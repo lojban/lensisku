@@ -14,7 +14,7 @@
               <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
             </div>
           </template>
-          <template #trailing>
+          <template #toolbar>
             <div class="flex flex-wrap items-center justify-end gap-2">
               <RouterLink
                 :to="localePath('/lingo/courses')"

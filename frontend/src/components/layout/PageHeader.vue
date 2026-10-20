@@ -26,9 +26,11 @@ function vnodeIsVisible(vn: VNode): boolean {
  * Card-style page header: bordered white panel, responsive padding (`mb-6` when `margin="section"`).
  *
  * **Layouts**
- * - `stack` (default): title row (`icon` + heading + `title-after`, optional `trailing` on the same row).
- *   Optional `leading` (e.g. collection cover) opens a two-column row; `eyebrow` / `description` sit in the text column.
- * - `split`: one row — left block is `leading` + text column; right block is `trailing` (e.g. study session actions).
+ * - `stack` (default): title row (`icon` + heading + `title-after`) with optional `trailing` on the
+ *   same flex row (`justify-between`; wraps via CSS when space is tight). `description` next;
+ *   use `#toolbar` for actions that should sit below.
+ *   Optional `leading` opens a two-column row; `eyebrow` sits above the title.
+ * - `split`: one row — left block is `leading` + text column; right block is `trailing`.
  *
  * **Slots:** `leading`, `eyebrow`, `icon`, `title`, `title-after`, `trailing`, `description`, `meta`, `meta-trailing`, `toolbar`.
  */
@@ -82,18 +84,6 @@ const passthroughAttrs = computed(() => {
 })
 
 const stackGapClass = computed(() => (props.stackGap === 'comfortable' ? 'gap-4' : 'gap-2'))
-
-const titleRowClass = computed(() =>
-  hasTrailing.value
-    ? 'flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1'
-    : 'flex w-fit max-w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1'
-)
-
-const titleShellClass = computed(() =>
-  hasTrailing.value
-    ? 'flex w-full min-w-0 items-start justify-between gap-2'
-    : 'flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4'
-)
 
 const titleClass = computed(() => {
   const base =
@@ -167,10 +157,8 @@ const metaRowJustifyClass = computed(() => {
             <div class="flex min-w-0 flex-1 flex-col gap-2 text-left">
               <div v-if="hasEyebrow" class="min-w-0"><slot name="eyebrow" /></div>
 
-              <div
-                class="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4"
-              >
-                <div :class="titleRowClass">
+              <div class="flex w-full min-w-0 flex-wrap items-center justify-between gap-2">
+                <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
                   <span v-if="hasIcon" class="inline-flex shrink-0 items-center text-gray-500">
                     <slot name="icon" />
                   </span>
@@ -198,8 +186,8 @@ const metaRowJustifyClass = computed(() => {
           <div class="flex w-full min-w-0 flex-col gap-2 text-left">
             <div v-if="hasEyebrow" class="min-w-0"><slot name="eyebrow" /></div>
 
-            <div :class="titleShellClass">
-              <div :class="titleRowClass">
+            <div class="flex w-full min-w-0 flex-wrap items-center justify-between gap-2">
+              <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
                 <span v-if="hasIcon" class="inline-flex shrink-0 items-center text-gray-500">
                   <slot name="icon" />
                 </span>

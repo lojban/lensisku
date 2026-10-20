@@ -100,7 +100,7 @@ const streakPointsEmoji = (points: number): string => {
   if (points < 10) return '🌱'
   if (points < 25) return '⭐'
   if (points < 50) return '🔥'
-  return '🏆'
+  return '🌳'
 }
 
 /** Gregorian weekdays (JS getDay 0=Sun..6=Sat): color lujvo from sampu vlaste (xunre…zirpu + dei). */
