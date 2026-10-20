@@ -6,7 +6,7 @@
     <LingoMobileHeader />
     <LingoSidebar class="hidden lg:flex" />
     <main class="lingo-main" :class="fill ? 'flex min-h-0 flex-col overflow-hidden' : ''">
-      <div class="lingo-main-inner" :class="fill ? 'flex min-h-0 flex-1 flex-col' : ''">
+      <div class="lingo-main-inner" :class="fill ? 'min-h-0 flex-1' : ''">
         <slot />
       </div>
     </main>

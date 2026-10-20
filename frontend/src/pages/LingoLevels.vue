@@ -1,9 +1,9 @@
 <template>
   <LingoLayout>
     <LingoFeedLayout>
-      <div class="lingo-levels-root flex w-full flex-col pb-10">
+      <div class="lingo-levels-root flex w-full flex-col">
         <header
-          class="sticky top-0 z-40 mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white pb-3 lg:z-50 lg:mt-[-28px] lg:pt-[28px]"
+          class="sticky top-0 z-40 mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white pb-3 lg:z-50 lg:mt-[-1rem] lg:pt-4"
         >
           <RouterLink
             to="/lingo/courses"
@@ -12,8 +12,11 @@
           >
             <ArrowLeft class="h-5 w-5" />
           </RouterLink>
-          <h1 class="min-w-0 truncate text-center text-lg font-bold text-neutral-700">
-            {{ collection?.name || t('flashcardLevels.title', { collectionName: '' }) }}
+          <h1
+            class="min-w-0 truncate text-center text-lg font-bold text-neutral-700"
+            :aria-busy="isLoading"
+          >
+            {{ isLoading ? '' : collection?.name || '' }}
           </h1>
           <div class="flex shrink-0 items-center gap-2">
             <button
@@ -845,7 +848,11 @@ const performDeleteLevel = async () => {
 }
 
 useSeoHead({
-  title: t('flashcardLevels.title', { collectionName: collection.value?.name || '' }),
+  title: computed(() =>
+    collection.value?.name
+      ? t('flashcardLevels.title', { collectionName: collection.value.name })
+      : t('lingo.courses')
+  ),
 })
 
 onMounted(async () => {

@@ -1817,6 +1817,7 @@
     "learn": "学ぶ",
     "searchCourses": "コース名または説明で検索",
     "languageCourses": "言語コース",
+    "currentCourse": "受講中のコース",
     "noCourses": "まだコースがありません。メインアプリでコレクションを作成してください。",
     "courses": "コース",
     "heroTitle": "Lingo で学び、練習し、身につけよう。",

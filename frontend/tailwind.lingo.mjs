@@ -94,7 +94,7 @@ export function buildLingoThemeLayer() {
       '@apply flex flex-1 flex-col gap-y-2 pt-4 lg:pt-8': {},
     },
     /**
-     * Main column: top offset for mobile header, bottom for tab bar, left for desktop rail.
+     * Main column: left inset for desktop rail; bottom reserve for mobile tab bar.
      * Safe-area padding is raw CSS (commas in `env()` break `@apply`).
      */
     '.lingo-main': {
@@ -104,8 +104,25 @@ export function buildLingoThemeLayer() {
         paddingBottom: '0',
       },
     },
+    /**
+     * Width shell only (no padding). Inset lives on the scroll/content child:
+     * `.feed-page__body` or `.lingo-feed-layout` — never both.
+     */
     '.lingo-main-inner': {
-      '@apply mx-auto h-full w-full max-w-[1056px] px-4 pt-6 lg:px-6': {},
+      '@apply mx-auto flex h-full min-h-0 w-full max-w-[1056px] flex-col': {},
+    },
+    /**
+     * Fill+scroll Lingo pages (`feed-page` + `FeedPageBody`): body is the pad owner.
+     * Slightly roomier than dictionary `px-3 pt-3`, with bottom breath (no FAB gutter).
+     */
+    '.lingo-main-inner .feed-page__header': {
+      '@apply px-4 lg:px-6': {},
+    },
+    '.lingo-main-inner .feed-page__body': {
+      '@apply px-4 pt-4 pb-4 lg:px-6': {},
+    },
+    '.lingo-main-inner .feed-page__pagination': {
+      '@apply px-4 pr-4 lg:px-6': {},
     },
     /**
      * Persistent mobile / tablet tab bar — always reachable under lg.
@@ -127,10 +144,41 @@ export function buildLingoThemeLayer() {
     '.lingo-bottom-nav-item--active': {
       '@apply text-green-600': {},
     },
-    /** Course pick tile (clone: courses/card.tsx) — plain button, not ui-btn. */
+    /**
+     * Course pick tile (clone: courses/card.tsx) — plain button, not ui-btn.
+     * Top-aligned fixed slots (media → title → desc) so a grid of cards stays even.
+     * Active = currently selected course (clone Check); smaller corner badge + sky border.
+     */
     '.lingo-course-card': {
-      '@apply flex h-full min-h-[217px] min-w-0 w-full cursor-pointer flex-col items-center justify-between rounded-xl border-2 border-b-[4px] border-neutral-200 bg-white p-3 pb-6 text-left transition hover:bg-black/5 active:border-b-2 disabled:pointer-events-none disabled:opacity-50 lg:min-w-[200px]':
+      '@apply relative flex h-full min-h-[217px] min-w-0 w-full cursor-pointer flex-col items-center justify-start rounded-xl border-2 border-b-[4px] border-neutral-200 bg-white p-3 pb-5 text-left transition hover:bg-black/5 active:border-b-2 disabled:pointer-events-none disabled:opacity-50 lg:min-w-[200px]':
         {},
+    },
+    '.lingo-course-card--active': {
+      '@apply border-sky-400 bg-sky-500/5': {},
+    },
+    '.lingo-course-card__media': {
+      '@apply relative mt-1 flex h-[70px] w-[93px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 drop-shadow-md':
+        {},
+    },
+    /**
+     * Current-course mark — direct child of the card button (inside padding).
+     * Dumbbell matches Learn / “actively studying this course”.
+     */
+    '.lingo-course-card__active-badge': {
+      '@apply absolute right-3.5 top-3.5 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-green-600 text-white shadow-sm':
+        {},
+    },
+    '.lingo-course-card__copy': {
+      '@apply mt-3 flex w-full min-w-0 flex-col items-center gap-1 px-0.5 text-center': {},
+    },
+    /** Two-line title slot (always reserved). */
+    '.lingo-course-card__title': {
+      '@apply w-full min-h-[2.75rem] text-sm font-bold leading-snug text-neutral-700 line-clamp-2':
+        {},
+    },
+    /** Two-line description slot (always reserved, even when empty). */
+    '.lingo-course-card__desc': {
+      '@apply card-description w-full min-h-[2.5rem] text-center leading-snug line-clamp-2': {},
     },
     /** Unit / collection banner on the learn ladder. */
     '.lingo-unit-banner': {
@@ -163,6 +211,20 @@ export function buildLingoThemeLayer() {
     },
     '.lingo-drawer-backdrop': {
       '@apply fixed inset-0 z-[100] bg-black/50 lg:hidden': {},
+    },
+    /**
+     * Optional main + aside (leaderboard, levels, quests).
+     * Pad owner when not using `feed-page` — do not also pad `.lingo-main-inner`.
+     */
+    '.lingo-feed-layout': {
+      '@apply flex w-full flex-col-reverse gap-8 px-4 py-4 lg:flex-row-reverse lg:gap-12 lg:px-6':
+        {},
+    },
+    '.lingo-feed-layout__aside': {
+      '@apply hidden w-full shrink-0 lg:sticky lg:top-4 lg:block lg:w-[368px] lg:self-start': {},
+    },
+    '.lingo-feed-layout__main': {
+      '@apply relative min-w-0 flex-1': {},
     },
     /** Empty / placeholder panels inside Lingo. */
     '.lingo-panel': {

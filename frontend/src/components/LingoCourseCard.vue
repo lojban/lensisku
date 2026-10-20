@@ -2,32 +2,32 @@
   <button
     type="button"
     class="lingo-course-card"
+    :class="{ 'lingo-course-card--active': isActive }"
     :disabled="disabled"
+    :aria-current="isActive ? 'true' : undefined"
+    :aria-label="cardAriaLabel"
     @click="$emit('select', collection.collection_id)"
   >
-    <div class="flex min-h-[24px] w-full items-center justify-end">
-      <div v-if="isActive" class="flex items-center justify-center rounded-md bg-green-600 p-1.5">
-        <Check class="h-4 w-4 stroke-[3] text-white" />
-      </div>
-    </div>
+    <span v-if="isActive" class="lingo-course-card__active-badge" :title="t('lingo.currentCourse')">
+      <Dumbbell class="h-3.5 w-3.5" aria-hidden="true" />
+      <span class="sr-only">{{ t('lingo.currentCourse') }}</span>
+    </span>
 
-    <div
-      class="flex h-[70px] w-[93px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 drop-shadow-md"
-    >
+    <div class="lingo-course-card__media">
       <img
         v-if="coverImageUrl && !imageFailed"
         :src="coverImageUrl"
-        :alt="collection.name"
+        alt=""
         class="collection-cover-thumb"
         @error="imageFailed = true"
       />
-      <PlayingCardsFanIcon v-else class="h-9 w-9 text-green-600" />
+      <PlayingCardsFanIcon v-else class="h-9 w-9 text-green-600" aria-hidden="true" />
     </div>
 
-    <div class="mt-3 flex w-full min-w-0 flex-col items-center gap-1 px-0.5 text-center">
-      <p class="w-full font-bold text-neutral-700 line-clamp-2">{{ collection.name }}</p>
-      <p v-if="collection.description" class="card-description w-full text-center">
-        {{ collection.description }}
+    <div class="lingo-course-card__copy">
+      <p class="lingo-course-card__title">{{ collection.name }}</p>
+      <p class="lingo-course-card__desc">
+        {{ collection.description || '' }}
       </p>
     </div>
   </button>
@@ -36,7 +36,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { PlayingCardsFanIcon } from '@packages/ui'
-import { Check } from '@lucide/vue'
+import { Dumbbell } from '@lucide/vue'
+import { useI18n } from 'vue-i18n'
 import { getCollectionImage } from '@/api'
 
 const props = defineProps({
@@ -47,11 +48,17 @@ const props = defineProps({
 
 defineEmits(['select'])
 
+const { t } = useI18n()
 const imageFailed = ref(false)
 
 const coverImageUrl = computed(() => {
   if (!props.collection?.has_cover_image) return null
   return getCollectionImage(props.collection.collection_id, { cached: true })
+})
+
+const cardAriaLabel = computed(() => {
+  const name = String(props.collection?.name ?? '')
+  return props.isActive ? `${name}. ${t('lingo.currentCourse')}` : name
 })
 
 watch(

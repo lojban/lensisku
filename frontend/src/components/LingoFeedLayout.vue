@@ -1,9 +1,7 @@
 <template>
-  <div class="flex w-full flex-col-reverse gap-8 lg:flex-row-reverse lg:gap-12">
-    <aside
-      v-if="showAside"
-      class="hidden w-full shrink-0 lg:sticky lg:top-6 lg:block lg:w-[368px] lg:self-start"
-    >
+  <!-- Main/aside split only. Content inset is `.lingo-main-inner` (brandbook §10.3). -->
+  <div class="lingo-feed-layout">
+    <aside v-if="showAside" class="lingo-feed-layout__aside">
       <div class="flex flex-col gap-y-4">
         <LingoUserProgress />
         <slot name="aside">
@@ -12,7 +10,7 @@
         </slot>
       </div>
     </aside>
-    <div class="relative min-w-0 flex-1 pb-10">
+    <div class="lingo-feed-layout__main">
       <slot />
     </div>
   </div>
