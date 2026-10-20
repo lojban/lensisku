@@ -180,7 +180,10 @@ export function buildLingoThemeLayer() {
     '.lingo-bottom-nav-item--active': {
       '@apply text-green-600': {},
     },
-    /** Shared Lingo card surface — thin border + soft shadow (not chunky clone borders). */
+    /**
+     * Shared Lingo card surface — thin border + soft shadow (not chunky clone borders).
+     * No padding: callers add `p-4` (see LingoPromo / StudyStreak / LingoQuestsPanel).
+     */
     '.lingo-card': {
       '@apply rounded-xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/60': {},
     },

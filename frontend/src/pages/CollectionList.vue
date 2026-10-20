@@ -2,20 +2,26 @@
   <div class="feed-page">
     <FeedPageBody>
       <div class="flex flex-col gap-4">
-        <StudyStreak />
+        <StudyStreak class="card-base card-compact" />
 
-        <PageHeader title-as="h2" title-tone="secondary" margin="none" class="mt-0">
+        <PageHeader
+          title-as="h2"
+          title-tone="secondary"
+          stack-gap="comfortable"
+          margin="none"
+          class="mt-0"
+        >
           <template #title>
             <span class="select-none">{{ t('collectionList.catalogCourses') }}</span>
           </template>
           <template #description>
-            <div class="flex max-w-2xl flex-col gap-2 text-sm text-slate-600">
+            <div class="page-header-description">
               <p class="m-0">{{ t('collectionList.learnDescription') }}</p>
               <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
             </div>
           </template>
           <template #toolbar>
-            <div class="flex flex-wrap items-center justify-end gap-2">
+            <div class="page-header-actions">
               <RouterLink
                 :to="localePath('/lingo/courses')"
                 class="ui-btn--neutral inline-flex items-center gap-2"
@@ -114,45 +120,49 @@
             >
           </div>
         </div>
-        <LoadingSpinner v-if="isLoading" />
-        <div v-else class="collections-section">
-          <div class="collections-grid">
-            <CollectionCard
-              v-for="collection in collections"
-              :key="collection.collection_id"
-              :collection="collection"
-              :cover-image-url="
-                collection.has_cover_image
-                  ? getCollectionImage(collection.collection_id, { cached: true })
-                  : null
-              "
-              :study-loading="studyLoadingId === collection.collection_id"
-              :show-study="segment === 'courses'"
-              :format-date="formatDate"
-              :study-button-label="t('collectionList.studyButton')"
-              :collection-button-label="t('collectionList.collectionButton')"
-              :flashcards-button-label="t('collectionList.flashcardsButton')"
-              :created-by-label="t('collectionList.createdBy')"
-              :updated-label="t('collectionList.updatedAt')"
-              :public-label="t('collectionList.publicStatus')"
-              :private-label="t('collectionList.privateStatus')"
-              :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"
-              :monthly-drillers-label="monthlyDrillersLabel(collection)"
-              @study="startStudy(collection)"
+        <div class="collections-section" :aria-busy="isLoading || undefined">
+          <LoadingSpinner v-if="isLoading" variant="inline" class="py-16" />
+          <template v-else>
+            <div class="collections-grid">
+              <CollectionCard
+                v-for="collection in collections"
+                :key="collection.collection_id"
+                :collection="collection"
+                :cover-image-url="
+                  collection.has_cover_image
+                    ? getCollectionImage(collection.collection_id, { cached: true })
+                    : null
+                "
+                :study-loading="studyLoadingId === collection.collection_id"
+                :show-study="segment === 'courses'"
+                :format-date="formatDate"
+                :study-button-label="t('collectionList.studyButton')"
+                :collection-button-label="t('collectionList.collectionButton')"
+                :flashcards-button-label="t('collectionList.flashcardsButton')"
+                :created-by-label="t('collectionList.createdBy')"
+                :updated-label="t('collectionList.updatedAt')"
+                :public-label="t('collectionList.publicStatus')"
+                :private-label="t('collectionList.privateStatus')"
+                :items-count-label="
+                  t('collectionList.itemsCount', { count: collection.item_count })
+                "
+                :monthly-drillers-label="monthlyDrillersLabel(collection)"
+                @study="startStudy(collection)"
+              />
+            </div>
+            <PaginationComponent
+              v-if="totalPages > 1"
+              :current-page="currentPage"
+              :total-pages="totalPages"
+              :total="totalCollections"
+              :per-page="perPage"
+              class="w-full"
+              @prev="prevPage"
+              @next="nextPage"
             />
-          </div>
-          <PaginationComponent
-            v-if="totalPages > 1"
-            :current-page="currentPage"
-            :total-pages="totalPages"
-            :total="totalCollections"
-            :per-page="perPage"
-            class="w-full"
-            @prev="prevPage"
-            @next="nextPage"
-          />
+            <EmptyStatePanel v-if="collections.length === 0" />
+          </template>
         </div>
-        <EmptyStatePanel v-if="!isLoading && collections.length === 0" />
       </div>
     </FeedPageBody>
     <div ref="paginationHost" class="contents" />
@@ -357,13 +367,3 @@ onBeforeUnmount(() => {
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 })
 </script>
-
-<style scoped>
-.collections-section {
-  @apply w-full;
-}
-
-.collections-grid {
-  @apply grid gap-4 sm:gap-5 items-stretch grid-cols-1 sm:grid-cols-2;
-}
-</style>

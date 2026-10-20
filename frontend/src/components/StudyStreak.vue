@@ -1,9 +1,5 @@
 <template>
-  <div
-    v-if="auth.state.isLoggedIn"
-    class="card-streak min-h-[11rem] p-4 sm:min-h-[13rem] sm:p-5"
-    :class="lingo ? 'lingo-card' : 'card-base card-compact'"
-  >
+  <div v-if="auth.state.isLoggedIn" class="card-streak p-4 sm:p-5">
     <template v-if="!isLoadingStreak && streakData">
       <div class="card-streak-header">
         <h3 class="card-streak-title select-none">{{ t('collectionList.studyStreak') }}</h3>
@@ -27,9 +23,7 @@
 
           <div
             class="card-streak-day-count"
-            :class="
-              day.reviews_count > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'
-            "
+            :data-active="day.reviews_count > 0 ? 'true' : 'false'"
           >
             {{ day.reviews_count }}
           </div>
@@ -45,7 +39,7 @@
       </div>
     </template>
 
-    <div v-else class="streak-skeleton animate-pulse" aria-hidden="true">
+    <div v-else class="streak-skeleton skeleton-pulse" aria-hidden="true">
       <div class="card-streak-header">
         <div class="h-6 w-1/3 min-w-[6rem] max-w-[12rem] rounded bg-gray-200" />
 
@@ -56,7 +50,7 @@
         <div v-for="i in 7" :key="i" class="card-streak-day">
           <div class="card-streak-skeleton-line" />
 
-          <div class="card-streak-day-count bg-gray-100" />
+          <div class="card-streak-day-count" data-active="false" />
 
           <div class="card-streak-skeleton-line card-streak-skeleton-line--points" />
         </div>
@@ -70,11 +64,6 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getStreak } from '@/api'
 import { useAuth } from '@/composables/useAuth'
-
-defineProps({
-  /** Soft Lingo card chrome (thin border + shadow) instead of dictionary card-base. */
-  lingo: { type: Boolean, default: false },
-})
 
 interface StreakDay {
   date: string

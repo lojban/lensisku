@@ -202,6 +202,14 @@
                     <GalleryVerticalIcon class="w-4 h-4 shrink-0" aria-hidden="true" />
                     {{ t('collectionDetail.viewAsTiktoknu') }}
                   </RouterLink>
+                  <span
+                    v-else
+                    class="ui-btn--accent-purple ui-btn--group-item invisible pointer-events-none inline-flex items-center gap-2"
+                    aria-hidden="true"
+                  >
+                    <GalleryVerticalIcon class="w-4 h-4 shrink-0" />
+                    {{ t('collectionDetail.viewAsTiktoknu') }}
+                  </span>
                   <RouterLink
                     :to="`/collections/${props.collectionId}/levels`"
                     class="ui-btn--neutral ui-btn--group-item inline-flex items-center gap-2"
@@ -231,8 +239,6 @@
             </div>
           </template>
         </CollectionPageHeader>
-        <!-- Loading State -->
-        <LoadingSpinner v-if="isLoading" class="py-12" />
         <!-- Items List -->
         <div
           v-if="isOwner && isAddFlashcardMode"
@@ -250,11 +256,13 @@
           </label>
         </div>
 
-        <div v-show="activeTab === 'items'" class="flex flex-col gap-4" role="tabpanel">
-          <!-- Loading state for items -->
-          <LoadingSpinner v-if="isLoadingItems" class="py-8" />
-          <!-- Items grid -->
-
+        <div
+          v-show="activeTab === 'items'"
+          class="relative flex min-h-[12rem] flex-col gap-4"
+          role="tabpanel"
+          :aria-busy="isLoading || isLoadingItems || undefined"
+        >
+          <LoadingSpinner v-if="isLoading || isLoadingItems" variant="inline" class="py-12" />
           <div v-else class="grid gap-4">
             <div
               v-for="(item, index) in paginatedItems.items"
@@ -304,7 +312,7 @@
           </div>
           <!-- Empty State -->
           <div
-            v-if="!isLoadingItems && paginatedItems.items.length === 0"
+            v-if="!isLoading && !isLoadingItems && paginatedItems.items.length === 0"
             class="text-center py-12 bg-gray-50 rounded-lg border border-gray-200"
           >
             <p class="text-gray-600">{{ t('collectionDetail.noItems') }}</p>
@@ -327,9 +335,14 @@
           />
         </div>
 
-        <div v-show="activeTab === 'discussion'" class="pt-2" role="tabpanel">
+        <div
+          v-show="activeTab === 'discussion'"
+          class="relative min-h-[8rem] pt-2"
+          role="tabpanel"
+          :aria-busy="isLoadingWaves || undefined"
+        >
           <div v-if="searchMode === 'comments' && itemSearchQuery.trim()" class="space-y-4">
-            <LoadingSpinner v-if="isLoadingWaves" class="py-8" />
+            <LoadingSpinner v-if="isLoadingWaves" variant="inline" class="py-8" />
             <template v-else>
               <div v-if="waveItems.length > 0" class="space-y-3">
                 <div

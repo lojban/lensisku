@@ -38,6 +38,7 @@
     stack-gap="comfortable"
   >
     <template #leading>
+      <!-- Always slot leading so skeleton ↔ loaded chrome keep the same two-column geometry. -->
       <CollectionCoverLightbox
         v-if="coverImageUrl"
         class="shrink-0 self-stretch"
@@ -56,6 +57,11 @@
           />
         </div>
       </CollectionCoverLightbox>
+      <div
+        v-else
+        class="collection-header-logo-placeholder self-stretch min-h-[4.5rem]"
+        aria-hidden="true"
+      />
     </template>
     <template #eyebrow> <slot name="hint" /> </template>
     <template #title> <slot name="title" /> </template>
@@ -65,10 +71,7 @@
       </div>
     </template>
     <template #meta>
-      <span
-        class="inline-flex h-6 shrink-0 items-center select-none rounded-full px-2 py-1 text-xs"
-        :class="collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'"
-      >
+      <span class="badge-visibility" :data-public="collection.is_public ? 'true' : 'false'">
         {{ collection.is_public ? publicLabel : privateLabel }}
       </span>
       <span v-if="collection.owner" class="inline-flex h-6 items-center text-xs text-gray-500">

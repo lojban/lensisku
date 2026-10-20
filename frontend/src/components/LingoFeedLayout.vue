@@ -20,7 +20,7 @@
             <LingoUserProgress />
           </div>
           <slot name="aside">
-            <StudyStreak lingo />
+            <StudyStreak class="lingo-card" />
           </slot>
         </div>
       </aside>

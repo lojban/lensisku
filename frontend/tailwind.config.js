@@ -128,6 +128,18 @@ export default {
           '@apply absolute inset-0 z-10 flex min-h-[8rem] items-center justify-center bg-white/50':
             {},
         },
+        /** LoadingSpinner root: layout via `data-variant` (no JS class map). */
+        '.loading-spinner[data-variant="page"]': {
+          '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/40 backdrop-blur-sm':
+            {},
+        },
+        '.loading-spinner[data-variant="content"]': {
+          '@apply absolute inset-0 z-10 flex min-h-[8rem] items-center justify-center bg-white/50':
+            {},
+        },
+        '.loading-spinner[data-variant="inline"]': {
+          '@apply flex flex-col items-center justify-center': {},
+        },
         /**
          * Static snapshot of the previous route while the next page loads.
          * Absolute inside the route stage (keeps `#main-child` max-w-4xl); light blur.
@@ -916,8 +928,9 @@ export default {
           '@apply flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden':
             {},
         },
+        /** Same fixed square as `.collection-card-logo` so cover ↔ icon swap does not CLS. */
         '.collection-card-logo-placeholder': {
-          '@apply flex w-12 sm:w-16 min-h-0 rounded-lg sm:rounded-xl bg-gray-50 items-center justify-center text-gray-400 border border-gray-100 shadow-sm shrink-0':
+          '@apply flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-gray-50 text-gray-400 border border-gray-100 shadow-sm':
             {},
         },
         /** Collection detail header: fixed width, height follows hint+title row (`items-stretch`). */
@@ -938,12 +951,16 @@ export default {
           '@apply block h-full w-auto max-h-full max-w-full object-contain': {},
         },
         /**
-         * Default `PageHeader` card shell: mobile-only full-bleed (cancels `#main-child` `pt-3` + inner `px-3`
-         * from `App.vue`), square corners; from `sm` restores inset + `rounded-lg`.
+         * `PageHeader` card shell (Courses / Library / collection detail).
+         * Mobile full-bleed (cancels `#main-child` `pt-3` + inner `px-3`); from `sm` inset + `rounded-lg`.
+         * Gaps: see `.page-header-stack` / `__body` / `__title-row` (brandbook §8).
          */
         '.page-header-shell': {
           '@apply -mx-3 -mt-3 rounded-none border border-gray-200 bg-white p-4 sm:p-6 sm:mx-0 sm:mt-0 sm:rounded-lg':
             {},
+        },
+        '.page-header-shell[data-margin="section"]': {
+          '@apply mb-6': {},
         },
         /**
          * Flashcard study session strip under the app bar (`border-t-0`, bottom radius only from `sm`).
@@ -1316,6 +1333,24 @@ export default {
         '.badge-muted': {
           '@apply bg-gray-50 text-gray-500': {},
         },
+        /** Public / private collection visibility chip (`data-public="true|false"`). */
+        '.badge-visibility': {
+          '@apply inline-flex h-6 shrink-0 items-center select-none rounded-full px-2 py-1 text-xs':
+            {},
+        },
+        '.badge-visibility[data-public="true"]': {
+          '@apply bg-green-100 text-green-700': {},
+        },
+        '.badge-visibility[data-public="false"]': {
+          '@apply bg-gray-100 text-gray-700': {},
+        },
+        /** Public catalog / library collection card grid. */
+        '.collections-section': {
+          '@apply relative w-full min-h-[20rem]': {},
+        },
+        '.collections-grid': {
+          '@apply grid gap-4 sm:gap-5 items-stretch grid-cols-1 sm:grid-cols-2': {},
+        },
         '.card-meta': {
           '@apply flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 shrink-0': {},
         },
@@ -1332,9 +1367,13 @@ export default {
         '.card-meta-drillers': {
           '@apply inline-flex basis-full items-center gap-1 text-xs text-gray-500': {},
         },
-        /** Study streak strip (collections): seven columns that shrink in flex layouts; larger type than generic card-meta-date. */
+        /**
+         * Study streak strip (collections / lingo aside).
+         * Min-heights reserve layout while the inner skeleton loads (pair with `.skeleton-pulse`).
+         * Chrome (`card-base` / `lingo-card`) is passed by the caller.
+         */
         '.card-streak': {
-          '@apply w-full min-w-0 max-w-full': {},
+          '@apply w-full min-w-0 max-w-full min-h-[11rem] p-4 sm:min-h-[13rem] sm:p-5': {},
         },
         '.card-streak-header': {
           '@apply mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1': {},
@@ -1363,6 +1402,12 @@ export default {
         '.card-streak-day-count': {
           '@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium sm:h-8 sm:w-8 sm:text-sm':
             {},
+        },
+        '.card-streak-day-count[data-active="true"]': {
+          '@apply bg-blue-100 text-blue-700': {},
+        },
+        '.card-streak-day-count[data-active="false"]': {
+          '@apply bg-gray-100 text-gray-400': {},
         },
         /** Pulse bars: heights match `.card-streak-day-label` / `.card-streak-day-points` line boxes (no CLS vs loaded streak). */
         '.card-streak-skeleton-line': {
@@ -1397,6 +1442,82 @@ export default {
         },
         '.card-study-area': {
           '@apply flex items-center justify-center min-h-[5.5rem] py-6 sm:py-8 flex-shrink-0': {},
+        },
+        /** Compact study CTA band on catalog cards — always mounted to avoid segment-toggle CLS. */
+        '.card-study-area-compact': {
+          '@apply flex shrink-0 items-center justify-center min-h-[3.25rem] py-3': {},
+        },
+        /**
+         * PageHeader internals (machine source for brandbook §8).
+         * Gap scale — do not re-declare `gap-*` in page templates; use these classes.
+         * - stack compact (default): 0.5rem between major blocks (body / meta / toolbar)
+         * - stack comfortable: 1rem (catalog intros, collection detail)
+         * - body: 0.5rem between eyebrow / title-row / description
+         * - title-row / trailing / actions: 0.5rem
+         * - leading-row: 0.75rem → 1rem from `sm`
+         */
+        '.page-header-stack': {
+          '@apply flex w-full min-w-0 flex-col gap-2': {},
+        },
+        '.page-header-stack[data-stack-gap="comfortable"]': {
+          '@apply gap-4': {},
+        },
+        '.page-header-leading-row': {
+          '@apply flex flex-row items-stretch gap-3 sm:gap-4': {},
+        },
+        '.page-header-body': {
+          '@apply flex w-full min-w-0 flex-col gap-2 text-left': {},
+        },
+        '.page-header-title-row': {
+          '@apply flex w-full min-w-0 flex-wrap items-center justify-between gap-2': {},
+        },
+        /** Split layout top band (leading+text | trailing) — slightly roomier than title-row. */
+        '.page-header-split-row': {
+          '@apply flex w-full min-w-0 flex-wrap items-center justify-between gap-4': {},
+        },
+        '.page-header-title-cluster': {
+          '@apply flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1': {},
+        },
+        '.page-header-trailing': {
+          '@apply flex shrink-0 flex-wrap items-center justify-end gap-2': {},
+        },
+        '.page-header-toolbar': {
+          '@apply w-full min-w-0': {},
+        },
+        /** Button / link rows inside `#toolbar` or `#trailing` slot content. */
+        '.page-header-actions': {
+          '@apply flex flex-wrap items-center justify-end gap-2': {},
+        },
+        /** Intro copy; `div` stacks paragraphs with `gap-2`, bare `<p>` is typography only. */
+        '.page-header-description': {
+          '@apply max-w-2xl text-sm text-slate-600': {},
+        },
+        'div.page-header-description': {
+          '@apply flex flex-col gap-2': {},
+        },
+        '.page-header-title': {
+          '@apply my-0 min-w-0 max-w-full break-words font-bold text-gray-800 [overflow-wrap:anywhere] text-2xl sm:text-3xl':
+            {},
+        },
+        '.page-header-title[data-tone="secondary"]': {
+          '@apply text-xl sm:text-2xl': {},
+        },
+        '.page-header-meta': {
+          '@apply flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-2': {},
+        },
+        '.page-header-meta:has([data-slot="meta"]:not(:empty)):has([data-slot="meta-trailing"]:not(:empty))':
+          {
+            '@apply justify-between': {},
+          },
+        '.page-header-meta:not(:has([data-slot="meta"]:not(:empty))):has([data-slot="meta-trailing"]:not(:empty))':
+          {
+            '@apply justify-end': {},
+          },
+        '.page-header-meta-cluster': {
+          '@apply flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1': {},
+        },
+        '.page-header-meta-trailing': {
+          '@apply flex shrink-0 flex-wrap items-center justify-end gap-2': {},
         },
         /** Native / imported wiki article: dense reading layout (especially on mobile). */
         '.wiki-article': {

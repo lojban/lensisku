@@ -215,11 +215,34 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 | `.page-section-title`                                       | In-page H1-style tool titles.                                                                                                                                                                                                                                        |
 | `.empty-state-panel`                                        | Zero-state blocks.                                                                                                                                                                                                                                                   |
 | `.feed-page` / `__header` / `__body` / `__footer`           | Dictionary full-height feeds: pad owner is `__body` (`px-3 pt-3`).                                                                                                                                                                                                   |
+| `.page-header-shell` + stack / body / title-row (§8.1)      | Catalog & detail page intro cards (`PageHeader.vue`). Gaps are **named classes**, not ad-hoc `gap-*` in pages.                                                                                                                                                       |
 | `.lingo-main-inner`                                         | Lingo **width** shell only (`max-w-[1056px]`). **No** padding.                                                                                                                                                                                                       |
 | Lingo + `feed-page`                                         | Pad owner: `.lingo-main-inner .feed-page__body` (`px-4 pt-4 pb-4 lg:px-6`) in `tailwind.lingo.mjs`.                                                                                                                                                                  |
 | `.lingo-feed-layout`                                        | Pad owner for courses/leaderboard (`px-4 py-4 lg:px-6`). `--with-header` (levels): `py-0` so sticky header sits flush under the app bar; body uses `pt-3 lg:pt-6`. Aside: hearts + `StudyStreak lingo` — **above** main on small screens, sticky right rail on `lg`. |
 
 **Padding rule:** one inset owner per Lingo page — never `.lingo-main-inner` **and** `__body` / `.lingo-feed-layout`.
+
+### 8.1 Page header cards (`PageHeader.vue`)
+
+Machine source: `tailwind.config.js` (`.page-header-*`). Use these instead of one-off `gap-*` / `mb-*` in Courses, Library, collection detail, entry headers.
+
+| Class / attr                                     | Role                                                     | Gap / spacing                                                                               |
+| ------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `.page-header-shell`                             | Card chrome (border, pad `p-4` / `sm:p-6`, mobile bleed) | —                                                                                           |
+| `[data-margin="section"]`                        | Below-header section spacing                             | `mb-6`                                                                                      |
+| `.page-header-stack`                             | Major blocks: body → meta → toolbar                      | **compact** (default): `gap-2` (0.5rem); **`data-stack-gap="comfortable"`**: `gap-4` (1rem) |
+| `.page-header-body`                              | Eyebrow → title-row → description                        | `gap-2`                                                                                     |
+| `.page-header-leading-row`                       | Cover + body (collection detail)                         | `gap-3` → `sm:gap-4`                                                                        |
+| `.page-header-title-row`                         | Title cluster + trailing actions                         | `gap-2`, `justify-between`, wraps                                                           |
+| `.page-header-split-row`                         | Split layout: leading+text \| trailing                   | `gap-4`                                                                                     |
+| `.page-header-title-cluster`                     | Icon + heading + title-after                             | `gap-x-2 gap-y-1`                                                                           |
+| `.page-header-trailing` / `.page-header-actions` | Trailing / toolbar button rows                           | `gap-2`                                                                                     |
+| `.page-header-description`                       | Intro copy (`div` stacks `<p>`s)                         | typography; `div` adds `gap-2`                                                              |
+| `.page-header-meta` (+ `-cluster` / `-trailing`) | Badges + overflow menu                                   | `gap-x-2 gap-y-2` (row); clusters `gap-x-2 gap-y-1`                                         |
+
+**When to use `stack-gap="comfortable"`:** catalog intros (Courses, Library) and collection detail — title, blurb, and action rows need a full `1rem` between major blocks. Keep **compact** for dense entry headers.
+
+**Anti-pattern:** `class="flex … gap-2"` (or `gap-4`) inside `#description` / `#toolbar` / `#trailing` when `.page-header-description` or `.page-header-actions` already encodes the gap.
 
 ---
 

@@ -34,11 +34,10 @@
     </template>
     <template #footer>
       <div class="card-footer-block">
-        <div
-          v-if="showStudy && collection.has_flashcards"
-          class="card-study-area card-study-area-compact"
-        >
+        <!-- Always mounted: reserves CTA height so segment/has_flashcards toggles do not CLS. -->
+        <div class="card-study-area-compact">
           <Button
+            v-if="showStudy && collection.has_flashcards"
             :variant="studyButtonVariant"
             :loading="studyLoading"
             class="!h-auto px-5 py-2.5 rounded-xl text-sm"
@@ -67,6 +66,15 @@
               <GalleryHorizontalEnd class="w-4 h-4 shrink-0" />
               <span>{{ flashcardsButtonLabel }}</span>
             </RouterLink>
+            <!-- Invisible twin keeps action-group width aligned when the card has no flashcards. -->
+            <span
+              v-else
+              class="ui-btn--empty ui-btn--group-item invisible pointer-events-none"
+              aria-hidden="true"
+            >
+              <GalleryHorizontalEnd class="w-4 h-4 shrink-0" />
+              <span>{{ flashcardsButtonLabel }}</span>
+            </span>
           </div>
         </div>
 
@@ -206,12 +214,6 @@ defineEmits<{ study: [collection: CollectionCardCollection] }>()
 <style scoped>
 .collection-card {
   @apply flex flex-col h-full;
-}
-
-:deep(.card-study-area-compact) {
-  min-height: 0;
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
 }
 
 .card-meta-row {
