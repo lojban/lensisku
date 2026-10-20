@@ -1,114 +1,116 @@
 <template>
   <LingoLayout>
-    <div class="lingo-levels-root flex w-full flex-col pb-10">
-      <header
-        class="sticky top-0 z-40 mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white pb-3 text-neutral-400 lg:z-50 lg:mt-[-28px] lg:pt-[28px]"
-      >
-        <RouterLink
-          to="/lingo/courses"
-          class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon"
-          aria-label="Back"
+    <LingoFeedLayout>
+      <div class="lingo-levels-root flex w-full flex-col pb-10">
+        <header
+          class="sticky top-0 z-40 mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white pb-3 text-neutral-400 lg:z-50 lg:mt-[-28px] lg:pt-[28px]"
         >
-          <ArrowLeft class="h-5 w-5 stroke-2 text-neutral-400" />
-        </RouterLink>
-        <h1 class="min-w-0 truncate text-center text-lg font-bold text-neutral-700">
-          {{ collection?.name || t('flashcardLevels.title', { collectionName: '' }) }}
-        </h1>
-        <div class="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            class="lingo-btn lingo-btn--secondary lingo-btn--sm"
-            @click="startStudy"
+          <RouterLink
+            to="/lingo/courses"
+            class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon"
+            aria-label="Back"
           >
-            <Dumbbell class="h-4 w-4 shrink-0" />
-            <span class="hidden sm:inline">{{ t('flashcardLevels.studyButton') }}</span>
-          </button>
-          <button
-            v-if="isOwner"
-            type="button"
-            class="lingo-btn lingo-btn--primary lingo-btn--sm"
-            @click="showCreateModal = true"
-          >
-            {{ t('flashcardLevels.createLevel') }}
-          </button>
-        </div>
-      </header>
-
-      <div v-if="isLoading" class="flex min-h-[40vh] items-center justify-center py-12">
-        <div
-          class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
-        />
-      </div>
-
-      <div v-else class="flex flex-col gap-6">
-        <div v-if="levels.length === 0" class="lingo-panel py-12">
-          <p class="mb-4 text-slate-600">{{ t('flashcardLevels.noLevels') }}</p>
-          <button
-            v-if="isOwner"
-            type="button"
-            class="lingo-btn lingo-btn--secondary"
-            @click="showCreateModal = true"
-          >
-            {{ t('flashcardLevels.createFirst') }}
-          </button>
-        </div>
-
-        <div v-else class="relative flex flex-col items-center pb-16">
-          <LingoUnitBanner
-            :title="collection?.name || ''"
-            :description="collection?.description || ''"
-            :continue-label="t('flashcardLevels.continueLabel')"
-            @continue="startStudy"
-          />
-          <div class="relative mt-4 flex w-full flex-col items-center">
-            <LingoLessonButton
-              v-for="(level, i) in sortedEffectiveLevels"
-              :key="level.level_id"
-              :index="i"
-              :total-count="sortedEffectiveLevels.length - 1"
-              :locked="!isLevelUnlocked(level) && !level.progress?.is_completed"
-              :current="level === activeLevel"
-              :completed="!!level.progress?.is_completed"
-              :percentage="
-                activeLevel && level.level_id === activeLevel.level_id ? activeLevelPercentage : 0
-              "
-              :study-url="`/collections/${props.collectionId}/lingo/study?levelId=${level.level_id}`"
-              :start-label="t('flashcardLevels.start')"
-              :show-owner-menu="isOwner"
+            <ArrowLeft class="h-5 w-5 stroke-2 text-neutral-400" />
+          </RouterLink>
+          <h1 class="min-w-0 truncate text-center text-lg font-bold text-neutral-700">
+            {{ collection?.name || t('flashcardLevels.title', { collectionName: '' }) }}
+          </h1>
+          <div class="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              class="lingo-btn lingo-btn--secondary lingo-btn--sm"
+              @click="startStudy"
             >
-              <template #menu>
-                <div class="flex flex-col py-1">
-                  <button
-                    type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
-                    @click.stop="editLevel(level)"
-                  >
-                    <Settings class="h-4 w-4 shrink-0" />
-                    {{ t('flashcardLevels.actions.edit') }}
-                  </button>
-                  <button
-                    type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
-                    @click.stop="showAddCardsModal(level)"
-                  >
-                    <PlusCircle class="h-4 w-4 shrink-0" />
-                    {{ t('flashcardLevels.actions.addCards') }}
-                  </button>
-                  <button
-                    type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
-                    @click.stop="showLevelCards(level)"
-                  >
-                    <BookOpen class="h-4 w-4 shrink-0" />
-                    {{ t('flashcardLevels.actions.viewCards') }}
-                  </button>
-                </div>
-              </template>
-            </LingoLessonButton>
+              <Dumbbell class="h-4 w-4 shrink-0" />
+              <span class="hidden sm:inline">{{ t('flashcardLevels.studyButton') }}</span>
+            </button>
+            <button
+              v-if="isOwner"
+              type="button"
+              class="lingo-btn lingo-btn--primary lingo-btn--sm"
+              @click="showCreateModal = true"
+            >
+              {{ t('flashcardLevels.createLevel') }}
+            </button>
+          </div>
+        </header>
+
+        <div v-if="isLoading" class="flex min-h-[40vh] items-center justify-center py-12">
+          <div
+            class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
+          />
+        </div>
+
+        <div v-else class="flex flex-col gap-6">
+          <div v-if="levels.length === 0" class="lingo-panel py-12">
+            <p class="mb-4 text-slate-600">{{ t('flashcardLevels.noLevels') }}</p>
+            <button
+              v-if="isOwner"
+              type="button"
+              class="lingo-btn lingo-btn--secondary"
+              @click="showCreateModal = true"
+            >
+              {{ t('flashcardLevels.createFirst') }}
+            </button>
+          </div>
+
+          <div v-else class="relative flex flex-col items-center pb-16">
+            <LingoUnitBanner
+              :title="collection?.name || ''"
+              :description="collection?.description || ''"
+              :continue-label="t('flashcardLevels.continueLabel')"
+              @continue="startStudy"
+            />
+            <div class="relative mt-4 flex w-full flex-col items-center">
+              <LingoLessonButton
+                v-for="(level, i) in sortedEffectiveLevels"
+                :key="level.level_id"
+                :index="i"
+                :total-count="sortedEffectiveLevels.length - 1"
+                :locked="!isLevelUnlocked(level) && !level.progress?.is_completed"
+                :current="level === activeLevel"
+                :completed="!!level.progress?.is_completed"
+                :percentage="
+                  activeLevel && level.level_id === activeLevel.level_id ? activeLevelPercentage : 0
+                "
+                :study-url="`/collections/${props.collectionId}/lingo/study?levelId=${level.level_id}`"
+                :start-label="t('flashcardLevels.start')"
+                :show-owner-menu="isOwner"
+              >
+                <template #menu>
+                  <div class="flex flex-col py-1">
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                      @click.stop="editLevel(level)"
+                    >
+                      <Settings class="h-4 w-4 shrink-0" />
+                      {{ t('flashcardLevels.actions.edit') }}
+                    </button>
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                      @click.stop="showAddCardsModal(level)"
+                    >
+                      <PlusCircle class="h-4 w-4 shrink-0" />
+                      {{ t('flashcardLevels.actions.addCards') }}
+                    </button>
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                      @click.stop="showLevelCards(level)"
+                    >
+                      <BookOpen class="h-4 w-4 shrink-0" />
+                      {{ t('flashcardLevels.actions.viewCards') }}
+                    </button>
+                  </div>
+                </template>
+              </LingoLessonButton>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </LingoFeedLayout>
     <!-- Create/Edit Level ModalComponent -->
     <div
       v-if="showCreateModal || showEditModal"
@@ -452,8 +454,10 @@ import { useI18n } from 'vue-i18n'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import LingoLayout from '@/components/LingoLayout.vue'
+import LingoFeedLayout from '@/components/LingoFeedLayout.vue'
 import LingoUnitBanner from '@/components/LingoUnitBanner.vue'
 import LingoLessonButton from '@/components/LingoLessonButton.vue'
+import { useLingoProgress } from '@/composables/useLingoProgress'
 
 import {
   getCollection,
@@ -484,6 +488,7 @@ const auth = useAuth()
 const router = useRouter()
 const { t } = useI18n()
 const { getProgress } = useAnonymousProgress()
+const { setActiveCourse } = useLingoProgress()
 
 function startStudy() {
   const sorted = [...levels.value].sort((a, b) => a.position - b.position)
@@ -625,6 +630,7 @@ const fetchCollection = async () => {
   try {
     const response = await getCollection(props.collectionId)
     collection.value = response.data
+    setActiveCourse(Number(props.collectionId), response.data?.name || '')
   } catch (error) {
     console.error('Error fetching collection:', error)
   }

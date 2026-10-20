@@ -1125,7 +1125,21 @@ pub async fn list_flashcards(
         all_flashcards_with_retrievability.len() as i64
     };
 
+    // Warm retention cache while the learner reads the first card (not on the rating click)
+    let refresh_retention = if query.due.unwrap_or(false) {
+        get_optimal_retention(&transaction, user_id)
+            .await
+            .map(|(_, needs)| needs)
+            .unwrap_or(false)
+    } else {
+        false
+    };
+
     transaction.commit().await?;
+
+    if refresh_retention {
+        spawn_optimal_retention_refresh(pool.clone(), user_id);
+    }
 
     Ok(FlashcardListResponse {
         flashcards: paginated_cards,
@@ -1327,12 +1341,14 @@ async fn get_quiz_options_for_listing(
 }
 
 // Calculate optimal retention for a user
+const DEFAULT_OPTIMAL_RETENTION: f32 = 0.9;
+const OPTIMAL_RETENTION_CACHE_DAYS: i64 = 7;
+
 pub async fn calculate_optimal_retention(
     transaction: &Transaction<'_>,
     user_id: i32,
 ) -> Result<f32, Box<dyn std::error::Error>> {
-    // Default retention if we can't calculate an optimal one
-    let default_retention = 0.9;
+    let default_retention = DEFAULT_OPTIMAL_RETENTION;
 
     // Check if user has enough review history to calculate optimal retention
     let review_count: i64 = transaction
@@ -1343,46 +1359,45 @@ pub async fn calculate_optimal_retention(
         .await?
         .get(0);
 
-    // If user doesn't have enough review history, use default retention
+    // Persist default so the review hot path stops re-checking every click
     if review_count < 50 {
+        cache_optimal_retention(transaction, user_id, default_retention).await?;
         return Ok(default_retention);
     }
 
-    // Extract review history to build RevlogEntry objects
+    // Join progress once — avoid correlated subqueries per history row
     let rows = transaction
         .query(
             "SELECT
-                id,
-                flashcard_id::bigint as cid,
-                0 as usn,
-                rating as button_chosen,
-                scheduled_days as interval,
-                elapsed_days as last_interval,
-                0 as ease_factor,
-                0 as taken_millis,
+                fh.id,
+                fh.flashcard_id::bigint AS cid,
+                0 AS usn,
+                fh.rating AS button_chosen,
+                fh.scheduled_days AS interval,
+                fh.elapsed_days AS last_interval,
+                0 AS ease_factor,
+                0 AS taken_millis,
                 CASE
-                    WHEN (SELECT status FROM user_flashcard_progress
-                          WHERE user_id = $1 AND flashcard_id = flashcard_review_history.flashcard_id
-                          AND card_side = flashcard_review_history.card_side
-                          LIMIT 1) = 'learning' THEN 0
-                    WHEN (SELECT status FROM user_flashcard_progress
-                          WHERE user_id = $1 AND flashcard_id = flashcard_review_history.flashcard_id
-                          AND card_side = flashcard_review_history.card_side
-                          LIMIT 1) = 'review' THEN 1
+                    WHEN ufp.status = 'learning' THEN 0
+                    WHEN ufp.status = 'review' THEN 1
                     ELSE 2
-                END as review_kind
-             FROM flashcard_review_history
-             WHERE user_id = $1
-             ORDER BY review_time",
+                END AS review_kind
+             FROM flashcard_review_history fh
+             LEFT JOIN user_flashcard_progress ufp
+               ON ufp.user_id = fh.user_id
+              AND ufp.flashcard_id = fh.flashcard_id
+              AND ufp.card_side = fh.card_side
+              AND NOT ufp.archived
+             WHERE fh.user_id = $1
+             ORDER BY fh.review_time",
             &[&user_id],
         )
         .await?;
 
-    // Convert rows to RevlogEntry objects
-    let mut revlogs = Vec::new();
+    let mut revlogs = Vec::with_capacity(rows.len());
     for row in rows {
-        let revlog = RevlogEntry {
-            id: row.get::<_, i32>("id") as i64, // Store in i64 but read as i32 from Postgres
+        revlogs.push(RevlogEntry {
+            id: row.get::<_, i32>("id") as i64,
             cid: row.get("cid"),
             usn: row.get("usn"),
             button_chosen: row.get::<_, i32>("button_chosen") as u8,
@@ -1395,56 +1410,57 @@ pub async fn calculate_optimal_retention(
                 1 => RevlogReviewKind::Review,
                 _ => RevlogReviewKind::Relearning,
             },
-        };
-        revlogs.push(revlog);
+        });
     }
 
-    // If we don't have enough revlogs, use default retention
     if revlogs.is_empty() {
+        cache_optimal_retention(transaction, user_id, default_retention).await?;
         return Ok(default_retention);
     }
 
-    // Extract simulator config from review history
-    let day_cutoff = Utc::now().timestamp() - 86400; // 24 hours ago
+    let day_cutoff = Utc::now().timestamp() - 86400;
     let config = extract_simulator_config(revlogs, day_cutoff, true);
-
-    // Calculate optimal retention
     let _fsrs = FSRS::new(&[])?;
-
-    // Use a progress callback that always returns true to avoid interruption
     let progress_callback = |_: ItemProgress| true;
 
-    match optimal_retention(
+    let retention = match optimal_retention(
         &config,
         DEFAULT_PARAMETERS.as_slice(),
         progress_callback,
         None::<Vec<Card>>,
         None,
     ) {
-        Ok(optimal_retention) => {
-            // Cache the optimal retention value in the database for this user
-            transaction
-                .execute(
-                    "INSERT INTO user_settings (user_id, optimal_retention, last_calculated)
-                     VALUES ($1, $2, CURRENT_TIMESTAMP)
-                     ON CONFLICT (user_id)
-                     DO UPDATE SET optimal_retention = $2, last_calculated = CURRENT_TIMESTAMP",
-                    &[&user_id, &(optimal_retention as f64)],
-                )
-                .await?;
+        Ok(value) => value,
+        Err(_) => default_retention,
+    };
 
-            Ok(optimal_retention)
-        }
-        Err(_) => Ok(default_retention),
-    }
+    cache_optimal_retention(transaction, user_id, retention).await?;
+    Ok(retention)
 }
 
-// Function to get the optimal retention for a user (with caching)
+async fn cache_optimal_retention(
+    transaction: &Transaction<'_>,
+    user_id: i32,
+    retention: f32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    transaction
+        .execute(
+            "INSERT INTO user_settings (user_id, optimal_retention, last_calculated)
+             VALUES ($1, $2, CURRENT_TIMESTAMP)
+             ON CONFLICT (user_id)
+             DO UPDATE SET optimal_retention = $2, last_calculated = CURRENT_TIMESTAMP",
+            &[&user_id, &(retention as f64)],
+        )
+        .await?;
+    Ok(())
+}
+
+/// Cached/default retention for the review hot path. Never runs the FSRS solver.
+/// Returns `(retention, needs_background_refresh)`.
 pub async fn get_optimal_retention(
     transaction: &Transaction<'_>,
     user_id: i32,
-) -> Result<f32, Box<dyn std::error::Error>> {
-    // Check if we have a cached value that's less than 7 days old
+) -> Result<(f32, bool), Box<dyn std::error::Error>> {
     let cached = transaction
         .query_opt(
             "SELECT optimal_retention, last_calculated
@@ -1456,16 +1472,62 @@ pub async fn get_optimal_retention(
 
     if let Some(row) = cached {
         let last_calculated: DateTime<Utc> = row.get("last_calculated");
-        let now = Utc::now();
-
-        // If the cached value is less than 7 days old, use it
-        if now.signed_duration_since(last_calculated).num_days() < 7 {
-            return Ok(row.get::<_, f64>("optimal_retention") as f32);
-        }
+        let retention = row.get::<_, f64>("optimal_retention") as f32;
+        let stale = Utc::now().signed_duration_since(last_calculated).num_days()
+            >= OPTIMAL_RETENTION_CACHE_DAYS;
+        // Use stale cache immediately — refresh in the background after the review commits
+        return Ok((retention, stale));
     }
 
-    // Otherwise, calculate a new value
-    calculate_optimal_retention(transaction, user_id).await
+    Ok((DEFAULT_OPTIMAL_RETENTION, true))
+}
+
+/// Recalculate and cache optimal retention off the review request path.
+pub async fn refresh_optimal_retention(
+    pool: &Pool,
+    user_id: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    // Bail if another worker already refreshed (stampede guard)
+    let fresh_after = Utc::now() - Duration::days(OPTIMAL_RETENTION_CACHE_DAYS);
+    let fresh = transaction
+        .query_opt(
+            "SELECT 1 FROM user_settings
+             WHERE user_id = $1 AND last_calculated >= $2",
+            &[&user_id, &fresh_after],
+        )
+        .await?;
+    if fresh.is_some() {
+        return Ok(());
+    }
+
+    // Claim the refresh slot so concurrent reviews don't all solve FSRS
+    transaction
+        .execute(
+            "INSERT INTO user_settings (user_id, optimal_retention, last_calculated)
+             VALUES ($1, $2, CURRENT_TIMESTAMP)
+             ON CONFLICT (user_id)
+             DO UPDATE SET last_calculated = CURRENT_TIMESTAMP",
+            &[&user_id, &(DEFAULT_OPTIMAL_RETENTION as f64)],
+        )
+        .await?;
+
+    calculate_optimal_retention(&transaction, user_id).await?;
+    transaction.commit().await?;
+    Ok(())
+}
+
+fn spawn_optimal_retention_refresh(pool: Pool, user_id: i32) {
+    tokio::spawn(async move {
+        if let Err(e) = refresh_optimal_retention(&pool, user_id).await {
+            error!(
+                "Background optimal retention refresh failed for user {}: {}",
+                user_id, e
+            );
+        }
+    });
 }
 
 pub async fn review_flashcard(
@@ -1574,9 +1636,8 @@ pub async fn review_flashcard(
     };
 
     let fsrs = FSRS::new(&[])?;
-    //todo: uncomment to use hardcoded desired_retention
-    // let desired_retention: f32 = 0.9;
-    let desired_retention = get_optimal_retention(&transaction, user_id).await?;
+    let (desired_retention, refresh_retention) =
+        get_optimal_retention(&transaction, user_id).await?;
     debug!("Using optimal retention: {}", desired_retention);
 
     let next_states = match fsrs.next_states(current_state, desired_retention, elapsed_days) {
@@ -1727,6 +1788,10 @@ pub async fn review_flashcard(
         .await?;
 
     transaction.commit().await?;
+
+    if refresh_retention {
+        spawn_optimal_retention_refresh(pool.clone(), user_id);
+    }
 
     Ok(ReviewResponse {
         success: true,

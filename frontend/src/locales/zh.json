@@ -1639,7 +1639,7 @@
       },
       "collectionReel": {
         "backToCollection": "← 合集",
-        "empty": "该合集中没有带图片的卡片。",
+        "empty": "该合集中没有卡片。",
         "frontLabel": "正面",
         "backLabel": "背面",
         "openEntry": "打开词条"
@@ -1836,7 +1836,25 @@
     "quests": "任务",
     "questsDescription": "通过获得积分完成任务。",
     "heartsLeft": "剩余红心",
-    "totalXP": "总经验"
+    "totalXP": "总经验",
+    "viewAll": "查看全部",
+    "upgradeToPro": "升级到 Pro",
+    "upgradeDescription": "无限爱心等更多！",
+    "upgradeToday": "立即升级",
+    "full": "已满",
+    "upgrade": "升级",
+    "settings": "设置",
+    "you": "你",
+    "heartsRefilled": "爱心已补满！",
+    "cannotRefill": "XP 不足，或爱心已满。",
+    "proEnabled": "已在此设备启用无限爱心。",
+    "proDisabled": "已关闭无限爱心。",
+    "outOfHearts": "没有爱心了",
+    "outOfHeartsHint": "去商店补充，或启用无限爱心继续练习。",
+    "goToShop": "去商店",
+    "leaderboardEmpty": "暂无学习记录。完成闪卡复习后会出现在这里。",
+    "leaderboardLoadError": "无法加载排行榜，请稍后再试。",
+    "yourStanding": "你的名次"
   },
   "upsertWiki": {
     "editTitle": "编辑维基页面",

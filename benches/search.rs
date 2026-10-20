@@ -3,8 +3,8 @@
 //! Run: `cargo bench --bench search`
 //! Filtered: `cargo bench --bench search -- escape_like`
 
-use std::hint::black_box;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use std::hint::black_box;
 
 #[path = "../src/search_helpers.rs"]
 mod search_helpers;
@@ -39,11 +39,9 @@ fn bench_dictionary_patterns(c: &mut Criterion) {
     let terms = ["mlatu", "brodahe", "coi", "gerku", long.as_str()];
     let mut group = c.benchmark_group("dictionary_patterns");
     for term in terms {
-        group.bench_with_input(
-            BenchmarkId::new("from_search_term", term),
-            term,
-            |b, t| b.iter(|| DictionarySearchPatterns::from_search_term(black_box(t))),
-        );
+        group.bench_with_input(BenchmarkId::new("from_search_term", term), term, |b, t| {
+            b.iter(|| DictionarySearchPatterns::from_search_term(black_box(t)))
+        });
     }
     group.finish();
 }

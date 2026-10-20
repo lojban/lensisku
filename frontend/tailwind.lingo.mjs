@@ -76,9 +76,12 @@ export function buildLingoThemeLayer() {
       '@apply fixed left-0 right-0 top-0 z-50 flex h-[50px] w-full items-center gap-3 border-b border-green-600/25 bg-green-500 px-4 lg:hidden':
         {},
     },
-    /** Desktop left rail + mobile drawer body (clone: lg:fixed lg:w-[256px]). */
+    /**
+     * Desktop left rail (fixed) + drawer body on small screens.
+     * z-40 keeps the rail above main content; never rely on in-flow placement alone.
+     */
     '.lingo-sidebar-rail': {
-      '@apply flex h-full w-full flex-col border-r-2 border-slate-200 bg-white px-4 lg:fixed lg:left-0 lg:top-0 lg:w-[256px]':
+      '@apply flex h-full w-full flex-col border-r-2 border-slate-200 bg-white px-4 lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:h-svh lg:w-[256px]':
         {},
     },
     '.lingo-sidebar-brand': {
@@ -88,12 +91,39 @@ export function buildLingoThemeLayer() {
     '.lingo-sidebar-nav': {
       '@apply flex flex-1 flex-col gap-y-2': {},
     },
-    /** Main column offset for the rail (clone: pt-[50px] lg:pl-[256px]). */
+    /**
+     * Main column: top offset for mobile header, bottom for tab bar, left for desktop rail.
+     * Safe-area padding is raw CSS (commas in `env()` break `@apply`).
+     */
     '.lingo-main': {
       '@apply min-h-0 flex-1 pt-[50px] lg:pl-[256px] lg:pt-0': {},
+      paddingBottom: 'calc(4.25rem + env(safe-area-inset-bottom, 0px))',
+      '@screen lg': {
+        paddingBottom: '0',
+      },
     },
     '.lingo-main-inner': {
       '@apply mx-auto h-full w-full max-w-[1056px] px-4 pt-6 lg:px-6': {},
+    },
+    /**
+     * Persistent mobile / tablet tab bar — always reachable under lg.
+     * Do not `@apply lg:hidden` here (responsive variants in addComponents can
+     * collapse to unconditional `display:none`).
+     */
+    '.lingo-bottom-nav': {
+      '@apply fixed inset-x-0 bottom-0 z-50 flex h-[4.25rem] items-stretch justify-around gap-0 border-t-2 border-slate-200 bg-white px-1':
+        {},
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      '@media (min-width: 1024px)': {
+        display: 'none',
+      },
+    },
+    '.lingo-bottom-nav-item': {
+      '@apply flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 no-underline transition-colors':
+        {},
+    },
+    '.lingo-bottom-nav-item--active': {
+      '@apply text-green-600': {},
     },
     /** Course pick tile (clone: courses/card.tsx) — plain button, not ui-btn. */
     '.lingo-course-card': {
@@ -136,6 +166,14 @@ export function buildLingoThemeLayer() {
     '.lingo-panel': {
       '@apply w-full rounded-xl border-2 border-slate-200 bg-white p-4 text-center text-slate-500':
         {},
+    },
+    /** Leaderboard / list avatar ring (clone: green border circle). */
+    '.lingo-avatar': {
+      '@apply mr-4 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-green-500 bg-green-100 text-sm font-bold text-green-700':
+        {},
+    },
+    '.lingo-avatar img': {
+      '@apply h-full w-full object-cover': {},
     },
   }
 }

@@ -14,15 +14,38 @@
     >
       <!-- Duolingo-style header: progress + exit (only when in lesson) -->
       <LingoStudyHeader
-        v-if="currentCard && !isLoading"
+        v-if="(currentCard || outOfHearts) && !isLoading"
         :percentage="progressPercentage"
         @exit="handleExit"
-      />
+      >
+        <template #extra>
+          <div class="flex items-center gap-1 text-rose-500">
+            <Heart class="h-5 w-5 fill-rose-500" />
+            <InfinityIcon v-if="hasUnlimitedHearts" class="h-4 w-4 stroke-[3]" />
+            <span v-else class="text-sm font-bold">{{ hearts }}</span>
+          </div>
+        </template>
+      </LingoStudyHeader>
       <!-- Loading State -->
       <div v-if="isLoading" class="flex flex-1 items-center justify-center min-h-0 py-4">
         <div
           class="animate-spin rounded-full h-6 w-6 border-2 border-green-500 border-t-transparent"
         />
+      </div>
+      <!-- Out of hearts -->
+      <div
+        v-else-if="outOfHearts"
+        class="flex flex-1 flex-col items-center justify-center gap-3 min-h-0 py-4 text-center px-4"
+      >
+        <Heart class="h-14 w-14 fill-rose-500 text-rose-500" />
+        <h1 class="text-lg font-bold text-neutral-700">{{ t('lingo.outOfHearts') }}</h1>
+        <p class="max-w-sm text-sm text-slate-500">{{ t('lingo.outOfHeartsHint') }}</p>
+        <RouterLink
+          to="/lingo/shop"
+          class="lingo-btn lingo-btn--secondary lingo-btn--lg !normal-case !tracking-normal"
+        >
+          {{ t('lingo.goToShop') }}
+        </RouterLink>
       </div>
       <!-- No Cards State (Duolingo finish: centered, compact) -->
       <div
@@ -35,12 +58,13 @@
         </h1>
 
         <div class="flex w-full max-w-xs flex-col gap-2 sm:flex-row sm:max-w-sm justify-center">
-          <LingoResultCard variant="points" :value="cardsAnsweredInSession * 10" />
+          <LingoResultCard variant="points" :value="sessionXpAwarded" />
+          <LingoResultCard variant="hearts" :value="hasUnlimitedHearts ? Infinity : hearts" />
         </div>
-        <Button
+        <button
           ref="returnToDeckButtonRef"
-          variant="auth-signup"
-          class="h-9 min-w-[140px] text-sm"
+          type="button"
+          class="lingo-btn lingo-btn--secondary lingo-btn--lg !normal-case !tracking-normal min-w-[140px]"
           @click="router.push(returnToUrl)"
         >
           {{
@@ -48,7 +72,7 @@
               ? t('flashcardStudy.returnToLevels')
               : t('flashcardStudy.returnToDeck')
           }}
-        </Button>
+        </button>
       </div>
       <!-- Lesson: compact card + rating + footer, no scroll -->
       <div v-else-if="currentCard" class="flex flex-1 flex-col min-h-0 overflow-hidden">
@@ -397,14 +421,23 @@
 
 <script setup lang="ts">
 import { Button, Textarea } from '@packages/ui'
-import { XCircle, Check, Smile, CheckCircle2, EqualApproximately } from '@lucide/vue'
+import {
+  XCircle,
+  Check,
+  Smile,
+  CheckCircle2,
+  EqualApproximately,
+  Heart,
+  Infinity as InfinityIcon,
+} from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 import LingoStudyHeader from '@/components/LingoStudyHeader.vue'
 import LingoStudyFooter from '@/components/LingoStudyFooter.vue'
 import LingoResultCard from '@/components/LingoResultCard.vue'
+import { useLingoProgress } from '@/composables/useLingoProgress'
 
 import {
   getDueCards,
@@ -428,6 +461,8 @@ const ANON_BANNER_ANSWERED_KEY = 'lensisku_study_cards_answered'
 
 const anonBannerVisible = ref(false)
 const cardsAnsweredInSession = ref(0)
+const sessionXpAwarded = ref(0)
+const sessionXpClaimed = ref(false)
 
 const { t } = useI18n()
 
@@ -435,6 +470,19 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuth()
 const { getProgress, saveLevelProgress } = useAnonymousProgress()
+const { hearts, hasUnlimitedHearts, loseHeart, awardSessionXp } = useLingoProgress()
+
+const outOfHearts = computed(() => !hasUnlimitedHearts.value && hearts.value <= 0)
+
+function registerWrongAnswer() {
+  loseHeart()
+}
+
+function claimSessionXpOnce() {
+  if (sessionXpClaimed.value) return
+  sessionXpClaimed.value = true
+  sessionXpAwarded.value = awardSessionXp(cardsAnsweredInSession.value)
+}
 
 const collectionId = computed(() => paramStr(route.params.collectionId))
 
@@ -755,11 +803,13 @@ const submitAnswer = async (rating?: number) => {
         correct = isAnonFillinAnswerCorrect()
         fillinResult.value = { correct, message: correct ? t('flashcardStudy.correctAnswer') : '' }
         applyAnonLevelProgress(correct)
+        if (!correct) registerWrongAnswer()
         await nextTick()
         if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
       } else {
         correct = typeof rating === 'number' ? rating >= 3 : true
         applyAnonLevelProgress(correct)
+        if (!correct) registerWrongAnswer()
         loadNextCard()
       }
       isSubmitting.value = false
@@ -772,6 +822,9 @@ const submitAnswer = async (rating?: number) => {
         answer: userAnswer.value.trim(),
       })
       fillinResult.value = response.data
+      if (response.data && !(response.data.correct === true || response.data.success === true)) {
+        registerWrongAnswer()
+      }
       await checkForDueChanges()
       await nextTick()
       if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
@@ -782,6 +835,7 @@ const submitAnswer = async (rating?: number) => {
         rating,
         card_side: currentCard.value.progress[0].card_side,
       })
+      if (rating < 3) registerWrongAnswer()
       loadNextCard()
       await checkForDueChanges()
     }
@@ -813,6 +867,7 @@ const submitQuizOption = async (selectedOption) => {
           .toLowerCase()
       quizResult.value = { correct, message: correct ? '' : t('flashcardStudy.correctAnswer') }
       applyAnonLevelProgress(correct)
+      if (!correct) registerWrongAnswer()
     } else {
       const response = await submitQuizAnswer({
         flashcard_id: fc.id,
@@ -821,6 +876,7 @@ const submitQuizOption = async (selectedOption) => {
         presented_options: options,
       })
       quizResult.value = response.data
+      if (response.data && !response.data.correct) registerWrongAnswer()
       await checkForDueChanges()
     }
     await nextTick()
@@ -918,6 +974,13 @@ watch(showAnswer, (newValue) => {
     })
   }
 })
+
+watch(
+  () => !isLoading.value && !currentCard.value && remainingCards.value.length === 0,
+  (finished) => {
+    if (finished && cardsAnsweredInSession.value > 0) claimSessionXpOnce()
+  }
+)
 
 watch(fillinResult, (newValue) => {
   if (newValue) {

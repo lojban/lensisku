@@ -606,6 +606,10 @@ export const getStreak = async (days = 7) => {
   return api.get('/flashcards/streak', { params: { days } })
 }
 
+/** Public Lingo leaderboard (flashcard review XP). Optional auth enriches `me`. */
+export const getLingoLeaderboard = (params?: { limit?: number }) =>
+  api.get('/lingo/leaderboard', { params })
+
 export const mergeProgress = async (data: Record<string, unknown>) => {
   return api.post('/flashcards/progress/merge', data)
 }

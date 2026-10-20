@@ -10,12 +10,14 @@
         <slot />
       </div>
     </main>
+    <LingoBottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
 import LingoMobileHeader from './LingoMobileHeader.vue'
 import LingoSidebar from './LingoSidebar.vue'
+import LingoBottomNav from './LingoBottomNav.vue'
 
 defineProps({
   fill: {

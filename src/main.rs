@@ -22,6 +22,7 @@ mod export;
 mod flashcards;
 mod jbovlaste;
 mod language;
+mod lingo;
 mod mailarchive;
 mod messaging;
 mod middleware;

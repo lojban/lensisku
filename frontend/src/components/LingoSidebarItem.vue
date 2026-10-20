@@ -29,9 +29,12 @@ const props = defineProps({
 defineEmits(['navigate'])
 
 const route = useRoute()
-const isActive = computed(
-  () => route.path === props.href || route.path.startsWith(props.href + '/')
-)
+const isActive = computed(() => {
+  if (route.path === props.href || route.path.startsWith(props.href + '/')) return true
+  // Levels ladder is the Learn surface (clone /learn).
+  if (props.href === '/lingo/learn' && /\/lingo\/levels\/?$/.test(route.path)) return true
+  return false
+})
 
 const iconComponent = computed(() => {
   const map = {

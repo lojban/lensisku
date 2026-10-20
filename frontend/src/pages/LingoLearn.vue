@@ -14,22 +14,20 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { useLingoProgress } from '@/composables/useLingoProgress'
 
 const { t } = useI18n()
 useSeoHead({ title: t('lingo.learn') })
 
-const LINGO_ACTIVE_COURSE_KEY = 'lingo_active_collection_id'
-
 const router = useRouter()
+const { activeCourseId } = useLingoProgress()
 
 onMounted(() => {
-  try {
-    const id = sessionStorage.getItem(LINGO_ACTIVE_COURSE_KEY)
-    if (id) {
-      router.replace(`/collections/${id}/lingo/levels`)
-      return
-    }
-  } catch {}
+  const id = activeCourseId.value
+  if (id) {
+    router.replace(`/collections/${id}/lingo/levels`)
+    return
+  }
   router.replace('/lingo/courses')
 })
 </script>

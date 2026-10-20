@@ -1639,7 +1639,7 @@
       },
       "collectionReel": {
         "backToCollection": "← lo liste",
-        "empty": "no karda poi pixra cu zasti lo liste",
+        "empty": "no karda cu zasti lo liste",
         "frontLabel": "crane",
         "backLabel": "trixe",
         "openEntry": "fungau lo valsi"
@@ -1857,7 +1857,25 @@
     "quests": "troci",
     "questsDescription": "ko mulno lo troci mu'i lo nu jbera",
     "heartsLeft": "nelci poi cliva",
-    "totalXP": "ro jbera be la'ei XP"
+    "totalXP": "ro jbera be la'ei XP",
+    "viewAll": "View all",
+    "upgradeToPro": "Upgrade to Pro",
+    "upgradeDescription": "Get unlimited hearts and more!",
+    "upgradeToday": "Upgrade today",
+    "full": "full",
+    "upgrade": "upgrade",
+    "settings": "settings",
+    "you": "You",
+    "heartsRefilled": "Hearts refilled!",
+    "cannotRefill": "Not enough XP, or hearts are already full.",
+    "proEnabled": "Unlimited hearts enabled on this device.",
+    "proDisabled": "Unlimited hearts turned off.",
+    "outOfHearts": "Out of hearts",
+    "outOfHeartsHint": "Refill in the shop or enable unlimited hearts to keep practicing.",
+    "goToShop": "Go to shop",
+    "leaderboardEmpty": "No study activity yet. Complete flashcard reviews to appear here.",
+    "leaderboardLoadError": "Could not load the leaderboard. Try again later.",
+    "yourStanding": "Your standing"
   },
   "upsertWiki": {
     "editTitle": "galfi le uitki papri",

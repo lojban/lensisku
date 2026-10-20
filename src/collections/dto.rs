@@ -98,7 +98,7 @@ pub struct CollectionResponse {
     pub has_flashcards: bool,
     /// True when the collection has a cover image (`collection_images`).
     pub has_cover_image: bool,
-    /// True when there is a cover or at least one item with a front/back card image (Tiktoknu / visual study).
+    /// True when there is a cover or at least one item with a front/back card image.
     pub has_collection_image: bool,
     pub owner: CollectionOwner,
     /// Number of discussion comments on this collection (if any thread exists).

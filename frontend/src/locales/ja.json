@@ -1634,7 +1634,7 @@
       },
       "collectionReel": {
         "backToCollection": "← コレクション",
-        "empty": "画像付きのカードがありません。",
+        "empty": "このコレクションにはカードがありません。",
         "frontLabel": "表面",
         "backLabel": "裏面",
         "openEntry": "項目を開く"
@@ -1831,7 +1831,25 @@
     "quests": "クエスト",
     "questsDescription": "ポイントを集めてクエストをクリア。",
     "heartsLeft": "残りハート",
-    "totalXP": "合計 XP"
+    "totalXP": "合計 XP",
+    "viewAll": "すべて",
+    "upgradeToPro": "Proにアップグレード",
+    "upgradeDescription": "ハート無制限など！",
+    "upgradeToday": "今すぐアップグレード",
+    "full": "満タン",
+    "upgrade": "アップグレード",
+    "settings": "設定",
+    "you": "あなた",
+    "heartsRefilled": "ハートを補充しました！",
+    "cannotRefill": "XPが足りないか、すでに満タンです。",
+    "proEnabled": "この端末でハート無制限を有効にしました。",
+    "proDisabled": "ハート無制限をオフにしました。",
+    "outOfHearts": "ハートがありません",
+    "outOfHeartsHint": "ショップで補充するか、無制限ハートを有効にしてください。",
+    "goToShop": "ショップへ",
+    "leaderboardEmpty": "まだ学習記録がありません。フラッシュカードを復習すると表示されます。",
+    "leaderboardLoadError": "リーダーボードを読み込めませんでした。後でもう一度お試しください。",
+    "yourStanding": "あなたの順位"
   },
   "upsertWiki": {
     "editTitle": "ウィキページを編集",

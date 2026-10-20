@@ -41,7 +41,7 @@
                   <template #icon> <List class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
                 </IconButton>
                 <IconButton
-                  v-if="collection?.has_collection_image"
+                  v-if="(collection?.item_count ?? 0) > 0"
                   tag="router-link"
                   :to="`/collections/${props.collectionId}/tiktoknu`"
                   :label="t('components.flashcardCollectionView.viewAsTiktoknu')"

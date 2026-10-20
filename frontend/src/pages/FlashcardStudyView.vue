@@ -6,20 +6,19 @@
       @visible="anonBannerVisible = $event"
     />
     <header class="page-header-study-strip">
-      <div class="flex w-full min-w-0 items-start gap-3 sm:gap-4">
-        <Button
+      <div class="flex w-full min-w-0 items-stretch gap-3 sm:gap-4">
+        <!-- Same cover chrome as CollectionPageHeader — plain link, not ui-btn (Aqua/Flat pills crush the thumb). -->
+        <RouterLink
           v-if="collectionCoverDisplayUrl"
-          variant="neutral"
-          type="button"
-          class="cursor-pointer max-w-full inline-flex h-full min-h-0 shrink-0 items-stretch border-0 bg-transparent p-0 text-inherit shrink-0 self-start"
+          :to="flashcardCollectionUrl"
+          class="inline-flex h-full min-h-0 max-w-full shrink-0 self-stretch items-stretch border-0 bg-transparent p-0 no-underline"
           :aria-label="
             collectionMeta?.name
               ? t('collectionDetail.coverLightboxDialog', { name: collectionMeta.name })
               : t('flashcardStudy.title')
           "
-          @click="router.push(flashcardCollectionUrl)"
         >
-          <div class="collection-card-logo">
+          <div class="collection-header-logo">
             <img
               :src="collectionCoverDisplayUrl"
               :alt="
@@ -27,13 +26,17 @@
                   ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
                   : t('flashcardStudy.title')
               "
-              class="collection-cover-thumb"
+              class="collection-header-cover-thumb"
               loading="lazy"
               decoding="async"
             />
           </div>
-        </Button>
-        <div v-else class="collection-card-logo-placeholder shrink-0 self-start" aria-hidden="true">
+        </RouterLink>
+        <div
+          v-else
+          class="collection-header-logo-placeholder shrink-0 self-stretch min-h-[4.5rem]"
+          aria-hidden="true"
+        >
           <PlayingCardsFanIcon class="h-8 w-8" />
         </div>
 
@@ -536,7 +539,7 @@ import {
 } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import { Button, IconButton, PlayingCardsFanIcon, Textarea } from '@packages/ui'

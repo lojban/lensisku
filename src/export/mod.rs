@@ -1,6 +1,6 @@
 pub mod controller;
-mod latex;
 pub mod dto;
+mod latex;
 pub mod models;
 pub mod service;
 

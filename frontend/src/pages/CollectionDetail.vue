@@ -195,7 +195,7 @@
                     {{ t('collectionDetail.viewAsFlashcards') }}
                   </RouterLink>
                   <RouterLink
-                    v-if="collection?.has_collection_image"
+                    v-if="(collection?.item_count ?? 0) > 0"
                     :to="`/collections/${props.collectionId}/tiktoknu`"
                     class="ui-btn--accent-purple ui-btn--group-item inline-flex items-center gap-2"
                   >

@@ -27,7 +27,7 @@
             v-for="collection in collections"
             :key="collection.collection_id"
             :collection="collection"
-            :is-active="activeCollectionId === collection.collection_id"
+            :is-active="activeCourseId === collection.collection_id"
             :disabled="isSelecting"
             @select="onSelectCourse"
           />
@@ -63,17 +63,16 @@ import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import { getPublicCollections } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
-
-const LINGO_ACTIVE_COURSE_KEY = 'lingo_active_collection_id'
+import { useLingoProgress } from '@/composables/useLingoProgress'
 
 const router = useRouter()
 const paginationHost = useFeedPaginationHost()
 const { t } = useI18n()
+const { activeCourseId, setActiveCourse } = useLingoProgress()
 
 const collections = ref([])
 const isLoading = ref(true)
 const isSelecting = ref(false)
-const activeCollectionId = ref(null)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const perPage = ref(12)
@@ -81,31 +80,16 @@ const totalCollections = ref(0)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCollections.value / perPage.value)))
 let searchDebounceTimer = null
 
-function getStoredActiveId() {
-  try {
-    const id = sessionStorage.getItem(LINGO_ACTIVE_COURSE_KEY)
-    return id ? Number(id) : null
-  } catch {
-    return null
-  }
-}
-
-function setStoredActiveId(id) {
-  try {
-    if (id != null) sessionStorage.setItem(LINGO_ACTIVE_COURSE_KEY, String(id))
-    else sessionStorage.removeItem(LINGO_ACTIVE_COURSE_KEY)
-  } catch {}
-}
-
 async function loadCollections() {
   isLoading.value = true
   try {
+    // Match main “courses” catalog: any public collection with flashcards.
+    // Requiring levels too hid most public decks (many have cards but no ladder yet).
     const response = await getPublicCollections({
       page: currentPage.value,
       per_page: perPage.value,
       search: searchQuery.value.trim() || undefined,
       has_flashcards_only: true,
-      has_levels_only: true,
     })
     collections.value = response.data.collections || []
     totalCollections.value = Number(response.data.total || 0)
@@ -115,7 +99,6 @@ async function loadCollections() {
       await loadCollections()
       return
     }
-    activeCollectionId.value = getStoredActiveId()
   } catch (e) {
     console.error(e)
     collections.value = []
@@ -139,13 +122,9 @@ function nextPage() {
 
 function onSelectCourse(id) {
   if (isSelecting.value) return
-  if (id === activeCollectionId.value) {
-    router.push(`/collections/${id}/lingo/levels`)
-    return
-  }
+  const collection = collections.value.find((c) => c.collection_id === id)
   isSelecting.value = true
-  setStoredActiveId(id)
-  activeCollectionId.value = id
+  setActiveCourse(id, collection?.name || '')
   router.push(`/collections/${id}/lingo/levels`)
   isSelecting.value = false
 }

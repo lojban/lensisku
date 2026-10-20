@@ -6,7 +6,8 @@
   <div
     class="collection-reel-card h-dvh max-h-dvh w-full snap-start snap-always relative overflow-hidden min-h-0"
   >
-    <div class="absolute inset-0 min-h-0">
+    <!-- Image background -->
+    <div v-if="hasImage" class="absolute inset-0 min-h-0">
       <img
         loading="lazy"
         :src="imageSrc"
@@ -25,12 +26,45 @@
       />
     </div>
 
+    <!-- Text-only fallback: atmospheric gradient + large word hero -->
+    <div
+      v-else
+      class="absolute inset-0 min-h-0 bg-gradient-to-br from-slate-950 via-emerald-950/80 to-slate-900"
+      aria-hidden="true"
+    >
+      <div
+        class="pointer-events-none absolute inset-0 opacity-[0.12]"
+        style="
+          background-image:
+            radial-gradient(circle at 20% 20%, #34d399 0%, transparent 45%),
+            radial-gradient(circle at 80% 30%, #38bdf8 0%, transparent 40%),
+            radial-gradient(circle at 50% 80%, #a78bfa 0%, transparent 45%);
+        "
+      />
+      <div
+        class="absolute inset-x-0 top-[12dvh] bottom-[42dvh] flex flex-col items-center justify-center px-6 text-center"
+      >
+        <p
+          class="max-w-xl text-4xl font-bold leading-tight tracking-tight text-white drop-shadow-lg sm:text-5xl [overflow-wrap:anywhere]"
+        >
+          {{ heading }}
+        </p>
+        <p
+          v-if="backPlain !== '—' && backPlain !== heading"
+          class="mt-4 max-w-lg text-base text-white/75 line-clamp-4 sm:text-lg [overflow-wrap:anywhere]"
+        >
+          {{ backPlain }}
+        </p>
+      </div>
+    </div>
+
     <div
       class="absolute inset-x-0 bottom-0 z-10 max-h-[55dvh] overflow-y-auto overscroll-y-contain text-white [-webkit-overflow-scrolling:touch] touch-pan-y bg-gradient-to-t from-black/92 via-black/80 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pt-12 sm:px-6"
     >
       <div class="flex justify-between items-start gap-3 mb-3">
         <h2
           class="text-xl font-bold drop-shadow-lg min-w-0 flex-1 break-words sm:text-2xl [overflow-wrap:anywhere]"
+          :class="{ 'sr-only': !hasImage }"
         >
           {{ heading }}
         </h2>
@@ -65,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 type CollectionReelItem = {
@@ -87,6 +121,20 @@ const props = defineProps<{
 const { t } = useI18n()
 
 const imageLoaded = ref(false)
+/** After a failed image fetch, treat the card as text-only. */
+const imageFailed = ref(false)
+
+const hasImage = computed(
+  () => !imageFailed.value && (props.item.has_front_image || props.item.has_back_image)
+)
+
+watch(
+  () => [props.item.item_id, props.item.has_front_image, props.item.has_back_image],
+  () => {
+    imageLoaded.value = false
+    imageFailed.value = false
+  }
+)
 
 const imageSide = computed(() => (props.item.has_front_image ? 'front' : 'back'))
 
@@ -124,6 +172,7 @@ function stripHtml(s: string | null | undefined): string {
 }
 
 const handleImageError = () => {
+  imageFailed.value = true
   imageLoaded.value = true
 }
 </script>

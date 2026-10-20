@@ -140,7 +140,6 @@ async function fetchMoreReels() {
     const res = await listCollectionItems(collectionIdStr.value, {
       page: reelNextPage.value,
       per_page: PER_PAGE,
-      has_card_image_only: true,
     })
     const total = Number(res.data.total ?? 0)
     const batch = res.data.items ?? []
