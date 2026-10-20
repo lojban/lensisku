@@ -1689,6 +1689,7 @@
   "flashcardLevels": {
     "title": "{collectionName} — レベル",
     "viewFlashcards": "フラッシュカードを見る",
+    "backToCourses": "コース一覧に戻る",
     "studyButton": "学習",
     "createLevel": "レベルを作成",
     "noLevels": "まだレベルがありません。",

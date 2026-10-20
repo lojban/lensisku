@@ -1643,6 +1643,7 @@
   "flashcardLevels": {
     "title": "{collectionName} - Уровни",
     "viewFlashcards": "К списку карточек",
+    "backToCourses": "К курсам",
     "studyButton": "Учить",
     "createLevel": "Создать уровень",
     "noLevels": "Уровни еще не созданы.",

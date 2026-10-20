@@ -3,14 +3,14 @@
     <LingoFeedLayout>
       <div class="lingo-levels-root flex w-full flex-col pb-10">
         <header
-          class="sticky top-0 z-40 mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white pb-3 text-neutral-400 lg:z-50 lg:mt-[-28px] lg:pt-[28px]"
+          class="sticky top-0 z-40 mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white pb-3 lg:z-50 lg:mt-[-28px] lg:pt-[28px]"
         >
           <RouterLink
             to="/lingo/courses"
-            class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon"
-            aria-label="Back"
+            class="lingo-icon-btn lingo-icon-btn--muted"
+            :aria-label="t('flashcardLevels.backToCourses')"
           >
-            <ArrowLeft class="h-5 w-5 stroke-2 text-neutral-400" />
+            <ArrowLeft class="h-5 w-5" />
           </RouterLink>
           <h1 class="min-w-0 truncate text-center text-lg font-bold text-neutral-700">
             {{ collection?.name || t('flashcardLevels.title', { collectionName: '' }) }}

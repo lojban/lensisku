@@ -1732,6 +1732,7 @@
   "flashcardLevels": {
     "title": "{collectionName} - Levels",
     "viewFlashcards": "View flashcards",
+    "backToCourses": "Back to courses",
     "studyButton": "Study",
     "createLevel": "Create level",
     "noLevels": "No levels created yet.",

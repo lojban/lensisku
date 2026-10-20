@@ -16,18 +16,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { BookOpen, Trophy, Target, ShoppingBag, Dumbbell } from '@lucide/vue'
+import { BookOpen, Trophy, Dumbbell } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const route = useRoute()
 
+/** Quests / shop nav hidden for now (routes still exist). */
 const items = computed(() => [
   { label: t('lingo.learn'), href: '/lingo/learn', icon: Dumbbell },
   { label: t('lingo.courses'), href: '/lingo/courses', icon: BookOpen },
   { label: t('lingo.leaderboard'), href: '/lingo/leaderboard', icon: Trophy },
-  { label: t('lingo.quests'), href: '/lingo/quests', icon: Target },
-  { label: t('lingo.shop'), href: '/lingo/shop', icon: ShoppingBag },
 ])
 
 function isActive(href: string) {

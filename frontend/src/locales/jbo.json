@@ -1715,6 +1715,7 @@
   "flashcardLevels": {
     "title": "{collectionName} - klesi",
     "viewFlashcards": "zgana le karda",
+    "backToCourses": "xruti lo ctuca liste",
     "studyButton": "tadni",
     "createLevel": "finti lo klesi",
     "noLevels": "no klesi cu ba'o se finti",

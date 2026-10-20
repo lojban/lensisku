@@ -1694,6 +1694,7 @@
   "flashcardLevels": {
     "title": "{collectionName} - 等级",
     "viewFlashcards": "查看闪卡",
+    "backToCourses": "返回课程",
     "studyButton": "学习",
     "createLevel": "创建等级",
     "noLevels": "尚未创建等级。",

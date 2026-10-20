@@ -71,10 +71,15 @@ export function buildLingoThemeLayer() {
     '.lingo-icon-btn--muted': {
       '@apply text-slate-500 hover:bg-slate-100 focus-visible:ring-green-500': {},
     },
-    /** Fixed green mobile top bar (clone: h-[50px]). */
+    /**
+     * Mobile top bar — same chrome as `.app-header-bar` (logo left + logout),
+     * sticky in-flow so `.lingo-main` needs no top offset. Drawer toggle only.
+     */
     '.lingo-mobile-header': {
-      '@apply fixed left-0 right-0 top-0 z-50 flex h-[50px] w-full items-center gap-3 border-b border-green-600/25 bg-green-500 px-4 lg:hidden':
-        {},
+      '@apply sticky top-0 z-50 w-full shrink-0 border-b border-gray-200 bg-white lg:hidden': {},
+    },
+    '.lingo-mobile-header-inner': {
+      '@apply mx-auto w-full max-w-none px-1 sm:px-2': {},
     },
     /**
      * Desktop left rail (fixed) + drawer body on small screens.
@@ -84,19 +89,16 @@ export function buildLingoThemeLayer() {
       '@apply flex h-full w-full flex-col border-r-2 border-slate-200 bg-white px-4 lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:h-svh lg:w-[256px]':
         {},
     },
-    '.lingo-sidebar-brand': {
-      '@apply flex items-center gap-x-3 pb-7 pl-4 pt-8 text-2xl font-extrabold tracking-wide text-green-600':
-        {},
-    },
     '.lingo-sidebar-nav': {
-      '@apply flex flex-1 flex-col gap-y-2': {},
+      /* Desktop rail needs its own top inset; drawer gets that from `.lingo-drawer-toolbar`. */
+      '@apply flex flex-1 flex-col gap-y-2 pt-4 lg:pt-8': {},
     },
     /**
      * Main column: top offset for mobile header, bottom for tab bar, left for desktop rail.
      * Safe-area padding is raw CSS (commas in `env()` break `@apply`).
      */
     '.lingo-main': {
-      '@apply min-h-0 flex-1 pt-[50px] lg:pl-[256px] lg:pt-0': {},
+      '@apply min-h-0 flex-1 lg:pl-[256px]': {},
       paddingBottom: 'calc(4.25rem + env(safe-area-inset-bottom, 0px))',
       '@screen lg': {
         paddingBottom: '0',
@@ -155,9 +157,9 @@ export function buildLingoThemeLayer() {
       '@apply fixed left-0 top-0 z-[101] flex h-full w-[min(100%,16rem)] flex-col overflow-y-auto bg-white shadow-xl lg:hidden':
         {},
     },
-    /** Close control host inside the drawer (relative positioning context). */
-    '.lingo-drawer-panel > .lingo-sidebar-rail': {
-      '@apply relative min-h-full': {},
+    /** In-flow close row (not absolute overlay) — brandbook: `.lingo-icon-btn`, no Aqua pills. */
+    '.lingo-drawer-toolbar': {
+      '@apply flex shrink-0 items-center justify-end border-b border-slate-200 px-3 py-2': {},
     },
     '.lingo-drawer-backdrop': {
       '@apply fixed inset-0 z-[100] bg-black/50 lg:hidden': {},
