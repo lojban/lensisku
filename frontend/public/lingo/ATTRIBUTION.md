@@ -19,7 +19,16 @@ Converted to Ogg Vorbis with ffmpeg.
 
 ## Speech-bubble characters
 
-From Lojban Through Dialogues icon set (`lojban.pw` pixra):
+From Lojban Through Dialogues icon set (`lojban.pw` pixra
+`data/assets/pixra/books/lojban-through-dialogues/icons`):
+
+**Question row** (`*1` poses only):
+
+- `lin1.webp`
+- `lif1.webp`
+- `bla1.webp`
+
+**Reply / answer row** (original three):
 
 - `bla5.webp`
 - `lif7.webp`

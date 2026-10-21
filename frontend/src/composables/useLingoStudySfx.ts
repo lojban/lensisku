@@ -43,16 +43,44 @@ export function useLingoStudySfx() {
   }
 }
 
-/** Dialogue icons for the study speech-bubble character. */
-export const LINGO_STUDY_CHARACTERS = [
+/** Question-row sprites — only the `*1` poses. */
+export const LINGO_STUDY_QUESTION_CHARACTERS = [
+  '/lingo/lin1.webp',
+  '/lingo/lif1.webp',
+  '/lingo/bla1.webp',
+] as const
+
+/** Reply-row sprites — the three poses used before the full set was copied. */
+export const LINGO_STUDY_ANSWER_CHARACTERS = [
   '/lingo/bla5.webp',
   '/lingo/lif7.webp',
   '/lingo/lin5.webp',
 ] as const
 
+/** @deprecated Prefer question/answer pools; kept for any single-sprite callers. */
+export const LINGO_STUDY_CHARACTERS = LINGO_STUDY_ANSWER_CHARACTERS
+
+function pickFrom(pool: readonly string[]): string {
+  return pool[Math.floor(Math.random() * pool.length)]!
+}
+
 export function pickRandomLingoCharacter(): string {
-  const i = Math.floor(Math.random() * LINGO_STUDY_CHARACTERS.length)
-  return LINGO_STUDY_CHARACTERS[i]!
+  return pickFrom(LINGO_STUDY_ANSWER_CHARACTERS)
+}
+
+/**
+ * Question uses a `*1` sprite; reply uses one of the three answer sprites.
+ * Prefixes differ when possible so the two speakers are not the same family.
+ */
+export function pickLingoStudyCharacterPair(): { question: string; answer: string } {
+  const question = pickFrom(LINGO_STUDY_QUESTION_CHARACTERS)
+  const qPrefix = question.match(/\/([a-z]+)\d+\.webp$/)?.[1]
+  const answerPool = LINGO_STUDY_ANSWER_CHARACTERS.filter((src) => {
+    const aPrefix = src.match(/\/([a-z]+)\d+\.webp$/)?.[1]
+    return aPrefix !== qPrefix
+  })
+  const answer = pickFrom(answerPool.length ? answerPool : LINGO_STUDY_ANSWER_CHARACTERS)
+  return { question, answer }
 }
 
 /** FNV-1a 32-bit → base36 fragment id for a study question (stable deep-link hash). */

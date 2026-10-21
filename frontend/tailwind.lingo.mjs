@@ -370,9 +370,12 @@ export function buildLingoThemeLayer() {
     },
 
 
-    /** Study footer SRS grades (Forgot / Good / Easy). */
+    /**
+     * Study footer action row — three equal columns so Check occupies the same
+     * cell as Easy (Forgot | Good | Easy / Check).
+     */
     '.lingo-study-rate-row': {
-      '@apply flex w-full items-stretch gap-1.5 sm:gap-2': {},
+      '@apply grid w-full grid-cols-3 items-stretch gap-1.5 sm:gap-2': {},
     },
     /**
      * Fixed footer box (clone `footer.tsx` h-[100px]/Check and rate share one height so
@@ -396,52 +399,97 @@ export function buildLingoThemeLayer() {
         {},
     },
     /**
-     * Study dialogue rows.
-     * Stimulus = solo bubble (no mascot). Reply = mascot + bubble (empty invite → typed/revealed).
+     * Study dialogue rows: mascot + bubble.
+     * Question and reply use different LTD prefixes (`lin` / `lif` / `bla`).
+     * Caret sits in the gap (not clipped by the scroll stack).
+     * Opposite-side inset so Q/A rows stagger like a chat dialogue.
      */
     '.lingo-study-question-row': {
       '@apply flex items-center gap-x-3 sm:gap-x-4': {},
+    },
+    /** Question (sprite left): leave room on the right. */
+    '.lingo-study-question-row:not(.lingo-study-question-row--reply)': {
+      '@apply pr-12 sm:pr-16 lg:pr-20': {},
+    },
+    /** Reply (sprite right): leave room on the left. */
+    '.lingo-study-question-row--reply': {
+      '@apply pl-12 sm:pl-16 lg:pl-20': {},
     },
     /** Portrait LTD icons: fixed box + background image (avoids CLS from late image layout). */
     '.lingo-study-mascot': {
       '@apply h-16 w-14 shrink-0 bg-contain bg-center bg-no-repeat sm:h-20 sm:w-[4.25rem] lg:h-[88px] lg:w-[72px]':
         {},
     },
-    /** Stimulus bubble — no speech caret (mascot sits on the reply row below). */
+    /** Stimulus / reply speech bubble. */
     '.lingo-study-question-bubble': {
-      '@apply relative min-w-0 flex-1 rounded-xl border border-neutral-200/90 bg-white px-4 py-2 text-sm text-neutral-700 shadow-sm shadow-slate-200/50 lg:text-base':
+      '@apply relative z-0 min-w-0 flex-1 rounded-xl border border-neutral-200/90 bg-white px-4 py-2 text-sm text-neutral-700 shadow-sm shadow-slate-200/50 lg:text-base':
         {},
-    },
-    '.lingo-study-question-bubble--solo::before': {
-      content: 'none',
-      display: 'none',
     },
     /**
-     * Empty reply invite (mascot asks you to answer). Same min-height as a one-line
-     * answer so Check → reveal does not jump the stack.
+     * Speech-bubble caret toward the mascot (in the row gap).
+     * Raw borders — @apply on ::before is flaky across Tailwind builds.
+     */
+    '.lingo-study-question-bubble::before': {
+      content: '""',
+      position: 'absolute',
+      left: '-0.75rem',
+      top: '50%',
+      width: '0',
+      height: '0',
+      borderLeft: '8px solid transparent',
+      borderRight: '8px solid transparent',
+      borderTop: '8px solid #e5e5e5',
+      transform: 'translateY(-50%) rotate(90deg)',
+      zIndex: '1',
+    },
+    /**
+     * Empty reply invite (mascot on the right). Caret flips to point at the sprite.
+     * Reserved two-line body so the bubble is not a smashed one-liner before Check.
      */
     '.lingo-study-reply-bubble': {
-      '@apply flex min-h-[3rem] items-center': {},
+      '@apply flex items-center': {},
     },
-    /** Speech-bubble caret toward the mascot (reply / answer rows only). */
-    '.lingo-study-reply-bubble::before, .lingo-study-answer-bubble::before': {
+    '.lingo-study-reply-bubble::before': {
       content: '""',
-      '@apply absolute -left-3 top-1/2 h-0 w-0 -translate-y-1/2 rotate-90 border-x-8 border-t-8 border-x-transparent border-t-neutral-200':
-        {},
+      position: 'absolute',
+      left: 'auto',
+      right: '-0.75rem',
+      top: '50%',
+      width: '0',
+      height: '0',
+      borderLeft: '8px solid transparent',
+      borderRight: '8px solid transparent',
+      borderTop: '8px solid #e5e5e5',
+      transform: 'translateY(-50%) rotate(-90deg)',
+      zIndex: '1',
+    },
+    '.lingo-study-reply-invite': {
+      '@apply w-full min-h-[2.75rem] text-sm leading-snug sm:min-h-[3rem] sm:text-base': {},
     },
     /** Revealed answer — same bubble geometry as the reply invite (no layout jump). */
     '.lingo-study-answer-bubble': {
       '@apply border-green-200 bg-green-50/80': {},
     },
     '.lingo-study-answer-bubble::before': {
-      '@apply border-t-green-200': {},
+      content: '""',
+      position: 'absolute',
+      left: 'auto',
+      right: '-0.75rem',
+      top: '50%',
+      width: '0',
+      height: '0',
+      borderLeft: '8px solid transparent',
+      borderRight: '8px solid transparent',
+      borderTop: '8px solid #bbf7d0', // green-200
+      transform: 'translateY(-50%) rotate(-90deg)',
+      zIndex: '1',
     },
     '.lingo-study-answer-label': {
       '@apply mb-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700 sm:text-xs': {},
     },
-    /** Borderless field inside the reply bubble. */
+    /** Borderless field inside the reply bubble (two-line tall like the empty invite). */
     '.lingo-study-reply-input': {
-      '@apply w-full resize-none border-0 bg-transparent p-0 text-center text-sm shadow-none outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 sm:text-base':
+      '@apply w-full min-h-[2.75rem] resize-none border-0 bg-transparent p-0 text-center text-sm leading-snug shadow-none outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 sm:min-h-[3rem] sm:text-base':
         {},
     },
     '.lingo-study-stimulus': {

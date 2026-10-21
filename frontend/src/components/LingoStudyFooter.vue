@@ -4,21 +4,22 @@
     :class="[footerClass, compact ? 'lingo-study-footer--compact' : 'lingo-study-footer--roomy']"
   >
     <!-- One chrome box for Check and rate — fixed height avoids CLS (clone footer.tsx). -->
+    <!-- Same chrome for Check and rate so the Easy/Check cell never moves. -->
     <div
-      class="lingo-study-chrome-inner lingo-study-footer__chrome justify-between gap-3"
-      :class="status === 'rate' ? '!items-stretch flex-col justify-center gap-1.5 sm:gap-2' : ''"
+      class="lingo-study-chrome-inner lingo-study-footer__chrome !items-stretch flex-col justify-center gap-1.5 sm:gap-2"
     >
-      <template v-if="status === 'rate'">
-        <p
-          v-if="ratePrompt"
-          class="text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs"
-        >
-          {{ ratePrompt }}
-        </p>
-        <div class="lingo-study-rate-row">
+      <p
+        class="text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs"
+        :class="status === 'rate' && ratePrompt ? '' : 'invisible'"
+        :aria-hidden="status !== 'rate' || !ratePrompt"
+      >
+        {{ ratePrompt || '\u00a0' }}
+      </p>
+      <div class="lingo-study-rate-row">
+        <template v-if="status === 'rate'">
           <button
             type="button"
-            class="lingo-btn lingo-btn--danger lingo-btn--sm flex-1 !normal-case !tracking-normal"
+            class="lingo-btn lingo-btn--danger lingo-btn--sm w-full !normal-case !tracking-normal"
             :disabled="disabled"
             @click="$emit('rate', 1)"
           >
@@ -28,7 +29,7 @@
           </button>
           <button
             type="button"
-            class="lingo-btn lingo-btn--primary lingo-btn--sm flex-1 !normal-case !tracking-normal"
+            class="lingo-btn lingo-btn--primary lingo-btn--sm w-full !normal-case !tracking-normal"
             :disabled="disabled"
             @click="$emit('rate', 3)"
           >
@@ -38,7 +39,7 @@
           </button>
           <button
             type="button"
-            class="lingo-btn lingo-btn--secondary lingo-btn--sm flex-1 !normal-case !tracking-normal"
+            class="lingo-btn lingo-btn--secondary lingo-btn--sm w-full !normal-case !tracking-normal"
             :disabled="disabled"
             @click="$emit('rate', 4)"
           >
@@ -46,49 +47,47 @@
             <span>{{ labelEasy || t('flashcardStudy.easy') }}</span>
             <span class="hidden opacity-70 sm:inline">(3)</span>
           </button>
-        </div>
-      </template>
-
-      <template v-else>
-        <div
-          v-if="status === 'correct'"
-          class="flex items-center gap-1.5 text-xs font-bold text-green-600 sm:gap-2 sm:text-sm"
-          :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
-        >
-          <CheckCircle
-            class="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
-            :class="{ 'lg:h-6 lg:w-6': !compact }"
-          />
-          <span>{{ correctLabel }}</span>
-        </div>
-
-        <div
-          v-else-if="status === 'wrong'"
-          class="flex items-center gap-1.5 text-xs font-bold text-rose-500 sm:gap-2 sm:text-sm"
-          :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
-        >
-          <XCircle class="h-4 w-4 shrink-0 sm:h-5 sm:w-5" :class="{ 'lg:h-6 lg:w-6': !compact }" />
-          <span>{{ wrongLabel }}</span>
-        </div>
-
-        <div v-else class="flex-1" />
-
-        <button
-          type="button"
-          class="lingo-btn ml-auto text-sm"
-          :class="[
-            buttonVariantClass,
-            compact
-              ? 'lingo-btn--sm min-w-[88px] sm:min-w-[96px]'
-              : 'lingo-btn--lg min-w-[100px] sm:min-w-[110px] sm:text-base lg:min-w-[120px]',
-          ]"
-          :disabled="disabled"
-          :aria-disabled="disabled"
-          @click="$emit('check')"
-        >
-          {{ buttonLabel }}
-        </button>
-      </template>
+        </template>
+        <template v-else>
+          <div class="flex min-w-0 items-center justify-start gap-1.5 sm:gap-2">
+            <template v-if="status === 'correct'">
+              <CheckCircle
+                class="h-4 w-4 shrink-0 text-green-600 sm:h-5 sm:w-5"
+                :class="{ 'lg:h-6 lg:w-6': !compact }"
+              />
+              <span
+                class="truncate text-xs font-bold text-green-600 sm:text-sm"
+                :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
+              >
+                {{ correctLabel }}
+              </span>
+            </template>
+            <template v-else-if="status === 'wrong'">
+              <XCircle
+                class="h-4 w-4 shrink-0 text-rose-500 sm:h-5 sm:w-5"
+                :class="{ 'lg:h-6 lg:w-6': !compact }"
+              />
+              <span
+                class="truncate text-xs font-bold text-rose-500 sm:text-sm"
+                :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
+              >
+                {{ wrongLabel }}
+              </span>
+            </template>
+          </div>
+          <div aria-hidden="true" />
+          <button
+            type="button"
+            class="lingo-btn lingo-btn--sm w-full !normal-case !tracking-normal"
+            :class="buttonVariantClass"
+            :disabled="disabled"
+            :aria-disabled="disabled"
+            @click="$emit('check')"
+          >
+            {{ buttonLabel }}
+          </button>
+        </template>
+      </div>
     </div>
   </footer>
 </template>
@@ -157,5 +156,10 @@ const buttonLabel = computed(() => {
 }
 .lingo-study-footer button:disabled {
   cursor: not-allowed;
+}
+/* Equal Check/Easy cells even if Tailwind layer lags on HMR. */
+.lingo-study-footer :deep(.lingo-study-rate-row) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 </style>

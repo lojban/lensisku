@@ -78,7 +78,7 @@
       <!-- Lesson card (footer is full-bleed below this column) -->
       <div v-else-if="currentCard" class="flex flex-1 flex-col min-h-0 overflow-hidden">
         <!-- Top-anchored (not centered) so answer reveal does not shove the question. -->
-        <div class="flex flex-1 min-h-0 items-start justify-center overflow-hidden">
+        <div class="flex flex-1 min-h-0 items-center justify-center overflow-hidden">
           <div class="lingo-study-lesson-stack overflow-auto">
             <!-- Clone lesson title: large; stimulus below is smaller in a bubble -->
             <h1 v-if="lessonPrompt" class="lingo-study-lesson-title">
@@ -96,13 +96,13 @@
               }}
             </div>
 
-            <!-- Clone QuestionBubble: random LTD dialogue icon + speech bubble -->
+            <!-- Stimulus: question speaker + bubble (caret sits in the gap). -->
             <div class="lingo-study-question-row">
               <div
                 class="lingo-study-mascot"
                 role="img"
                 aria-hidden="true"
-                :style="{ backgroundImage: `url(${studyCharacterSrc})` }"
+                :style="{ backgroundImage: `url(${studyQuestionCharacterSrc})` }"
               />
               <div class="lingo-study-question-bubble">
                 <div
@@ -174,87 +174,115 @@
               />
             </div>
 
-            <!-- Answer as a second bubble (aligned under question) — no mid-stack jump. -->
-            <div v-if="showAnswerBubble" class="lingo-study-question-row">
-              <div class="lingo-study-mascot lingo-study-mascot--spacer" aria-hidden="true" />
-              <div class="lingo-study-question-bubble lingo-study-answer-bubble">
-                <p class="lingo-study-answer-label">{{ t('flashcardStudy.correctAnswer') }}</p>
-                <div class="lingo-study-stimulus prose prose-sm max-w-none">
-                  <template v-if="currentCard.progress[0].card_side === 'direct'">
-                    <LazyMathJax
-                      :content="
-                        currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
-                      "
-                    />
-                    <div
-                      v-if="currentCard.flashcard.has_back_image"
-                      class="mt-1 flex justify-center"
-                    >
-                      <img
-                        :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
-                        class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
-                        alt=""
-                      />
-                    </div>
-                  </template>
-                  <template v-else>
-                    <div class="flex items-center gap-1.5">
-                      <span>{{
-                        currentCard.flashcard.word ?? currentCard.flashcard.free_content_front
-                      }}</span>
-                      <AudioPlayer
-                        v-if="currentCard.flashcard.sound_url"
-                        ref="answerAudioPlayerRef"
-                        :url="currentCard.flashcard.sound_url"
-                        :collection-id="
-                          currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                            ? currentCard.flashcard.collection_id
-                            : undefined
+            <!-- Reply: empty/fill-in bubble + speaker on the right (mirrored). -->
+            <div class="lingo-study-question-row lingo-study-question-row--reply">
+              <div
+                class="lingo-study-question-bubble"
+                :class="showAnswerBubble ? 'lingo-study-answer-bubble' : 'lingo-study-reply-bubble'"
+                :aria-label="showAnswerBubble ? undefined : t('flashcardStudy.typeAnswer')"
+              >
+                <template v-if="showAnswerBubble">
+                  <p class="lingo-study-answer-label">{{ t('flashcardStudy.correctAnswer') }}</p>
+                  <div class="lingo-study-stimulus prose prose-sm max-w-none">
+                    <template v-if="currentCard.progress[0].card_side === 'direct'">
+                      <LazyMathJax
+                        :content="
+                          currentCard.flashcard.definition ??
+                          currentCard.flashcard.free_content_back
                         "
-                        :item-id="
-                          currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                            ? currentCard.flashcard.item_id
-                            : undefined
-                        "
-                        :suppress-play-errors="true"
                       />
-                    </div>
-                    <div
-                      v-if="showCanonicalForm"
-                      class="mt-1 flex flex-col gap-0.5 border-t border-green-100 pt-1"
-                    >
                       <div
-                        class="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                        v-if="currentCard.flashcard.has_back_image"
+                        class="mt-1 flex justify-center"
                       >
-                        <EqualApproximately class="h-3 text-blue-400" />
-                        <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+                        <img
+                          :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
+                          class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
+                          alt=""
+                        />
                       </div>
-                      <div class="code-snippet-inline">
-                        {{ currentCard.flashcard.canonical_form }}
+                    </template>
+                    <template v-else>
+                      <div class="flex items-center gap-1.5">
+                        <span>{{
+                          currentCard.flashcard.word ?? currentCard.flashcard.free_content_front
+                        }}</span>
+                        <AudioPlayer
+                          v-if="currentCard.flashcard.sound_url"
+                          ref="answerAudioPlayerRef"
+                          :url="currentCard.flashcard.sound_url"
+                          :collection-id="
+                            currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                              ? currentCard.flashcard.collection_id
+                              : undefined
+                          "
+                          :item-id="
+                            currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                              ? currentCard.flashcard.item_id
+                              : undefined
+                          "
+                          :suppress-play-errors="true"
+                        />
                       </div>
-                    </div>
-                    <div
-                      v-if="currentCard.flashcard.has_front_image"
-                      class="mt-1 flex justify-center"
-                    >
-                      <img
-                        :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
-                        class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
-                        alt=""
-                      />
-                    </div>
-                  </template>
-                </div>
-                <div
-                  v-if="
-                    currentCard.flashcard.notes && currentCard.progress[0].card_side === 'direct'
-                  "
-                  class="mt-1.5 border-t border-green-100 pt-1.5 text-[10px] sm:text-xs"
-                >
-                  <h4 class="mb-0.5 font-medium text-gray-700">{{ t('flashcardStudy.notes') }}</h4>
-                  <LazyMathJax :content="currentCard.flashcard.notes" :enable-markdown="true" />
-                </div>
+                      <div
+                        v-if="showCanonicalForm"
+                        class="mt-1 flex flex-col gap-0.5 border-t border-green-100 pt-1"
+                      >
+                        <div
+                          class="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                        >
+                          <EqualApproximately class="h-3 text-blue-400" />
+                          <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+                        </div>
+                        <div class="code-snippet-inline">
+                          {{ currentCard.flashcard.canonical_form }}
+                        </div>
+                      </div>
+                      <div
+                        v-if="currentCard.flashcard.has_front_image"
+                        class="mt-1 flex justify-center"
+                      >
+                        <img
+                          :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
+                          class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
+                          alt=""
+                        />
+                      </div>
+                    </template>
+                  </div>
+                  <div
+                    v-if="
+                      currentCard.flashcard.notes && currentCard.progress[0].card_side === 'direct'
+                    "
+                    class="mt-1.5 border-t border-green-100 pt-1.5 text-[10px] sm:text-xs"
+                  >
+                    <h4 class="mb-0.5 font-medium text-gray-700">
+                      {{ t('flashcardStudy.notes') }}
+                    </h4>
+                    <LazyMathJax :content="currentCard.flashcard.notes" :enable-markdown="true" />
+                  </div>
+                </template>
+                <template v-else-if="isFillInMode">
+                  <Textarea
+                    ref="fillInTextareaRef"
+                    v-model="userAnswer"
+                    type="text"
+                    rows="2"
+                    class="lingo-study-reply-input"
+                    :placeholder="t('flashcardStudy.typeAnswer')"
+                    :disabled="!!fillinResult"
+                    @keydown.enter.prevent="() => submitAnswer()"
+                  />
+                </template>
+                <!-- Empty two-line invite for recall / just-info (Check fills this slot). -->
+                <div v-else class="lingo-study-reply-invite" aria-hidden="true"><br /><br /></div>
               </div>
+              <div
+                class="lingo-study-mascot"
+                role="img"
+                aria-hidden="true"
+                :style="{ backgroundImage: `url(${studyAnswerCharacterSrc})` }"
+              />
             </div>
 
             <div
@@ -265,7 +293,7 @@
               <span>{{ t('flashcardStudy.canonicalComparisonEnabled') }}</span>
             </div>
 
-            <!-- Quiz / fill-in challenge shell (graded reveal uses answer bubble above). -->
+            <!-- Quiz options / result (fill-in lives in the reply bubble above). -->
             <div v-if="showStudyCardShell" class="lingo-study-card-shell">
               <div class="flex min-h-0 flex-col gap-1">
                 <div
@@ -306,18 +334,6 @@
                       <LazyMathJax :content="opt" />
                     </Button>
                   </div>
-                </div>
-                <div v-if="isFillInMode" class="mt-1">
-                  <Textarea
-                    ref="fillInTextareaRef"
-                    v-model="userAnswer"
-                    type="text"
-                    rows="1"
-                    class="textarea-field w-full text-center text-sm sm:text-base"
-                    :placeholder="t('flashcardStudy.typeAnswer')"
-                    :disabled="!!fillinResult"
-                    @keydown.enter.prevent="() => submitAnswer()"
-                  />
                 </div>
                 <div v-if="quizResult" class="flex flex-col gap-1">
                   <div
@@ -373,7 +389,7 @@ import LingoResultCard from '@/components/LingoResultCard.vue'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 import {
   hashLingoQuestionKey,
-  pickRandomLingoCharacter,
+  pickLingoStudyCharacterPair,
   useLingoStudySfx,
 } from '@/composables/useLingoStudySfx'
 
@@ -410,7 +426,9 @@ const auth = useAuth()
 const { getProgress, saveLevelProgress } = useAnonymousProgress()
 const { hearts, hasUnlimitedHearts, loseHeart, awardSessionXp } = useLingoProgress()
 const { playCorrect, playIncorrect, playFinish } = useLingoStudySfx()
-const studyCharacterSrc = ref(pickRandomLingoCharacter())
+const initialStudyCharacters = pickLingoStudyCharacterPair()
+const studyQuestionCharacterSrc = ref(initialStudyCharacters.question)
+const studyAnswerCharacterSrc = ref(initialStudyCharacters.answer)
 
 const outOfHearts = computed(() => !hasUnlimitedHearts.value && hearts.value <= 0)
 
@@ -813,11 +831,10 @@ const showAnswerBubble = computed(
     (showAnswer.value || (!!fillinResult.value && !isFillinCorrect.value))
 )
 
-/** Quiz / fill-in challenge surface only (graded reveal uses the answer bubble). */
+/** Quiz options / result surface (fill-in types inside the reply bubble). */
 const showStudyCardShell = computed(() => {
   if (!currentCard.value) return false
   if (isQuizMode.value) return true
-  if (isFillInMode.value) return true
   if (quizResult.value) return true
   return false
 })
@@ -996,12 +1013,14 @@ async function checkForDueChanges() {
 
 // --- Focus and Keyboard Handling ---
 
-// Card change: random sprite, content-hash URL fragment, focus / autoplay.
+// Card change: random Q/A sprites (different prefixes), hash URL, focus / autoplay.
 watch(
   currentCard,
   (newCard) => {
     if (newCard) {
-      studyCharacterSrc.value = pickRandomLingoCharacter()
+      const pair = pickLingoStudyCharacterPair()
+      studyQuestionCharacterSrc.value = pair.question
+      studyAnswerCharacterSrc.value = pair.answer
     }
     syncQuestionHash(newCard)
     if (newCard && isFillInMode.value && !fillinResult.value) {
@@ -1138,5 +1157,40 @@ onMounted(async () => {
 }
 .lingo-study-root :deep(.overflow-auto)::-webkit-scrollbar {
   display: none;
+}
+
+/* Reply/answer: caret points right toward the sprite (overrides left caret). */
+.lingo-study-root :deep(.lingo-study-reply-bubble::before),
+.lingo-study-root :deep(.lingo-study-answer-bubble::before) {
+  left: auto;
+  right: -0.75rem;
+  transform: translateY(-50%) rotate(-90deg);
+}
+.lingo-study-root :deep(.lingo-study-answer-bubble::before) {
+  border-top-color: #bbf7d0;
+}
+
+/* Dialogue stagger: question inset from the right, reply from the left. */
+.lingo-study-root :deep(.lingo-study-question-row:not(.lingo-study-question-row--reply)) {
+  padding-right: 3rem;
+}
+.lingo-study-root :deep(.lingo-study-question-row--reply) {
+  padding-left: 3rem;
+}
+@media (min-width: 640px) {
+  .lingo-study-root :deep(.lingo-study-question-row:not(.lingo-study-question-row--reply)) {
+    padding-right: 4rem;
+  }
+  .lingo-study-root :deep(.lingo-study-question-row--reply) {
+    padding-left: 4rem;
+  }
+}
+@media (min-width: 1024px) {
+  .lingo-study-root :deep(.lingo-study-question-row:not(.lingo-study-question-row--reply)) {
+    padding-right: 5rem;
+  }
+  .lingo-study-root :deep(.lingo-study-question-row--reply) {
+    padding-left: 5rem;
+  }
 }
 </style>
