@@ -14,12 +14,6 @@
           >
             <ArrowLeft class="h-5 w-5" />
           </RouterLink>
-          <h1
-            class="min-w-0 truncate text-center text-lg font-bold text-neutral-700"
-            :aria-busy="isLoading"
-          >
-            {{ isLoading ? '' : collection?.name || '' }}
-          </h1>
           <div class="flex shrink-0 items-center gap-2">
             <button
               type="button"

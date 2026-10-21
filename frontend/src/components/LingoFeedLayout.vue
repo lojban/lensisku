@@ -15,8 +15,8 @@
     <div class="lingo-feed-layout__body">
       <aside v-if="showAside" class="lingo-feed-layout__aside">
         <div class="flex flex-col gap-y-4">
-          <!-- With levels header: hearts sit in the stripe on lg; keep them here on small screens. -->
-          <div :class="hasHeader ? 'lg:hidden' : undefined">
+          <!-- With header: hearts sit in the header stripe (all breakpoints). -->
+          <div v-if="!hasHeader">
             <LingoUserProgress />
           </div>
           <slot name="aside">

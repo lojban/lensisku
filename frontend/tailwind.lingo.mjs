@@ -196,10 +196,6 @@ export function buildLingoThemeLayer() {
       '@apply relative flex h-full min-h-[217px] min-w-0 w-full cursor-pointer flex-col items-center justify-start rounded-xl border border-slate-200/90 bg-white p-3 pb-5 text-left shadow-sm shadow-slate-200/60 transition hover:-translate-y-0.5 hover:bg-slate-50/80 hover:shadow-md hover:shadow-slate-200/80 active:translate-y-0 active:shadow-sm disabled:pointer-events-none disabled:opacity-50 lg:min-w-[200px]':
         {},
     },
-    '.lingo-course-card--active': {
-      '@apply border-sky-400 bg-sky-500/5 shadow-md shadow-sky-500/15': {},
-    },
-
     '.lingo-course-card__media': {
       '@apply relative mt-1 flex h-[70px] w-[93px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200/80 bg-neutral-50 shadow-sm':
         {},
@@ -312,8 +308,7 @@ export function buildLingoThemeLayer() {
     },
 
     '.lingo-feed-layout__header-row': {
-      '@apply relative z-[1] flex w-full flex-col gap-2 lg:flex-row lg:items-center lg:gap-3':
-        {},
+      '@apply relative z-[1] flex w-full items-center gap-2': {},
       '@screen lg': {
         gap: 'var(--lingo-feed-col-gap)',
       },
@@ -322,12 +317,12 @@ export function buildLingoThemeLayer() {
       '@apply min-w-0 flex-1': {},
     },
     '.lingo-feed-layout__header-aside': {
-      '@apply hidden w-full shrink-0 lg:block': {},
+      '@apply w-auto shrink-0': {},
       '@screen lg': {
         width: 'var(--lingo-feed-aside-w)',
       },
     },
-    /** Title/actions only — stripe wash lives on `__header-band`, not here. */
+    /** Actions only — stripe wash lives on `__header-band`, not here. */
     '.lingo-levels-header': {
       '@apply flex w-full items-center justify-between gap-3': {},
       background: 'transparent',

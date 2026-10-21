@@ -1695,6 +1695,13 @@
     "searchPlaceholder": "pentoi lo cmene .a lo skicu be lo karda cu'u",
     "searchPlaceholderCollections": "pentoi lo cmene .a lo skicu be lo liste",
     "studyStreak": "citri mi",
+    "streakGrowth": {
+      "seed": "nu'o zukte",
+      "sprout": "cnino",
+      "poorWater": "so'ova'e zukte",
+      "moreWater": "so'imei zukte",
+      "tree": "makcu"
+    },
     "studyButton": "tadni",
     "updated": "ba'o se galfi",
     "updatedAt": "ba'o se galfi",

@@ -1,7 +1,9 @@
 <template>
   <LingoLayout fill>
     <LingoFeedLayout class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-      <h1 class="text-2xl font-bold text-neutral-700">{{ t('lingo.languageCourses') }}</h1>
+      <template #header>
+        <h1 class="text-2xl font-bold text-neutral-700">{{ t('lingo.languageCourses') }}</h1>
+      </template>
 
       <div class="mt-4">
         <Input

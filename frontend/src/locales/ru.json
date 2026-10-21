@@ -1629,6 +1629,13 @@
     "searchPlaceholder": "Поиск по названию или описанию курса",
     "searchPlaceholderCollections": "Поиск по названию или описанию коллекции",
     "studyStreak": "Прогресс обучения",
+    "streakGrowth": {
+      "seed": "Семя",
+      "sprout": "Росток",
+      "poorWater": "Немного воды",
+      "moreWater": "Больше воды",
+      "tree": "Дерево"
+    },
     "studyButton": "Учить",
     "updated": "Обновлено",
     "updatedAt": "Обновлено",

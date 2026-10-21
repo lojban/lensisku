@@ -30,10 +30,10 @@
 
           <div
             class="card-streak-day-points"
-            :title="t('collectionList.points', { count: day.points })"
-            :aria-label="t('collectionList.points', { count: day.points })"
+            :title="streakGrowthLabel(day.points)"
+            :aria-label="streakGrowthLabel(day.points)"
           >
-            {{ streakPointsEmoji(day.points) }}
+            {{ streakGrowthStage(day.points).emoji }}
           </div>
         </div>
       </div>
@@ -83,13 +83,33 @@ const streakData = ref<StreakData | null>(null)
 /** Start true so the first paint uses the in-card skeleton (outer min-h already reserved). */
 const isLoadingStreak = ref(true)
 
-/** Daily intensity tiers (exact pts are in title/aria-label). */
-const streakPointsEmoji = (points: number): string => {
-  if (points <= 0) return '😴'
-  if (points < 10) return '🌱'
-  if (points < 25) return '⭐'
-  if (points < 50) return '🔥'
-  return '🌳'
+/**
+ * Daily study intensity as plant growth: seed → sprout → water → tree.
+ * Exact points stay in the title / aria-label.
+ */
+const STREAK_GROWTH_STAGES = [
+  { id: 'seed', minPoints: 0, emoji: '😴' },
+  { id: 'sprout', minPoints: 1, emoji: '💧' },
+  { id: 'poorWater', minPoints: 10, emoji: '💦' },
+  { id: 'moreWater', minPoints: 25, emoji: '🌱' },
+  { id: 'tree', minPoints: 50, emoji: '🌳' },
+] as const
+
+type StreakGrowthStage = (typeof STREAK_GROWTH_STAGES)[number]
+
+const streakGrowthStage = (points: number): StreakGrowthStage => {
+  let stage: StreakGrowthStage = STREAK_GROWTH_STAGES[0]
+  for (const candidate of STREAK_GROWTH_STAGES) {
+    if (points >= candidate.minPoints) stage = candidate
+  }
+  return stage
+}
+
+const streakGrowthLabel = (points: number) => {
+  const { id } = streakGrowthStage(points)
+  const stage = t(`collectionList.streakGrowth.${id}`)
+  const pts = t('collectionList.points', { count: points })
+  return `${stage} · ${pts}`
 }
 
 /** Gregorian weekdays (JS getDay 0=Sun..6=Sat): color lujvo from sampu vlaste (xunre…zirpu + dei). */

@@ -1678,6 +1678,13 @@
     "searchPlaceholder": "コース名または説明で検索",
     "searchPlaceholderCollections": "コレクション名または説明で検索",
     "studyStreak": "学習ストリーク",
+    "streakGrowth": {
+      "seed": "種",
+      "sprout": "芽",
+      "poorWater": "少しの水",
+      "moreWater": "もっと水",
+      "tree": "木"
+    },
     "studyButton": "学習",
     "updated": "更新",
     "updatedAt": "更新日時",

@@ -1721,6 +1721,13 @@
     "searchPlaceholder": "Search courses by name or description",
     "searchPlaceholderCollections": "Search collections by name or description",
     "studyStreak": "Study streak",
+    "streakGrowth": {
+      "seed": "Seed",
+      "sprout": "Sprout",
+      "poorWater": "A little water",
+      "moreWater": "More water",
+      "tree": "Tree"
+    },
     "studyButton": "Study",
     "updated": "Updated",
     "updatedAt": "Updated at",

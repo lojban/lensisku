@@ -1683,6 +1683,13 @@
     "searchPlaceholder": "按名称或描述搜索课程",
     "searchPlaceholderCollections": "按名称或描述搜索合集",
     "studyStreak": "学习连续",
+    "streakGrowth": {
+      "seed": "种子",
+      "sprout": "发芽",
+      "poorWater": "少量水",
+      "moreWater": "更多水",
+      "tree": "树"
+    },
     "studyButton": "学习",
     "updated": "更新于",
     "updatedAt": "更新时间",
