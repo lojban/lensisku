@@ -140,11 +140,13 @@ export async function unlockLingoStudySfx(): Promise<void> {
 
 export function useLingoStudySfx() {
   void preloadLingoStudySfx()
+  void preloadLingoStudySprites()
   return {
     playCorrect: () => play('correct'),
     playIncorrect: () => play('incorrect'),
     playFinish: () => play('finish'),
     preload: preloadLingoStudySfx,
+    preloadSprites: preloadLingoStudySprites,
     unlock: unlockLingoStudySfx,
   }
 }
@@ -165,6 +167,34 @@ export const LINGO_STUDY_ANSWER_CHARACTERS = [
 
 /** @deprecated Prefer question/answer pools; kept for any single-sprite callers. */
 export const LINGO_STUDY_CHARACTERS = LINGO_STUDY_ANSWER_CHARACTERS
+
+/** All unique study mascot URLs (idle + pose-1 reveal). */
+export const LINGO_STUDY_SPRITE_URLS = [
+  ...new Set([...LINGO_STUDY_QUESTION_CHARACTERS, ...LINGO_STUDY_ANSWER_CHARACTERS]),
+] as const
+
+let spritePreloadPromise: Promise<void> | null = null
+
+function loadImage(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof Image === 'undefined') {
+      resolve()
+      return
+    }
+    const img = new Image()
+    img.decoding = 'async'
+    img.onload = () => resolve()
+    img.onerror = () => resolve()
+    img.src = url
+  })
+}
+
+/** Warm the HTTP + browser image cache for every study mascot (fire-and-forget OK). */
+export function preloadLingoStudySprites(): Promise<void> {
+  if (spritePreloadPromise) return spritePreloadPromise
+  spritePreloadPromise = Promise.all(LINGO_STUDY_SPRITE_URLS.map(loadImage)).then(() => undefined)
+  return spritePreloadPromise
+}
 
 function pickFrom(pool: readonly string[]): string {
   return pool[Math.floor(Math.random() * pool.length)]!
