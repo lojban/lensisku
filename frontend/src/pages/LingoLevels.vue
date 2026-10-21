@@ -64,6 +64,7 @@
             :key="level.level_id"
             :index="i"
             :total-count="displayLevels.length - 1"
+            :level-id="level.level_id"
             :locked="!isLevelUnlocked(level) && !level.progress?.is_completed"
             :current="level === activeLevel"
             :completed="!!level.progress?.is_completed"
@@ -83,8 +84,8 @@
 
 <script setup lang="ts">
 import { ArrowLeft, Dumbbell, GalleryVerticalIcon, Pencil } from '@lucide/vue'
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, nextTick, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
 import LingoFeedLayout from '@/components/LingoFeedLayout.vue'
@@ -106,6 +107,7 @@ const props = defineProps({
 })
 
 const auth = useAuth()
+const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const { getProgress } = useAnonymousProgress()
@@ -212,6 +214,23 @@ const effectiveLevels = computed(() => {
 
 const isLevelUnlocked = (level) => level && (!level.is_locked || !!level.progress?.is_unlocked)
 
+/** Center the next required level (from study finish `?focusLevelId=`) or the active node. */
+function scrollFocusLevelIntoView() {
+  const raw = route.query.focusLevelId
+  const fromQuery = Array.isArray(raw) ? raw[0] : raw
+  const focusId =
+    fromQuery != null && String(fromQuery) !== ''
+      ? String(fromQuery)
+      : activeLevel.value?.level_id != null
+        ? String(activeLevel.value.level_id)
+        : ''
+  if (!focusId) return
+  nextTick(() => {
+    const el = document.querySelector(`[data-level-id="${CSS.escape(focusId)}"]`)
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  })
+}
+
 const fetchCollection = async () => {
   try {
     const response = await getCollection(props.collectionId)
@@ -244,6 +263,7 @@ onMounted(async () => {
     await Promise.all([fetchCollection(), fetchLevels()])
   } finally {
     isLoading.value = false
+    scrollFocusLevelIntoView()
   }
 })
 </script>

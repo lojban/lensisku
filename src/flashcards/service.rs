@@ -805,9 +805,29 @@ pub async fn list_flashcards(
 
     verify_collection_read_access(&transaction, query.collection_id, Some(user_id)).await?;
 
+    // Level sessions must not load cards the user cannot review (review also enforces this).
+    if let Some(level_id) = query.level_id {
+        let unlocked: bool = transaction
+            .query_one(
+                "SELECT check_level_prerequisites($1, $2) AS unlocked",
+                &[&user_id, &level_id],
+            )
+            .await?
+            .get("unlocked");
+        if !unlocked {
+            return Err(format!(
+                "access denied: level {} is locked. Complete prerequisites first.",
+                level_id
+            )
+            .into());
+        }
+    }
+
     let fsrs = FSRS::new(&[])?;
 
-    // Get base flashcards including free content
+    // Get base flashcards including free content.
+    // Cards assigned only to locked levels are excluded so open due queues cannot
+    // surface content that POST /review would reject.
     let rows = transaction
     .query(
         "WITH ReviewHistory AS (
@@ -848,6 +868,16 @@ pub async fn list_flashcards(
                  (p.next_review_at IS NULL OR p.next_review_at <= CURRENT_TIMESTAMP)))
         AND ($5::int IS NULL OR f.id = $5)
         AND ($6::int IS NULL OR f.id IN (SELECT flashcard_id FROM flashcard_level_items WHERE level_id = $6))
+        AND (
+            NOT EXISTS (
+                SELECT 1 FROM flashcard_level_items fli_any WHERE fli_any.flashcard_id = f.id
+            )
+            OR EXISTS (
+                SELECT 1 FROM flashcard_level_items fli_ok
+                WHERE fli_ok.flashcard_id = f.id
+                  AND check_level_prerequisites($1, fli_ok.level_id)
+            )
+        )
         ORDER BY
         CASE
             WHEN $4::boolean = true THEN EXTRACT(EPOCH FROM p.next_review_at)
@@ -1885,29 +1915,46 @@ async fn verify_study_access(
         return Err("access denied".into());
     }
 
-    // 2. Check if the flashcard belongs to a level and if that level is unlocked
-    let level_check = transaction
-        .query_opt(
-            "SELECT fli.level_id, check_level_prerequisites($1, fli.level_id) as unlocked
-             FROM flashcard_level_items fli
-             WHERE fli.flashcard_id = $2",
+    // 2. Levelled cards: allow when at least one of the card's levels is unlocked.
+    // (A card may sit on multiple levels; locking a later level must not block an
+    // unlocked earlier level that still contains the same flashcard.)
+    let level_row = transaction
+        .query_one(
+            "SELECT
+                EXISTS(
+                    SELECT 1 FROM flashcard_level_items WHERE flashcard_id = $2
+                ) AS in_level,
+                COALESCE(
+                    (
+                        SELECT bool_or(check_level_prerequisites($1, fli.level_id))
+                        FROM flashcard_level_items fli
+                        WHERE fli.flashcard_id = $2
+                    ),
+                    true
+                ) AS unlocked,
+                (
+                    SELECT fli.level_id
+                    FROM flashcard_level_items fli
+                    WHERE fli.flashcard_id = $2
+                      AND NOT check_level_prerequisites($1, fli.level_id)
+                    ORDER BY fli.level_id
+                    LIMIT 1
+                ) AS sample_locked_level_id",
             &[&user_id, &flashcard_id],
         )
         .await?;
 
-    if let Some(level_row) = level_check {
-        let is_unlocked: bool = level_row.get("unlocked");
-        if !is_unlocked {
-            let level_id: i32 = level_row.get("level_id");
-            return Err(format!(
-                "access denied: level {} is locked. Complete prerequisites first.",
-                level_id
-            )
-            .into());
-        }
+    let in_level: bool = level_row.get("in_level");
+    let is_unlocked: bool = level_row.get("unlocked");
+    if in_level && !is_unlocked {
+        let level_id: i32 = level_row.get("sample_locked_level_id");
+        return Err(format!(
+            "access denied: level {} is locked. Complete prerequisites first.",
+            level_id
+        )
+        .into());
     }
 
-    // If checks pass
     Ok(())
 }
 
@@ -3222,7 +3269,8 @@ async fn get_level_progress(
 ) -> Result<Option<LevelProgress>, Box<dyn std::error::Error>> {
     if let Some(row) = transaction
         .query_opt(
-            "SELECT * FROM user_level_progress
+            "SELECT *, check_level_prerequisites($1, $2) AS prereqs_met
+         FROM user_level_progress
          WHERE user_id = $1 AND level_id = $2",
             &[&user_id, &level_id],
         )
@@ -3234,14 +3282,16 @@ async fn get_level_progress(
             0.0
         };
 
+        // Source of truth is check_level_prerequisites (same as review/list gates).
+        // Do not trust unlocked_at alone — it can be stale from before V133.
+        let prereqs_met: bool = row.get("prereqs_met");
+
         Ok(Some(LevelProgress {
             cards_completed: row.get("cards_completed"),
             correct_answers: row.get("correct_answers"),
             total_answers: row.get("total_answers"),
             success_rate,
-            is_unlocked: row
-                .get::<_, Option<ChronoDateTime>>("unlocked_at")
-                .is_some(),
+            is_unlocked: prereqs_met,
             is_completed: row
                 .get::<_, Option<ChronoDateTime>>("completed_at")
                 .is_some(),

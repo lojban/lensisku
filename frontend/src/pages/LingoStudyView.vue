@@ -48,14 +48,21 @@
           {{ t('lingo.goToShop') }}
         </RouterLink>
       </div>
-      <!-- No Cards State (Duolingo finish: centered, compact) -->
+      <!-- Lesson finish (clone quiz.tsx: finish art + XP/hearts + continue to path) -->
       <div
         v-else-if="!currentCard && remainingCards.length === 0"
-        class="flex flex-1 flex-col items-center justify-center gap-2 min-h-0 py-4 text-center"
+        class="flex flex-1 flex-col items-center justify-center gap-3 min-h-0 py-4 text-center sm:gap-4"
       >
-        <h1 class="text-base font-bold text-neutral-700 sm:text-lg">
-          {{ t('flashcardStudy.allCaughtUp') }} <br />
-          {{ t('flashcardStudy.allReviewed') }}
+        <div class="text-5xl sm:text-6xl" aria-hidden="true">🎉</div>
+        <h1 class="text-lg font-bold text-neutral-700 sm:text-2xl">
+          <template v-if="levelIdParam != null && cardsAnsweredInSession > 0">
+            {{ t('flashcardStudy.lessonCompleteTitle') }} <br />
+            {{ t('flashcardStudy.lessonCompleteBody') }}
+          </template>
+          <template v-else>
+            {{ t('flashcardStudy.allCaughtUp') }} <br />
+            {{ t('flashcardStudy.allReviewed') }}
+          </template>
         </h1>
 
         <div class="flex w-full max-w-xs flex-col gap-2 sm:flex-row sm:max-w-sm justify-center">
@@ -70,7 +77,7 @@
         >
           {{
             levelIdParam != null
-              ? t('flashcardStudy.returnToLevels')
+              ? t('flashcardStudy.continueToLevels')
               : t('flashcardStudy.returnToDeck')
           }}
         </button>
@@ -457,13 +464,38 @@ const levelIdParam = computed(() => {
 const isAnonLevelMode = computed(() => !auth.state.isLoggedIn && levelIdParam.value != null)
 const isAnonNoLevelsMode = ref(false) // anon studying collection with no levels (uses public flashcards)
 const anonLevelMeta = ref(null) // { min_cards, min_success_rate } when in anon level mode
+/** Next required level to center on the path after a levelled lesson finish. */
+const focusLevelId = ref<number | null>(null)
 
 const returnToUrl = computed(() => {
   const cid = collectionId.value
-  if (levelIdParam.value != null) return `/collections/${cid}/lingo/levels`
+  if (levelIdParam.value != null) {
+    const id = focusLevelId.value ?? levelIdParam.value
+    return `/collections/${cid}/lingo/levels?focusLevelId=${id}`
+  }
   if (isAnonNoLevelsMode.value) return `/collections/${cid}/flashcards`
   return `/collections/${cid}/lingo/levels`
 })
+
+/** Pick the first unlocked incomplete level (next required), else the lesson just finished. */
+async function resolveReturnFocusLevel() {
+  const cid = collectionId.value
+  const fallback = levelIdParam.value
+  if (!cid || fallback == null) {
+    focusLevelId.value = fallback
+    return
+  }
+  try {
+    const res = await getLevels(cid)
+    const list = [...(res.data.levels || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    const next = list.find(
+      (l) => (!l.is_locked || !!l.progress?.is_unlocked) && !l.progress?.is_completed
+    )
+    focusLevelId.value = next?.level_id ?? fallback
+  } catch {
+    focusLevelId.value = fallback
+  }
+}
 
 const isLoading = ref(true)
 const remainingCards = ref([])
@@ -1063,8 +1095,10 @@ watch(showAnswer, (newValue) => {
 
 watch(
   () => !isLoading.value && !currentCard.value && remainingCards.value.length === 0,
-  (finished) => {
-    if (finished && cardsAnsweredInSession.value > 0) claimSessionXpOnce()
+  async (finished) => {
+    if (!finished || cardsAnsweredInSession.value <= 0) return
+    if (levelIdParam.value != null) await resolveReturnFocusLevel()
+    claimSessionXpOnce()
   }
 )
 

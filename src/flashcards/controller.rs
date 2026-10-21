@@ -183,7 +183,13 @@ pub async fn list_flashcards(
     match service::list_flashcards(&pool, claims.sub, query.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            HttpResponse::InternalServerError().body(format!("Failed to list flashcards: {}", e))
+            let message = e.to_string();
+            if message.contains("access denied") || message.contains("locked") {
+                HttpResponse::Forbidden().body(message)
+            } else {
+                HttpResponse::InternalServerError()
+                    .body(format!("Failed to list flashcards: {}", message))
+            }
         }
     }
 }
@@ -267,7 +273,15 @@ pub async fn get_due_cards(
 
     match service::list_flashcards(&pool, claims.sub, query_params).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to get cards: {}", e)),
+        Err(e) => {
+            let message = e.to_string();
+            if message.contains("access denied") || message.contains("locked") {
+                HttpResponse::Forbidden().body(message)
+            } else {
+                HttpResponse::InternalServerError()
+                    .body(format!("Failed to get cards: {}", message))
+            }
+        }
     }
 }
 

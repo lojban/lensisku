@@ -2,6 +2,7 @@
   <div
     v-if="!locked"
     class="lingo-lesson-button group relative flex flex-row items-center justify-start gap-2"
+    :data-level-id="levelId || undefined"
     :style="nodeStyle"
   >
     <RouterLink
@@ -71,6 +72,7 @@
   <div
     v-else-if="locked && showOwnerMenu"
     class="lingo-lesson-button group relative flex flex-row items-center justify-start gap-2"
+    :data-level-id="levelId || undefined"
     :style="nodeStyle"
     aria-disabled="true"
   >
@@ -109,6 +111,7 @@
   <div
     v-else
     class="lingo-lesson-button relative flex pointer-events-none"
+    :data-level-id="levelId || undefined"
     :style="nodeStyle"
     aria-disabled="true"
     :aria-label="accessibleName"
@@ -143,6 +146,8 @@ const props = defineProps({
   startLabel: { type: String, default: 'Start' },
   /** Visible level name under the node (e.g. "01 Basic"). */
   label: { type: String, default: '' },
+  /** Stable id for scroll-into-view from study finish (`?focusLevelId=`). */
+  levelId: { type: [Number, String], default: '' },
   showOwnerMenu: { type: Boolean, default: false },
 })
 
