@@ -72,6 +72,7 @@
             "
             :study-url="studyUrlFor(level)"
             :start-label="t('flashcardLevels.start')"
+            :label="level.name || ''"
             :show-owner-menu="false"
           />
         </div>

@@ -1006,10 +1006,17 @@ watch(
   () => effectiveLevels.value,
   (newLevels) => {
     if (newLevels?.length) {
-      setElements(convertLevelsToElements(newLevels))
+      const next = convertLevelsToElements(newLevels)
+      // Keep v-model `elements` in sync; setElements alone can leave the bound array empty.
+      elements.value = next
+      setElements(next)
       scrollToNextUnlocked(newLevels)
+    } else {
+      elements.value = []
+      setElements([])
     }
-  }
+  },
+  { immediate: true }
 )
 
 const showDeleteLevelConfirmDialog = (level) => {

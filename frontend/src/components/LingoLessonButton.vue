@@ -4,7 +4,11 @@
     class="lingo-lesson-button group relative flex flex-row items-center justify-start gap-2"
     :style="nodeStyle"
   >
-    <RouterLink :to="studyUrl" class="flex shrink-0 flex-col items-center no-underline">
+    <RouterLink
+      :to="studyUrl"
+      class="flex shrink-0 flex-col items-center no-underline"
+      :aria-label="accessibleName"
+    >
       <div v-if="current" class="relative h-[102px] w-[102px]">
         <div
           class="absolute -top-6 left-2.5 z-10 animate-bounce rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 font-bold uppercase tracking-wide text-green-500"
@@ -41,6 +45,7 @@
       <div v-else class="lingo-lesson-node lingo-lesson-node--open">
         <component :is="iconComponent" class="h-10 w-10" :class="iconClass" />
       </div>
+      <span v-if="label" class="lingo-lesson-label" :title="label">{{ label }}</span>
     </RouterLink>
     <div v-if="showOwnerMenu" class="relative z-20 flex shrink-0 items-center" @click.stop>
       <button
@@ -69,11 +74,16 @@
     :style="nodeStyle"
     aria-disabled="true"
   >
-    <div class="lingo-lesson-node lingo-lesson-node--locked pointer-events-none">
-      <component
-        :is="iconComponent"
-        class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400"
-      />
+    <div class="flex shrink-0 flex-col items-center" :aria-label="accessibleName">
+      <div class="lingo-lesson-node lingo-lesson-node--locked pointer-events-none">
+        <component
+          :is="iconComponent"
+          class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400"
+        />
+      </div>
+      <span v-if="label" class="lingo-lesson-label lingo-lesson-label--locked" :title="label">{{
+        label
+      }}</span>
     </div>
     <div class="relative z-20 flex shrink-0 items-center" @click.stop>
       <button
@@ -101,12 +111,18 @@
     class="lingo-lesson-button relative flex pointer-events-none"
     :style="nodeStyle"
     aria-disabled="true"
+    :aria-label="accessibleName"
   >
-    <div class="lingo-lesson-node lingo-lesson-node--locked">
-      <component
-        :is="iconComponent"
-        class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400"
-      />
+    <div class="flex flex-col items-center">
+      <div class="lingo-lesson-node lingo-lesson-node--locked">
+        <component
+          :is="iconComponent"
+          class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400"
+        />
+      </div>
+      <span v-if="label" class="lingo-lesson-label lingo-lesson-label--locked" :title="label">{{
+        label
+      }}</span>
     </div>
   </div>
 </template>
@@ -125,10 +141,18 @@ const props = defineProps({
   percentage: { type: Number, default: 0 },
   studyUrl: { type: String, default: '' },
   startLabel: { type: String, default: 'Start' },
+  /** Visible level name under the node (e.g. "01 Basic"). */
+  label: { type: String, default: '' },
   showOwnerMenu: { type: Boolean, default: false },
 })
 
 const menuOpen = ref(false)
+
+const accessibleName = computed(() => {
+  if (props.label) return props.label
+  if (props.current) return props.startLabel
+  return props.locked ? 'Locked lesson' : 'Lesson'
+})
 
 const cycleLength = 8
 const cycleIndex = computed(() => props.index % cycleLength)
@@ -148,7 +172,8 @@ const isCompleted = computed(() => props.completed)
 
 const nodeStyle = computed(() => ({
   right: `${rightPositionPx.value}px`,
-  marginTop: isFirst.value && !isCompleted.value ? '60px' : '24px',
+  // Extra vertical room so `.lingo-lesson-label` (up to 2 lines) never crowds the next node.
+  marginTop: isFirst.value && !isCompleted.value ? '60px' : '36px',
 }))
 
 const iconComponent = computed(() => {

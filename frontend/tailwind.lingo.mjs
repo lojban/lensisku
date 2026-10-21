@@ -246,6 +246,17 @@ export function buildLingoThemeLayer() {
     '.lingo-lesson-node--locked': {
       '@apply border-neutral-400 bg-neutral-200 text-neutral-400 active:border-b-0': {},
     },
+    /**
+     * Level name under a ladder node — always visible (not hover-only).
+     * Narrow max-width so the zig-zag path stays readable with long titles.
+     */
+    '.lingo-lesson-label': {
+      '@apply mt-1.5 w-[7.5rem] max-w-[7.5rem] text-center text-xs font-bold leading-snug text-neutral-700 line-clamp-2':
+        {},
+    },
+    '.lingo-lesson-label--locked': {
+      '@apply text-neutral-400': {},
+    },
     /** Owner gear beside a lesson node — flat, not Aqua. */
     '.lingo-lesson-menu-trigger': {
       '@apply lingo-icon-btn lingo-icon-btn--muted h-8 w-8 rounded-full': {},
@@ -384,7 +395,10 @@ export function buildLingoThemeLayer() {
       '@apply shrink-0 text-center text-lg font-bold text-neutral-700 lg:text-start lg:text-3xl':
         {},
     },
-    /** Clone `QuestionBubble`: mascot + speech bubble for the stimulus. */
+    /**
+     * Study dialogue rows.
+     * Stimulus = solo bubble (no mascot). Reply = mascot + bubble (empty invite → typed/revealed).
+     */
     '.lingo-study-question-row': {
       '@apply flex items-center gap-x-3 sm:gap-x-4': {},
     },
@@ -393,16 +407,29 @@ export function buildLingoThemeLayer() {
       '@apply h-16 w-14 shrink-0 bg-contain bg-center bg-no-repeat sm:h-20 sm:w-[4.25rem] lg:h-[88px] lg:w-[72px]':
         {},
     },
-    /** Invisible twin so answer bubbles align under the question bubble. */
-    '.lingo-study-mascot--spacer': {
-      visibility: 'hidden',
-      backgroundImage: 'none',
-    },
+    /** Stimulus bubble — no speech caret (mascot sits on the reply row below). */
     '.lingo-study-question-bubble': {
       '@apply relative min-w-0 flex-1 rounded-xl border border-neutral-200/90 bg-white px-4 py-2 text-sm text-neutral-700 shadow-sm shadow-slate-200/50 lg:text-base':
         {},
     },
-    /** Revealed answer — same bubble geometry as the question (no layout jump). */
+    '.lingo-study-question-bubble--solo::before': {
+      content: 'none',
+      display: 'none',
+    },
+    /**
+     * Empty reply invite (mascot asks you to answer). Same min-height as a one-line
+     * answer so Check → reveal does not jump the stack.
+     */
+    '.lingo-study-reply-bubble': {
+      '@apply flex min-h-[3rem] items-center': {},
+    },
+    /** Speech-bubble caret toward the mascot (reply / answer rows only). */
+    '.lingo-study-reply-bubble::before, .lingo-study-answer-bubble::before': {
+      content: '""',
+      '@apply absolute -left-3 top-1/2 h-0 w-0 -translate-y-1/2 rotate-90 border-x-8 border-t-8 border-x-transparent border-t-neutral-200':
+        {},
+    },
+    /** Revealed answer — same bubble geometry as the reply invite (no layout jump). */
     '.lingo-study-answer-bubble': {
       '@apply border-green-200 bg-green-50/80': {},
     },
@@ -412,11 +439,9 @@ export function buildLingoThemeLayer() {
     '.lingo-study-answer-label': {
       '@apply mb-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700 sm:text-xs': {},
     },
-
-    /** Speech-bubble caret (clone: rotated border triangle on the left). */
-    '.lingo-study-question-bubble::before': {
-      content: '""',
-      '@apply absolute -left-3 top-1/2 h-0 w-0 -translate-y-1/2 rotate-90 border-x-8 border-t-8 border-x-transparent border-t-neutral-200':
+    /** Borderless field inside the reply bubble. */
+    '.lingo-study-reply-input': {
+      '@apply w-full resize-none border-0 bg-transparent p-0 text-center text-sm shadow-none outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 sm:text-base':
         {},
     },
     '.lingo-study-stimulus': {
