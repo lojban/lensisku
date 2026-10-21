@@ -1,6 +1,8 @@
 /**
  * Lingo lesson feedback SFX (same flow as archive/duolingo-clone lesson quiz).
  * Assets in `public/lingo/*.ogg` — see ATTRIBUTION.md.
+ *
+ * Prefetches + decodes into AudioBuffers so Forgot / Good / Easy feel immediate.
  */
 
 const SFX = {
@@ -11,21 +13,38 @@ const SFX = {
 
 type SfxKind = keyof typeof SFX
 
-const players = new Map<SfxKind, HTMLAudioElement>()
+let audioCtx: AudioContext | null = null
+const buffers = new Map<SfxKind, AudioBuffer>()
+/** HTMLAudio fallback while decode is in flight or Web Audio unavailable. */
+const htmlPlayers = new Map<SfxKind, HTMLAudioElement>()
+let preloadPromise: Promise<void> | null = null
 
-function getPlayer(kind: SfxKind): HTMLAudioElement {
-  let el = players.get(kind)
+function getAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null
+  if (!audioCtx) {
+    const AC =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!AC) return null
+    audioCtx = new AC()
+  }
+  return audioCtx
+}
+
+function getHtmlPlayer(kind: SfxKind): HTMLAudioElement {
+  let el = htmlPlayers.get(kind)
   if (!el) {
     el = new Audio(SFX[kind])
     el.preload = 'auto'
-    players.set(kind, el)
+    el.load()
+    htmlPlayers.set(kind, el)
   }
   return el
 }
 
-function play(kind: SfxKind) {
+function playHtml(kind: SfxKind) {
   try {
-    const el = getPlayer(kind)
+    const el = getHtmlPlayer(kind)
     el.currentTime = 0
     void el.play().catch(() => {
       /* autoplay / missing user gesture — ignore */
@@ -35,11 +54,98 @@ function play(kind: SfxKind) {
   }
 }
 
+async function resumeCtx(ctx: AudioContext) {
+  if (ctx.state === 'suspended') {
+    try {
+      await ctx.resume()
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+/**
+ * Fetch + decode all lesson SFX (safe to call multiple times).
+ * Starts network work immediately; AudioContext may stay suspended until a gesture.
+ */
+export function preloadLingoStudySfx(): Promise<void> {
+  if (preloadPromise) return preloadPromise
+  preloadPromise = (async () => {
+    // Warm HTMLAudio cache in parallel (fallback path).
+    for (const kind of Object.keys(SFX) as SfxKind[]) {
+      getHtmlPlayer(kind)
+    }
+
+    const ctx = getAudioContext()
+    if (!ctx) return
+
+    await Promise.all(
+      (Object.keys(SFX) as SfxKind[]).map(async (kind) => {
+        if (buffers.has(kind)) return
+        try {
+          const res = await fetch(SFX[kind])
+          if (!res.ok) return
+          const raw = await res.arrayBuffer()
+          // decodeAudioData may detach the buffer; copy for safety across browsers.
+          const decoded = await ctx.decodeAudioData(raw.slice(0))
+          buffers.set(kind, decoded)
+        } catch {
+          /* keep HTMLAudio fallback for this kind */
+        }
+      })
+    )
+  })()
+  return preloadPromise
+}
+
+function playBuffer(ctx: AudioContext, buf: AudioBuffer) {
+  const src = ctx.createBufferSource()
+  src.buffer = buf
+  src.connect(ctx.destination)
+  src.start(0)
+}
+
+function play(kind: SfxKind) {
+  const ctx = getAudioContext()
+  const buf = buffers.get(kind)
+  if (ctx && buf) {
+    // Prefer sync start when already unlocked (rating taps after Check).
+    if (ctx.state === 'running') {
+      try {
+        playBuffer(ctx, buf)
+        return
+      } catch {
+        playHtml(kind)
+        return
+      }
+    }
+    void resumeCtx(ctx).then(() => {
+      try {
+        playBuffer(ctx, buf)
+      } catch {
+        playHtml(kind)
+      }
+    })
+    return
+  }
+  playHtml(kind)
+}
+
+/** Resume AudioContext on a user gesture so the next rating SFX can start synchronously. */
+export async function unlockLingoStudySfx(): Promise<void> {
+  await preloadLingoStudySfx()
+  const ctx = getAudioContext()
+  if (ctx) await resumeCtx(ctx)
+}
+
 export function useLingoStudySfx() {
+  void preloadLingoStudySfx()
   return {
     playCorrect: () => play('correct'),
     playIncorrect: () => play('incorrect'),
     playFinish: () => play('finish'),
+    preload: preloadLingoStudySfx,
+    unlock: unlockLingoStudySfx,
   }
 }
 
@@ -66,6 +172,14 @@ function pickFrom(pool: readonly string[]): string {
 
 export function pickRandomLingoCharacter(): string {
   return pickFrom(LINGO_STUDY_ANSWER_CHARACTERS)
+}
+
+/** Same character family, pose `1` (e.g. `/lingo/lin5.webp` → `/lingo/lin1.webp`). */
+export function lingoStudyPose1Src(src: string): string {
+  return src.replace(
+    /(\/[a-z]+)\d+(\.webp)$/i,
+    (_m, prefix: string, ext: string) => `${prefix}1${ext}`
+  )
 }
 
 /**

@@ -398,6 +398,7 @@ import {
   hashLingoQuestionKey,
   pickLingoStudyCharacterPair,
   useLingoStudySfx,
+  lingoStudyPose1Src,
 } from '@/composables/useLingoStudySfx'
 
 import {
@@ -432,10 +433,11 @@ const router = useRouter()
 const auth = useAuth()
 const { getProgress, saveLevelProgress } = useAnonymousProgress()
 const { hearts, hasUnlimitedHearts, loseHeart, awardSessionXp } = useLingoProgress()
-const { playCorrect, playIncorrect, playFinish } = useLingoStudySfx()
+const { playCorrect, playIncorrect, playFinish, unlock: unlockStudySfx } = useLingoStudySfx()
 const initialStudyCharacters = pickLingoStudyCharacterPair()
 const studyQuestionCharacterSrc = ref(initialStudyCharacters.question)
-const studyAnswerCharacterSrc = ref(initialStudyCharacters.answer)
+/** Idle reply pose (`*5` / `*7`); display switches to same-family `*1` when the answer is shown. */
+const studyAnswerIdleSrc = ref(initialStudyCharacters.answer)
 
 const outOfHearts = computed(() => !hasUnlimitedHearts.value && hearts.value <= 0)
 
@@ -602,6 +604,8 @@ function handleExit() {
 }
 
 function onFooterCheck() {
+  // Unlock Web Audio on this gesture so Forgot/Good/Easy SFX start without delay.
+  void unlockStudySfx()
   const status = studyFooterStatus.value
   if (status === 'correct' || status === 'wrong') {
     if (quizResult.value) handleQuizNextCard()
@@ -863,6 +867,11 @@ const showAnswerBubble = computed(
     (showAnswer.value || (!!fillinResult.value && !isFillinCorrect.value))
 )
 
+/** Same reply character; pose `*1` while the answer text is visible. */
+const studyAnswerCharacterSrc = computed(() =>
+  showAnswerBubble.value ? lingoStudyPose1Src(studyAnswerIdleSrc.value) : studyAnswerIdleSrc.value
+)
+
 /** Quiz options / result surface (fill-in types inside the reply bubble). */
 const showStudyCardShell = computed(() => {
   if (!currentCard.value) return false
@@ -933,13 +942,14 @@ const submitAnswer = async (rating?: number) => {
       if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
     } else if (!isQuizMode.value) {
       if (rating === undefined) return
+      // Play SFX on tap — do not wait for the review network round-trip.
+      if (rating < 3) registerWrongAnswer()
+      else registerCorrectAnswer()
       await reviewFlashcard({
         flashcard_id: currentCard.value.flashcard.id,
         rating,
         card_side: currentCard.value.progress[0].card_side,
       })
-      if (rating < 3) registerWrongAnswer()
-      else registerCorrectAnswer()
       loadNextCard()
       await checkForDueChanges()
     }
@@ -1052,7 +1062,7 @@ watch(
     if (newCard) {
       const pair = pickLingoStudyCharacterPair()
       studyQuestionCharacterSrc.value = pair.question
-      studyAnswerCharacterSrc.value = pair.answer
+      studyAnswerIdleSrc.value = pair.answer
     }
     syncQuestionHash(newCard)
     if (newCard && isFillInMode.value && !fillinResult.value) {
@@ -1150,6 +1160,7 @@ const flashcardStudySeoTitle = computed(() => t('flashcardStudy.title'))
 useSeoHead({ title: flashcardStudySeoTitle })
 
 onMounted(async () => {
+  void unlockStudySfx()
   try {
     const stored = sessionStorage.getItem(ANON_BANNER_ANSWERED_KEY)
     cardsAnsweredInSession.value = parseInt(stored || '0', 10)
