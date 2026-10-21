@@ -54,3 +54,13 @@ export function pickRandomLingoCharacter(): string {
   const i = Math.floor(Math.random() * LINGO_STUDY_CHARACTERS.length)
   return LINGO_STUDY_CHARACTERS[i]!
 }
+
+/** FNV-1a 32-bit → base36 fragment id for a study question (stable deep-link hash). */
+export function hashLingoQuestionKey(text: string): string {
+  let h = 2166136261
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return (h >>> 0).toString(36)
+}

@@ -1,51 +1,67 @@
 <template>
   <LingoLayout fill>
-    <LingoFeedLayout class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+    <!-- Wait for the first catalog payload before painting the feed (avoids header/grid CLS). -->
+    <div
+      v-if="isLoading && !hasLoadedOnce"
+      class="flex min-h-0 flex-1 items-center justify-center py-12"
+    >
+      <div
+        class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
+        role="status"
+        :aria-label="t('components.loadingSpinner.loadingDefault')"
+      />
+    </div>
+
+    <LingoFeedLayout v-else class="min-h-0 flex-1" :aria-busy="isLoading || undefined">
       <template #header>
         <h1 class="text-2xl font-bold text-neutral-700">{{ t('lingo.languageCourses') }}</h1>
       </template>
 
-      <div class="mt-4">
+      <template #toolbar>
         <Input
           v-model="searchQuery"
           type="text"
           class="input-field w-full sm:max-w-md"
           :placeholder="t('lingo.searchCourses')"
         />
-      </div>
+      </template>
 
-      <div v-if="isLoading" class="flex w-full items-center justify-center py-12">
+      <div
+        v-if="isLoading"
+        class="flex w-full items-center justify-center py-12"
+        role="status"
+        :aria-label="t('components.loadingSpinner.loadingDefault')"
+      >
         <div
           class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
         />
       </div>
 
-      <div
-        v-else
-        class="grid grid-cols-2 gap-4 pt-6 lg:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
-      >
-        <LingoCourseCard
-          v-for="collection in collections"
-          :key="collection.collection_id"
-          :collection="collection"
-          :is-active="activeCourseId === collection.collection_id"
-          :disabled="isSelecting"
-          @select="onSelectCourse"
+      <template v-else>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]">
+          <LingoCourseCard
+            v-for="collection in collections"
+            :key="collection.collection_id"
+            :collection="collection"
+            :is-active="activeCourseId === collection.collection_id"
+            :disabled="isSelecting"
+            @select="onSelectCourse"
+          />
+        </div>
+        <PaginationComponent
+          v-if="totalPages > 1"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          :total="totalCollections"
+          :per-page="perPage"
+          class="mt-6 w-full"
+          @prev="prevPage"
+          @next="nextPage"
         />
-      </div>
-      <PaginationComponent
-        v-if="!isLoading && totalPages > 1"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total="totalCollections"
-        :per-page="perPage"
-        class="mt-6 w-full"
-        @prev="prevPage"
-        @next="nextPage"
-      />
-      <p v-if="!isLoading && collections.length === 0" class="py-8 text-center text-neutral-600">
-        {{ t('lingo.noCourses') }}
-      </p>
+        <p v-if="collections.length === 0" class="py-8 text-center text-neutral-600">
+          {{ t('lingo.noCourses') }}
+        </p>
+      </template>
     </LingoFeedLayout>
   </LingoLayout>
 </template>
@@ -69,6 +85,7 @@ const { activeCourseId, setActiveCourse } = useLingoProgress()
 
 const collections = ref([])
 const isLoading = ref(true)
+const hasLoadedOnce = ref(false)
 const isSelecting = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
@@ -102,6 +119,7 @@ async function loadCollections() {
     totalCollections.value = 0
   } finally {
     isLoading.value = false
+    hasLoadedOnce.value = true
   }
 }
 

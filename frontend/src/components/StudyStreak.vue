@@ -1,5 +1,6 @@
 <template>
-  <div v-if="auth.state.isLoggedIn" class="card-streak p-4 sm:p-5">
+  <!-- Pad + min-h live on `.card-streak` (tailwind.config) so skeleton/loaded share one box. -->
+  <div v-if="auth.state.isLoggedIn" class="card-streak">
     <template v-if="!isLoadingStreak && streakData">
       <div class="card-streak-header">
         <h3 class="card-streak-title select-none">{{ t('collectionList.studyStreak') }}</h3>
@@ -41,17 +42,14 @@
 
     <div v-else class="streak-skeleton skeleton-pulse" aria-hidden="true">
       <div class="card-streak-header">
-        <div class="h-6 w-1/3 min-w-[6rem] max-w-[12rem] rounded bg-gray-200" />
-
-        <div class="h-4 w-28 rounded bg-gray-100 sm:w-36" />
+        <div class="card-streak-skeleton-title" />
+        <div class="card-streak-skeleton-meta" />
       </div>
 
       <div class="card-streak-week-grid">
         <div v-for="i in 7" :key="i" class="card-streak-day">
           <div class="card-streak-skeleton-line" />
-
           <div class="card-streak-day-count" data-active="false" />
-
           <div class="card-streak-skeleton-line card-streak-skeleton-line--points" />
         </div>
       </div>
@@ -90,7 +88,7 @@ const isLoadingStreak = ref(true)
 const STREAK_GROWTH_STAGES = [
   { id: 'seed', minPoints: 0, emoji: '😴' },
   { id: 'sprout', minPoints: 1, emoji: '💧' },
-  { id: 'poorWater', minPoints: 10, emoji: '💦' },
+  { id: 'poorWater', minPoints: 10, emoji: '🌧️' },
   { id: 'moreWater', minPoints: 25, emoji: '🌱' },
   { id: 'tree', minPoints: 50, emoji: '🌳' },
 ] as const

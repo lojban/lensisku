@@ -1,9 +1,15 @@
 <template>
   <LingoLayout fill>
-    <LingoFeedLayout
-      :show-aside="false"
-      class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain"
-    >
+    <!-- Wait for collection + levels before painting the feed (avoids header/body CLS). -->
+    <div v-if="isLoading" class="flex min-h-0 flex-1 items-center justify-center py-12">
+      <div
+        class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
+        role="status"
+        :aria-label="t('components.loadingSpinner.loadingDefault')"
+      />
+    </div>
+
+    <LingoFeedLayout v-else :show-aside="false" class="min-h-0 flex-1">
       <template #header>
         <!-- div not header: global App.vue `header` stripes belong on `__header-band`. -->
         <div class="lingo-levels-header">
@@ -31,6 +37,7 @@
               <GalleryVerticalIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               <span class="hidden sm:inline">{{ t('collectionDetail.viewAsTiktoknu') }}</span>
             </RouterLink>
+            <LingoUserProgress />
             <RouterLink
               v-if="isOwner"
               :to="flashcardsPath"
@@ -40,42 +47,33 @@
               <Pencil class="h-4 w-4 shrink-0" />
               <span class="hidden sm:inline">{{ t('flashcardLevels.editCourse') }}</span>
             </RouterLink>
-            <LingoUserProgress />
           </div>
         </div>
       </template>
 
-      <div class="lingo-levels-root flex w-full flex-col">
-        <div v-if="isLoading" class="flex min-h-[40vh] items-center justify-center py-12">
-          <div
-            class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
+      <div class="lingo-levels-root relative flex w-full flex-col items-center pb-16">
+        <LingoUnitBanner
+          :title="collection?.name || ''"
+          :description="collection?.description || ''"
+          :continue-label="t('flashcardLevels.continueLabel')"
+          @continue="startStudy"
+        />
+        <div class="relative mt-4 flex w-full flex-col items-center">
+          <LingoLessonButton
+            v-for="(level, i) in displayLevels"
+            :key="level.level_id"
+            :index="i"
+            :total-count="displayLevels.length - 1"
+            :locked="!isLevelUnlocked(level) && !level.progress?.is_completed"
+            :current="level === activeLevel"
+            :completed="!!level.progress?.is_completed"
+            :percentage="
+              activeLevel && level.level_id === activeLevel.level_id ? activeLevelPercentage : 0
+            "
+            :study-url="studyUrlFor(level)"
+            :start-label="t('flashcardLevels.start')"
+            :show-owner-menu="false"
           />
-        </div>
-
-        <div v-else class="relative flex flex-col items-center pb-16">
-          <LingoUnitBanner
-            :title="collection?.name || ''"
-            :description="collection?.description || ''"
-            :continue-label="t('flashcardLevels.continueLabel')"
-            @continue="startStudy"
-          />
-          <div class="relative mt-4 flex w-full flex-col items-center">
-            <LingoLessonButton
-              v-for="(level, i) in displayLevels"
-              :key="level.level_id"
-              :index="i"
-              :total-count="displayLevels.length - 1"
-              :locked="!isLevelUnlocked(level) && !level.progress?.is_completed"
-              :current="level === activeLevel"
-              :completed="!!level.progress?.is_completed"
-              :percentage="
-                activeLevel && level.level_id === activeLevel.level_id ? activeLevelPercentage : 0
-              "
-              :study-url="studyUrlFor(level)"
-              :start-label="t('flashcardLevels.start')"
-              :show-owner-menu="false"
-            />
-          </div>
         </div>
       </div>
     </LingoFeedLayout>
@@ -229,8 +227,6 @@ const fetchLevels = async () => {
     levels.value = response.data.levels
   } catch (error) {
     console.error('Error fetching levels:', error)
-  } finally {
-    isLoading.value = false
   }
 }
 
@@ -243,6 +239,10 @@ useSeoHead({
 })
 
 onMounted(async () => {
-  await Promise.all([fetchCollection(), fetchLevels()])
+  try {
+    await Promise.all([fetchCollection(), fetchLevels()])
+  } finally {
+    isLoading.value = false
+  }
 })
 </script>

@@ -106,6 +106,14 @@ export function buildLingoThemeLayer() {
       '@apply text-slate-500 hover:bg-slate-100 focus-visible:ring-green-500': {},
     },
     /**
+     * Hearts readout — same 40px chrome as `.lingo-icon-btn--muted`, not a control
+     * (div / `role="status"`, no hover/focus/pointer).
+     */
+    '.lingo-hearts-badge': {
+      '@apply inline-flex h-10 min-w-10 shrink-0 cursor-default items-center justify-center gap-0.5 rounded-lg border-0 bg-transparent px-1.5 text-sm font-bold text-rose-500':
+        {},
+    },
+    /**
      * Mobile top bar — same chrome as `.app-header-bar` (logo left + logout),
      * sticky in-flow so `.lingo-main` needs no top offset. Drawer toggle only.
      */
@@ -182,7 +190,7 @@ export function buildLingoThemeLayer() {
     },
     /**
      * Shared Lingo card surface — thin border + soft shadow (not chunky clone borders).
-     * No padding: callers add `p-4` (see LingoPromo / StudyStreak / LingoQuestsPanel).
+     * No padding: callers add their own (`StudyStreak` uses `.card-streak` pad).
      */
     '.lingo-card': {
       '@apply rounded-xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/60': {},
@@ -255,65 +263,68 @@ export function buildLingoThemeLayer() {
       '@apply fixed inset-0 z-[100] bg-black/50 lg:hidden': {},
     },
     /**
-     * Optional main + aside (leaderboard, levels, quests).
-     * Pad owner when not using `feed-page` — do not also pad `.lingo-main-inner`.
+     * Courses / levels / leaderboard shell.
+     * No horizontal pad on the shell — scrollbar on `__scroll` stays flush to the edge.
+     * Content inset uses `--lingo-feed-inline-pad` on header / toolbar / `__body`.
      */
     '.lingo-feed-layout': {
-      '@apply flex w-full flex-col gap-8 px-4 py-4 lg:px-6': {},
-      '--lingo-feed-inline-pad': '1rem',
+      '@apply flex min-h-0 w-full flex-1 flex-col gap-8': {},
+      overflow: 'hidden',
+      '--lingo-feed-inline-pad': '0.5rem',
       '--lingo-feed-aside-w': '368px',
       '--lingo-feed-col-gap': '3rem',
       '@screen lg': {
         '--lingo-feed-inline-pad': '1.5rem',
       },
     },
+    /** Non-header pages: light vertical breath (inline pad is on `__body`). */
+    '.lingo-feed-layout:not(.lingo-feed-layout--with-header)': {
+      paddingTop: '0.5rem',
+      paddingBottom: '0.5rem',
+    },
     /**
-     * DOM: aside then main.
-     * Mobile `flex-col`: streak/hearts first (visible without scrolling past the grid).
-     * Desktop `flex-row-reverse`: main | aside (rail on the right).
+     * Full-bleed scroller (streak + grid). Header / search stay pinned above.
+     */
+    '.lingo-feed-layout__scroll': {
+      '@apply min-h-0 flex-1 overscroll-y-contain': {},
+      overflowX: 'hidden',
+      overflowY: 'auto',
+    },
+    /**
+     * DOM: aside then main. Owns the content inline pad (not the scroller).
+     * Mobile `flex-col`: streak first. Desktop `flex-row-reverse`: main | aside.
      */
     '.lingo-feed-layout__body': {
-      '@apply flex w-full flex-col gap-6 lg:flex-row-reverse lg:gap-12': {},
+      '@apply flex w-full flex-col gap-6 pb-4 lg:flex-row-reverse lg:gap-12 lg:pb-6': {},
+      paddingLeft: 'var(--lingo-feed-inline-pad)',
+      paddingRight: 'var(--lingo-feed-inline-pad)',
     },
-    /**
-     * Levels: sticky full-bleed header, then ladder.
-     * Drop outer vertical pad on this variant — header sits flush under the app bar.
-     */
+    /** Header flush under app bar; gap lives on toolbar / scroll body. */
     '.lingo-feed-layout--with-header': {
-      '@apply gap-0 py-0': {},
+      '@apply gap-0': {},
     },
-    '.lingo-feed-layout--with-header .lingo-feed-layout__body': {
-      '@apply pt-3 lg:pt-6': {},
-    },
-    /** Keep streak card below the sticky header while scrolling. */
-    '.lingo-feed-layout--with-header .lingo-feed-layout__aside': {
-      '@screen lg': {
-        top: '5rem',
+    '.lingo-feed-layout--with-header:not(.lingo-feed-layout--with-toolbar) .lingo-feed-layout__scroll':
+      {
+        '@apply pt-3 lg:pt-6': {},
       },
-    },
     /**
-     * Full-bleed sticky top bar. Owns the Lensisku header/footer stripe wash
-     * (same as App.vue `header, footer`) across the whole feed width.
-     * Inset: `p-2` only — no extra pad on `__header-row`.
+     * Pinned full-bleed header stripe. Content inset on `__header-row`.
      */
     '.lingo-feed-layout__header-band': {
-      '@apply sticky top-0 z-40 shrink-0 p-2 lg:z-50': {},
-      position: 'sticky',
-      width: 'calc(100% + 2 * var(--lingo-feed-inline-pad))',
-      maxWidth: 'none',
-      marginLeft: 'calc(-1 * var(--lingo-feed-inline-pad))',
-      marginRight: 'calc(-1 * var(--lingo-feed-inline-pad))',
+      '@apply relative z-40 shrink-0 py-2 lg:z-50': {},
       background: 'repeating-linear-gradient(#f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 8px)',
       boxShadow: 'inset 0 -2px 0 0 rgb(226 232 240), 0 4px 12px -6px rgb(15 23 42 / 0.12)',
     },
 
     '.lingo-feed-layout__header-row': {
-      '@apply relative z-[1] flex w-full items-center gap-2': {},
+      '@apply relative z-[1] flex w-full min-w-0 items-center gap-2': {},
+      paddingLeft: 'var(--lingo-feed-inline-pad)',
+      paddingRight: 'var(--lingo-feed-inline-pad)',
       '@screen lg': {
         gap: 'var(--lingo-feed-col-gap)',
       },
     },
-    '.lingo-feed-layout__header-main': {
+    '.lingo-feed-layout__header-row > :first-child': {
       '@apply min-w-0 flex-1': {},
     },
     '.lingo-feed-layout__header-aside': {
@@ -322,17 +333,20 @@ export function buildLingoThemeLayer() {
         width: 'var(--lingo-feed-aside-w)',
       },
     },
-    /** Actions only — stripe wash lives on `__header-band`, not here. */
+    /** Pinned search / filters — same inline pad as body content. */
+    '.lingo-feed-layout__toolbar': {
+      '@apply shrink-0 py-3': {},
+      paddingLeft: 'var(--lingo-feed-inline-pad)',
+      paddingRight: 'var(--lingo-feed-inline-pad)',
+    },
+    /** Levels toolbar — flex only; L/R inset is on `__header-row`. */
     '.lingo-levels-header': {
       '@apply flex w-full items-center justify-between gap-3': {},
-      background: 'transparent',
-      backgroundImage: 'none',
     },
 
-
-    /** Progress + streak: above main on small screens; sticky right rail on lg. */
+    /** Progress + streak: above main on small screens; right rail on lg. */
     '.lingo-feed-layout__aside': {
-      '@apply w-full shrink-0 lg:sticky lg:top-4 lg:w-[368px] lg:self-start': {},
+      '@apply w-full shrink-0 lg:w-[368px] lg:self-start': {},
     },
     '.lingo-feed-layout__main': {
       '@apply relative min-w-0 flex-1': {},
@@ -349,6 +363,22 @@ export function buildLingoThemeLayer() {
     '.lingo-study-rate-row': {
       '@apply flex w-full items-stretch gap-1.5 sm:gap-2': {},
     },
+    /**
+     * Fixed footer box (clone `footer.tsx` h-[100px]/Check and rate share one height so
+     * revealing Forgot/Good/Easy does not shift the lesson column (CLS).
+     */
+    '.lingo-study-footer--compact': {
+      height: '5.5rem',
+    },
+    '.lingo-study-footer--roomy': {
+      height: '100px',
+      '@screen lg': {
+        height: '140px',
+      },
+    },
+    '.lingo-study-footer__chrome': {
+      '@apply h-full w-full': {},
+    },
     /** Clone lesson title (`quiz.tsx` h1). */
     '.lingo-study-lesson-title': {
       '@apply shrink-0 text-center text-lg font-bold text-neutral-700 lg:text-start lg:text-3xl':
@@ -356,16 +386,31 @@ export function buildLingoThemeLayer() {
     },
     /** Clone `QuestionBubble`: mascot + speech bubble for the stimulus. */
     '.lingo-study-question-row': {
-      '@apply mb-2 flex items-center gap-x-3 sm:mb-4 sm:gap-x-4': {},
+      '@apply flex items-center gap-x-3 sm:gap-x-4': {},
     },
     /** Portrait LTD icons: fixed box + background image (avoids CLS from late image layout). */
     '.lingo-study-mascot': {
       '@apply h-16 w-14 shrink-0 bg-contain bg-center bg-no-repeat sm:h-20 sm:w-[4.25rem] lg:h-[88px] lg:w-[72px]':
         {},
     },
+    /** Invisible twin so answer bubbles align under the question bubble. */
+    '.lingo-study-mascot--spacer': {
+      visibility: 'hidden',
+      backgroundImage: 'none',
+    },
     '.lingo-study-question-bubble': {
       '@apply relative min-w-0 flex-1 rounded-xl border border-neutral-200/90 bg-white px-4 py-2 text-sm text-neutral-700 shadow-sm shadow-slate-200/50 lg:text-base':
         {},
+    },
+    /** Revealed answer — same bubble geometry as the question (no layout jump). */
+    '.lingo-study-answer-bubble': {
+      '@apply border-green-200 bg-green-50/80': {},
+    },
+    '.lingo-study-answer-bubble::before': {
+      '@apply border-t-green-200': {},
+    },
+    '.lingo-study-answer-label': {
+      '@apply mb-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700 sm:text-xs': {},
     },
 
     /** Speech-bubble caret (clone: rotated border triangle on the left). */
@@ -377,8 +422,13 @@ export function buildLingoThemeLayer() {
     '.lingo-study-stimulus': {
       '@apply text-sm font-medium text-neutral-700 lg:text-base': {},
     },
+    /**
+     * Top-anchored column (not vertically centered) so revealing the answer bubble
+     * does not shove the question mid-screen (clone keeps title + bubble fixed).
+     */
     '.lingo-study-lesson-stack': {
-      '@apply flex w-full max-h-full min-h-0 flex-col gap-y-6 sm:gap-y-8 lg:gap-y-12': {},
+      '@apply flex w-full max-h-full min-h-0 flex-col gap-y-4 pt-2 sm:gap-y-5 sm:pt-3 lg:gap-y-6 lg:pt-4':
+        {},
     },
     /** Leaderboard / list avatar ring (clone: green border circle). */
     '.lingo-avatar': {

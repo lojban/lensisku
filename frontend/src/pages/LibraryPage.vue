@@ -2,6 +2,8 @@
   <div class="feed-page">
     <FeedPageBody>
       <div class="flex flex-col gap-4">
+        <StudyStreak class="card-base card-compact" />
+
         <PageHeader
           title-as="h2"
           title-tone="secondary"
@@ -211,6 +213,7 @@ import {
   ImportIcon,
 } from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import StudyStreak from '@/components/StudyStreak.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'

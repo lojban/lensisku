@@ -1368,28 +1368,29 @@ export default {
           '@apply inline-flex basis-full items-center gap-1 text-xs text-gray-500': {},
         },
         /**
-         * Study streak strip (collections / lingo aside).
-         * Min-heights reserve layout while the inner skeleton loads (pair with `.skeleton-pulse`).
-         * Chrome (`card-base` / `lingo-card`) is passed by the caller.
+         * Study streak strip (collections / library / lingo aside).
+         * Compact pad; min-heights + fixed day slots match skeleton → loaded (no CLS).
+         * Chrome (`card-base` / `lingo-card`) is passed by the caller — no extra `p-*` on the Vue root.
          */
         '.card-streak': {
-          '@apply w-full min-w-0 max-w-full min-h-[11rem] p-4 sm:min-h-[13rem] sm:p-5': {},
+          '@apply w-full min-w-0 max-w-full min-h-[9.5rem] p-3 sm:min-h-[10.75rem]': {},
         },
         '.card-streak-header': {
-          '@apply mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1': {},
+          '@apply mb-1.5 flex min-h-7 min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1':
+            {},
         },
         '.card-streak-title': {
-          '@apply min-w-0 flex-1 text-base font-semibold text-gray-800 sm:flex-none': {},
+          '@apply min-w-0 flex-1 text-sm font-semibold text-gray-800 sm:flex-none sm:text-base': {},
         },
         '.card-streak-meta': {
-          '@apply card-meta min-w-0 sm:shrink-0': {},
+          '@apply card-meta min-w-0 text-sm sm:shrink-0': {},
         },
         '.card-streak-week-grid': {
-          '@apply grid w-full min-w-0 gap-1 sm:gap-2': {},
+          '@apply grid w-full min-w-0 gap-1 sm:gap-1.5': {},
           gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
         },
         '.card-streak-day': {
-          '@apply flex h-[6rem] min-h-0 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden text-center sm:h-[7.25rem]':
+          '@apply flex h-[5.5rem] min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden text-center sm:h-[6.5rem] sm:gap-1':
             {},
         },
         '.card-streak-day-label': {
@@ -1397,10 +1398,10 @@ export default {
             {},
         },
         '.card-streak-day-points': {
-          '@apply w-full text-center text-base leading-tight sm:text-lg': {},
+          '@apply w-full text-center text-sm leading-tight sm:text-base': {},
         },
         '.card-streak-day-count': {
-          '@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium sm:h-8 sm:w-8 sm:text-sm':
+          '@apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-medium sm:h-7 sm:w-7 sm:text-xs':
             {},
         },
         '.card-streak-day-count[data-active="true"]': {
@@ -1409,13 +1410,20 @@ export default {
         '.card-streak-day-count[data-active="false"]': {
           '@apply bg-gray-100 text-gray-400': {},
         },
-        /** Pulse bars: heights match `.card-streak-day-label` / `.card-streak-day-points` line boxes (no CLS vs loaded streak). */
+        /** Pulse bars: heights match label / points line boxes (no CLS vs loaded streak). */
         '.card-streak-skeleton-line': {
-          '@apply mx-auto h-[0.9375rem] w-full max-w-[3.5rem] shrink-0 rounded bg-gray-100 sm:h-[1.09375rem]':
+          '@apply mx-auto h-[0.875rem] w-full max-w-[3.5rem] shrink-0 rounded bg-gray-100 sm:h-[1rem]':
             {},
         },
         '.card-streak-skeleton-line--points': {
-          '@apply max-w-[2.25rem]': {},
+          '@apply h-5 max-w-[2rem] sm:h-6': {},
+        },
+        /** Skeleton title / meta — same slots as loaded header (min-h-7). */
+        '.card-streak-skeleton-title': {
+          '@apply h-5 w-1/3 min-w-[5.5rem] max-w-[10rem] rounded bg-gray-200 sm:h-6': {},
+        },
+        '.card-streak-skeleton-meta': {
+          '@apply h-4 w-24 rounded bg-gray-100 sm:w-28': {},
         },
         /**
          * Feed / card loading placeholders (Recent Changes tabs, etc.).
