@@ -15,11 +15,8 @@
       @exit="handleExit"
     >
       <template #extra>
-        <div class="flex items-center gap-1 text-rose-500">
-          <Heart class="h-5 w-5 fill-rose-500" />
-          <InfinityIcon v-if="hasUnlimitedHearts" class="h-4 w-4 stroke-[3]" />
-          <span v-else class="text-sm font-bold">{{ hearts }}</span>
-        </div>
+        <!-- Same compact chrome as the exit control (`icon-btn-header-back--compact`). -->
+        <LingoUserProgress class="icon-btn-header-back--compact !min-w-9" />
       </template>
     </LingoStudyHeader>
 
@@ -373,26 +370,48 @@
       :status="studyFooterStatus"
       :disabled="studyFooterDisabled"
       :compact="true"
+      :show-card-actions="true"
+      :snooze-disabled="isSubmitting"
       :correct-label="t('flashcardStudy.nicelyDone')"
       :wrong-label="t('flashcardStudy.tryAgain')"
       :rate-prompt="t('flashcardStudy.howWellRemembered')"
       :label-check="isJustInformationMode ? t('flashcardStudy.continue') : ''"
       @check="onStudyFooterCheck"
       @rate="submitAnswer"
+      @discuss="openWavesModal"
+      @snooze="snoozeCard"
     />
+
+    <LingoModal
+      :show="showWavesModal"
+      :title="t('flashcardStudy.wavesModalTitle', { id: currentFlashcardId })"
+      @close="showWavesModal = false"
+    >
+      <div v-if="currentCard?.flashcard?.id" class="pt-1">
+        <CommentList
+          :collection-id="currentCard.flashcard.collection_id"
+          :definition-link-id="currentCard.flashcard.id"
+          :initial-subject="currentFlashcardTag"
+          :embedded="true"
+        />
+      </div>
+    </LingoModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Button, Textarea } from '@packages/ui'
-import { CheckCircle2, EqualApproximately, Heart, Infinity as InfinityIcon } from '@lucide/vue'
+import { CheckCircle2, EqualApproximately, Heart } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
+import LingoModal from '@/components/LingoModal.vue'
 import LingoStudyHeader from '@/components/LingoStudyHeader.vue'
 import LingoStudyFooter from '@/components/LingoStudyFooter.vue'
 import LingoResultCard from '@/components/LingoResultCard.vue'
+import LingoUserProgress from '@/components/LingoUserProgress.vue'
+import CommentList from '@/pages/CommentList.vue'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 import {
   hashLingoQuestionKey,
@@ -404,6 +423,7 @@ import {
 import {
   getDueCards,
   reviewFlashcard,
+  snoozeFlashcard,
   getLanguages,
   submitFillinAnswer,
   submitQuizAnswer,
@@ -502,7 +522,19 @@ async function resolveReturnFocusLevel() {
 const isLoading = ref(true)
 const remainingCards = ref([])
 const currentCard = ref(null)
+const showWavesModal = ref(false)
 const showAnswer = ref(false)
+
+const currentFlashcardTag = computed(() => {
+  const id = currentCard.value?.flashcard?.id
+  if (!id) return ''
+  return `#[${id}]`
+})
+
+const currentFlashcardId = computed(() => {
+  const id = currentCard.value?.flashcard?.id
+  return id ? String(id) : ''
+})
 /** Cards in this study session (level queue / loaded batch) — not collection-wide due total. */
 const sessionTotal = ref(0)
 const showAnswerButtonRef = ref(null)
@@ -1010,6 +1042,29 @@ const handleQuizNextCard = async () => {
   if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
 }
 
+const snoozeCard = async () => {
+  if (!currentCard.value || isSubmitting.value) return
+  isSubmitting.value = true
+  try {
+    if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
+      loadNextCard()
+      return
+    }
+    await snoozeFlashcard(currentCard.value.flashcard.id)
+    loadNextCard()
+    await checkForDueChanges()
+  } catch (error) {
+    console.error(t('flashcardStudy.snoozeError'), error)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const openWavesModal = () => {
+  if (!currentCard.value) return
+  showWavesModal.value = true
+}
+
 const revealAnswerAndPlayAudio = async () => {
   showAnswer.value = true
   showNewCardsMessage.value = false
@@ -1059,6 +1114,7 @@ async function checkForDueChanges() {
 watch(
   currentCard,
   (newCard) => {
+    if (showWavesModal.value) showWavesModal.value = false
     if (newCard) {
       const pair = pickLingoStudyCharacterPair()
       studyQuestionCharacterSrc.value = pair.question

@@ -945,6 +945,49 @@ footer {
   overflow: hidden;
 }
 
+/* Feed pages: scroll the full main width; the column keeps the max-w-4xl measure.
+   Header and footer sit outside the scrollport, so they match the column by
+   centering in the area beside the classic scrollbar (15px, 8px under 640px). */
+.main-content.main-content--no-scroll:has(.feed-page) {
+  --feed-scrollbar: 15px;
+}
+
+@media (max-width: 640px) {
+  .main-content.main-content--no-scroll:has(.feed-page) {
+    --feed-scrollbar: 8px;
+  }
+}
+
+.main-content.main-content--no-scroll:has(.feed-page) > #main-child {
+  max-width: none;
+  width: 100%;
+}
+
+.main-content.main-content--no-scroll:has(.feed-page) .feed-page__body {
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.main-content.main-content--no-scroll:has(.feed-page) .feed-page__column {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 56rem;
+  margin-inline: auto;
+  padding: 0.75rem 0.75rem 0;
+}
+
+.main-content.main-content--no-scroll:has(.feed-page) .feed-page__header,
+.main-content.main-content--no-scroll:has(.feed-page) .feed-page__footer {
+  box-sizing: border-box;
+  width: min(56rem, calc(100% - var(--feed-scrollbar)));
+  max-width: none;
+  margin-left: calc((100% - var(--feed-scrollbar) - min(56rem, 100% - var(--feed-scrollbar))) / 2);
+  margin-right: calc(
+    var(--feed-scrollbar) +
+      (100% - var(--feed-scrollbar) - min(56rem, 100% - var(--feed-scrollbar))) / 2
+  );
+}
+
 /* Prevent page scroll when full-height study is active */
 html:has(.main-content.main-content--no-scroll),
 body:has(.main-content.main-content--no-scroll) {

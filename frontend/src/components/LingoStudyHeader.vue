@@ -3,7 +3,7 @@
     <div class="lingo-study-chrome-inner">
       <button
         type="button"
-        class="icon-btn-header-back icon-btn-header-back--compact"
+        class="lingo-icon-btn lingo-icon-btn--muted icon-btn-header-back--compact"
         :aria-label="t('flashcardStudy.endSession')"
         @click="$emit('exit')"
       >

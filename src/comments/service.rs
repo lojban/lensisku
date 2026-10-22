@@ -65,11 +65,17 @@ pub async fn get_thread_comments(
         .await?
     };
 
-    if thread_id.is_none() {
-        return Err("Could not determine thread. Please provide a valid thread_id, comment_id, or a context (e.g., valsi_id, definition_id, target_user_id) that identifies an existing thread.".into());
-    }
+    // Context query with no thread yet (e.g. flashcard never discussed) → empty page, not 500.
+    let Some(thread_id) = thread_id else {
+        return Ok(PaginatedCommentsResponse {
+            comments: vec![],
+            total: 0,
+            page,
+            per_page,
+        });
+    };
 
-    let (comments, total) = if let Some(thread_id) = thread_id {
+    let (comments, total) = {
         verify_thread_access(&transaction, thread_id, params.current_user_id).await?;
         // Get all comments in the thread in hierarchical order
         let all_comments = transaction
@@ -165,8 +171,6 @@ pub async fn get_thread_comments(
             .collect();
 
         (comments, total)
-    } else {
-        (Vec::new(), 0)
     };
 
     // Get comment IDs and fetch reactions

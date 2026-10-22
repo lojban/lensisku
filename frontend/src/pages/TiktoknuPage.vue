@@ -13,7 +13,6 @@
         </RouterLink>
       </div>
 
-      <div class="absolute top-4 right-4 z-30"><LanguageSelector /></div>
       <CollectionReelCard
         v-for="item in reelItems"
         :key="item.item_id"

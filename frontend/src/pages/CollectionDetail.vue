@@ -51,93 +51,19 @@
           </template>
           <template #title> {{ collection.name }} </template>
           <template #meta-actions>
-            <ToolbarSelectDropdown
+            <CollectionActionsMenu
               v-if="auth.state.isLoggedIn"
-              trigger-icon="ellipsis"
-              trigger-class="dropdown-action-trigger"
-            >
-              <template #label>{{ t('collectionDetail.actions') }}</template>
-              <ToolbarSelectDropdownItem
-                v-if="isOwner"
-                class="text-gray-700 hover:bg-gray-100"
-                @click="openEditCollectionModal"
-              >
-                <Edit3 class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.editCollectionInfo') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                v-if="isOwner"
-                class="text-gray-700 hover:bg-gray-100"
-                @click="openAddModal"
-              >
-                <PlusCircle class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.addItemButton') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                v-if="isOwner"
-                class="text-gray-700 hover:bg-gray-100"
-                @click="router.push(`/collections/${props.collectionId}/custom-text-bulk`)"
-              >
-                <FileText class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.bulkEditCustomText') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                v-if="canExportFilteredItems"
-                class="text-blue-600 hover:bg-blue-50"
-                @click="goToCollectionExport"
-              >
-                <FileExportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.exportFilteredItems') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                v-if="isOwner"
-                class="text-blue-600 hover:bg-blue-50"
-                @click="triggerJsonImport"
-              >
-                <FileImportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.importFullButton') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                class="text-indigo-600 hover:bg-indigo-50"
-                @click="handleCloneCollection"
-              >
-                <Copy class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.cloneCollection') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                v-if="isOwner"
-                class="text-green-600 hover:bg-green-50"
-                @click="openMergeModal"
-              >
-                <GitMerge class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.mergeCollections') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                v-if="isOwner"
-                class="text-teal-600 hover:bg-teal-50"
-                @click="showMediaBulkZipModal = true"
-              >
-                <Images class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                v-if="isOwner"
-                class="text-red-600 hover:bg-red-50"
-                @click="handleDelete"
-              >
-                <Trash2 class="h-4 w-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.deleteCollection') }}
-              </ToolbarSelectDropdownItem>
-            </ToolbarSelectDropdown>
+              :collection-id="props.collectionId"
+              :collection="collection"
+              :is-owner="isOwner"
+              :export-query="collectionExportQuery"
+              inline-add-item
+              @add-item="openAddModal"
+              @updated="onCollectionMenuUpdated"
+              @refresh="fetchItems"
+            />
           </template>
           <template #toolbar>
-            <FileInput
-              ref="jsonImportInput"
-              type="file"
-              accept=".json"
-              class="hidden"
-              @change="handleJsonFileSelect"
-            />
             <div class="space-y-4">
               <div class="flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-2">
                 <div
@@ -389,166 +315,6 @@
           </div>
           <CommentList v-else :collection-id="collection.collection_id" :embedded="true" />
         </div>
-        <!-- Edit Collection Modal -->
-        <ModalComponent
-          :show="showEditModal"
-          :title="t('collectionDetail.editCollectionTitle')"
-          @close="cancelEditCollectionModal()"
-        >
-          <form @submit.prevent="performUpdateCollection">
-            <div class="space-y-4">
-              <div v-if="isOwner" class="flex flex-col items-center mb-2">
-                <div class="relative group w-28 h-28">
-                  <div
-                    v-show="isEditCollectionImageLoading"
-                    class="collection-edit-logo-placeholder"
-                  >
-                    <Loader class="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                  <CollectionCoverLightbox
-                    v-if="editCollectionImageUrl"
-                    v-show="!isEditCollectionImageLoading"
-                    :image-url="editCollectionImageUrl"
-                    :alt="t('collectionDetail.coverImageAlt', { name: editForm.name })"
-                    :aria-label="t('collectionDetail.coverLightboxDialog', { name: editForm.name })"
-                    :close-aria-label="t('collectionDetail.coverLightboxClose')"
-                  >
-                    <div class="collection-edit-logo">
-                      <img
-                        :key="editCollectionImageUrl || 'none'"
-                        :src="editCollectionImageUrl"
-                        :alt="t('collectionDetail.coverImageAlt', { name: editForm.name })"
-                        class="collection-cover-thumb"
-                        loading="eager"
-                        decoding="async"
-                        @load="handleEditCollectionImageLoad"
-                        @error="handleEditCollectionImageError"
-                      />
-                    </div>
-                  </CollectionCoverLightbox>
-                  <div
-                    v-show="!isEditCollectionImageLoading && !editCollectionImageUrl"
-                    class="collection-edit-logo-placeholder"
-                  >
-                    <PlayingCardsFanIcon class="h-14 w-14" />
-                  </div>
-
-                  <div
-                    v-if="isCollectionImageUploading"
-                    class="absolute inset-0 rounded-xl bg-black bg-opacity-50 flex items-center justify-center"
-                  >
-                    <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="#4B5563"
-                        stroke-width="8"
-                      />
-
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="#3B82F6"
-                        stroke-width="8"
-                        :stroke-dasharray="collectionImageCircumference"
-                        :stroke-dashoffset="
-                          collectionImageCircumference -
-                          (collectionImageUploadProgress / 100) * collectionImageCircumference
-                        "
-                        class="transition-all duration-300"
-                      />
-                    </svg>
-                    <span class="absolute text-white text-sm font-medium"
-                      >{{ Math.round(collectionImageUploadProgress) }}%</span
-                    >
-                  </div>
-
-                  <div
-                    v-if="!isCollectionImageUploading"
-                    class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 pointer-events-none"
-                  >
-                    <label
-                      class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md pointer-events-auto"
-                      :title="t('collectionDetail.collectionCoverUploadTitle')"
-                    >
-                      <FileInput
-                        type="file"
-                        class="hidden"
-                        accept="image/*"
-                        @change="handleCollectionCoverFileChange"
-                      />
-                      <Camera class="h-5 w-5" />
-                    </label>
-                    <button
-                      v-if="collection?.has_cover_image"
-                      type="button"
-                      class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md pointer-events-auto"
-                      :title="t('collectionDetail.collectionCoverRemoveTitle')"
-                      @click.stop="handleCollectionCoverRemove"
-                    >
-                      <Trash2 class="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div class="h-6" />
-
-                <p v-if="collectionImageUploadError" class="mt-2 text-sm text-red-600">
-                  {{ collectionImageUploadError }}
-                </p>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{
-                  t('collectionDetail.nameLabel')
-                }}</label>
-                <Input v-model="editForm.name" type="text" required class="input-field w-full" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{
-                  t('collectionDetail.descriptionLabel')
-                }}</label>
-                <Textarea v-model="editForm.description" rows="3" class="textarea-field" />
-              </div>
-
-              <div class="flex items-center">
-                <Checkbox
-                  id="edit_is_public"
-                  v-model="editForm.is_public"
-                  class="checkbox-toggle"
-                />
-                <label for="edit_is_public" class="ml-2 text-sm text-gray-700">
-                  {{ t('collectionDetail.makePublicLabel') }}
-                </label>
-              </div>
-            </div>
-
-            <div class="mt-6 flex justify-end gap-3">
-              <Button variant="cancel" type="button" @click="cancelEditCollectionModal()">
-                {{ t('collectionDetail.cancel') }}
-              </Button>
-              <Button
-                variant="edit"
-                type="submit"
-                :disabled="isSubmitting || isCollectionImageUploading"
-              >
-                {{
-                  isSubmitting ? t('collectionDetail.saving') : t('collectionDetail.saveChanges')
-                }}
-              </Button>
-            </div>
-          </form>
-        </ModalComponent>
-        <CollectionMediaBulkZipModal
-          v-model="showMediaBulkZipModal"
-          :collection-id="props.collectionId"
-          @success="onMediaBulkZipSuccess"
-        />
         <!-- Add/Edit Item Modal -->
         <ModalComponent
           :show="showAddModal"
@@ -1360,73 +1126,6 @@
             </div>
           </div>
         </ModalComponent>
-        <!-- Merge Collection Modal -->
-        <ModalComponent
-          :show="showMergeModal"
-          :title="t('collectionDetail.mergeCollectionTitle')"
-          @close="showMergeModal = false"
-        >
-          <div v-if="isLoadingCollections" class="flex justify-center py-4">
-            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" />
-          </div>
-
-          <form v-else class="space-y-4" @submit.prevent="performMerge">
-            <!-- Collection Selection -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{
-                t('collectionDetail.selectCollectionToMergeLabel')
-              }}</label>
-              <Select
-                v-model="selectedCollectionToMerge"
-                searchable
-                :search-placeholder="t('filters.searchOptions')"
-                :empty-filter-label="t('filters.noMatches')"
-                select-class="input-field w-full"
-                required
-                :options="[
-                  { value: '', label: t('collectionDetail.selectCollectionPlaceholder') },
-                  ...availableCollections.map((c) => ({
-                    value: c.collection_id,
-                    label:
-                      c.name +
-                      ' (' +
-                      t('collectionDetail.itemsCount', { count: c.item_count }) +
-                      ') ',
-                  })),
-                ]"
-              />
-            </div>
-            <!-- New Collection Option -->
-            <div class="flex items-center space-x-2">
-              <Checkbox id="createNew" v-model="createNewCollection" class="checkbox-toggle" />
-              <label for="createNew" class="text-sm text-gray-700">
-                {{ t('collectionDetail.createNewFromMergeLabel') }}
-              </label>
-            </div>
-            <!-- New Collection Name (if creating new) -->
-            <div v-if="createNewCollection">
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{
-                t('collectionDetail.newCollectionNameLabel')
-              }}</label>
-              <Input
-                v-model="newMergedCollectionName"
-                type="text"
-                required
-                class="input-field w-full"
-                :placeholder="t('collectionDetail.newCollectionNamePlaceholder')"
-              />
-            </div>
-            <!-- Action Buttons -->
-            <div class="flex justify-end space-x-3 pt-4">
-              <Button variant="cancel" type="button" @click="showMergeModal = false">
-                {{ t('collectionDetail.cancel') }}
-              </Button>
-              <Button variant="edit" type="submit" :disabled="!isValidMerge || isMerging">
-                {{ isMerging ? t('collectionDetail.merging') : t('collectionDetail.mergeButton') }}
-              </Button>
-            </div>
-          </form>
-        </ModalComponent>
         <!-- Edit Notes Modal -->
       </div>
       <DeleteConfirmationModal
@@ -1442,15 +1141,6 @@
         @confirm="removeItem(itemToDelete?.item_id)"
         @cancel="showDeleteItemConfirm = false"
       />
-      <DeleteConfirmationModal
-        :show="showDeleteCollectionConfirm"
-        :title="t('collectionDetail.confirmDeleteTitle')"
-        class="z-[65]"
-        :message="t('collectionDetail.confirmDeleteMessage')"
-        :is-deleting="isDeletingCollection"
-        @confirm="performDeleteCollection"
-        @cancel="showDeleteCollectionConfirm = false"
-      />
     </FeedPageBody>
     <div ref="paginationHost" class="contents" />
   </div>
@@ -1464,16 +1154,9 @@ import {
   List,
   Edit3,
   HelpCircle,
-  FileText,
-  PlusCircle,
-  Copy,
-  GitMerge,
-  Images,
   Search as SearchIcon,
   Loader,
   ArrowRight,
-  Camera,
-  Trash2,
   MessagesSquare,
   MessageSquare,
 } from '@lucide/vue'
@@ -1482,20 +1165,12 @@ import { useRouter, useRoute } from 'vue-router'
 
 import {
   getCollection,
-  getCollections,
   getCollectionImage,
-  updateCollection,
-  updateCollectionImage,
-  removeCollectionImage,
-  deleteCollection,
   addCollectionItem,
   removeCollectionItem,
   getDefinition,
   searchDefinitions,
   listCollectionItems,
-  mergeCollection,
-  cloneCollection,
-  importCollectionFull,
   getLanguages,
   updateItemPosition,
   searchWaves,
@@ -1513,10 +1188,10 @@ import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import SoundUpload from '@/components/SoundUpload.vue'
+import CollectionActionsMenu from '@/components/CollectionActionsMenu.vue'
 import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import CollectionMediaBulkZipModal from '@/components/CollectionMediaBulkZipModal.vue'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
@@ -1532,16 +1207,8 @@ import {
   Checkbox,
   DefinitionCreateIcon,
   DefinitionsIcon,
-  CollectionCoverLightbox,
-  PlayingCardsFanIcon,
-  FileInput,
-  Input,
   Select,
   Textarea,
-  ToolbarSelectDropdown,
-  ToolbarSelectDropdownItem,
-  FileExportIcon,
-  FileImportIcon,
 } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useCollectionsCache } from '@/composables/useCollectionsCache'
@@ -1559,11 +1226,7 @@ import {
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import type { CommentItemApiComment } from '@/types/comment'
-import {
-  getApiErrorMessage,
-  getCollectionItemSaveErrorMessage,
-  uploadImageErrorMessage,
-} from '@/utils/apiError'
+import { getCollectionItemSaveErrorMessage } from '@/utils/apiError'
 
 /** Row from listCollectionItems / searchItems (template + reorder). */
 interface CollectionDetailListItem {
@@ -1618,18 +1281,11 @@ const setActiveTab = (tab: CollectionTab) => {
 // Check for flashcard mode
 const isAddFlashcardMode = computed(() => route.query.mode === 'add_flashcard')
 
-const editForm = ref({
-  name: '',
-  description: '',
-  is_public: false,
-})
-
 // State
 const collection = ref(null)
 const { showError, clearError } = useError()
 const isLoading = ref(true)
 const isLoadingItems = ref(false)
-const showEditModal = ref(false)
 const showAddModal = ref(false)
 const isEditingItem = ref(false)
 const currentItem = ref(null)
@@ -1637,7 +1293,6 @@ const editingItem = ref(null)
 
 const numericCollectionId = computed(() => Number(props.collectionId))
 
-const showMediaBulkZipModal = ref(false)
 const showValidation = ref(false)
 const addItemModalError = ref('')
 
@@ -2195,151 +1850,10 @@ const openEditItemModal = async (item) => {
   }
 }
 
-function cancelEditCollectionModal() {
-  showEditModal.value = false
-  collectionImageUploadError.value = ''
-}
-
-function openEditCollectionModal() {
-  showEditModal.value = true
-  collectionImageUploadError.value = ''
-  refreshEditCollectionCoverUrl()
-}
-
-const isCollectionImageUploading = ref(false)
-const collectionImageUploadError = ref('')
-const collectionImageUploadProgress = ref(0)
-const collectionImageCircumference = computed(() => 2 * Math.PI * 45)
-const isEditCollectionImageLoading = ref(false)
-const editCollectionImageUrl = ref<string | null>(null)
-
 const collectionCoverDisplayUrl = computed(() => {
   if (!collection.value?.has_cover_image) return null
   return getCollectionImage(props.collectionId, { cached: true })
 })
-
-function handleEditCollectionImageLoad() {
-  isEditCollectionImageLoading.value = false
-}
-
-function handleEditCollectionImageError() {
-  isEditCollectionImageLoading.value = false
-  editCollectionImageUrl.value = null
-}
-
-function refreshEditCollectionCoverUrl() {
-  if (collection.value?.has_cover_image) {
-    isEditCollectionImageLoading.value = true
-    editCollectionImageUrl.value = `${getCollectionImage(props.collectionId)}?t=${Date.now()}`
-  } else {
-    editCollectionImageUrl.value = null
-    isEditCollectionImageLoading.value = false
-  }
-}
-
-async function handleCollectionCoverFileChange(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  const input = event.target as HTMLInputElement
-  if (input) input.value = ''
-  if (!file) return
-
-  collectionImageUploadError.value = ''
-  collectionImageUploadProgress.value = 0
-
-  if (!file.type.startsWith('image/')) {
-    collectionImageUploadError.value = t('profile.uploadError.invalidType')
-    return
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    collectionImageUploadError.value = t('profile.uploadError.tooLarge')
-    return
-  }
-
-  try {
-    isCollectionImageUploading.value = true
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      let progressInterval: ReturnType<typeof setInterval> | undefined
-      try {
-        const raw = e.target?.result
-        const base64Data = typeof raw === 'string' ? (raw.split(',')[1] ?? '') : ''
-        const imageData = { data: base64Data, mime_type: file.type }
-
-        isEditCollectionImageLoading.value = true
-        editCollectionImageUrl.value = URL.createObjectURL(file)
-
-        let progress = 0
-        progressInterval = setInterval(() => {
-          progress += 10
-          if (progress > 90 && progressInterval) clearInterval(progressInterval)
-          collectionImageUploadProgress.value = Math.min(progress, 90)
-        }, 100)
-
-        await updateCollectionImage(props.collectionId, imageData)
-        if (progressInterval) clearInterval(progressInterval)
-        collectionImageUploadProgress.value = 100
-
-        const meta = await getCollection(props.collectionId)
-        collection.value = meta.data
-        editForm.value = {
-          name: meta.data.name,
-          description: meta.data.description || '',
-          is_public: meta.data.is_public,
-        }
-        refreshEditCollectionCoverUrl()
-        showSuccess(t('collectionDetail.collectionCoverUploadSuccess'))
-
-        setTimeout(() => {
-          isCollectionImageUploading.value = false
-          collectionImageUploadProgress.value = 0
-        }, 500)
-      } catch (err: unknown) {
-        if (progressInterval) clearInterval(progressInterval)
-        console.error('Collection cover upload error:', err)
-        collectionImageUploadError.value = uploadImageErrorMessage(err, t)
-        isCollectionImageUploading.value = false
-        isEditCollectionImageLoading.value = false
-        collectionImageUploadProgress.value = 0
-      }
-    }
-    reader.onerror = () => {
-      collectionImageUploadError.value = t('profile.uploadError.readError')
-      isCollectionImageUploading.value = false
-      isEditCollectionImageLoading.value = false
-      collectionImageUploadProgress.value = 0
-    }
-    reader.readAsDataURL(file)
-  } catch {
-    collectionImageUploadError.value = t('profile.uploadError.uploadFailed')
-    isCollectionImageUploading.value = false
-    collectionImageUploadProgress.value = 0
-  }
-}
-
-async function handleCollectionCoverRemove() {
-  if (!confirm(t('collectionDetail.collectionCoverRemoveConfirm'))) return
-
-  try {
-    isCollectionImageUploading.value = true
-    collectionImageUploadError.value = ''
-    await removeCollectionImage(props.collectionId)
-    const meta = await getCollection(props.collectionId)
-    collection.value = meta.data
-    editForm.value = {
-      name: meta.data.name,
-      description: meta.data.description || '',
-      is_public: meta.data.is_public,
-    }
-    editCollectionImageUrl.value = null
-    isEditCollectionImageLoading.value = false
-    showSuccess(t('collectionDetail.collectionCoverRemoveSuccess'))
-  } catch (err: unknown) {
-    collectionImageUploadError.value =
-      getApiErrorMessage(err) || t('collectionDetail.collectionCoverRemoveError')
-  } finally {
-    isCollectionImageUploading.value = false
-  }
-}
 
 function cancelEditItemModal() {
   addItemModalError.value = ''
@@ -2356,11 +1870,6 @@ const showDeleteItemConfirm = ref(false)
 const itemToDelete = ref<CollectionDetailListItem | null>(null)
 const isDeletingItem = ref(false)
 const isUpdatingItem = ref(false)
-const showDeleteCollectionConfirm = ref(false) // New state for collection deletion confirmation
-const isDeletingCollection = ref(false) // New state for collection deletion loading
-const isImportingJson = ref(false) // State for JSON import loading
-
-const isSubmitting = ref(false)
 // Search state
 const searchQuery = ref('')
 const itemSearchQuery = ref('')
@@ -2524,7 +2033,6 @@ const paginatedItems = ref<{
   page?: number
   per_page?: number
 }>({ items: [], total: 0 })
-const isCloning = ref(false)
 const isReordering = ref(false)
 const languages = ref([])
 const {
@@ -2556,39 +2064,10 @@ const totalPages = computed(() => {
   return Math.ceil(paginatedItems.value.total / itemsPerPage)
 })
 
-const handleCloneCollection = async () => {
-  isCloning.value = true
-  try {
-    const response = await cloneCollection(props.collectionId)
-    router.push(`/collections/${response.data.collection_id}`)
-  } catch (error) {
-    console.error('Error cloning collection:', error)
-  } finally {
-    isCloning.value = false
-  }
-}
-
 // Fetch user's collections (shared cache; CollectionWidget opens instantly)
 const fetchUserCollections = async () => {
   if (!auth.state.isLoggedIn) return
   await preloadUserCollections()
-}
-
-const onMediaBulkZipSuccess = async () => {
-  try {
-    const response = await getCollection(props.collectionId)
-    collection.value = response.data
-    if (collection.value) {
-      editForm.value = {
-        name: collection.value.name,
-        description: collection.value.description || '',
-        is_public: collection.value.is_public,
-      }
-    }
-  } catch (e) {
-    console.error('Failed to refresh collection after bulk images:', e)
-  }
-  await fetchItems()
 }
 
 // Fetch collection details
@@ -2602,13 +2081,6 @@ const fetchCollection = async () => {
     collection.value = response.data
 
     if (!validateAccess(collection.value)) return
-
-    // Initialize edit form
-    editForm.value = {
-      name: collection.value.name,
-      description: collection.value.description || '',
-      is_public: collection.value.is_public,
-    }
 
     const langsResponse = await getLanguages()
     languages.value = langsResponse.data
@@ -2847,42 +2319,6 @@ watch(
   }
 )
 
-// Update collection
-const performUpdateCollection = async () => {
-  if (isSubmitting.value) return
-  isSubmitting.value = true
-
-  try {
-    const response = await updateCollection(props.collectionId, editForm.value)
-    collection.value = response.data
-    showEditModal.value = false
-  } catch (error) {
-    console.error('Error updating collection:', error)
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-// Show confirmation modal for deleting collection
-const handleDelete = () => {
-  showDeleteCollectionConfirm.value = true
-}
-
-// Perform collection deletion after confirmation
-const performDeleteCollection = async () => {
-  isDeletingCollection.value = true
-  try {
-    await deleteCollection(props.collectionId)
-    router.push('/library')
-  } catch (error) {
-    console.error('Error deleting collection:', error)
-    showError(error.response?.data?.error || 'Failed to delete collection')
-  } finally {
-    isDeletingCollection.value = false
-    showDeleteCollectionConfirm.value = false
-  }
-}
-
 // Search debouncing
 let searchTimeout = null
 
@@ -3098,178 +2534,53 @@ const toggleAddFlashcardMode = () => {
   })
 }
 
-const showMergeModal = ref(false)
-const selectedCollectionToMerge = ref('')
-const createNewCollection = ref(false)
-const newMergedCollectionName = ref('')
-const isLoadingCollections = ref(false)
-const isMerging = ref(false)
-const availableCollections = ref([])
-
-const isValidMerge = computed(() => {
-  if (!selectedCollectionToMerge.value) return false
-  if (createNewCollection.value && !newMergedCollectionName.value.trim()) return false
-  return selectedCollectionToMerge.value !== props.collectionId // Can't merge with self
-})
-
-const openMergeModal = () => {
-  showMergeModal.value = true
-  loadAvailableCollections()
-}
-
 const openAddModal = () => {
   resetForm()
   showAddModal.value = true
 }
 
-const canExportFilteredItems = computed(
-  () => collection.value && (collection.value.is_public || isOwner.value)
-)
+function onCollectionMenuUpdated(next) {
+  collection.value = next
+}
 
-const goToCollectionExport = () => {
+const collectionExportQuery = computed(() => {
   const mode =
     searchMode.value === 'dictionary' || searchMode.value === 'semantic'
       ? searchMode.value
       : itemFilters.value.isSemantic
         ? 'semantic'
         : 'dictionary'
-  router.push({
-    path: '/export/search',
-    query: compactQuery({
-      q: itemSearchQuery.value || undefined,
-      mode,
-      collection_only: '1',
-      ...combinedFiltersToQuery({
-        ...itemFilters.value,
-        selectedCollections: [numericCollectionId.value],
-        includePopularCollections: false,
-      }),
+  return compactQuery({
+    q: itemSearchQuery.value || undefined,
+    mode,
+    collection_only: '1',
+    ...combinedFiltersToQuery({
+      ...itemFilters.value,
+      selectedCollections: [numericCollectionId.value],
+      includePopularCollections: false,
     }),
   })
-}
+})
+
+watch(
+  () => [queryStr(route.query.addItem), isOwner.value] as const,
+  async ([addItem, owner]) => {
+    if (addItem !== '1' || !owner) return
+    openAddModal()
+    // The incoming navigation may still be committing this query; clear it after that settles
+    // so a refresh does not reopen the dialog.
+    await nextTick()
+    if (queryStr(route.query.addItem) !== '1') return
+    const nextQuery = { ...route.query }
+    delete nextQuery.addItem
+    await router.replace({ query: nextQuery })
+  }
+)
 
 const confirmDeleteItem = () => {
   itemToDelete.value = currentItem.value
   showDeleteItemConfirm.value = true
 }
-
-const loadAvailableCollections = async () => {
-  isLoadingCollections.value = true
-  try {
-    const response = await getCollections()
-    // Filter out the current collection
-    availableCollections.value = response.data.collections.filter(
-      (c) => c.collection_id !== Number(props.collectionId)
-    )
-  } catch (e) {
-    showError('Failed to load collections')
-    console.error('Error loading collections:', e)
-  } finally {
-    isLoadingCollections.value = false
-  }
-}
-
-// Add the merge function
-const performMerge = async () => {
-  if (!isValidMerge.value || isMerging.value) return
-
-  isMerging.value = true
-  clearError()
-
-  try {
-    await mergeCollection({
-      source_collection_id: Number(selectedCollectionToMerge.value),
-      target_collection_id: Number(props.collectionId),
-      new_collection_name: createNewCollection.value ? newMergedCollectionName.value : undefined,
-    })
-
-    // If creating new collection, redirect to it
-    if (createNewCollection.value) {
-      router.push('/library')
-    } else {
-      // Otherwise refresh the current collection
-      await fetchCollection()
-    }
-
-    // Reset merge form
-    showMergeModal.value = false
-    selectedCollectionToMerge.value = ''
-    createNewCollection.value = false
-    newMergedCollectionName.value = ''
-
-    showSuccess(t('collectionDetail.mergeSuccess'))
-  } catch (err) {
-    showError(err.response?.data?.error || 'Failed to merge collections')
-  } finally {
-    isMerging.value = false
-  }
-}
-
-// --- JSON Import Logic ---
-const jsonImportInput = ref(null)
-
-const triggerJsonImport = () => {
-  jsonImportInput.value?.click()
-}
-
-const handleJsonFileSelect = async (event) => {
-  const file = event.target.files?.[0]
-  if (!file) return
-
-  isImportingJson.value = true
-  clearError()
-
-  try {
-    const fileContent = await file.text()
-    const jsonData = JSON.parse(fileContent)
-
-    // Full format: { collection, items, levels? }
-    if (!jsonData.collection || !Array.isArray(jsonData.items)) {
-      showError(t('collectionDetail.importFullFormatError'))
-      return
-    }
-
-    const payload = {
-      collection: {
-        name: jsonData.collection.name,
-        description: jsonData.collection.description ?? null,
-        is_public: jsonData.collection.is_public ?? true,
-      },
-      items: jsonData.items,
-      levels: Array.isArray(jsonData.levels) ? jsonData.levels : [],
-    }
-
-    const response = await importCollectionFull(payload)
-    const {
-      collection: newCollection,
-      imported_count,
-      skipped_count,
-      levels_created,
-      warnings,
-    } = response.data
-
-    let message =
-      t('collectionDetail.importFullSuccess', {
-        name: newCollection.name,
-        imported: imported_count,
-        skipped: skipped_count,
-        levels: levels_created,
-      }) ||
-      `Created "${newCollection.name}" with ${imported_count} items, ${levels_created} levels.`
-    if (warnings?.length) {
-      message += '<br/><br/>' + warnings.slice(0, 5).join('<br/>')
-      if (warnings.length > 5) message += `<br/>... ${warnings.length - 5} more`
-    }
-    showSuccess(message, 4000)
-    router.push(`/collections/${newCollection.collection_id}`)
-  } catch (error) {
-    showError(error.response?.data?.error || t('collectionDetail.importJsonError'))
-  } finally {
-    isImportingJson.value = false
-    jsonImportInput.value.value = ''
-  }
-}
-// --- End JSON Import Logic ---
 
 onMounted(() => {
   fetchCollection()

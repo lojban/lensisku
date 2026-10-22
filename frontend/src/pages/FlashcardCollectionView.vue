@@ -28,6 +28,15 @@
         <template #title>
           {{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}
         </template>
+        <template v-if="isOwner" #meta-actions>
+          <CollectionActionsMenu
+            :collection-id="props.collectionId"
+            :collection="collection"
+            :is-owner="isOwner"
+            @updated="onCollectionMenuUpdated"
+            @refresh="loadFlashcards"
+          />
+        </template>
         <template #toolbar>
           <div class="space-y-4 md:space-y-0">
             <div class="flex w-full flex-wrap items-center justify-center gap-2">
@@ -400,6 +409,7 @@ import {
   getCollectionImage,
 } from '@/api'
 import AudioPlayer from '@/components/AudioPlayer.vue'
+import CollectionActionsMenu from '@/components/CollectionActionsMenu.vue'
 import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -426,6 +436,10 @@ const paginationHost = useFeedPaginationHost()
 const isOwner = computed(() => {
   return auth.state.isLoggedIn && collection.value?.owner?.username === auth.state.username
 })
+
+function onCollectionMenuUpdated(next) {
+  collection.value = next
+}
 
 // State
 const flashcards = ref([])

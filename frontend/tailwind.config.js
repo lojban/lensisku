@@ -1281,23 +1281,31 @@ export default {
         /**
          * Three-block feed shell (header | scroll body | footer).
          * Use with route meta.fullHeight so the page fills main and only the body scrolls.
+         * The scrollport is the full width of main (scrollbar at the page edge).
+         * Header, column, and footer stay on the shared max-w-4xl measure.
          */
         '.feed-page': {
           '@apply relative flex h-full min-h-0 w-full flex-1 flex-col': {},
         },
         '.feed-page__header': {
-          '@apply z-20 w-full shrink-0 bg-transparent px-3': {},
+          '@apply z-20 mx-auto w-full max-w-4xl shrink-0 bg-transparent px-3': {},
         },
         '.feed-page__header--tabs': {
           '@apply pb-1': {},
         },
-        /** Only this block scrolls — scrollbar sits between pinned header and footer. */
+        /** Only this block scrolls. It is full width so the scrollbar sits on the main edge. */
         '.feed-page__body': {
           /* Keep block flow (not flex-col): flex shrink lets tall children overflow over later siblings. */
-          '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain px-3 pt-3 pb-0': {},
+          '@apply min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain pb-0':
+            {},
+        },
+        /** Content measure. Matches #main-child max-w-4xl on non-feed pages. */
+        '.feed-page__column': {
+          '@apply mx-auto w-full max-w-4xl px-3 pt-3': {},
         },
         '.feed-page__footer': {
-          '@apply z-30 w-full shrink-0 border-t border-gray-200 bg-white md:bg-zinc-50': {},
+          '@apply z-30 mx-auto w-full max-w-4xl shrink-0 border-t border-gray-200 bg-white md:bg-zinc-50':
+            {},
         },
         '.feed-page__footer-inner': {
           '@apply flex w-full flex-col': {},

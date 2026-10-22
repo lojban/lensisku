@@ -8,7 +8,9 @@ import PublicDomainNotice from '@/components/PublicDomainNotice.vue'
 
 <template>
   <div class="feed-page__body">
-    <slot />
-    <PublicDomainNotice />
+    <div class="feed-page__column">
+      <slot />
+      <PublicDomainNotice />
+    </div>
   </div>
 </template>

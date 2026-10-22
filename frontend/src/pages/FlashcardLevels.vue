@@ -2,6 +2,16 @@
   <div class="flex flex-col min-h-[calc(100vh-6rem)]">
     <PageHeader title-as="h2" stack-gap="comfortable" class="shrink-0">
       <template #title>{{ collection?.name }}</template>
+      <template #meta-trailing>
+        <CollectionActionsMenu
+          v-if="isOwner"
+          :collection-id="props.collectionId"
+          :collection="collection"
+          :is-owner="isOwner"
+          @updated="onCollectionMenuUpdated"
+          @refresh="fetchLevels"
+        />
+      </template>
       <template #toolbar>
         <div class="flex w-full flex-row flex-wrap items-center justify-between gap-2">
           <RouterLink
@@ -542,6 +552,7 @@ import {
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import CollectionActionsMenu from '@/components/CollectionActionsMenu.vue'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
@@ -638,6 +649,10 @@ const levelForm = ref({
 const isOwner = computed(() => {
   return auth.state.isLoggedIn && collection.value?.owner?.username === auth.state.username
 })
+
+function onCollectionMenuUpdated(next) {
+  collection.value = next
+}
 
 // When anonymous, a level is unlocked if it has no prerequisites or all prerequisites are completed in localStorage
 function isLevelUnlockedForAnon(level) {

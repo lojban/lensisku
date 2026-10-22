@@ -31,6 +31,11 @@ export function buildLingoThemeLayer() {
       '@apply border-b-4 border-rose-600 bg-rose-500 text-white hover:bg-rose-500/90 active:border-b-0':
         {},
     },
+    /** Defer / snooze — amber so it stays distinct from Check (green) and Forgot (rose). */
+    '.lingo-btn--warn': {
+      '@apply border-b-4 border-amber-600 bg-amber-400 text-amber-950 hover:bg-amber-400/90 active:border-b-0':
+        {},
+    },
     '.lingo-btn--locked': {
       '@apply border-b-4 border-neutral-400 bg-neutral-200 text-neutral-400 hover:bg-neutral-200/90 active:border-b-0':
         {},
@@ -106,11 +111,11 @@ export function buildLingoThemeLayer() {
       '@apply text-slate-500 hover:bg-slate-100 focus-visible:ring-green-500': {},
     },
     /**
-     * Hearts readout — same 40px chrome as `.lingo-icon-btn--muted`, not a control
-     * (div / `role="status"`, no hover/focus/pointer).
+     * Hearts readout — same shell as `.lingo-icon-btn` / header back, but not a control
+     * (no hover fill, no focus ring). Pair with `.icon-btn-header-back--compact` on study.
      */
     '.lingo-hearts-badge': {
-      '@apply inline-flex h-10 min-w-10 shrink-0 cursor-default items-center justify-center gap-0.5 rounded-lg border-0 bg-transparent px-1.5 text-sm font-bold text-rose-500':
+      '@apply lingo-icon-btn min-w-10 cursor-default gap-0.5 px-1.5 text-sm font-bold text-rose-500 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0':
         {},
     },
     /**
@@ -524,6 +529,30 @@ export function buildLingoThemeLayer() {
     },
     '.lingo-avatar img': {
       '@apply h-full w-full object-cover': {},
+    },
+    /**
+     * Lingo dialog shell (study discussions, etc.) — not Lensisku `ModalComponent` /
+     * Aqua close buttons. Pair with `LingoModal.vue`.
+     */
+    '.lingo-modal-backdrop': {
+      '@apply fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-3 sm:p-4': {},
+    },
+    '.lingo-modal-panel': {
+      '@apply flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-lg':
+        {},
+    },
+    '.lingo-modal-header': {
+      '@apply flex shrink-0 items-center justify-between gap-3 border-b-2 border-slate-200 px-3 py-2.5 sm:px-4 sm:py-3':
+        {},
+    },
+    '.lingo-modal-title': {
+      '@apply min-w-0 truncate text-base font-bold text-neutral-700 sm:text-lg': {},
+    },
+    '.lingo-modal-body': {
+      '@apply min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4': {},
+    },
+    '.lingo-modal-footer': {
+      '@apply shrink-0 border-t-2 border-slate-200 px-3 py-2.5 sm:px-4 sm:py-3': {},
     },
   }
 }
