@@ -4,14 +4,8 @@
   <!-- Profile Content -->
   <div v-else>
     <!-- Header -->
-    <div
-      class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6"
-      :class="{ 'lg:justify-end': embedded }"
-    >
-      <h2
-        v-if="!embedded"
-        class="text-2xl font-bold text-gray-800 text-center sm:text-left flex-1 min-w-[200px]"
-      >
+    <div class="page-header-title-row mb-6" :class="{ 'justify-end': embedded }">
+      <h2 v-if="!embedded" class="page-section-title min-w-0 flex-1 text-center sm:text-left">
         {{
           isOwnProfile
             ? t('profile.yourProfile')
@@ -19,72 +13,31 @@
         }}
       </h2>
 
-      <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center items-center">
-        <!-- Language Selector -->
-        <div v-if="isOwnProfile" class="relative group">
-          <Select
-            searchable
-            :search-placeholder="t('filters.searchLanguages')"
-            :empty-filter-label="t('filters.noMatches')"
-            :model-value="locale"
-            select-class="input-field appearance-none !h-6 !py-0 !pr-3 min-w-[8rem] !text-xs"
-            :options="availableLocales.map((loc) => ({ value: loc, label: localeNativeName(loc) }))"
-            @change="switchLanguage"
-          />
-        </div>
-
-        <div v-if="isOwnProfile" class="relative group">
-          <Select
-            :model-value="buttonTheme"
-            :options="[
-              { value: 'aqua', label: t('buttonTheme.aqua') },
-              { value: 'flat', label: t('buttonTheme.flat') },
-            ]"
-            select-class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs min-w-[8rem]"
-            :label="t('buttonTheme.label')"
-            @update:model-value="setButtonTheme"
-          />
-          <ChevronDown
-            class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-          />
-        </div>
-        <!--
-        <RouterLink
-          v-if="isOwnProfile"
-          to="/balance"
-          class="ui-btn--danger-rose"
-        >
-          <Wallet class="h-4 w-4" />
-          {{ t('profile.balance') }}
-        </RouterLink>
-        -->
-        <!-- Aqua button group -->
-        <div class="btn-group md:gap-y-2">
+      <div class="page-header-actions">
+        <LocaleSelect v-if="isOwnProfile" inline />
+        <ButtonThemeSelect v-if="isOwnProfile" inline />
+        <div v-if="!isOwnProfile" class="btn-group">
           <RouterLink
-            v-if="!isOwnProfile"
             :to="`/user/${profileData.username}/activity?tab=definitions`"
             class="ui-btn--accent-purple ui-btn--group-item"
           >
             <Activity class="h-4 w-4" /> {{ t('profile.viewActivity') }}
           </RouterLink>
-          <!-- Message Button for other users -->
           <MessageButton
-            v-if="!isOwnProfile && profileData.user_id"
+            v-if="profileData.user_id"
             :user-id="parseInt(profileData.user_id)"
             :username="profileData.username"
             class="ui-btn--accent-blue ui-btn--group-item"
           />
-          <Button
-            v-if="isOwnProfile && auth.state.isLoggedIn"
-            variant="toolbar"
-            class="ui-btn--group-item"
-            @click="auth.logout()"
-          >
-            <LogOut class="h-4 w-4" /> {{ t('nav.logout') }}
-          </Button>
         </div>
-        <!-- Role Assignment Section -->
-        <div v-if="canAssignRoles && !isOwnProfile" class="flex gap-2 items-center form-group">
+        <Button
+          v-if="isOwnProfile && auth.state.isLoggedIn"
+          variant="toolbar"
+          @click="auth.logout()"
+        >
+          <LogOut class="h-4 w-4" /> {{ t('nav.logout') }}
+        </Button>
+        <div v-if="canAssignRoles && !isOwnProfile" class="flex items-center gap-2">
           <Select
             v-model="selectedRole"
             :placeholder="t('profile.assignRole')"
@@ -355,10 +308,10 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { KeyRound, Activity, Pencil, User, ChevronDown, Camera, Trash2, LogOut } from '@lucide/vue'
+import { KeyRound, Activity, Pencil, User, Camera, Trash2, LogOut } from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter, RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 
 import {
   updateProfile,
@@ -371,9 +324,10 @@ import {
   getRoles,
 } from '@/api'
 
-import { localeNativeName } from '@/config/locales'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import ButtonThemeSelect from '@/components/layout/ButtonThemeSelect.vue'
+import LocaleSelect from '@/components/layout/LocaleSelect.vue'
 import MessageButton from '@/components/messaging/navigation/MessageButton.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
@@ -406,10 +360,9 @@ defineProps({
 })
 
 const route = useRoute()
-const router = useRouter()
 const auth = useAuth()
-const { locale, availableLocales, t } = useI18n()
-const { buttonTheme, initButtonTheme, setButtonTheme } = useButtonTheme()
+const { t } = useI18n()
+const { initButtonTheme } = useButtonTheme()
 
 const { showError, clearError } = useError()
 const { showSuccess } = useSuccessToast()
@@ -483,36 +436,6 @@ const profileImageUrl = computed(() => {
   }
   return null
 })
-
-// Methods
-const switchLanguage = (event: Event) => {
-  if (typeof window === 'undefined') return
-
-  const newLocale = (event.target as HTMLSelectElement).value
-  if (availableLocales.includes(newLocale)) {
-    locale.value = newLocale
-    localStorage.setItem('selectedLocale', newLocale) // Store preference
-    // Construct the new path by replacing/adding the locale prefix
-    const currentPath = route.path
-    const pathSegments = currentPath.split('/').filter((segment) => segment !== '') // Split and remove empty segments (e.g., leading '/')
-
-    // Check if the first segment is a known locale (assuming availableLocales is accessible in this scope)
-    if (pathSegments.length > 0 && availableLocales.includes(pathSegments[0])) {
-      // Replace the existing locale prefix
-      pathSegments[0] = newLocale
-    } else {
-      pathSegments.unshift(newLocale)
-    }
-
-    // Reconstruct the path, ensuring it starts with a '/'
-    const newPath = '/' + pathSegments.join('/')
-
-    // Update the URL using the new path and preserving query parameters
-    router.push({ path: newPath, query: route.query })
-    // Optionally, you might want to reload the page or trigger a data refresh
-    // window.location.reload(); // Uncomment if a full reload is desired
-  }
-}
 
 const fetchProfileImageUrl = async () => {
   // Always try to fetch, rely on cache or get updated image

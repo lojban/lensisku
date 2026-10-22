@@ -480,6 +480,13 @@ export default {
         '.nav-select-field': {
           '@apply !h-6 !w-full !min-w-0 appearance-none !py-0 !pr-3 !text-xs': {},
         },
+        /**
+         * Language / theme field sized to its label (profile toolbar).
+         * The menu variant (`.nav-select`) stays full width.
+         */
+        '.nav-select-inline': {
+          '@apply w-max max-w-full shrink-0': {},
+        },
         // --- Assistant (chat UI) ---
         /** Assistant chat: scrollable message column shell. */
         '.assistant-messages-pane': {
