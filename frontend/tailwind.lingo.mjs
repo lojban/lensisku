@@ -224,9 +224,9 @@ export function buildLingoThemeLayer() {
       '@apply w-full min-h-[2.75rem] overflow-hidden text-sm font-bold leading-snug text-neutral-700 line-clamp-2':
         {},
     },
-    /** Two-line description slot (always reserved, even when empty) with ellipsis. */
+    /** Three-line description slot (always reserved, even when empty) with ellipsis. */
     '.lingo-course-card__desc': {
-      '@apply card-description w-full min-h-[2.5rem] overflow-hidden text-center leading-snug line-clamp-2':
+      '@apply card-description w-full min-h-[3.75rem] overflow-hidden text-center leading-snug line-clamp-3':
         {},
     },
     /** Unit / collection banner on the learn ladder. */
@@ -240,18 +240,32 @@ export function buildLingoThemeLayer() {
       '@apply flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full border-2 border-b-8 transition-[transform,box-shadow] duration-150':
         {},
     },
+    /**
+     * Open node. Hue comes from `--lingo-node-h` (hash of the ladder index).
+     * Saturation and lightness stay at the old green-500 / green-600 pair.
+     */
     '.lingo-lesson-node--open': {
-      '@apply border-green-600 bg-green-500 text-white hover:bg-green-500/90 active:border-b-0': {},
+      '@apply text-white active:border-b-0': {},
+      backgroundColor: 'hsl(var(--lingo-node-h, 142) 71% 45%)',
+      borderColor: 'hsl(var(--lingo-node-h, 142) 76% 36%)',
+    },
+    '.lingo-lesson-node--open:hover': {
+      backgroundColor: 'hsl(var(--lingo-node-h, 142) 71% 40%)',
+    },
+    /** Current-lesson progress ring; same hue as the node inside it. */
+    '.lingo-lesson-progress': {
+      stroke: 'hsl(var(--lingo-node-h, 142) 71% 60%)',
     },
     '.lingo-lesson-node--locked': {
       '@apply border-neutral-400 bg-neutral-200 text-neutral-400 active:border-b-0': {},
     },
     /**
      * Level name under a ladder node — always visible (not hover-only).
-     * Narrow max-width so the zig-zag path stays readable with long titles.
+     * Wide enough for a short sentence of context, clamped to three lines.
+     * Mobile stays narrower so a zig-zag node near the edge is not clipped.
      */
     '.lingo-lesson-label': {
-      '@apply mt-1.5 w-[7.5rem] max-w-[7.5rem] text-center text-xs font-bold leading-snug text-neutral-700 line-clamp-2':
+      '@apply mt-1.5 w-[11rem] max-w-[11rem] break-words text-center text-xs font-bold leading-snug text-neutral-700 line-clamp-3 sm:w-[14rem] sm:max-w-[14rem]':
         {},
     },
     '.lingo-lesson-label--locked': {

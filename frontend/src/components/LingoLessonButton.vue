@@ -28,12 +28,11 @@
               cy="51"
               r="43"
               fill="none"
-              stroke="#4ade80"
+              class="lingo-lesson-progress transition-all duration-300"
               stroke-width="8"
               stroke-linecap="round"
               stroke-dasharray="270.2"
               :stroke-dashoffset="270.2 - (270.2 * Math.min(100, percentage)) / 100"
-              class="transition-all duration-300"
             />
           </svg>
           <div class="absolute inset-0 flex items-center justify-center">
@@ -175,10 +174,27 @@ const rightPositionPx = computed(() => indentationLevel.value * 40)
 const isFirst = computed(() => props.index === 0)
 const isCompleted = computed(() => props.completed)
 
+/**
+ * Hue for this node. A hash of the ladder index.
+ * Orange (~30°), amber (~45°), and deep yellow (~55°) are in range.
+ * Deep blue (215°–254°) is skipped; sky blue and indigo stay.
+ */
+function hueFromIndex(index: number): number {
+  let h = (index + 1) >>> 0
+  h = Math.imul(h ^ (h >>> 16), 0x7feb352d)
+  h = Math.imul(h ^ (h >>> 15), 0x846ca68b)
+  h = (h ^ (h >>> 16)) >>> 0
+  const deepBlueStart = 215
+  const deepBlueGap = 40
+  const span = h % (360 - deepBlueGap)
+  return span < deepBlueStart ? span : span + deepBlueGap
+}
+
 const nodeStyle = computed(() => ({
   right: `${rightPositionPx.value}px`,
-  // Extra vertical room so `.lingo-lesson-label` (up to 2 lines) never crowds the next node.
+  // Extra vertical room so `.lingo-lesson-label` (up to 3 lines) never crowds the next node.
   marginTop: isFirst.value && !isCompleted.value ? '60px' : '36px',
+  '--lingo-node-h': String(hueFromIndex(props.index)),
 }))
 
 const iconComponent = computed(() => {
@@ -197,5 +213,19 @@ const iconClass = computed(() => {
 <style scoped>
 .lingo-lesson-button:not(.pointer-events-none):hover .lingo-lesson-node {
   transform: scale(1.05);
+}
+
+/* Hue is `--lingo-node-h` on the button (hash of the ladder index). */
+.lingo-lesson-node--open {
+  background-color: hsl(var(--lingo-node-h, 142) 71% 45%);
+  border-color: hsl(var(--lingo-node-h, 142) 76% 36%);
+}
+
+.lingo-lesson-button:not(.pointer-events-none):hover .lingo-lesson-node--open {
+  background-color: hsl(var(--lingo-node-h, 142) 71% 40%);
+}
+
+.lingo-lesson-progress {
+  stroke: hsl(var(--lingo-node-h, 142) 71% 60%);
 }
 </style>

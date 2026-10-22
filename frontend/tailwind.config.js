@@ -28,6 +28,15 @@ export default {
       fontFamily: {
         sans: ['"Open Sans"', 'system-ui', 'Tahoma', 'sans-serif'],
       },
+      keyframes: {
+        'route-progress': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(350%)' },
+        },
+      },
+      animation: {
+        'route-progress': 'route-progress 1.05s ease-in-out infinite',
+      },
       colors: {
         /** Primary nav / legacy link blue (navbar-item, NavLink, mobile logout). */
         'nav-link': '#007bff',
@@ -114,42 +123,61 @@ export default {
         // --- App shell & global chrome ---
         /**
          * Full-viewport loading veil (LoadingSpinner `page` variant).
-         * Light frost — `backdrop-blur-sm` (4px), not a heavy glass stack.
+         * Flat wash — no backdrop blur. The ring is the indicator.
          */
         '.page-loading-overlay': {
-          '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/40 backdrop-blur-sm':
+          '@apply fixed inset-0 z-50 flex min-h-0 flex-col items-center justify-center bg-white/80':
             {},
         },
         /**
          * In-region veil (LoadingSpinner `content` variant) — parent must be `relative`.
-         * For query/filter refreshes; path changes use App’s route freeze instead.
+         * For query/filter refreshes; path changes use App’s route progress bar instead.
          */
         '.content-loading-overlay': {
-          '@apply absolute inset-0 z-10 flex min-h-[8rem] items-center justify-center bg-white/50':
+          '@apply absolute inset-0 z-10 flex min-h-[8rem] flex-col items-center justify-center bg-white/60':
             {},
         },
         /** LoadingSpinner root: layout via `data-variant` (no JS class map). */
         '.loading-spinner[data-variant="page"]': {
-          '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/40 backdrop-blur-sm':
+          '@apply fixed inset-0 z-50 flex min-h-0 flex-col items-center justify-center bg-white/80':
             {},
         },
         '.loading-spinner[data-variant="content"]': {
-          '@apply absolute inset-0 z-10 flex min-h-[8rem] items-center justify-center bg-white/50':
+          '@apply absolute inset-0 z-10 flex min-h-[8rem] flex-col items-center justify-center bg-white/60':
             {},
         },
         '.loading-spinner[data-variant="inline"]': {
           '@apply flex flex-col items-center justify-center': {},
         },
+        /** Track plus a leading edge. Generic “Loading…” stays off screen (sr-only). */
+        '.loading-spinner__mark': {
+          '@apply h-8 w-8 shrink-0 animate-spin rounded-full border-2 border-cornflower-600/20 border-t-cornflower-600':
+            {},
+          '@media (prefers-reduced-motion: reduce)': {
+            animation: 'none',
+          },
+        },
+        '.loading-spinner__label': {
+          '@apply mt-3 text-sm font-medium text-slate-600': {},
+        },
         /**
          * Static snapshot of the previous route while the next page loads.
-         * Absolute inside the route stage (keeps `#main-child` max-w-4xl); light blur.
+         * Sharp, not blurred — the progress bar is the only loading chrome.
          */
         '.route-view-freeze': {
-          '@apply pointer-events-none absolute inset-0 z-30 overflow-auto bg-white blur-sm': {},
+          '@apply pointer-events-none absolute inset-0 z-30 overflow-auto': {},
         },
-        /** Spinner over the same stage region as `.route-view-freeze` (not full viewport). */
-        '.route-freeze-spinner': {
-          '@apply absolute inset-0 z-40 flex items-center justify-center bg-white/35': {},
+        /** Indeterminate bar on the viewport top edge, above the sticky header. */
+        '.route-progress': {
+          '@apply pointer-events-none fixed inset-x-0 top-0 z-[60] h-[3px] overflow-hidden bg-cornflower-600/15':
+            {},
+        },
+        '.route-progress__bar': {
+          '@apply block h-full w-2/5 bg-cornflower-600 animate-route-progress': {},
+          '@media (prefers-reduced-motion: reduce)': {
+            animation: 'none',
+            width: '100%',
+          },
         },
         /** Sticky app chrome (logo, nav, auth). */
         '.app-header-bar': {

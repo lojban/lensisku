@@ -40,7 +40,7 @@
             <LingoUserProgress />
             <RouterLink
               v-if="isOwner"
-              :to="flashcardsPath"
+              :to="editPath"
               class="lingo-btn lingo-btn--ghost lingo-btn--sm"
               :aria-label="t('flashcardLevels.editCourse')"
             >
@@ -96,6 +96,7 @@ import { useLingoProgress } from '@/composables/useLingoProgress'
 import { getCollection, getLevels } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
+import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const props = defineProps({
@@ -110,6 +111,7 @@ const auth = useAuth()
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const localePath = useLocalePath()
 const { getProgress } = useAnonymousProgress()
 const { setActiveCourse } = useLingoProgress()
 
@@ -117,7 +119,13 @@ const collection = ref(null)
 const levels = ref([])
 const isLoading = ref(true)
 
-const flashcardsPath = computed(() => `/collections/${props.collectionId}/flashcards`)
+/** Owner edit: level ladder when the course has levels, otherwise the card list. */
+const editPath = computed(() => {
+  const id = props.collectionId
+  const path =
+    levels.value.length > 0 ? `/collections/${id}/levels` : `/collections/${id}/flashcards`
+  return localePath(path)
+})
 
 /** Collection reels (tiktoknu) — browse cards; `from=lingo` sends back here. */
 const reelsPath = computed(() => ({

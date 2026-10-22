@@ -258,12 +258,19 @@
             aria-hidden="true"
             v-html="routeOverlayHtml"
           />
-          <LoadingSpinner
-            v-if="routeOverlayHtml != null"
-            variant="inline"
-            class="route-freeze-spinner"
-          />
-          <LoadingSpinner v-else-if="auth.state.isLoading" variant="page" />
+          <Teleport to="body">
+            <div
+              v-if="routeOverlayHtml != null"
+              class="route-progress"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              :aria-label="$t('components.loadingSpinner.loadingDefault')"
+            >
+              <span class="route-progress__bar" />
+            </div>
+          </Teleport>
+          <LoadingSpinner v-if="routeOverlayHtml == null && auth.state.isLoading" variant="page" />
           <div
             data-route-live
             class="relative min-h-0 min-w-0"
@@ -1188,6 +1195,16 @@ body:has(.main-content.main-content--no-scroll) {
 </style>
 
 <style>
+/* Route-change bar. Fixed so it is not covered by the sticky header. */
+div.route-progress {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+}
+
 /* Create button. Inside the content column until that column is narrower than the viewport, then 1rem to its right. */
 .fab-anchor {
   pointer-events: auto;
