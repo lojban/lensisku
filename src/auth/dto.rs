@@ -29,6 +29,9 @@ pub struct ProfileResponse {
     pub realname: Option<String>,
     pub url: Option<String>,
     pub personal: Option<String>,
+    /// When false, activity and message notifications are suppressed.
+    /// Account mail (confirmation, password reset, password change) still sends.
+    pub notifications_enabled: bool,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -37,6 +40,7 @@ pub struct UpdateProfileRequest {
     pub realname: Option<String>,
     pub url: Option<String>,
     pub personal: Option<String>,
+    pub notifications_enabled: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

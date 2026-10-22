@@ -509,6 +509,9 @@
       "uploadFailed": "上传失败。",
       "payloadTooLarge": "上传体积超过服务器限制。请换用更小的图片或更强的压缩。"
     },
+    "notifications": "通知",
+    "notificationsHint": "词条编辑、新增、讨论和私信。密码重置、邮箱确认和修改密码验证码仍会发送。",
+    "notificationsError": "无法更新通知设置。",
     "updateSuccess": "资料已更新！",
     "roleAssignedSuccess": "角色已分配！",
     "usernameTakenError": "用户名已被占用，请换一个。"

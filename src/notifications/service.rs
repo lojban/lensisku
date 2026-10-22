@@ -480,6 +480,20 @@ pub const BLOCKED_ROLE: &str = "blocked";
 pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<(), EmailError> {
     let client = pool.get().await?;
 
+    // Discard activity mail queued for people who have since opted out,
+    // so turning notifications back on does not flush that backlog.
+    client
+        .execute(
+            "UPDATE user_notifications n
+             SET email_sent = CURRENT_TIMESTAMP
+             FROM users u
+             WHERE n.user_id = u.userid
+               AND n.email_sent IS NULL
+               AND NOT COALESCE((u.metadata->>'notifications_enabled')::boolean, true)",
+            &[],
+        )
+        .await?;
+
     let notifications = client
         .query(
             "SELECT n.*, u.email, v.word as valsi_word,
@@ -496,6 +510,7 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
              AND u.email IS NOT NULL
              AND u.email <> ''
              AND u.role::text <> $1
+             AND COALESCE((u.metadata->>'notifications_enabled')::boolean, true)
              LIMIT 50",
             &[&BLOCKED_ROLE],
         )

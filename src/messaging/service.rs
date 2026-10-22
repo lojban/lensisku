@@ -594,7 +594,8 @@ impl MessagingService {
                 "INSERT INTO message_notifications (user_id, thread_id, message_id, sender_id, notification_type)
                  SELECT tp.user_id, $1, $2, $3, 'new_message'
                  FROM thread_participants tp
-                 WHERE tp.thread_id = $1 AND tp.user_id != $3 AND tp.is_active = TRUE",
+                 WHERE tp.thread_id = $1 AND tp.user_id != $3 AND tp.is_active = TRUE
+                   AND user_accepts_notifications(tp.user_id)",
                 &[&request.thread_id, &message_id, &user_id],
             )
             .await?;
@@ -1182,6 +1183,7 @@ impl MessagingService {
                  SELECT $1, $2, m.message_id, $3, 'thread_added'
                  FROM private_messages m
                  WHERE m.thread_id = $2
+                   AND user_accepts_notifications($1)
                  ORDER BY m.message_id DESC
                  LIMIT 1",
                 &[&request.user_id, &thread_id, &actor_id],

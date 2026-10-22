@@ -508,6 +508,9 @@
       "uploadFailed": "fliba lo nu punji lo pixra",
       "payloadTooLarge": "lo nu benji cu barda tumfa lo sarvi .i ko troci lo cmalu pixra .a lo nu mligau ke'a"
     },
+    "notifications": "notci",
+    "notificationsHint": "lo nu stika .e lo nu jmina .e lo casnu .e lo notci be lo se mrilu .i lo se mrilu pe lo jaspu — nu zbasu lo japyvla cnino .e nu kanji lo vebysni .e lo nu galfi lo japyvla — cu se benji",
+    "notificationsError": "fliba lo nu galfi lo se zunti be lo notci",
     "updateSuccess": "snada lo nu galfi lo predatni be do",
     "roleAssignedSuccess": "snada lo nu dunda lo pikta",
     "usernameTakenError": "le pilno cmene ba'o se pilno .i ko cuxna lo drata"

@@ -203,6 +203,30 @@
             </div>
           </div>
         </div>
+        <div
+          v-if="isOwnProfile"
+          class="flex items-center justify-between gap-4 border-t border-gray-100 pt-4 max-[959px]:pr-14"
+        >
+          <div class="min-w-0">
+            <span class="text-sm font-medium text-gray-900">{{ t('profile.notifications') }}</span>
+            <p class="mt-1 text-sm text-gray-500">{{ t('profile.notificationsHint') }}</p>
+          </div>
+          <Button
+            variant="plain"
+            type="button"
+            class="toggle-switch"
+            :aria-pressed="notificationsEnabled"
+            :aria-label="t('profile.notifications')"
+            :disabled="!notificationsReady || notificationsSaving"
+            @click="toggleNotifications"
+          >
+            <span
+              aria-hidden="true"
+              class="toggle-switch-thumb"
+              :class="notificationsEnabled ? 'translate-x-5' : 'translate-x-0'"
+            />
+          </Button>
+        </div>
       </div>
     </div>
     <!-- Edit Mode -->
@@ -338,6 +362,7 @@ import { useRouter, RouterLink, useRoute } from 'vue-router'
 
 import {
   updateProfile,
+  getProfile,
   getUserProfile,
   updateProfileImage,
   removeProfileImage,
@@ -357,6 +382,7 @@ import { useSeoHead } from '@/composables/useSeoHead'
 import { useButtonTheme } from '@/composables/useButtonTheme'
 import { useDateFormat } from '@/composables/useDateFormat'
 import { uploadImageErrorMessage } from '@/utils/apiError'
+import { setNotificationsEnabledLocal } from '@/utils/notificationPreference'
 import { Button, FileInput, Input, Select, Textarea } from '@packages/ui'
 
 /** JWT fields used on the profile page (decode + display). */
@@ -391,6 +417,9 @@ const { formatDate } = useDateFormat()
 const isLoading = ref(true)
 const isEditing = ref(false)
 const isUpdating = ref(false)
+const notificationsEnabled = ref(true)
+const notificationsReady = ref(false)
+const notificationsSaving = ref(false)
 
 const isViewProfileImageLoading = ref(false)
 const handleViewProfileImageLoad = () => {
@@ -739,6 +768,10 @@ const fetchProfileData = async () => {
     // Initialize selected role with current user's role
     selectedRole.value = capitalizeFirstLetter(role)
 
+    if (isOwnProfile.value) {
+      await loadNotificationPreference()
+    }
+
     await fetchProfileImageUrl()
 
     memberSince.value = join_date ? formatDate(join_date) : 'N/A'
@@ -766,6 +799,35 @@ const fetchProfileData = async () => {
     console.error('Error loading profile:', err)
   } finally {
     isLoading.value = false
+  }
+}
+
+const loadNotificationPreference = async () => {
+  try {
+    const res = await getProfile()
+    const enabled = res.data?.notifications_enabled !== false
+    notificationsEnabled.value = enabled
+    setNotificationsEnabledLocal(enabled)
+  } catch (err) {
+    console.error('Failed to load notification preference:', err)
+  } finally {
+    notificationsReady.value = true
+  }
+}
+
+const toggleNotifications = async () => {
+  if (!notificationsReady.value || notificationsSaving.value) return
+  const next = !notificationsEnabled.value
+  notificationsSaving.value = true
+  clearError()
+  try {
+    await updateProfile({ notifications_enabled: next })
+    notificationsEnabled.value = next
+    setNotificationsEnabledLocal(next)
+  } catch (err) {
+    showError(err.response?.data?.error || t('profile.notificationsError'))
+  } finally {
+    notificationsSaving.value = false
   }
 }
 

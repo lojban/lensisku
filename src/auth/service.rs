@@ -851,7 +851,10 @@ pub async fn get_profile(pool: &Pool, user_id: i32) -> AppResult<ProfileResponse
 
     let row = client
         .query_one(
-            "SELECT realname, url, personal FROM users WHERE userid = $1",
+            "SELECT realname, url, personal,
+                    COALESCE((metadata->>'notifications_enabled')::boolean, true)
+                        AS notifications_enabled
+             FROM users WHERE userid = $1",
             &[&user_id],
         )
         .await?;
@@ -860,6 +863,7 @@ pub async fn get_profile(pool: &Pool, user_id: i32) -> AppResult<ProfileResponse
         realname: row.get("realname"),
         url: row.get("url"),
         personal: row.get("personal"),
+        notifications_enabled: row.get("notifications_enabled"),
     })
 }
 
@@ -925,22 +929,66 @@ pub async fn update_profile(
         param_count += 1;
     }
 
-    if updates.is_empty() {
-        // No fields to update
+    if updates.is_empty() && profile.notifications_enabled.is_none() {
         return Ok(None);
     }
 
-    // Add user_id as the last parameter
-    params.push(&user_id);
-    let user_id_param_index = param_count;
+    if !updates.is_empty() {
+        // Add user_id as the last parameter
+        params.push(&user_id);
+        let user_id_param_index = param_count;
 
-    let query = format!(
-        "UPDATE users SET {} WHERE userid = ${}",
-        updates.join(", "),
-        user_id_param_index
-    );
+        let query = format!(
+            "UPDATE users SET {} WHERE userid = ${}",
+            updates.join(", "),
+            user_id_param_index
+        );
 
-    transaction.execute(&query, &params).await?;
+        transaction.execute(&query, &params).await?;
+    }
+
+    if let Some(enabled) = profile.notifications_enabled {
+        transaction
+            .execute(
+                "UPDATE users
+                 SET metadata = jsonb_set(
+                     COALESCE(metadata, '{}'::jsonb),
+                     '{notifications_enabled}',
+                     to_jsonb($1::boolean),
+                     true
+                 )
+                 WHERE userid = $2",
+                &[&enabled, &user_id],
+            )
+            .await?;
+        if !enabled {
+            // Drop queued activity mail and clear message badges already on the account.
+            transaction
+                .execute(
+                    "UPDATE user_notifications
+                     SET email_sent = CURRENT_TIMESTAMP
+                     WHERE user_id = $1 AND email_sent IS NULL",
+                    &[&user_id],
+                )
+                .await?;
+            transaction
+                .execute(
+                    "UPDATE message_notifications
+                     SET is_read = TRUE, read_at = CURRENT_TIMESTAMP
+                     WHERE user_id = $1 AND is_read = FALSE",
+                    &[&user_id],
+                )
+                .await?;
+            transaction
+                .execute(
+                    "UPDATE thread_participants
+                     SET unread_count = 0
+                     WHERE user_id = $1",
+                    &[&user_id],
+                )
+                .await?;
+        }
+    }
 
     // If username was changed, generate a new token
     let new_token = if username_changed {

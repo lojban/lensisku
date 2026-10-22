@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { webSocketService } from './WebSocketService'
 import type { Message } from '@/types/messaging'
+import { notificationsEnabledLocal } from '@/utils/notificationPreference'
 
 // Type definition for PWA install prompt event
 interface BeforeInstallPromptEvent extends Event {
@@ -79,6 +80,7 @@ class NotificationService {
     if (typeof document === 'undefined' || !document.hidden) {
       return
     }
+    if (!notificationsEnabledLocal()) return
     const notif = notification as {
       id: string
       title: string
@@ -115,7 +117,12 @@ class NotificationService {
   }
 
   private async handleNewMessage(message: Message) {
-    if (typeof document === 'undefined' || !document.hidden || message.is_from_sender) {
+    if (
+      typeof document === 'undefined' ||
+      !document.hidden ||
+      message.is_from_sender ||
+      !notificationsEnabledLocal()
+    ) {
       return
     }
     await this.showNotification({

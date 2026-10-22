@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import {
   setAuthInstance,
   api,
+  getProfile,
   performBackendLogout,
   mergeProgress,
   getApiBaseUrl,
@@ -11,6 +12,10 @@ import {
 } from '@/api'
 
 import { getAllProgressForMerge, clearAfterMerge } from '@/composables/useAnonymousProgress'
+import {
+  clearNotificationsEnabledLocal,
+  setNotificationsEnabledLocal,
+} from '@/utils/notificationPreference'
 
 const ASSISTANT_CHATS_STORAGE_KEY = 'lensisku-assistant-chats-v1'
 
@@ -184,6 +189,7 @@ export function provideAuth(): AuthApi {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('username')
+    clearNotificationsEnabledLocal()
 
     state.isLoggedIn = false
     state.userId = 0
@@ -281,6 +287,16 @@ export function provideAuth(): AuthApi {
     startTokenVerification()
     void mergeAnonymousProgressThenClear()
     void mergeAssistantChatsThenClear()
+    void syncNotificationPreference()
+  }
+
+  async function syncNotificationPreference(): Promise<void> {
+    try {
+      const res = await getProfile()
+      setNotificationsEnabledLocal(res.data?.notifications_enabled !== false)
+    } catch (err) {
+      console.warn('Failed to load notification preference:', err)
+    }
   }
 
   async function mergeAssistantChatsThenClear(): Promise<void> {
@@ -395,6 +411,7 @@ export function provideAuth(): AuthApi {
       }
     } finally {
       state.isLoading = false
+      if (state.isLoggedIn) void syncNotificationPreference()
     }
   }
 

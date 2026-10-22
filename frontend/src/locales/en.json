@@ -512,6 +512,9 @@
       "uploadFailed": "Failed to upload image.",
       "payloadTooLarge": "The upload exceeds the server size limit. Try a smaller image or stronger compression."
     },
+    "notifications": "Notifications",
+    "notificationsHint": "Edits, new entries, discussions, and messages. Password resets, email confirmation, and password-change codes still arrive.",
+    "notificationsError": "Could not update notifications.",
     "updateSuccess": "Profile updated successfully!",
     "roleAssignedSuccess": "Role assigned successfully!",
     "usernameTakenError": "Username already taken. Please choose another."

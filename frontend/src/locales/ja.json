@@ -509,6 +509,9 @@
       "uploadFailed": "画像をアップロードできませんでした。",
       "payloadTooLarge": "送信サイズがサーバーの上限を超えています。より小さい画像にするか、圧縮を強めてください。"
     },
+    "notifications": "通知",
+    "notificationsHint": "編集、新規項目、議論、メッセージの通知です。パスワード再設定、メール確認、パスワード変更コードは届きます。",
+    "notificationsError": "通知設定を更新できませんでした。",
     "updateSuccess": "プロフィールを更新しました。",
     "roleAssignedSuccess": "ロールを割り当てました。",
     "usernameTakenError": "このユーザー名は既に使われています。別の名前を選んでください。"
