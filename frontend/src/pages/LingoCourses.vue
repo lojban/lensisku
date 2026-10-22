@@ -12,96 +12,109 @@
       />
     </div>
 
-    <LingoFeedLayout v-else class="min-h-0 flex-1" :aria-busy="isLoading || undefined">
+    <LingoFeedLayout
+      v-else
+      class="min-h-0 flex-1"
+      :show-aside="displayedSegment === 'courses'"
+      :show-header-aside="false"
+      :aria-busy="isLoading || undefined"
+    >
       <template #header>
-        <h1 class="text-2xl font-bold text-neutral-700">{{ t('lingo.languageCourses') }}</h1>
+        <div class="flex h-10 w-full min-w-0 items-center justify-between gap-2">
+          <div
+            class="lingo-catalog-tabs w-fit"
+            role="tablist"
+            :aria-label="t('collectionList.learnDescription')"
+          >
+            <button
+              v-for="seg in segments"
+              :key="seg.value"
+              type="button"
+              role="tab"
+              class="lingo-catalog-tabs__tab"
+              :class="{ 'lingo-catalog-tabs__tab--active': segment === seg.value }"
+              :aria-selected="segment === seg.value"
+              @click="setSegment(seg.value)"
+            >
+              {{ seg.label }}
+            </button>
+          </div>
+
+          <!-- Fixed 40×40 slot: unmounting the sort control on Collections caused header CLS. -->
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center">
+            <ToolbarSelectDropdown
+              v-if="segment === 'courses'"
+              :aria-label="selectedSortLabel"
+              trigger-icon="ellipsis"
+            >
+              <template #trigger="{ open }">
+                <button
+                  type="button"
+                  class="lingo-icon-btn lingo-icon-btn--muted"
+                  :aria-label="selectedSortLabel"
+                  aria-haspopup="menu"
+                  :aria-expanded="open"
+                >
+                  <ArrowUpDown class="h-5 w-5" aria-hidden="true" />
+                </button>
+              </template>
+              <ToolbarSelectDropdownItem
+                v-for="opt in sortOptions"
+                :key="opt.value"
+                :class="{ 'bg-green-50 text-green-700': sortBy === opt.value }"
+                @click="sortBy = opt.value"
+              >
+                {{ opt.label }}
+              </ToolbarSelectDropdownItem>
+            </ToolbarSelectDropdown>
+          </div>
+        </div>
       </template>
 
       <template #toolbar>
-        <div class="flex w-full flex-col gap-3">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div
-              class="lingo-catalog-tabs w-fit self-start"
-              role="tablist"
-              :aria-label="t('collectionList.learnDescription')"
-            >
-              <button
-                v-for="seg in segments"
-                :key="seg.value"
-                type="button"
-                role="tab"
-                class="lingo-catalog-tabs__tab"
-                :class="{ 'lingo-catalog-tabs__tab--active': segment === seg.value }"
-                :aria-selected="segment === seg.value"
-                @click="setSegment(seg.value)"
-              >
-                {{ seg.label }}
-              </button>
-            </div>
-            <label class="min-w-0 sm:shrink-0">
-              <span class="sr-only">{{ t('sort.sortByLabel') }}</span>
-              <select v-model="sortBy" class="lingo-select__control">
-                <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
-            </label>
-          </div>
-          <Input
-            v-model="searchQuery"
-            type="text"
-            class="input-field w-full sm:max-w-md"
-            :placeholder="
-              segment === 'courses'
-                ? t('lingo.searchCourses')
-                : t('collectionList.searchPlaceholderCollections')
-            "
-          />
-        </div>
+        <Input
+          v-model="searchQuery"
+          type="text"
+          class="input-field w-full sm:max-w-md"
+          :placeholder="
+            segment === 'courses'
+              ? t('lingo.searchCourses')
+              : t('collectionList.searchPlaceholderCollections')
+          "
+        />
       </template>
 
-      <div
-        v-if="isLoading"
-        class="flex w-full items-center justify-center py-12"
-        role="status"
-        :aria-label="t('components.loadingSpinner.loadingDefault')"
-      >
-        <div
-          class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
+      <!-- Keep the previous grid until the next payload lands (brandbook §8.2). -->
+      <div class="grid grid-cols-2 gap-4 lg:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]">
+        <LingoCourseCard
+          v-for="collection in collections"
+          :key="collection.collection_id"
+          :collection="collection"
+          :is-active="activeCourseId === collection.collection_id"
+          :disabled="isSelecting"
+          @select="onSelectCourse"
         />
       </div>
-
-      <template v-else>
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]">
-          <LingoCourseCard
-            v-for="collection in collections"
-            :key="collection.collection_id"
-            :collection="collection"
-            :is-active="activeCourseId === collection.collection_id"
-            :disabled="isSelecting"
-            @select="onSelectCourse"
-          />
-        </div>
-        <PaginationComponent
-          v-if="totalPages > 1"
-          :current-page="currentPage"
-          :total-pages="totalPages"
-          :total="totalCollections"
-          :per-page="perPage"
-          class="mt-6 w-full"
-          @prev="prevPage"
-          @next="nextPage"
-        />
-        <p v-if="collections.length === 0" class="py-8 text-center text-neutral-600">
-          {{ t('lingo.noCourses') }}
-        </p>
-      </template>
+      <PaginationComponent
+        v-if="totalPages > 1"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total="totalCollections"
+        :per-page="perPage"
+        class="mt-6 w-full"
+        @prev="prevPage"
+        @next="nextPage"
+      />
+      <p v-if="collections.length === 0" class="py-8 text-center text-neutral-600">
+        {{ t('lingo.noCourses') }}
+      </p>
     </LingoFeedLayout>
   </LingoLayout>
 </template>
 
 <script setup lang="ts">
-import { Input } from '@packages/ui'
+import { Input, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import { ArrowUpDown } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -127,6 +140,8 @@ const segment = ref(
 const collections = ref([])
 const isLoading = ref(true)
 const hasLoadedOnce = ref(false)
+/** Aside/chrome that must swap with the grid, not ahead of it (§8.2). */
+const displayedSegment = ref(segment.value)
 const isSelecting = ref(false)
 const sortBy = ref('active_week')
 const searchQuery = ref('')
@@ -144,6 +159,11 @@ const sortOptions = computed(() => [
   { value: 'active_all', label: t('collectionList.sortActiveAll') },
   { value: 'newest', label: t('collectionList.sortNewest') },
 ])
+const selectedSortLabel = computed(() =>
+  `${t('sort.sortByLabel')} ${
+    sortOptions.value.find((o) => o.value === sortBy.value)?.label ?? ''
+  }`.trim()
+)
 let searchDebounceTimer = null
 let loadRequestId = 0
 
@@ -153,19 +173,23 @@ function setSegment(next) {
 
 async function loadCollections() {
   const requestId = ++loadRequestId
+  // Always mark busy for a11y; the grid stays until replace (brandbook §8.2).
   isLoading.value = true
+  const nextSegment = segment.value
   try {
-    // Courses: public collections with flashcards. Collections: the full public catalog.
+    // Courses: public collections with flashcards. Collections: full public catalog.
+    // Search always applies to the active tab (name/description ILIKE + flashcards filter).
     const response = await getPublicCollections({
       sort: sortBy.value,
       page: currentPage.value,
       per_page: perPage.value,
       search: searchQuery.value.trim() || undefined,
-      has_flashcards_only: segment.value === 'courses' ? true : undefined,
+      has_flashcards_only: nextSegment === 'courses' ? true : undefined,
     })
     if (requestId !== loadRequestId) return
     collections.value = response.data.collections || []
     totalCollections.value = Number(response.data.total || 0)
+    displayedSegment.value = nextSegment
 
     if (collections.value.length === 0 && totalCollections.value > 0 && currentPage.value > 1) {
       currentPage.value = Math.max(1, totalPages.value)
@@ -177,6 +201,7 @@ async function loadCollections() {
     console.error(e)
     collections.value = []
     totalCollections.value = 0
+    displayedSegment.value = nextSegment
   } finally {
     if (requestId === loadRequestId) {
       isLoading.value = false
@@ -238,7 +263,9 @@ onBeforeUnmount(() => {
   display: inline-flex;
   width: fit-content;
   max-width: 100%;
-  align-self: flex-start;
+  height: 2.5rem;
+  box-sizing: border-box;
+  align-self: center;
   align-items: stretch;
   overflow: hidden;
   border-radius: 0.75rem;
@@ -251,7 +278,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   border: 0;
   background: transparent;
-  padding: 0.5rem 1rem;
+  padding: 0 1rem;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -271,40 +298,5 @@ onBeforeUnmount(() => {
 .lingo-catalog-tabs__tab--active:hover {
   background: rgb(34 197 94);
   color: #fff;
-}
-
-.lingo-select__control {
-  appearance: none;
-  -webkit-appearance: none;
-  height: 2.75rem;
-  width: 100%;
-  max-width: 100%;
-  cursor: pointer;
-  border-radius: 0.75rem;
-  border: 2px solid rgb(226 232 240);
-  border-bottom-width: 4px;
-  background-color: #fff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
-  padding: 0 2.25rem 0 0.875rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: rgb(64 64 64);
-}
-
-.lingo-select__control:focus {
-  outline: none;
-  box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 4px rgb(34 197 94);
-}
-
-@media (min-width: 640px) {
-  .lingo-select__control {
-    width: auto;
-    min-width: 14rem;
-  }
 }
 </style>

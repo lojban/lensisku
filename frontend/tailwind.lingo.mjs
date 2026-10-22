@@ -414,12 +414,14 @@ export function buildLingoThemeLayer() {
       paddingRight: 'var(--lingo-feed-inline-pad)',
     },
     /** Courses / collections switch on the Lingo catalog. */
+    /** Same 40px height as `.lingo-icon-btn` so the header row does not CLS with sort. */
     '.lingo-catalog-tabs': {
-      '@apply inline-flex w-fit max-w-full items-stretch self-start overflow-hidden rounded-xl border-2 border-b-4 border-slate-200 bg-white':
+      '@apply inline-flex h-10 w-fit max-w-full items-stretch self-center overflow-hidden rounded-xl border-2 border-b-4 border-slate-200 bg-white':
         {},
+      boxSizing: 'border-box',
     },
     '.lingo-catalog-tabs__tab': {
-      '@apply cursor-pointer border-0 bg-transparent px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 hover:bg-slate-50':
+      '@apply cursor-pointer border-0 bg-transparent px-4 py-0 text-xs font-bold uppercase tracking-wide text-slate-500 hover:bg-slate-50':
         {},
     },
     '.lingo-catalog-tabs__tab + .lingo-catalog-tabs__tab': {

@@ -15,7 +15,7 @@
       <div v-if="hasHeader" class="lingo-feed-layout__header-band">
         <div class="lingo-feed-layout__header-row">
           <slot name="header" />
-          <div v-if="showAside" class="lingo-feed-layout__header-aside">
+          <div v-if="showAside && showHeaderAside" class="lingo-feed-layout__header-aside">
             <LingoUserProgress />
           </div>
         </div>
@@ -53,6 +53,8 @@ import StudyStreak from './StudyStreak.vue'
 
 defineProps({
   showAside: { type: Boolean, default: true },
+  /** Hearts in the header stripe. Body streak/aside still follows `showAside`. */
+  showHeaderAside: { type: Boolean, default: true },
 })
 
 const slots = useSlots()

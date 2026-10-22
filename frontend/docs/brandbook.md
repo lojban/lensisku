@@ -6,13 +6,14 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 ## 1. Goals
 
-| Goal                          | What it means in practice                                                                                                                                                                        |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Recognizable product**      | Glossy **Aqua** and flat **toolbar** controls are both “Lensisku”; users can switch themes without breaking layouts. **Lingo** is a separate green chunky shell (Duolingo-style), not Aqua/Flat. |
-| **Predictable actions**       | Primary flows (save, search, destructive) map to **semantic** `ui-btn--*` names, not random Tailwind color utilities on `<button>`.                                                              |
-| **Accessible by default**     | Visible focus states (`focus-visible` / rings), icon-only controls require **accessible names** (`aria-label` or visible `label`).                                                               |
-| **Maintainable UI**           | New screens use **named patterns** from the Tailwind layer (`input-field`, `toolbar-panel`, `card-elevated`, …) and shared **`packages/ui`** primitives.                                         |
-| **No layout hacks for icons** | Icon + text controls use **`gap-*` on the parent**—never `mr-*` / `ml-*` on icons (breaks when labels are hidden or translated).                                                                 |
+| Goal                           | What it means in practice                                                                                                                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Recognizable product**       | Glossy **Aqua** and flat **toolbar** controls are both “Lensisku”; users can switch themes without breaking layouts. **Lingo** is a separate green chunky shell (Duolingo-style), not Aqua/Flat.              |
+| **Predictable actions**        | Primary flows (save, search, destructive) map to **semantic** `ui-btn--*` names, not random Tailwind color utilities on `<button>`.                                                                           |
+| **Stable lists while loading** | Tab, filter, sort, and search refetches **keep the previous list on screen** until the next payload is ready, then **replace** it in one step (§8.2). Never empty the feed or drop the scrollbar mid-request. |
+| **Accessible by default**      | Visible focus states (`focus-visible` / rings), icon-only controls require **accessible names** (`aria-label` or visible `label`).                                                                            |
+| **Maintainable UI**            | New screens use **named patterns** from the Tailwind layer (`input-field`, `toolbar-panel`, `card-elevated`, …) and shared **`packages/ui`** primitives.                                                      |
+| **No layout hacks for icons**  | Icon + text controls use **`gap-*` on the parent**—never `mr-*` / `ml-*` on icons (breaks when labels are hidden or translated).                                                                              |
 
 ---
 
@@ -222,6 +223,19 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 **Padding rule:** one inset owner per Lingo page — never `.lingo-main-inner` **and** `__body` / `.lingo-feed-layout`.
 
+### 8.2 Stable content while refetching (replace when ready)
+
+Catalog and feed screens (**Courses**, **Library**, Lingo courses, and similar lists) must not flash empty while a new query runs.
+
+| Rule                 | Practice                                                                                                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **First paint only** | Show a full-region spinner (or skeleton) **only** before the first successful payload (`!hasLoadedOnce`).                                                                                                                            |
+| **Later refetches**  | Tab switches, sort, search, and pagination **keep the previous rows** on screen. Set `aria-busy` on the list region; do **not** clear the array, swap the grid for a spinner, or collapse the scrollport.                            |
+| **Atomic replace**   | When the response arrives, assign the new rows (and any chrome that belongs with them—e.g. Lingo study streak) in the same update. Use a `displayedSegment` (or equivalent) if tab-dependent chrome must not flip ahead of the list. |
+| **Race safety**      | Increment a request id; ignore stale responses so a slow older tab cannot overwrite a newer one.                                                                                                                                     |
+
+Reference: `CollectionList.vue` / `LibraryPage.vue` (`if (!hasLoadedOnce) isLoading = true`), `LingoCourses.vue` (`displayedSegment` + keep grid).
+
 ### 8.1 Page header cards (`PageHeader.vue`)
 
 Machine source: `tailwind.config.js` (`.page-header-*`). Use these instead of one-off `gap-*` / `mb-*` in Courses, Library, collection detail, entry headers.
@@ -309,6 +323,7 @@ Machine source: `tailwind.config.js` (`.page-header-*`). Use these instead of on
 - On **Lingo** pages: wrapping menu / close / course cards / study Check in **`Button` `variant="neutral"`** (Aqua gloss “mutilates” Duolingo chunky controls)—use **`.lingo-btn*` / `.lingo-icon-btn`** instead (§10.3).
 - Showing the Lensisku **top bar or FAB** on `/lingo` routes—set **`meta.lingoShell`** (and hide flags) on the route.
 - Stacking **two content insets** (padding on `.lingo-main-inner` plus `__body` / `.lingo-feed-layout`) — pick one pad owner in `tailwind.lingo.mjs`.
+- **Emptying a feed mid-refetch** (clearing the list or swapping it for a spinner on tab/sort/search)—keep previous content and **replace when ready** (§8.2).
 
 ---
 
@@ -320,6 +335,7 @@ Machine source: `tailwind.config.js` (`.page-header-*`). Use these instead of on
 - [ ] Icon-only controls have **`aria-label`** (or visible label).
 - [ ] Focus visible on keyboard navigation (tab through interactive elements).
 - [ ] No new raw duplicate of **`input-field`** styling for standard text inputs.
+- [ ] Tab / sort / search refetch: previous list stays visible (scrollbar intact) until the new payload replaces it (§8.2).
 
 ---
 
