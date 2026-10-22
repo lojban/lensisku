@@ -1859,8 +1859,9 @@
     "searchCourses": "pentoi lo cmene .a lo skicu be lo karda ctuca",
     "languageCourses": "bangu ctuca",
     "currentCourse": "ca'a ctuca",
-    "noCourses": "no ctuca cu zasti .i ko finti lo liste fi lo jicmu kibygau",
-    "courses": "ctuca",
+    "noCourses": "no nunctu cu zasti .i ko finti lo liste fi lo jicmu kibygau",
+    "courses": "nunctu",
+    "allCourses": "ro nunctu",
     "classicCollections": "lo purci tarmi",
     "newTheme": "lo cnino tarmi",
 

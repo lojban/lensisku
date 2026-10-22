@@ -51,7 +51,15 @@
         </div>
 
         <div class="card-actions">
-          <div class="btn-group-forced flex flex-nowrap justify-center" role="group">
+          <!--
+            items-center + equal py: default `.btn-group-forced` is pt-1/pb-3 for aqua
+            shadow room, which lifts the pills. No invisible Flashcards twin — that twin
+            kept width aligned but shifted a lone Collection control off-center.
+          -->
+          <div
+            class="btn-group-forced flex flex-nowrap items-center justify-center !py-2"
+            role="group"
+          >
             <RouterLink
               :to="`/collections/${collection.collection_id}`"
               class="ui-btn--empty ui-btn--group-item"
@@ -66,15 +74,6 @@
               <GalleryHorizontalEnd class="w-4 h-4 shrink-0" />
               <span>{{ flashcardsButtonLabel }}</span>
             </RouterLink>
-            <!-- Invisible twin keeps action-group width aligned when the card has no flashcards. -->
-            <span
-              v-else
-              class="ui-btn--empty ui-btn--group-item invisible pointer-events-none"
-              aria-hidden="true"
-            >
-              <GalleryHorizontalEnd class="w-4 h-4 shrink-0" />
-              <span>{{ flashcardsButtonLabel }}</span>
-            </span>
           </div>
         </div>
 

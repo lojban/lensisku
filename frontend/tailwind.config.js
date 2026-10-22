@@ -1799,9 +1799,21 @@ export default {
         aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] =
           buildAquaUiBtnGroupItemGeometry()
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
-          /** Full borders on every segment; `-ml-px` overlaps adjacent 1px borders; hover/focus z-index reveals full outline. */
-          '@apply relative z-0 rounded-none border-r first:ml-0 -ml-px first:rounded-l-full last:rounded-r-full':
-            {},
+          /** Full borders on every segment; `-ml-px` overlaps adjacent 1px borders; hover/focus z-index reveals full outline.
+           *  Round the first/last `button` or `a`, not `:first-child`/`:last-child`, so a lone control
+           *  stays a pill when a non-control sibling (hidden spacer) sits in the group.
+           *  Raw radii (not `@apply rounded-*-full`): Tailwind rewrites nested
+           *  `:nth-child(1 of …)` `@apply` into `:first-child` / `:last-child`. */
+          '@apply relative z-0 rounded-none border-r -ml-px': {},
+          '&:nth-child(1 of button, a)': {
+            marginLeft: '0',
+            borderTopLeftRadius: '9999px',
+            borderBottomLeftRadius: '9999px',
+          },
+          '&:nth-last-child(1 of button, a)': {
+            borderTopRightRadius: '9999px',
+            borderBottomRightRadius: '9999px',
+          },
           '&:hover': {
             '@apply z-10': {},
           },

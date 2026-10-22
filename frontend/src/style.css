@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Flat `.btn-group-forced`: round first/last real control (`button`/`a`), not
+ * `:first-child`/`:last-child`. A lone Collection link stays a full pill when an
+ * invisible non-control spacer sits beside it (CollectionCard).
+ * Same selectors live in `tailwind.config.js` (flat btn-group-forced rules).
+ */
+html[data-button-theme='flat'] .btn-group-forced .ui-btn--group-item:first-child,
+html:not([data-button-theme]) .btn-group-forced .ui-btn--group-item:first-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -1px;
+}
+html[data-button-theme='flat'] .btn-group-forced .ui-btn--group-item:last-child,
+html:not([data-button-theme]) .btn-group-forced .ui-btn--group-item:last-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+html[data-button-theme='flat'] .btn-group-forced .ui-btn--group-item:nth-child(1 of button, a),
+html:not([data-button-theme]) .btn-group-forced .ui-btn--group-item:nth-child(1 of button, a) {
+  margin-left: 0;
+  border-top-left-radius: 9999px;
+  border-bottom-left-radius: 9999px;
+}
+html[data-button-theme='flat'] .btn-group-forced .ui-btn--group-item:nth-last-child(1 of button, a),
+html:not([data-button-theme]) .btn-group-forced .ui-btn--group-item:nth-last-child(1 of button, a) {
+  border-top-right-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .toggle-switch,
   .toggle-switch-thumb {

@@ -1,15 +1,18 @@
 <template>
-  <div
-    class="lingo-layout flex flex-col bg-white"
-    :class="fill ? 'h-full min-h-0' : 'min-h-screen'"
-  >
+  <div class="lingo-layout flex h-full min-h-0 flex-col bg-white">
     <LingoMobileHeader />
-    <LingoSidebar class="hidden lg:flex" />
-    <main class="lingo-main" :class="fill ? 'flex min-h-0 flex-col overflow-hidden' : ''">
-      <div class="lingo-main-inner" :class="fill ? 'min-h-0 flex-1' : ''">
-        <slot />
+    <!-- Full-width scrollport so the scrollbar sits on the viewport edge.
+         The rail and the page column stay one centered row. -->
+    <div class="lingo-shell-scroll">
+      <div class="lingo-shell-cluster">
+        <LingoSidebar class="hidden lg:flex" />
+        <main class="lingo-main" :class="fill ? 'flex flex-col' : ''">
+          <div class="lingo-main-inner" :class="fill ? 'flex flex-col' : ''">
+            <slot />
+          </div>
+        </main>
       </div>
-    </main>
+    </div>
     <!-- Bottom tab bar omitted: Learn/Courses/Leaderboard live in the sidebar / drawer. -->
   </div>
 </template>
@@ -25,3 +28,81 @@ defineProps({
   },
 })
 </script>
+
+<style>
+/* Live layout. Tailwind component CSS is easy to miss on a running dev server,
+   and the old rules (fixed rail, padded main, inner scroller) must lose. */
+.lingo-layout {
+  overflow: hidden;
+}
+
+.lingo-shell-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  background: #fff;
+}
+
+.lingo-shell-cluster {
+  display: grid;
+  grid-template-columns: minmax(0, 1056px);
+  justify-content: center;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .lingo-shell-cluster {
+    grid-template-columns: 256px minmax(0, 1056px);
+    width: max-content;
+    max-width: 100%;
+    margin-inline: auto;
+    justify-content: start;
+  }
+
+  .lingo-shell-cluster > .lingo-sidebar-rail {
+    position: sticky;
+    left: auto;
+    top: 0;
+    z-index: 40;
+    align-self: start;
+    height: 100svh;
+    width: 256px;
+    flex: none;
+  }
+}
+
+.lingo-shell-cluster > .lingo-main {
+  min-width: 0;
+  padding-left: 0;
+  overflow: visible;
+}
+
+.lingo-shell-cluster .lingo-main-inner {
+  height: auto;
+  min-height: 0;
+  max-width: 1056px;
+  overflow: visible;
+}
+
+.lingo-shell-cluster .lingo-feed-layout {
+  flex: none;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.lingo-shell-cluster .lingo-feed-layout__scroll {
+  flex: none;
+  overflow: visible;
+}
+
+.lingo-feed-layout__pin {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: #fff;
+}
+</style>

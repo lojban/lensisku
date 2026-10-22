@@ -1,7 +1,8 @@
 <template>
   <!--
-    Pin header (+ optional toolbar); only `__scroll` moves (full-bleed scrollbar).
-    Content inset: `--lingo-feed-inline-pad` on header / toolbar / body (brandbook §8).
+    Header (+ optional toolbar) sticks to the top of `.lingo-shell-scroll`.
+    That shell is the scrollport (scrollbar on the viewport edge).
+    Content inset: `--lingo-feed-inline-pad` on header / toolbar / body.
   -->
   <div
     class="lingo-feed-layout"
@@ -10,17 +11,19 @@
       'lingo-feed-layout--with-toolbar': hasToolbar,
     }"
   >
-    <div v-if="hasHeader" class="lingo-feed-layout__header-band">
-      <div class="lingo-feed-layout__header-row">
-        <slot name="header" />
-        <div v-if="showAside" class="lingo-feed-layout__header-aside">
-          <LingoUserProgress />
+    <div v-if="hasHeader || hasToolbar" class="lingo-feed-layout__pin">
+      <div v-if="hasHeader" class="lingo-feed-layout__header-band">
+        <div class="lingo-feed-layout__header-row">
+          <slot name="header" />
+          <div v-if="showAside" class="lingo-feed-layout__header-aside">
+            <LingoUserProgress />
+          </div>
         </div>
       </div>
-    </div>
 
-    <div v-if="hasToolbar" class="lingo-feed-layout__toolbar">
-      <slot name="toolbar" />
+      <div v-if="hasToolbar" class="lingo-feed-layout__toolbar">
+        <slot name="toolbar" />
+      </div>
     </div>
 
     <div class="lingo-feed-layout__scroll">

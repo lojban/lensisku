@@ -129,12 +129,12 @@ export function buildLingoThemeLayer() {
       '@apply mx-auto w-full max-w-none px-1 sm:px-2': {},
     },
     /**
-     * Desktop left rail (fixed) + drawer body on small screens.
-     * z-40 keeps the rail above main content; never rely on in-flow placement alone.
+     * Course rail. Drawer body on small screens (full width of the drawer).
+     * Desktop placement (sticky, beside the column, not the viewport edge)
+     * lives on `.lingo-shell-cluster > .lingo-sidebar-rail`.
      */
     '.lingo-sidebar-rail': {
-      '@apply flex h-full w-full flex-col border-r-2 border-slate-200 bg-white px-2 lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:h-svh lg:w-[256px]':
-        {},
+      '@apply flex h-full w-full flex-col border-r-2 border-slate-200 bg-white px-2': {},
     },
     '.lingo-sidebar-nav': {
       /* Desktop rail needs its own top inset; drawer gets that from `.lingo-drawer-toolbar`. */
@@ -149,16 +149,53 @@ export function buildLingoThemeLayer() {
       '@apply min-h-2 flex-1': {},
     },
 
-    /** Main column: left inset for desktop rail. No bottom pad (tab bar removed). */
+    /**
+     * Full-width scrollport (scrollbar on the viewport edge).
+     * The cluster is the rail + page column, centered, so the rail stays
+     * against the column even when that pair is inset from the viewport.
+     */
+    '.lingo-shell-scroll': {
+      '@apply min-h-0 w-full flex-1 overscroll-y-contain bg-white': {},
+      overflowX: 'hidden',
+      overflowY: 'auto',
+    },
+    '.lingo-shell-cluster': {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1056px)',
+      justifyContent: 'center',
+      width: '100%',
+      '@screen lg': {
+        gridTemplateColumns: '256px minmax(0, 1056px)',
+        width: 'max-content',
+        maxWidth: '100%',
+        marginInline: 'auto',
+        justifyContent: 'start',
+      },
+    },
+    '.lingo-shell-cluster > .lingo-sidebar-rail': {
+      '@screen lg': {
+        position: 'sticky',
+        top: '0',
+        zIndex: '40',
+        alignSelf: 'start',
+        height: '100svh',
+        width: '256px',
+      },
+    },
+
+    /**
+     * Page column beside the rail. No left inset: the rail is in the same row.
+     * Width cap is the cluster grid (256 + 1056), not padding.
+     */
     '.lingo-main': {
-      '@apply min-h-0 flex-1 pb-0 lg:pl-[256px]': {},
+      '@apply min-h-0 min-w-0 pb-0': {},
     },
     /**
-     * Width shell only (no padding). Inset lives on the scroll/content child:
-     * `.feed-page__body` or `.lingo-feed-layout` — never both.
+     * Width shell only (no padding). Height follows the page so the shell
+     * scrollport can grow. Inset lives on `.lingo-feed-layout`, not here.
      */
     '.lingo-main-inner': {
-      '@apply mx-auto flex h-full min-h-0 w-full max-w-[1056px] flex-col': {},
+      '@apply mx-auto flex w-full max-w-[1056px] flex-col': {},
     },
     /**
      * Fill+scroll Lingo pages (`feed-page` + `FeedPageBody`): body is the pad owner.
@@ -294,12 +331,12 @@ export function buildLingoThemeLayer() {
     },
     /**
      * Courses / levels / leaderboard shell.
-     * No horizontal pad on the shell — scrollbar on `__scroll` stays flush to the edge.
-     * Content inset uses `--lingo-feed-inline-pad` on header / toolbar / `__body`.
+     * The scrollport is `.lingo-shell-scroll` (viewport edge). This shell does not
+     * scroll. Content inset uses `--lingo-feed-inline-pad` on header / toolbar / `__body`.
      */
     '.lingo-feed-layout': {
-      '@apply flex min-h-0 w-full flex-1 flex-col gap-8': {},
-      overflow: 'hidden',
+      '@apply flex w-full flex-col gap-8': {},
+      overflow: 'visible',
       '--lingo-feed-inline-pad': '0.5rem',
       '--lingo-feed-aside-w': '368px',
       '--lingo-feed-col-gap': '3rem',
@@ -313,12 +350,19 @@ export function buildLingoThemeLayer() {
       paddingBottom: '0.5rem',
     },
     /**
-     * Full-bleed scroller (streak + grid). Header / search stay pinned above.
+     * Body wrapper. Scrolling happens on `.lingo-shell-scroll`, not here,
+     * so the scrollbar stays on the viewport edge.
      */
     '.lingo-feed-layout__scroll': {
-      '@apply min-h-0 flex-1 overscroll-y-contain': {},
-      overflowX: 'hidden',
-      overflowY: 'auto',
+      '@apply min-w-0': {},
+      overflow: 'visible',
+    },
+    /** Header + optional toolbar, stuck to the top of the shell scrollport. */
+    '.lingo-feed-layout__pin': {
+      position: 'sticky',
+      top: '0',
+      zIndex: '30',
+      backgroundColor: '#fff',
     },
     /**
      * DOM: aside then main. Owns the content inline pad (not the scroller).
@@ -368,6 +412,51 @@ export function buildLingoThemeLayer() {
       '@apply shrink-0 py-3': {},
       paddingLeft: 'var(--lingo-feed-inline-pad)',
       paddingRight: 'var(--lingo-feed-inline-pad)',
+    },
+    /** Courses / collections switch on the Lingo catalog. */
+    '.lingo-catalog-tabs': {
+      '@apply inline-flex w-fit max-w-full items-stretch self-start overflow-hidden rounded-xl border-2 border-b-4 border-slate-200 bg-white':
+        {},
+    },
+    '.lingo-catalog-tabs__tab': {
+      '@apply cursor-pointer border-0 bg-transparent px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 hover:bg-slate-50':
+        {},
+    },
+    '.lingo-catalog-tabs__tab + .lingo-catalog-tabs__tab': {
+      borderLeft: '2px solid rgb(226 232 240)',
+    },
+    '.lingo-catalog-tabs__tab--active': {
+      '@apply bg-green-500 text-white hover:bg-green-500': {},
+    },
+    /** Native sort menu, same chunky shell as `.lingo-btn`. */
+    '.lingo-select__control': {
+      appearance: 'none',
+      WebkitAppearance: 'none',
+      height: '2.75rem',
+      width: '100%',
+      maxWidth: '100%',
+      cursor: 'pointer',
+      borderRadius: '0.75rem',
+      border: '2px solid rgb(226 232 240)',
+      borderBottomWidth: '4px',
+      backgroundColor: '#fff',
+      backgroundImage:
+        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'right 0.75rem center',
+      backgroundSize: '1rem',
+      padding: '0 2.25rem 0 0.875rem',
+      fontSize: '0.875rem',
+      fontWeight: '700',
+      color: 'rgb(64 64 64)',
+      '@screen sm': {
+        width: 'auto',
+        minWidth: '14rem',
+      },
+    },
+    '.lingo-select__control:focus': {
+      outline: 'none',
+      boxShadow: '0 0 0 2px #fff, 0 0 0 4px rgb(34 197 94)',
     },
     /** Levels toolbar — flex only; L/R inset is on `__header-row`. */
     '.lingo-levels-header': {

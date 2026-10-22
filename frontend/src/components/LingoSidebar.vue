@@ -3,7 +3,7 @@
     <nav class="lingo-sidebar-nav">
       <template v-if="showCourseList">
         <LingoSidebarItem
-          :label="t('lingo.courses')"
+          :label="t('lingo.allCourses')"
           href="/lingo/courses"
           icon="courses"
           @navigate="$emit('navigate')"
