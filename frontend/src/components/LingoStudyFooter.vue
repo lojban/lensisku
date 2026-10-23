@@ -82,7 +82,7 @@
             <button
               v-if="showCardActions && status === 'none'"
               type="button"
-              class="lingo-btn lingo-btn--default lingo-btn--sm w-full !normal-case !tracking-normal"
+              class="lingo-btn lingo-btn--default lingo-btn--sm !normal-case !tracking-normal"
               :disabled="snoozeDisabled"
               :aria-label="labelSnooze || t('flashcardStudy.snooze')"
               :title="labelSnooze || t('flashcardStudy.snooze')"
