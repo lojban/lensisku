@@ -1634,6 +1634,7 @@
     },
     "recentChangeItem": {
       "fields": {
+        "word": "Entry",
         "definition": "Definition",
         "notes": "Notes",
         "etymology": "Etymology",
@@ -1737,6 +1738,7 @@
     "studyButton": "Study",
     "updated": "Updated",
     "updatedAt": "Updated at",
+    "sortRecentlyStudied": "Recently studied",
     "sortActiveWeek": "Popular this week",
     "sortActiveMonth": "Popular this month",
     "sortActiveAll": "All-time popular",

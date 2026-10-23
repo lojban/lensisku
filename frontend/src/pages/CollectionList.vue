@@ -170,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { CalendarDays, Calendar, Trophy, ArrowDown, Dumbbell } from '@lucide/vue'
+import { CalendarDays, Calendar, Trophy, ArrowDown, Dumbbell, History } from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -222,6 +222,12 @@ const segments = computed(() => [
 ])
 
 const sortOptions = computed(() => [
+  {
+    value: 'recently_studied',
+    label: t('collectionList.sortRecentlyStudied'),
+    icon: History,
+    aquaClass: 'ui-btn--sort-sky',
+  },
   {
     value: 'active_week',
     label: t('collectionList.sortActiveWeek'),

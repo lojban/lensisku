@@ -118,6 +118,7 @@ pub async fn list_collections(
         query.sort.as_deref(),
         query.search.as_deref(),
         pagination_bounds(query.page, query.per_page),
+        Some(user_id),
     )
     .await
 }
@@ -506,8 +507,15 @@ pub async fn list_public_collections(
     pool: &Pool,
     redis: &RedisCache,
     query: &ListCollectionsQuery,
+    viewer_user_id: Option<i32>,
 ) -> AppResult<CollectionListResponse> {
-    let sort_key = query.sort.as_deref().unwrap_or("active_week");
+    let requested = query.sort.as_deref().unwrap_or("active_week");
+    // Personal sort needs a viewer; anonymous callers get the public default.
+    let sort_key = if requested == "recently_studied" && viewer_user_id.is_none() {
+        "active_week"
+    } else {
+        requested
+    };
     let cache_key = format!("collections_public:{}", sort_key);
     let has_search = query
         .search
@@ -518,9 +526,11 @@ pub async fn list_public_collections(
     let has_levels_only = query.has_levels_only.unwrap_or(false);
     let pagination = pagination_bounds(query.page, query.per_page);
     let has_pagination = pagination.is_some();
+    let is_personal_sort = sort_key == "recently_studied";
 
     // For plain listing requests (sort-only), serve from cache and paginate in memory if requested.
-    if !has_search && !has_flashcards_only && !has_levels_only {
+    // Skip Redis for personal sorts — they depend on the caller.
+    if !is_personal_sort && !has_search && !has_flashcards_only && !has_levels_only {
         if let Ok(Some(response)) = redis.get::<CollectionListResponse>(&cache_key).await {
             if let Some((_, per_page, offset)) = pagination {
                 let start = offset as usize;
@@ -559,14 +569,20 @@ pub async fn list_public_collections(
         &client,
         &where_clause,
         &mut params,
-        query.sort.as_deref(),
+        Some(sort_key),
         query.search.as_deref(),
         pagination,
+        viewer_user_id,
     )
     .await?;
 
     // Keep existing sort-cache behavior only for plain (non-filtered, unpaginated) requests.
-    if !has_search && !has_flashcards_only && !has_levels_only && !has_pagination {
+    if !is_personal_sort
+        && !has_search
+        && !has_flashcards_only
+        && !has_levels_only
+        && !has_pagination
+    {
         let _ = redis
             .set(
                 &cache_key,
@@ -866,25 +882,43 @@ async fn query_collections(
     sort: Option<&str>,
     search: Option<&str>,
     pagination: Option<(i64, i64, i64)>,
+    viewer_user_id: Option<i32>,
 ) -> AppResult<CollectionListResponse> {
     let (active_join, sort_order) = match sort.unwrap_or("active_week") {
         "active_month" => (
             "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
              LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
-                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '30 days'",
-            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '30 days'"
+                .to_string(),
+            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC".to_string(),
         ),
         "active_all" => (
             "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
-             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id",
-            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id"
+                .to_string(),
+            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC".to_string(),
         ),
-        "newest" => ("", "c.created_at DESC"),
+        "newest" => (String::new(), "c.created_at DESC".to_string()),
+        "recently_studied" => {
+            // Caller’s last review on any card in the course; never-studied last.
+            let uid = viewer_user_id.unwrap_or(-1);
+            params.push(Box::new(uid));
+            let uid_idx = params.len();
+            (
+                format!(
+                    "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
+                     LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
+                         AND ufp.user_id = ${uid_idx} AND NOT ufp.archived"
+                ),
+                "MAX(ufp.last_reviewed_at) DESC NULLS LAST, c.updated_at DESC".to_string(),
+            )
+        }
         _ => (
             "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
              LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
-                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '7 days'",
-            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '7 days'"
+                .to_string(),
+            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC".to_string(),
         ),
     };
 
@@ -1076,7 +1110,8 @@ pub async fn invalidate_filter_picker_popular_cache(redis: &RedisCache) {
 /// `where_clause` – a WHERE clause already containing any necessary conditions
 ///    (but **no** $N placeholders for user_id – the parameter index is handled
 ///    by the caller).
-/// `sort`         – sort key: "active_week" | "active_month" | "active_all" | "newest".
+/// `sort`         – sort key: "active_week" | "active_month" | "active_all" | "newest"
+///    (`recently_studied` is not cached — it needs a viewer user id).
 /// `user_owned`   – if true the query selects `u.username` only (no `u.userid`),
 ///    matching the shape used by `list_collections`.
 fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: bool) -> String {
@@ -1095,7 +1130,7 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
             "ORDER BY COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
         ),
         "newest" => ("", "ORDER BY c.created_at DESC"),
-        // default: active_week
+        // default: active_week (and any unknown / personal keys skipped by cache refresh)
         _ => (
             "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
              LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id

@@ -1591,6 +1591,7 @@
     },
     "recentChangeItem": {
       "fields": {
+        "word": "エントリ",
         "definition": "定義",
         "notes": "注",
         "etymology": "語源",
@@ -1694,6 +1695,7 @@
     "studyButton": "学習",
     "updated": "更新",
     "updatedAt": "更新日時",
+    "sortRecentlyStudied": "最近学習した順",
     "sortActiveWeek": "今週の人気",
     "sortActiveMonth": "今月の人気",
     "sortActiveAll": "累計の人気",

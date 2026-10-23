@@ -7,7 +7,9 @@ use utoipa::ToSchema;
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ListCollectionsQuery {
     /// Sort order for collections.
-    /// - `active_week`  – most active flashcard users in the last 7 days (default)
+    /// - `recently_studied` – caller’s most recently reviewed flashcard course first
+    ///   (requires auth; anonymous falls back to `active_week`)
+    /// - `active_week`  – most active flashcard users in the last 7 days (default when anonymous)
     /// - `active_month` – most active flashcard users in the last 30 days
     /// - `active_all`   – most active flashcard users of all time
     /// - `newest`       – most recently created first

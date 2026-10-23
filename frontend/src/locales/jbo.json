@@ -1596,10 +1596,11 @@
     },
     "recentChangeItem": {
       "fields": {
+        "word": "vlapoi",
         "definition": "velckivei",
         "notes": "notci",
         "etymology": "krasi le vlapoi",
-        "gloss_keywords": "fanva valsi",
+        "gloss_keywords": "tordu xe fanva",
         "place_keywords": "valsi tcita lu'a lo te bridi",
         "language": "bangu",
         "selmaho": "selma'o",
@@ -1711,6 +1712,7 @@
     "studyButton": "tadni",
     "updated": "ba'o se galfi",
     "updatedAt": "ba'o se galfi",
+    "sortRecentlyStudied": "puzi se tadni",
     "sortActiveWeek": "lei misno pe le jeftu",
     "sortActiveMonth": "lei misno pe le masti",
     "sortActiveAll": "lei misno",

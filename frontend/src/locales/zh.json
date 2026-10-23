@@ -1596,6 +1596,7 @@
     },
     "recentChangeItem": {
       "fields": {
+        "word": "词条",
         "definition": "释义",
         "notes": "备注",
         "etymology": "词源",
@@ -1699,6 +1700,7 @@
     "studyButton": "学习",
     "updated": "更新于",
     "updatedAt": "更新时间",
+    "sortRecentlyStudied": "最近学习",
     "sortActiveWeek": "本周热门",
     "sortActiveMonth": "本月热门",
     "sortActiveAll": "总热门",

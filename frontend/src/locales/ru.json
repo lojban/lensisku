@@ -1545,6 +1545,7 @@
     },
     "recentChangeItem": {
       "fields": {
+        "word": "Запись",
         "definition": "Определение",
         "notes": "Заметки",
         "etymology": "Этимология",
@@ -1645,6 +1646,7 @@
     "studyButton": "Учить",
     "updated": "Обновлено",
     "updatedAt": "Обновлено",
+    "sortRecentlyStudied": "Недавно изучали",
     "sortActiveWeek": "Популярные за неделю",
     "sortActiveMonth": "Популярные за месяц",
     "sortActiveAll": "Популярные за всё время",

@@ -143,7 +143,7 @@ const hasLoadedOnce = ref(false)
 /** Aside/chrome that must swap with the grid, not ahead of it (§8.2). */
 const displayedSegment = ref(segment.value)
 const isSelecting = ref(false)
-const sortBy = ref('active_week')
+const sortBy = ref('recently_studied')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const perPage = ref(12)
@@ -154,6 +154,7 @@ const segments = computed(() => [
   { value: 'collections', label: t('collectionList.catalogCollections') },
 ])
 const sortOptions = computed(() => [
+  { value: 'recently_studied', label: t('collectionList.sortRecentlyStudied') },
   { value: 'active_week', label: t('collectionList.sortActiveWeek') },
   { value: 'active_month', label: t('collectionList.sortActiveMonth') },
   { value: 'active_all', label: t('collectionList.sortActiveAll') },

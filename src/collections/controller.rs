@@ -159,8 +159,16 @@ pub async fn list_public_collections(
     pool: web::Data<Pool>,
     redis_cache: web::Data<RedisCache>,
     query: web::Query<ListCollectionsQuery>,
+    claims: Option<Claims>,
 ) -> impl Responder {
-    match service::list_public_collections(&pool, &redis_cache, &query).await {
+    match service::list_public_collections(
+        &pool,
+        &redis_cache,
+        &query,
+        claims.as_ref().map(|c| c.sub),
+    )
+    .await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to list public collections: {}", e)
