@@ -61,6 +61,7 @@ pub async fn list_leaderboard(
                  FROM users u
                  JOIN user_flashcard_progress ufp ON ufp.user_id = u.userid
                  WHERE u.password != 'DISABLED'
+                   AND LOWER(u.role::text) <> 'guest'
                  GROUP BY u.userid, u.username
                  HAVING COALESCE(SUM(ufp.review_count), 0) > 0
              ),
@@ -126,6 +127,7 @@ async fn fetch_user_standing(
                  FROM users u
                  LEFT JOIN user_flashcard_progress ufp ON ufp.user_id = u.userid
                  WHERE u.userid = $1 AND u.password != 'DISABLED'
+                   AND LOWER(u.role::text) <> 'guest'
                  GROUP BY u.userid, u.username
              ),
              all_scored AS (
@@ -136,6 +138,7 @@ async fn fetch_user_standing(
                  FROM users u
                  JOIN user_flashcard_progress ufp ON ufp.user_id = u.userid
                  WHERE u.password != 'DISABLED'
+                   AND LOWER(u.role::text) <> 'guest'
                  GROUP BY u.userid, u.username
                  HAVING COALESCE(SUM(ufp.review_count), 0) > 0
              ),

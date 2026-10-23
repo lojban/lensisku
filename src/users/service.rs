@@ -20,8 +20,8 @@ pub async fn list_users(
     let per_page = query.per_page.unwrap_or(20);
     let offset = query.offset.unwrap_or((page - 1) * per_page);
 
-    // Build the base query
-    let mut query_conditions = vec!["TRUE"];
+    // Build the base query — never list disposable guest study accounts.
+    let mut query_conditions = vec!["LOWER(role::text) <> 'guest'"];
     let mut params = Vec::new();
 
     // Handle search

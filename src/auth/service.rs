@@ -782,6 +782,82 @@ pub async fn resend_confirmation(
     }
 }
 
+/// Create a disposable guest user + session for anonymous study (normal progress FKs).
+/// Frontend stores only the returned tokens; on real login the progress is claimed.
+pub async fn create_guest_session(
+    pool: &Pool,
+    ip_address: String,
+    user_agent: String,
+) -> AppResult<TokenPair> {
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let id = Uuid::new_v4();
+    let username = format!("guest_{}", id.simple());
+    let email = format!("guest_{}@guest.invalid", id.simple());
+    // Unusable random password — guests never log in with credentials.
+    let raw: String = rng()
+        .sample_iter(&Alphanumeric)
+        .take(48)
+        .map(char::from)
+        .collect();
+    let password_hash = hash_password(&raw)
+        .map_err(|e| AppError::Auth(format!("Password hashing failed: {}", e)))?;
+    let created_at = Utc::now();
+    let role = UserRole::Guest.to_string();
+
+    let row = transaction
+        .query_one(
+            "INSERT INTO users (
+                username, email, password, created_at,
+                role, email_confirmed, votesize
+            ) VALUES ($1, $2, $3, $4, $5, false, $6)
+            RETURNING userid",
+            &[
+                &username,
+                &email,
+                &password_hash,
+                &created_at,
+                &role,
+                &1.0_f32,
+            ],
+        )
+        .await?;
+
+    let userid: i32 = row.get("userid");
+    let user = User {
+        userid,
+        username,
+        email,
+        password: password_hash,
+        created_at,
+        followers: 0,
+        role,
+        email_confirmed: false,
+        email_confirmation_token: None,
+        email_confirmation_sent_at: None,
+    };
+
+    let parsed_ip: Option<std::net::IpAddr> = ip_address.parse().ok();
+    let session = transaction
+        .query_one(
+            "INSERT INTO user_sessions (user_id, ip_address, user_agent)
+             VALUES ($1, $2, $3) RETURNING session_uuid",
+            &[&userid, &parsed_ip, &user_agent],
+        )
+        .await?;
+    let jwt_session_id = Some(session.get::<_, Uuid>("session_uuid"));
+    transaction.commit().await?;
+
+    create_token_pair(pool, &user, jwt_session_id).await
+}
+
 pub async fn login(
     pool: &Pool,
     user_data: &LoginRequest,
@@ -811,6 +887,8 @@ pub async fn login(
 
             if user.role.to_lowercase() == UserRole::Blocked.to_string() {
                 Err(AppError::Auth("Account is blocked".to_string()))
+            } else if user.role.to_lowercase() == UserRole::Guest.to_string() {
+                Err(AppError::Auth("Invalid credentials".to_string()))
             } else if verify_password(&user_data.password, &user.password).unwrap_or(false) {
                 let mut user_for_token = user.clone();
 

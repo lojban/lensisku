@@ -10,7 +10,8 @@ use super::{
         self, AddCardsRequest, CreateFlashcardRequest, CreateLevelRequest, DirectAnswerResponse,
         FillInAnswerRequest, FlashcardListResponse, FlashcardResponse, ImportFromCollectionRequest,
         ImportFromCollectionResponse, LevelCardListResponse, LevelCardResponse, LevelListResponse,
-        LevelResponse, MergeProgressRequest, MergeProgressResponse, ReviewRequest, ReviewResponse,
+        ClaimGuestProgressRequest, ClaimGuestProgressResponse, LevelResponse, MergeProgressRequest,
+        MergeProgressResponse, ReviewRequest, ReviewResponse,
         StreakResponse, UpdateLevelRequest,
     },
     models::*,
@@ -723,6 +724,48 @@ pub async fn merge_progress(
             let msg = e.to_string();
             if msg.to_lowercase().contains("access denied") {
                 HttpResponse::Forbidden().json(json!({ "error": msg }))
+            } else {
+                HttpResponse::InternalServerError().json(json!({ "error": msg }))
+            }
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/flashcards/progress/claim-guest",
+    tag = "flashcards",
+    request_body = ClaimGuestProgressRequest,
+    responses(
+        (status = 200, description = "Guest progress claimed", body = ClaimGuestProgressResponse),
+        (status = 400, description = "Invalid guest session"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Claim guest study progress",
+    description = "Merges a guest study account's card/level progress into the authenticated user and deletes the guest."
+)]
+#[post("/progress/claim-guest")]
+pub async fn claim_guest_progress(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    req: web::Json<ClaimGuestProgressRequest>,
+) -> impl Responder {
+    if claims.role.to_lowercase() == "guest" {
+        return HttpResponse::BadRequest().json(json!({
+            "error": "Guest accounts cannot claim other guests"
+        }));
+    }
+    match service::claim_guest_progress(&pool, claims.sub, &req.guest_access_token).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.to_lowercase().contains("invalid guest")
+                || msg.to_lowercase().contains("not a guest")
+                || msg.to_lowercase().contains("no longer available")
+            {
+                HttpResponse::BadRequest().json(json!({ "error": msg }))
             } else {
                 HttpResponse::InternalServerError().json(json!({ "error": msg }))
             }

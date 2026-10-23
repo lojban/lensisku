@@ -381,6 +381,45 @@ pub async fn confirm_email(
 #[utoipa::path(
     post,
     tag = "auth",
+    path = "/auth/guest",
+    responses(
+        (status = 200, description = "Guest session created"),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Create guest study session",
+    description = "Creates a disposable guest user and session so anonymous study uses the same progress APIs as logged-in users. Tokens belong only in localStorage until claim-on-login."
+)]
+#[post("/guest")]
+pub async fn create_guest(pool: web::Data<Pool>, req: HttpRequest) -> impl Responder {
+    let peer = req.peer_addr().map(|addr| addr.ip());
+    let ip_address = peer
+        .filter(|ip| ip.is_loopback())
+        .and_then(|_| req.headers().get("X-Real-IP"))
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<std::net::IpAddr>().ok())
+        .or(peer)
+        .map(|ip| ip.to_string())
+        .unwrap_or_else(|| "unknown".into());
+    let user_agent = req
+        .headers()
+        .get("User-Agent")
+        .map_or("unknown".to_string(), |h| {
+            h.to_str().unwrap_or("unknown").to_string()
+        });
+    match service::create_guest_session(&pool, ip_address, user_agent).await {
+        Ok(token_pair) => HttpResponse::Ok().json(json!({
+            "access_token": token_pair.access_token,
+            "refresh_token": token_pair.refresh_token,
+        })),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to create guest session: {e}")
+        })),
+    }
+}
+
+#[utoipa::path(
+    post,
+    tag = "auth",
     path = "/auth/login",
     request_body = LoginRequest,
     responses(

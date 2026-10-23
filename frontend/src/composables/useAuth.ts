@@ -12,6 +12,7 @@ import {
 } from '@/api'
 
 import { getAllProgressForMerge, clearAfterMerge } from '@/composables/useAnonymousProgress'
+import { claimGuestProgressIntoAccount } from '@/composables/useGuestSession'
 import {
   clearNotificationsEnabledLocal,
   setNotificationsEnabledLocal,
@@ -285,7 +286,8 @@ export function provideAuth(): AuthApi {
     }
 
     startTokenVerification()
-    void mergeAnonymousProgressThenClear()
+    // Prefer server guest session claim; keep legacy localStorage merge as fallback.
+    void claimGuestProgressIntoAccount().then(() => mergeAnonymousProgressThenClear())
     void mergeAssistantChatsThenClear()
     void syncNotificationPreference()
   }

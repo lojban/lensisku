@@ -22,6 +22,8 @@ pub enum UserRole {
     User,
     Unconfirmed,
     Blocked,
+    /// Anonymous study dummy account — not listed; progress claimed on real login.
+    Guest,
 }
 
 impl std::fmt::Display for UserRole {
@@ -33,6 +35,7 @@ impl std::fmt::Display for UserRole {
             UserRole::User => write!(f, "user"),
             UserRole::Unconfirmed => write!(f, "unconfirmed"),
             UserRole::Blocked => write!(f, "blocked"),
+            UserRole::Guest => write!(f, "guest"),
         }
     }
 }
@@ -48,6 +51,7 @@ impl FromStr for UserRole {
             "user" => Ok(UserRole::User),
             "unconfirmed" => Ok(UserRole::Unconfirmed),
             "blocked" => Ok(UserRole::Blocked),
+            "guest" => Ok(UserRole::Guest),
             _ => Err("Invalid role".into()),
         }
     }

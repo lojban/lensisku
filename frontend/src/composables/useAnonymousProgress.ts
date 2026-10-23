@@ -13,12 +13,32 @@ const STORAGE_KEY = 'lensisku_anon_progress'
 /** Bumped on every write so Vue computeds that read localStorage re-evaluate. */
 export const anonProgressVersion = ref(0)
 
+/** One guest answer within a level (used to resume the queue after reload). */
+export interface AnonCardAttempt {
+  flashcard_id: number
+  card_side: string
+  correct?: boolean
+}
+
 export interface LevelProgressData {
   cards_completed: number
   correct_answers: number
   total_answers: number
   completed_at?: string | null
-  card_attempts?: unknown[]
+  card_attempts?: AnonCardAttempt[]
+}
+
+export function attemptKey(flashcardId: number | string, cardSide?: string | null): string {
+  return `${flashcardId}:${cardSide || 'direct'}`
+}
+
+export function answeredAttemptKeys(progress: LevelProgressData | null | undefined): Set<string> {
+  const set = new Set<string>()
+  for (const a of progress?.card_attempts || []) {
+    if (a?.flashcard_id == null) continue
+    set.add(attemptKey(a.flashcard_id, a.card_side))
+  }
+  return set
 }
 
 export interface AnonLevelLike {
@@ -165,6 +185,48 @@ export function saveLevelProgress(
   writeRaw(all)
 }
 
+/** Append one attempt (deduped by flashcard+side) and refresh counters. */
+export function recordCardAttempt(
+  collectionId: string | number,
+  levelId: string | number,
+  attempt: AnonCardAttempt,
+  meta?: { min_cards?: number; min_success_rate?: number } | null
+): LevelProgressData {
+  const cur: LevelProgressData = {
+    cards_completed: 0,
+    correct_answers: 0,
+    total_answers: 0,
+    card_attempts: [],
+    ...(getProgress(collectionId, levelId) as LevelProgressData | null),
+  }
+  const key = attemptKey(attempt.flashcard_id, attempt.card_side)
+  const attempts = [...(cur.card_attempts || [])]
+  const existingIdx = attempts.findIndex((a) => attemptKey(a.flashcard_id, a.card_side) === key)
+  if (existingIdx >= 0) attempts[existingIdx] = { ...attempts[existingIdx], ...attempt }
+  else attempts.push(attempt)
+
+  const total_answers = attempts.length
+  const correct_answers = attempts.filter((a) => a.correct).length
+  const cards_completed = correct_answers
+  let completed_at = cur.completed_at ?? null
+  if (meta && total_answers > 0) {
+    const rate = correct_answers / total_answers
+    if (cards_completed >= (meta.min_cards ?? 0) && rate >= (meta.min_success_rate ?? 0)) {
+      completed_at = new Date().toISOString()
+    }
+  }
+  const next: LevelProgressData = {
+    ...cur,
+    card_attempts: attempts,
+    total_answers,
+    correct_answers,
+    cards_completed,
+    completed_at,
+  }
+  saveLevelProgress(collectionId, levelId, next)
+  return next
+}
+
 export interface MergeLevelProgressRow {
   level_id: number
   cards_completed: number
@@ -215,6 +277,9 @@ export function useAnonymousProgress() {
   return {
     getProgress,
     saveLevelProgress,
+    recordCardAttempt,
+    answeredAttemptKeys,
+    attemptKey,
     getAllProgressForMerge,
     clearAfterMerge,
     isLevelUnlockedForAnon,

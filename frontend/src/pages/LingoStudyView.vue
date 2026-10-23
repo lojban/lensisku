@@ -1,13 +1,5 @@
 <template>
-  <div
-    class="lingo-study-root flex h-full min-h-0 flex-col overflow-hidden bg-slate-50"
-    :class="{ 'pt-for-anon-banner': anonBannerVisible }"
-  >
-    <AnonymousProgressBanner
-      v-if="cardsAnsweredInSession >= 4"
-      position="top"
-      @visible="anonBannerVisible = $event"
-    />
+  <div class="lingo-study-root flex h-full min-h-0 flex-col overflow-hidden bg-slate-50">
     <!-- Full-bleed header stripe; inner chrome matches the lesson column width -->
     <LingoStudyHeader
       v-if="(currentCard || outOfHearts) && !isLoading"
@@ -19,6 +11,12 @@
         <LingoUserProgress class="icon-btn-header-back--compact !min-w-9" />
       </template>
     </LingoStudyHeader>
+
+    <AnonymousProgressBanner
+      v-if="cardsAnsweredInSession >= ANON_BANNER_AFTER_ANSWERS"
+      variant="lingo"
+      position="inline"
+    />
 
     <!-- Lesson column (card body only) -->
     <div
@@ -436,12 +434,19 @@ import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'
-import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
+import {
+  useAnonymousProgress,
+  type LevelProgressData,
+  answeredAttemptKeys,
+  attemptKey,
+} from '@/composables/useAnonymousProgress'
+import { ensureGuestSession } from '@/composables/useGuestSession'
 import { queryStr, paramStr } from '@/utils/routeQuery'
 
 const ANON_BANNER_ANSWERED_KEY = 'lensisku_study_cards_answered'
+/** Show sign-up nudge only after a real stretch of practice (not a few taps). */
+const ANON_BANNER_AFTER_ANSWERS = 12
 
-const anonBannerVisible = ref(false)
 const cardsAnsweredInSession = ref(0)
 const sessionXpAwarded = ref(0)
 const sessionXpClaimed = ref(false)
@@ -453,7 +458,7 @@ const router = useRouter()
 const auth = useAuth()
 const {
   getProgress,
-  saveLevelProgress,
+  recordCardAttempt,
   isLevelUnlockedForAnon,
   resolveAndRememberActiveLevelId,
   setActiveLevelId,
@@ -490,7 +495,11 @@ const levelIdParam = computed(() => {
   return s ? parseInt(s, 10) : null
 })
 const isAnonLevelMode = computed(() => !auth.state.isLoggedIn && levelIdParam.value != null)
-const isAnonNoLevelsMode = ref(false) // anon studying collection with no levels (uses public flashcards)
+const isAnonNoLevelsMode = ref(false) // legacy local-only fallback when guest session fails
+/** Backend guest session active — same review/due APIs as logged-in. */
+const guestSessionActive = ref(false)
+/** True only for the legacy localStorage study path (no guest JWT). */
+const isAnonStudy = computed(() => !auth.state.isLoggedIn && !guestSessionActive.value)
 const anonLevelMeta = ref(null) // { min_cards, min_success_rate } when in anon level mode
 /** Next required level to center on the path after a levelled lesson finish. */
 const focusLevelId = ref<number | null>(null)
@@ -787,9 +796,7 @@ const loadLevelCardsForAnon = async () => {
       }
       page++
     } while (all.length < total)
-    remainingCards.value = all
-    sessionTotal.value = all.length
-    loadNextCard()
+    restoreAnonQueue(cid, lid, all)
   } catch (error) {
     console.error(t('flashcardStudy.loadError'), error)
   } finally {
@@ -816,11 +823,9 @@ const loadCollectionCardsForAnon = async () => {
       }
     }
     if (all.length === 0) return false
-    remainingCards.value = all
-    sessionTotal.value = all.length
     isAnonNoLevelsMode.value = true
     anonLevelMeta.value = null
-    loadNextCard()
+    restoreAnonQueue(cid, 0, all)
     return true
   } catch (error) {
     console.error(t('flashcardStudy.loadError'), error)
@@ -830,29 +835,67 @@ const loadCollectionCardsForAnon = async () => {
   }
 }
 
-const applyAnonLevelProgress = (correct: boolean) => {
-  const cid = collectionId.value
-  const lid = isAnonNoLevelsMode.value ? 0 : levelIdParam.value
-  if (!cid || lid == null) return
-  const merged: LevelProgressData = {
-    cards_completed: 0,
-    correct_answers: 0,
-    total_answers: 0,
-    ...(getProgress(cid, lid) as LevelProgressData | null),
+/** Resume guest queue from localStorage attempts so reload does not restart the lesson. */
+function restoreAnonQueue(cid: string | number, lid: string | number, all: unknown[]) {
+  const local = getProgress(cid, lid) as LevelProgressData | null
+  const done = answeredAttemptKeys(local)
+  const remaining = (
+    all as Array<{ flashcard?: { id?: number }; progress?: Array<{ card_side?: string }> }>
+  ).filter((c) => {
+    const id = c.flashcard?.id
+    if (id == null) return true
+    return !done.has(attemptKey(id, c.progress?.[0]?.card_side))
+  })
+  sessionTotal.value = all.length
+  const answered = Math.max(done.size, local?.total_answers ?? 0)
+  cardsAnsweredInSession.value = answered
+  try {
+    sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(answered))
+  } catch (_) {}
+  remainingCards.value = remaining
+  currentCard.value = null
+  if (remaining.length === 0) {
+    // All cards already answered — show finish screen.
+    return
   }
-  const cur = merged
-  const total_answers = (cur.total_answers || 0) + 1
-  const correct_answers = (cur.correct_answers || 0) + (correct ? 1 : 0)
-  const cards_completed = correct_answers
-  let completed_at = cur.completed_at ?? null
-  const meta = anonLevelMeta.value
-  if (meta && total_answers > 0) {
-    const rate = correct_answers / total_answers
-    if (cards_completed >= meta.min_cards && rate >= meta.min_success_rate) {
-      completed_at = new Date().toISOString()
+  // Prefer URL hash card if it is still unanswered; else next remaining.
+  const hash = route.hash || ''
+  if (hash.startsWith('#q-')) {
+    const want = hash.slice(1)
+    const idx = remaining.findIndex((c) => {
+      const side = c.progress?.[0]?.card_side ?? 'direct'
+      const key = `${side}\0${stimulusTextForCard(c)}`
+      return `q-${hashLingoQuestionKey(key)}` === want
+    })
+    if (idx > 0) {
+      const [picked] = remaining.splice(idx, 1)
+      remainingCards.value = remaining
+      currentCard.value = picked
+      showAnswer.value = false
+      return
     }
   }
-  saveLevelProgress(cid, lid, { cards_completed, correct_answers, total_answers, completed_at })
+  loadNextCard()
+}
+
+const applyAnonLevelProgress = (correct: boolean) => {
+  const cid = collectionId.value
+  // Prefer real level id; fall back to 0 for collection-wide guest study.
+  const lid = levelIdParam.value ?? (isAnonNoLevelsMode.value || isAnonStudy.value ? 0 : null)
+  if (!cid || lid == null) return
+  const card = currentCard.value
+  const flashcardId = card?.flashcard?.id
+  if (flashcardId == null) return
+  recordCardAttempt(
+    cid,
+    lid,
+    {
+      flashcard_id: Number(flashcardId),
+      card_side: card?.progress?.[0]?.card_side || 'direct',
+      correct,
+    },
+    anonLevelMeta.value
+  )
 }
 
 const loadNextCard = () => {
@@ -879,15 +922,17 @@ function stimulusTextForCard(card) {
 }
 
 function syncQuestionHash(card) {
+  // Always keep path + query (e.g. levelId) — `{ hash }` alone drops them in vue-router.
+  const keep = { path: route.path, query: { ...route.query } }
   if (!card) {
-    if (route.hash) router.replace({ hash: '' })
+    if (route.hash) router.replace({ ...keep, hash: '' })
     return
   }
   const side = card.progress?.[0]?.card_side ?? 'direct'
   const key = `${side}\0${stimulusTextForCard(card)}`
   const next = `#q-${hashLingoQuestionKey(key)}`
   if (route.hash !== next) {
-    router.replace({ hash: next })
+    router.replace({ ...keep, hash: next })
   }
 }
 
@@ -957,7 +1002,7 @@ const submitAnswer = async (rating?: number) => {
     try {
       sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
     } catch (_) {}
-    if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
+    if (isAnonStudy.value) {
       let correct
       if (isFillInMode.value) {
         correct = isAnonFillinAnswerCorrect()
@@ -972,6 +1017,8 @@ const submitAnswer = async (rating?: number) => {
         applyAnonLevelProgress(correct)
         if (correct) registerCorrectAnswer()
         else registerWrongAnswer()
+        // SFX already played on Check; advance after rate.
+        showAnswer.value = false
         loadNextCard()
       }
       isSubmitting.value = false
@@ -1027,7 +1074,7 @@ const submitQuizOption = async (selectedOption) => {
     try {
       sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
     } catch (_) {}
-    if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
+    if (isAnonStudy.value) {
       const correct =
         String(selectedOption).trim().toLowerCase() ===
         String((fc.quiz_options || [])[0] || '')
@@ -1061,14 +1108,14 @@ const submitQuizOption = async (selectedOption) => {
 const handleQuizNextCard = async () => {
   quizResult.value = null
   loadNextCard()
-  if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
+  if (!isAnonStudy.value) await checkForDueChanges()
 }
 
 const snoozeCard = async () => {
   if (!currentCard.value || isSubmitting.value) return
   isSubmitting.value = true
   try {
-    if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
+    if (isAnonStudy.value) {
       loadNextCard()
       return
     }
@@ -1101,7 +1148,7 @@ const handleNextCard = async () => {
   fillinResult.value = null
   userAnswer.value = ''
   loadNextCard()
-  if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
+  if (!isAnonStudy.value) await checkForDueChanges()
 }
 
 const newCardsMessage = ref('')
@@ -1247,21 +1294,29 @@ onMounted(async () => {
     const langsResponse = await getLanguages()
     languages.value = langsResponse.data
 
+    if (!auth.state.isLoggedIn) {
+      const session = await ensureGuestSession()
+      guestSessionActive.value = !!session
+    }
+
+    // Real user or backend guest: one study mechanism (due + review APIs).
+    if (auth.state.isLoggedIn || guestSessionActive.value) {
+      const cardIdStr = queryStr(route.query.card_id)
+      const cardIdToLoad = cardIdStr ? parseInt(cardIdStr, 10) : null
+      await loadDueCards(cardIdToLoad)
+      return
+    }
+
+    // Fallback if guest session could not be created (offline / API down).
     if (isAnonLevelMode.value) {
       await loadLevelCardsForAnon()
       return
     }
-    if (!auth.state.isLoggedIn) {
-      const cid = collectionId.value
-      const loaded = await loadCollectionCardsForAnon()
-      if (!loaded) {
-        router.replace(`/collections/${cid}/lingo/levels`)
-      }
-      return
+    const cid = collectionId.value
+    const loaded = await loadCollectionCardsForAnon()
+    if (!loaded) {
+      router.replace(`/collections/${cid}/lingo/levels`)
     }
-    const cardIdStr = queryStr(route.query.card_id)
-    const cardIdToLoad = cardIdStr ? parseInt(cardIdStr, 10) : null
-    await loadDueCards(cardIdToLoad)
   } catch (error) {
     console.error(t('flashcardStudy.loadInitialError'), error)
   }
@@ -1269,10 +1324,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.lingo-study-root.pt-for-anon-banner {
-  padding-top: 4.5rem;
-}
-
 /* Scrollbar-less card content when overflow; keep layout compact */
 .lingo-study-root :deep(.overflow-auto) {
   scrollbar-width: none;

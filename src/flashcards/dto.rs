@@ -340,3 +340,17 @@ pub struct MergeProgressRequest {
 pub struct MergeProgressResponse {
     pub merged_levels: i64,
 }
+
+/// Claim a guest study account's progress into the authenticated user, then delete the guest.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ClaimGuestProgressRequest {
+    /// Access token of the guest session created via `POST /auth/guest`.
+    pub guest_access_token: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ClaimGuestProgressResponse {
+    pub guest_user_id: i32,
+    pub moved_card_rows: i64,
+    pub moved_level_rows: i64,
+}

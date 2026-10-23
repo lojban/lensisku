@@ -21,6 +21,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             // Public routes (no auth required)
             .service(controller::signup)
             .service(controller::login)
+            .service(controller::create_guest)
             .service(controller::logout)
             .service(controller::refresh_token)
             .service(controller::restore_password)

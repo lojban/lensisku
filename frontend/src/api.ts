@@ -124,6 +124,7 @@ api.interceptors.response.use(
         requestUrl === '/auth/login' ||
         requestUrl === '/auth/logout' ||
         requestUrl === '/auth/refresh' ||
+        requestUrl === '/auth/guest' ||
         requestUrl.startsWith('/auth/oauth/')
 
       if (isAuthEndpoint) {
@@ -133,6 +134,9 @@ api.interceptors.response.use(
         }
         return Promise.reject(error)
       }
+
+      const usedGuest =
+        !localStorage.getItem('accessToken') && !!localStorage.getItem('lensisku_guest_session')
 
       if (isRefreshing) {
         return new Promise((resolve) => {
@@ -151,6 +155,25 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
+        if (usedGuest) {
+          const { refreshGuestAccessToken } = await import('@/composables/useGuestSession')
+          const guestToken = await refreshGuestAccessToken()
+          isRefreshing = false
+          if (guestToken) {
+            refreshSubscribers.forEach((callback) => callback(guestToken))
+            refreshSubscribers.length = 0
+            if (!originalRequest.headers) {
+              originalRequest.headers = new AxiosHeaders()
+            }
+            originalRequest.headers.Authorization = `Bearer ${guestToken}`
+            trackApiEnd(originalRequest)
+            return api(originalRequest)
+          }
+          refreshSubscribers.length = 0
+          trackApiEnd(originalRequest)
+          return Promise.reject(error)
+        }
+
         if (!authInstance) {
           throw new Error('Auth instance not initialized')
         }
@@ -177,7 +200,7 @@ api.interceptors.response.use(
         refreshSubscribers.length = 0
         trackApiEnd(originalRequest)
 
-        if (authInstance) {
+        if (!usedGuest && authInstance) {
           authInstance.logout()
         }
         return Promise.reject(refreshErr)
@@ -193,12 +216,25 @@ api.interceptors.request.use(
     trackApiStart(config as RetryableRequestConfig)
     if (typeof window === 'undefined') return config
     const accessToken = localStorage.getItem('accessToken')
+    let guestToken: string | null = null
+    if (!accessToken) {
+      try {
+        const raw = localStorage.getItem('lensisku_guest_session')
+        if (raw) {
+          const parsed = JSON.parse(raw) as { access_token?: string }
+          guestToken = parsed.access_token || null
+        }
+      } catch {
+        guestToken = null
+      }
+    }
+    const token = accessToken || guestToken
 
-    if (accessToken) {
+    if (token) {
       if (!config.headers) {
         config.headers = new AxiosHeaders()
       }
-      config.headers.Authorization = `Bearer ${accessToken}`
+      config.headers.Authorization = `Bearer ${token}`
     }
 
     return config

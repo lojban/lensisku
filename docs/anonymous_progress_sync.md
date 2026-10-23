@@ -1,13 +1,20 @@
 # Anonymous Progress Sync
 
-This document describes the architecture and behavior of the **Anonymous Progress Sync** feature in Lensisku. This feature allows users who study public flashcard collections without an account to have their progress seamlessly merged into their account once they log in or sign up.
+This document describes how guests study public courses without a real account, then claim that progress on login/signup.
 
-## Overview
+## Overview (current)
 
-The synchronization happens in three phases:
-1. **Local Tracking**: While unauthenticated, the frontend tracks a user's study progress using the browser's Local Storage.
-2. **Login Trigger**: When the user successfully authenticates, any tracked anonymous progress is extracted and sent to the backend API.
-3. **Database Merge (UPSERT)**: The backend securely reads the incoming unauthenticated progress and merges it with any existing authenticated progress the user might already have, utilizing a "Highest Score Wins" strategy.
+1. **Guest session**: `POST /auth/guest` creates a disposable `role=guest` user + JWT. The browser stores only that session in `lensisku_guest_session` (tokens), not progress blobs.
+2. **Same study APIs**: Guests call the normal due/review/level endpoints with the guest bearer token — one progress mechanism.
+3. **Claim on login**: After real auth, `POST /flashcards/progress/claim-guest` moves card + level progress onto the user and deletes the guest. Local guest session is cleared.
+4. **Legacy fallback**: Older `lensisku_anon_progress` localStorage blobs can still be POSTed to `/flashcards/progress/merge` (level aggregates only).
+
+## Overview (legacy localStorage path)
+
+The previous path (still used if guest session creation fails):
+1. **Local Tracking**: Frontend tracks study progress in Local Storage.
+2. **Login Trigger**: On authenticate, progress is POSTed to the merge API.
+3. **Database Merge (UPSERT)**: Level counters merge with `GREATEST`.
 
 ## 1. Frontend: Tracking Anonymous Progress
 

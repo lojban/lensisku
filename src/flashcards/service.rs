@@ -3609,6 +3609,160 @@ pub async fn get_level_cards_paginated(
     })
 }
 
+/// Move guest study progress onto `target_user_id`, then delete the guest user (CASCADE).
+pub async fn claim_guest_progress(
+    pool: &Pool,
+    target_user_id: i32,
+    guest_access_token: &str,
+) -> Result<crate::flashcards::dto::ClaimGuestProgressResponse, Box<dyn std::error::Error>> {
+    let guest_claims = crate::auth::models::authenticate_token(pool, guest_access_token)
+        .await
+        .map_err(|e| format!("Invalid guest session: {e}"))?;
+    if guest_claims.role.to_lowercase() != "guest" {
+        return Err("Token is not a guest session".into());
+    }
+    let guest_id = guest_claims.sub;
+    if guest_id == target_user_id {
+        return Err("Cannot claim your own session".into());
+    }
+
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    // Confirm guest row still exists and is guest.
+    let guest_ok: bool = transaction
+        .query_one(
+            "SELECT LOWER(role::text) = 'guest' FROM users WHERE userid = $1 AND NOT disabled",
+            &[&guest_id],
+        )
+        .await?
+        .get(0);
+    if !guest_ok {
+        return Err("Guest account is no longer available".into());
+    }
+
+    // Upsert card progress: prefer more recent last_reviewed_at when both exist.
+    let moved_cards = transaction
+        .execute(
+            r#"
+            INSERT INTO user_flashcard_progress AS t (
+                user_id, flashcard_id, card_side, status, ease_factor, interval,
+                review_count, next_review_at, last_reviewed_at,
+                stability, difficulty, archived
+            )
+            SELECT
+                $1, flashcard_id, card_side, status, ease_factor, interval,
+                review_count, next_review_at, last_reviewed_at,
+                stability, difficulty, archived
+            FROM user_flashcard_progress
+            WHERE user_id = $2 AND NOT archived
+            ON CONFLICT (user_id, flashcard_id, card_side) WHERE NOT archived DO UPDATE SET
+                status = CASE
+                    WHEN EXCLUDED.last_reviewed_at IS NOT NULL
+                         AND (t.last_reviewed_at IS NULL OR EXCLUDED.last_reviewed_at >= t.last_reviewed_at)
+                    THEN EXCLUDED.status ELSE t.status END,
+                ease_factor = CASE
+                    WHEN EXCLUDED.last_reviewed_at IS NOT NULL
+                         AND (t.last_reviewed_at IS NULL OR EXCLUDED.last_reviewed_at >= t.last_reviewed_at)
+                    THEN EXCLUDED.ease_factor ELSE t.ease_factor END,
+                interval = CASE
+                    WHEN EXCLUDED.last_reviewed_at IS NOT NULL
+                         AND (t.last_reviewed_at IS NULL OR EXCLUDED.last_reviewed_at >= t.last_reviewed_at)
+                    THEN EXCLUDED.interval ELSE t.interval END,
+                review_count = GREATEST(t.review_count, EXCLUDED.review_count),
+                next_review_at = CASE
+                    WHEN EXCLUDED.last_reviewed_at IS NOT NULL
+                         AND (t.last_reviewed_at IS NULL OR EXCLUDED.last_reviewed_at >= t.last_reviewed_at)
+                    THEN EXCLUDED.next_review_at ELSE t.next_review_at END,
+                last_reviewed_at = CASE
+                    WHEN EXCLUDED.last_reviewed_at IS NOT NULL
+                         AND (t.last_reviewed_at IS NULL OR EXCLUDED.last_reviewed_at >= t.last_reviewed_at)
+                    THEN EXCLUDED.last_reviewed_at ELSE t.last_reviewed_at END,
+                stability = CASE
+                    WHEN EXCLUDED.last_reviewed_at IS NOT NULL
+                         AND (t.last_reviewed_at IS NULL OR EXCLUDED.last_reviewed_at >= t.last_reviewed_at)
+                    THEN EXCLUDED.stability ELSE t.stability END,
+                difficulty = CASE
+                    WHEN EXCLUDED.last_reviewed_at IS NOT NULL
+                         AND (t.last_reviewed_at IS NULL OR EXCLUDED.last_reviewed_at >= t.last_reviewed_at)
+                    THEN EXCLUDED.difficulty ELSE t.difficulty END,
+                archived = false
+            "#,
+            &[&target_user_id, &guest_id],
+        )
+        .await?;
+
+    // Re-point review history after target progress rows exist.
+    transaction
+        .execute(
+            r#"
+            UPDATE flashcard_review_history h
+            SET user_id = $1
+            WHERE h.user_id = $2
+              AND EXISTS (
+                SELECT 1 FROM user_flashcard_progress p
+                WHERE p.user_id = $1
+                  AND p.flashcard_id = h.flashcard_id
+                  AND p.card_side = h.card_side
+              )
+            "#,
+            &[&target_user_id, &guest_id],
+        )
+        .await?;
+
+    let moved_levels = transaction
+        .execute(
+            r#"
+            INSERT INTO user_level_progress AS t (
+                user_id, level_id, cards_completed, correct_answers, total_answers,
+                last_activity_at, unlocked_at, completed_at
+            )
+            SELECT
+                $1, level_id, cards_completed, correct_answers, total_answers,
+                last_activity_at, unlocked_at, completed_at
+            FROM user_level_progress
+            WHERE user_id = $2
+            ON CONFLICT (user_id, level_id) DO UPDATE SET
+                cards_completed = GREATEST(t.cards_completed, EXCLUDED.cards_completed),
+                correct_answers = GREATEST(t.correct_answers, EXCLUDED.correct_answers),
+                total_answers = GREATEST(t.total_answers, EXCLUDED.total_answers),
+                last_activity_at = GREATEST(t.last_activity_at, EXCLUDED.last_activity_at),
+                unlocked_at = COALESCE(t.unlocked_at, EXCLUDED.unlocked_at),
+                completed_at = COALESCE(t.completed_at, EXCLUDED.completed_at)
+            "#,
+            &[&target_user_id, &guest_id],
+        )
+        .await?;
+
+    transaction
+        .execute(
+            r#"
+            UPDATE user_level_progress ulp
+            SET unlocked_at = CASE
+              WHEN check_level_prerequisites(ulp.user_id, ulp.level_id) AND ulp.unlocked_at IS NULL
+              THEN CURRENT_TIMESTAMP ELSE ulp.unlocked_at END
+            WHERE ulp.user_id = $1
+            "#,
+            &[&target_user_id],
+        )
+        .await?;
+
+    // Drop guest account (CASCADE progress/sessions leftover).
+    transaction
+        .execute(
+            "DELETE FROM users WHERE userid = $1 AND LOWER(role::text) = 'guest'",
+            &[&guest_id],
+        )
+        .await?;
+
+    transaction.commit().await?;
+    Ok(crate::flashcards::dto::ClaimGuestProgressResponse {
+        guest_user_id: guest_id,
+        moved_card_rows: moved_cards as i64,
+        moved_level_rows: moved_levels as i64,
+    })
+}
+
 pub async fn merge_anonymous_progress(
     pool: &Pool,
     user_id: i32,

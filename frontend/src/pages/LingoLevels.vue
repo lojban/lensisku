@@ -96,6 +96,7 @@ import { useLingoProgress } from '@/composables/useLingoProgress'
 import { getCollection, getLevels } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
+import { ensureGuestSession, hasGuestSession } from '@/composables/useGuestSession'
 import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'
 
@@ -184,10 +185,11 @@ const displayLevels = computed(() => {
 const activeLevel = computed(() => {
   const list = displayLevels.value
   if (!list.length) return null
-  if (auth.state.isLoggedIn) {
+  // Logged-in / backend guest: first unlocked incomplete from API progress.
+  if (auth.state.isLoggedIn || hasGuestSession()) {
     return list.find((l) => isLevelUnlocked(l) && !l.progress?.is_completed) ?? list[0] ?? null
   }
-  // Guests: prefer remembered active level if still unlocked & incomplete (prereq-aware).
+  // Legacy localStorage guests: prefer remembered active level if still unlocked.
   void anonProgressVersion.value
   const real = list.filter((l) => l.level_id !== IMPLICIT_COURSE_LEVEL_ID)
   if (real.length) {
@@ -209,13 +211,14 @@ const activeLevelPercentage = computed(() => {
 
 const effectiveLevels = computed(() => {
   const raw = levels.value
-  if (auth.state.isLoggedIn || !raw.length) return raw
+  // Logged-in or backend guest session: trust API lock/progress (single mechanism).
+  if (auth.state.isLoggedIn || hasGuestSession() || !raw.length) return raw
   void anonProgressVersion.value
   const cid = props.collectionId
   return raw.map((level) => {
     const local = getProgress(cid, level.level_id) as LevelProgressData | null
     const hasLocal = local && (local.cards_completed > 0 || local.total_answers > 0)
-    // Guests: unlock from localStorage prerequisites (API has no anon progress).
+    // Legacy localStorage unlock when no guest JWT.
     const isLocked = !isLevelUnlockedForAnon(cid, level)
     const progress = hasLocal
       ? {
@@ -294,6 +297,9 @@ useSeoHead({
 
 onMounted(async () => {
   try {
+    if (!auth.state.isLoggedIn) {
+      await ensureGuestSession()
+    }
     await Promise.all([fetchCollection(), fetchLevels()])
   } finally {
     isLoading.value = false
