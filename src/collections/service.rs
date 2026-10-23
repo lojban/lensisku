@@ -884,6 +884,9 @@ async fn query_collections(
     pagination: Option<(i64, i64, i64)>,
     viewer_user_id: Option<i32>,
 ) -> AppResult<CollectionListResponse> {
+    // COUNT only uses where-clause placeholders; sort/search-rank params are added after this.
+    let where_param_count = params.len();
+
     let (active_join, sort_order) = match sort.unwrap_or("active_week") {
         "active_month" => (
             "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
@@ -948,8 +951,10 @@ async fn query_collections(
         }
     }
 
-    let count_param_refs: Vec<&(dyn ToSql + Sync)> =
-        params.iter().map(|p| &**p as &(dyn ToSql + Sync)).collect();
+    let count_param_refs: Vec<&(dyn ToSql + Sync)> = params[..where_param_count]
+        .iter()
+        .map(|p| &**p as &(dyn ToSql + Sync))
+        .collect();
     let count_sql = format!("SELECT COUNT(*) AS total FROM collections c {where_clause}",);
     let total: i64 = client
         .query_one(&count_sql, &count_param_refs)
