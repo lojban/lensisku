@@ -95,10 +95,17 @@ type FeedSlot =
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+/** `/activity` defaults to All; home (and other embeds) keep News as the empty-query default. */
+const defaultFeed = computed(() =>
+  route.name === 'Activity' ||
+  (typeof route.name === 'string' && route.name.startsWith('Activity-'))
+    ? 'all'
+    : 'news'
+)
 const filter = computed(() =>
   ['all', 'discussions', 'definitions', 'wiki', 'news'].includes(queryStr(route.query.feed))
     ? queryStr(route.query.feed)
-    : 'news'
+    : defaultFeed.value
 )
 const location = computed(() => route.path)
 const { rows, cursor, loading, error, newActivity, restoredScroll, load, retry, save, setVisible } =
@@ -144,7 +151,11 @@ const saveScroll = () => save(body?.scrollTop || 0)
 function selectFilter(feed: string) {
   saveScroll()
   void router.push({
-    query: { ...route.query, feed: feed === 'news' ? undefined : feed, source: undefined },
+    query: {
+      ...route.query,
+      feed: feed === defaultFeed.value ? undefined : feed,
+      source: undefined,
+    },
   })
 }
 async function refresh() {
