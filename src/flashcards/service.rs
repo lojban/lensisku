@@ -828,9 +828,7 @@ pub async fn list_flashcards(
     // Get base flashcards including free content.
     // Cards assigned only to locked levels are excluded so open due queues cannot
     // surface content that POST /review would reject.
-    let rows = transaction
-    .query(
-        "WITH ReviewHistory AS (
+    const LIST_FLASHCARDS_SQL: &str = "WITH ReviewHistory AS (
             SELECT fh.flashcard_id, fh.card_side,
                    array_agg(jsonb_build_object(
                        'rating', fh.rating,
@@ -882,10 +880,69 @@ pub async fn list_flashcards(
         CASE
             WHEN $4::boolean = true THEN EXTRACT(EPOCH FROM p.next_review_at)
             ELSE f.position::bigint
-        END",
-        &[&user_id, &query.collection_id, &query.status, &query.due, &query.flashcard_id, &query.level_id],
-    )
-    .await?;
+        END";
+
+    let list_params: [&(dyn tokio_postgres::types::ToSql + Sync); 6] = [
+        &user_id,
+        &query.collection_id,
+        &query.status,
+        &query.due,
+        &query.flashcard_id,
+        &query.level_id,
+    ];
+
+    let mut rows = transaction.query(LIST_FLASHCARDS_SQL, &list_params).await?;
+
+    // First pass: seed progress for cards the user has never seen. Those rows are
+    // skipped in the response builder (`continue`), so without a re-query the first
+    // due fetch for a new guest/user returns an empty queue ("All caught up").
+    let mut seeded_any = false;
+    for row in &rows {
+        let flashcard_id: i32 = row.get("id");
+        let direction: FlashcardDirection = row.get("direction");
+        let card_side: Option<String> = row.get("card_side");
+        if card_side.is_some() {
+            continue;
+        }
+        seeded_any = true;
+        match direction {
+            FlashcardDirection::Direct => {
+                initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
+            }
+            FlashcardDirection::Reverse => {
+                initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
+            }
+            FlashcardDirection::Both => {
+                initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
+                initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
+            }
+            FlashcardDirection::FillIn => {
+                initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
+            }
+            FlashcardDirection::FillInReverse => {
+                initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
+            }
+            FlashcardDirection::FillInBoth => {
+                initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
+                initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
+            }
+            FlashcardDirection::JustInformation => {
+                initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
+                mark_progress_graduated(&transaction, user_id, flashcard_id, "direct").await?;
+            }
+            FlashcardDirection::QuizDirect
+            | FlashcardDirection::QuizReverse
+            | FlashcardDirection::QuizBoth
+            | FlashcardDirection::QuizImageDirect
+            | FlashcardDirection::QuizImageReverse
+            | FlashcardDirection::QuizImageBoth => {
+                initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
+            }
+        }
+    }
+    if seeded_any {
+        rows = transaction.query(LIST_FLASHCARDS_SQL, &list_params).await?;
+    }
 
     // Collect unique strings for sound URL lookup: valsi word when linked, otherwise free_content_front.
     let words_to_check: Vec<String> = rows
@@ -917,42 +974,8 @@ pub async fn list_flashcards(
         let direction: FlashcardDirection = row.get("direction");
         let card_side: Option<String> = row.get("card_side");
 
-        // Handle cards without progress records
+        // Should only happen if seeding failed; skip rather than return half-built cards.
         if card_side.is_none() {
-            match direction {
-                FlashcardDirection::Direct => {
-                    initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                }
-                FlashcardDirection::Reverse => {
-                    initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
-                }
-                FlashcardDirection::Both => {
-                    initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                    initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
-                }
-                FlashcardDirection::FillIn => {
-                    initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                }
-                FlashcardDirection::FillInReverse => {
-                    initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
-                }
-                FlashcardDirection::FillInBoth => {
-                    initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                    initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
-                }
-                FlashcardDirection::JustInformation => {
-                    initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                    mark_progress_graduated(&transaction, user_id, flashcard_id, "direct").await?;
-                }
-                FlashcardDirection::QuizDirect
-                | FlashcardDirection::QuizReverse
-                | FlashcardDirection::QuizBoth
-                | FlashcardDirection::QuizImageDirect
-                | FlashcardDirection::QuizImageReverse
-                | FlashcardDirection::QuizImageBoth => {
-                    initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                }
-            }
             continue;
         }
 

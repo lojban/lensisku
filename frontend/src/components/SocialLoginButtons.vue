@@ -1,32 +1,58 @@
 <template>
-  <div v-if="providers.length" class="auth-social-stack">
+  <div
+    v-if="providers.length"
+    class="auth-social-stack"
+    :class="{ 'auth-social-stack--lingo': isLingo }"
+  >
     <div class="auth-social-divider" role="separator">
       <span class="auth-social-divider-line" />
       <span>{{ t('oauth.or') }}</span>
       <span class="auth-social-divider-line" />
     </div>
     <p v-if="error" class="text-center text-sm text-red-600" role="alert">{{ error }}</p>
-    <Button
-      v-for="provider in visibleProviders"
-      :key="provider.id"
-      variant="neutral"
-      size="lg"
-      type="button"
-      class="w-full"
-      :loading="starting === provider.id"
-      :disabled="!!starting"
-      @click="start(provider.id)"
-    >
-      <template #icon>
-        <component :is="provider.icon" class="h-5 w-5 shrink-0" aria-hidden="true" />
-      </template>
-      {{ t(provider.labelKey) }}
-    </Button>
+    <template v-if="isLingo">
+      <button
+        v-for="provider in visibleProviders"
+        :key="provider.id"
+        type="button"
+        class="lingo-btn lingo-btn--default lingo-btn--lg w-full !normal-case !tracking-normal"
+        :disabled="!!starting"
+        :aria-busy="starting === provider.id"
+        @click="start(provider.id)"
+      >
+        <Loader2
+          v-if="starting === provider.id"
+          class="h-5 w-5 shrink-0 animate-spin"
+          aria-hidden="true"
+        />
+        <component :is="provider.icon" v-else class="h-5 w-5 shrink-0" aria-hidden="true" />
+        {{ t(provider.labelKey) }}
+      </button>
+    </template>
+    <template v-else>
+      <Button
+        v-for="provider in visibleProviders"
+        :key="provider.id"
+        variant="neutral"
+        size="lg"
+        type="button"
+        class="w-full"
+        :loading="starting === provider.id"
+        :disabled="!!starting"
+        @click="start(provider.id)"
+      >
+        <template #icon>
+          <component :is="provider.icon" class="h-5 w-5 shrink-0" aria-hidden="true" />
+        </template>
+        {{ t(provider.labelKey) }}
+      </Button>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
+import { Loader2 } from '@lucide/vue'
 import { computed, h, onMounted, ref, type FunctionalComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -52,12 +78,16 @@ const GoogleIcon: FunctionalComponent = (props) =>
 
 const props = defineProps<{
   returnTo?: string
+  /** Match Lingo auth chrome (`lingo-btn`) instead of classic `ui-btn`. */
+  variant?: 'default' | 'lingo'
 }>()
 
 const { t } = useI18n()
 const providers = ref<string[]>([])
 const starting = ref<string | null>(null)
 const error = ref('')
+
+const isLingo = computed(() => props.variant === 'lingo')
 
 const catalog: Record<
   SocialProviderId,

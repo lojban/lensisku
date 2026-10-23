@@ -1759,6 +1759,7 @@
   },
   "anonymousProgress": {
     "bannerMessage": "登録すると端末をまたいで進捗を保存できます",
+    "loginToSaveProgress": "ログインして進捗を保存",
     "signUp": "新規登録",
     "logIn": "ログイン",
     "dismiss": "閉じる",

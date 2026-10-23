@@ -1802,6 +1802,7 @@
   },
   "anonymousProgress": {
     "bannerMessage": "Sign up to save your progress across devices",
+    "loginToSaveProgress": "Log in to save your progress",
     "signUp": "Sign up",
     "logIn": "Log in",
     "dismiss": "Dismiss",

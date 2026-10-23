@@ -58,6 +58,7 @@
           :continue-label="t('flashcardLevels.continueLabel')"
           @continue="startStudy"
         />
+        <LingoGuestSaveAlert class="mt-3 w-full" :return-to="levelsReturnTo" />
         <div class="relative mt-4 flex w-full flex-col items-center">
           <LingoLessonButton
             v-for="(level, i) in displayLevels"
@@ -92,6 +93,7 @@ import LingoFeedLayout from '@/components/LingoFeedLayout.vue'
 import LingoUnitBanner from '@/components/LingoUnitBanner.vue'
 import LingoLessonButton from '@/components/LingoLessonButton.vue'
 import LingoUserProgress from '@/components/LingoUserProgress.vue'
+import LingoGuestSaveAlert from '@/components/LingoGuestSaveAlert.vue'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 import { getCollection, getLevels } from '@/api'
 import { useAuth } from '@/composables/useAuth'
@@ -139,6 +141,9 @@ const reelsPath = computed(() => ({
   path: `/collections/${props.collectionId}/tiktoknu`,
   query: { from: 'lingo' },
 }))
+
+/** After guest login/signup, return to this course tree. */
+const levelsReturnTo = computed(() => `/collections/${props.collectionId}/lingo/levels`)
 
 const isOwner = computed(
   () => auth.state.isLoggedIn && collection.value?.owner?.username === auth.state.username

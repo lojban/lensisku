@@ -1764,6 +1764,7 @@
   },
   "anonymousProgress": {
     "bannerMessage": "注册以在设备间同步学习进度",
+    "loginToSaveProgress": "登录以保存进度",
     "signUp": "注册",
     "logIn": "登录",
     "dismiss": "关闭",

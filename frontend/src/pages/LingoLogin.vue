@@ -36,7 +36,7 @@
       </button>
     </form>
 
-    <SocialLoginButtons class="w-full max-w-[400px]" :return-to="returnTo" />
+    <SocialLoginButtons class="w-full max-w-[400px]" variant="lingo" :return-to="returnTo" />
 
     <p class="mt-6 text-center text-sm text-slate-500">
       {{ t('loginPage.noAccountPrompt') }}

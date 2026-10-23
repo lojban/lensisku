@@ -1785,6 +1785,7 @@
   },
   "anonymousProgress": {
     "bannerMessage": "ko co'a se jaspu mu'i lo nu vreji lo do zenba ne'i lo drata skami",
+    "loginToSaveProgress": "ko ca'a se jaspu ja'e lo nu vreji fi le mu'e do tadni",
     "signUp": "terbejbi'o",
     "logIn": "co'a cmisau",
     "dismiss": "canpa",

@@ -12,12 +12,6 @@
       </template>
     </LingoStudyHeader>
 
-    <AnonymousProgressBanner
-      v-if="cardsAnsweredInSession >= ANON_BANNER_AFTER_ANSWERS"
-      variant="lingo"
-      position="inline"
-    />
-
     <!-- Lesson column (card body only) -->
     <div
       class="mx-auto flex h-full w-full max-w-[600px] flex-1 flex-col min-h-0 overflow-hidden px-2 sm:px-3"
@@ -357,6 +351,12 @@
                 </div>
               </div>
             </div>
+
+            <LingoGuestSaveAlert
+              v-if="showGuestSaveAlert"
+              class="mt-3 w-full"
+              :return-to="levelsReturnTo"
+            />
           </div>
         </div>
       </div>
@@ -403,7 +403,7 @@ import { CheckCircle2, EqualApproximately, Heart } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
+import LingoGuestSaveAlert from '@/components/LingoGuestSaveAlert.vue'
 import LingoModal from '@/components/LingoModal.vue'
 import LingoStudyHeader from '@/components/LingoStudyHeader.vue'
 import LingoStudyFooter from '@/components/LingoStudyFooter.vue'
@@ -444,10 +444,12 @@ import { ensureGuestSession } from '@/composables/useGuestSession'
 import { queryStr, paramStr } from '@/utils/routeQuery'
 
 const ANON_BANNER_ANSWERED_KEY = 'lensisku_study_cards_answered'
-/** Show sign-up nudge only after a real stretch of practice (not a few taps). */
-const ANON_BANNER_AFTER_ANSWERS = 12
+/** Show login-to-save after this many answers in the current study visit (guests only). */
+const GUEST_SAVE_ALERT_AFTER = 5
 
 const cardsAnsweredInSession = ref(0)
+/** Answers counted this study mount only — not restored from storage. */
+const guestAnswersThisVisit = ref(0)
 const sessionXpAwarded = ref(0)
 const sessionXpClaimed = ref(false)
 
@@ -504,6 +506,8 @@ const anonLevelMeta = ref(null) // { min_cards, min_success_rate } when in anon 
 /** Next required level to center on the path after a levelled lesson finish. */
 const focusLevelId = ref<number | null>(null)
 
+const levelsReturnTo = computed(() => `/collections/${collectionId.value}/lingo/levels`)
+
 const returnToUrl = computed(() => {
   const cid = collectionId.value
   if (levelIdParam.value != null) {
@@ -511,7 +515,7 @@ const returnToUrl = computed(() => {
     return `/collections/${cid}/lingo/levels?focusLevelId=${id}`
   }
   // Always stay in Lingo (including anon / no-levels course study).
-  return `/collections/${cid}/lingo/levels`
+  return levelsReturnTo.value
 })
 
 /** Pick the first unlocked incomplete level (next required), else the lesson just finished. */
@@ -615,6 +619,15 @@ const progressPercentage = computed(() => {
   return Math.min(100, Math.round((done / sessionTotal.value) * 100))
 })
 
+const showGuestSaveAlert = computed(
+  () => !auth.state.isLoggedIn && guestAnswersThisVisit.value >= GUEST_SAVE_ALERT_AFTER
+)
+
+function bumpGuestAnswersThisVisit() {
+  if (auth.state.isLoggedIn) return
+  guestAnswersThisVisit.value += 1
+}
+
 /** After Check reveals the answer on a graded card, footer shows Forgot/Good/Easy. */
 const footerShowsRate = computed(
   () =>
@@ -695,6 +708,34 @@ function isAnonFillinAnswerCorrect() {
   return expectedLower === user
 }
 
+/** Fetch all due pages for the current level (or open due batch). */
+async function fetchDueQueue() {
+  if (levelIdParam.value) {
+    const all = []
+    let page = 1
+    const perPage = 100
+    for (;;) {
+      const response = await getDueCards({
+        collection_id: collectionId.value,
+        level_id: levelIdParam.value,
+        page,
+        per_page: perPage,
+      })
+      const batch = response.data.flashcards || []
+      const total = Number(response.data.total || 0)
+      all.push(...batch)
+      page += 1
+      if (batch.length === 0 || all.length >= total) break
+    }
+    return all
+  }
+  const response = await getDueCards({
+    collection_id: collectionId.value,
+    per_page: 50,
+  })
+  return response.data.flashcards || []
+}
+
 /** Load due cards for this session. With a levelId, fetch every page so progress is per-level. */
 const loadDueCards = async (singleCardId = null) => {
   isLoading.value = true
@@ -707,34 +748,14 @@ const loadDueCards = async (singleCardId = null) => {
       })
       remainingCards.value = response.data.flashcards || []
       sessionTotal.value = remainingCards.value.length
-    } else if (levelIdParam.value) {
-      const all = []
-      let page = 1
-      const perPage = 100
-      let total = 0
-      do {
-        const response = await getDueCards({
-          collection_id: collectionId.value,
-          level_id: levelIdParam.value,
-          page,
-          per_page: perPage,
-        })
-        const batch = response.data.flashcards || []
-        total = Number(response.data.total || 0)
-        all.push(...batch)
-        page += 1
-        if (batch.length === 0) break
-      } while (all.length < total)
+    } else {
+      let all = await fetchDueQueue()
+      // First due call for a new guest/user seeds progress then used to return []; retry once.
+      if (all.length === 0) {
+        all = await fetchDueQueue()
+      }
       remainingCards.value = all
       sessionTotal.value = all.length
-    } else {
-      // Open due session: progress within the loaded batch (not collection-wide due count)
-      const response = await getDueCards({
-        collection_id: collectionId.value,
-        per_page: 50,
-      })
-      remainingCards.value = response.data.flashcards || []
-      sessionTotal.value = remainingCards.value.length
     }
     loadNextCard()
   } catch (error) {
@@ -999,6 +1020,7 @@ const submitAnswer = async (rating?: number) => {
   try {
     const next = cardsAnsweredInSession.value + 1
     cardsAnsweredInSession.value = next
+    bumpGuestAnswersThisVisit()
     try {
       sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
     } catch (_) {}
@@ -1071,6 +1093,7 @@ const submitQuizOption = async (selectedOption) => {
   try {
     const next = cardsAnsweredInSession.value + 1
     cardsAnsweredInSession.value = next
+    bumpGuestAnswersThisVisit()
     try {
       sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
     } catch (_) {}
