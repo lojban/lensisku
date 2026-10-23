@@ -451,7 +451,13 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const auth = useAuth()
-const { getProgress, saveLevelProgress } = useAnonymousProgress()
+const {
+  getProgress,
+  saveLevelProgress,
+  isLevelUnlockedForAnon,
+  resolveAndRememberActiveLevelId,
+  setActiveLevelId,
+} = useAnonymousProgress()
 const { hearts, hasUnlimitedHearts, loseHeart, awardSessionXp } = useLingoProgress()
 const { playCorrect, playIncorrect, playFinish, unlock: unlockStudySfx } = useLingoStudySfx()
 const initialStudyCharacters = pickLingoStudyCharacterPair()
@@ -495,7 +501,7 @@ const returnToUrl = computed(() => {
     const id = focusLevelId.value ?? levelIdParam.value
     return `/collections/${cid}/lingo/levels?focusLevelId=${id}`
   }
-  if (isAnonNoLevelsMode.value) return `/collections/${cid}/flashcards`
+  // Always stay in Lingo (including anon / no-levels course study).
   return `/collections/${cid}/lingo/levels`
 })
 
@@ -510,10 +516,14 @@ async function resolveReturnFocusLevel() {
   try {
     const res = await getLevels(cid)
     const list = [...(res.data.levels || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-    const next = list.find(
-      (l) => (!l.is_locked || !!l.progress?.is_unlocked) && !l.progress?.is_completed
-    )
-    focusLevelId.value = next?.level_id ?? fallback
+    if (auth.state.isLoggedIn) {
+      const next = list.find(
+        (l) => (!l.is_locked || !!l.progress?.is_unlocked) && !l.progress?.is_completed
+      )
+      focusLevelId.value = next?.level_id ?? fallback
+    } else {
+      focusLevelId.value = resolveAndRememberActiveLevelId(cid, list) ?? fallback
+    }
   } catch {
     focusLevelId.value = fallback
   }
@@ -733,9 +743,21 @@ const loadLevelCardsForAnon = async () => {
   isLoading.value = true
   try {
     const levelsRes = await getLevels(cid)
-    const level = (levelsRes.data.levels || []).find((l) => l.level_id === lid)
+    const list = levelsRes.data.levels || []
+    const level = list.find((l) => l.level_id === lid)
+    // Enforce prerequisites for guests (deep links cannot skip the ladder).
+    if (level && !isLevelUnlockedForAnon(cid, level)) {
+      const activeId = resolveAndRememberActiveLevelId(cid, list)
+      router.replace(
+        activeId != null
+          ? `/collections/${cid}/lingo/levels?focusLevelId=${activeId}`
+          : `/collections/${cid}/lingo/levels`
+      )
+      return
+    }
     if (level) {
       anonLevelMeta.value = { min_cards: level.min_cards, min_success_rate: level.min_success_rate }
+      setActiveLevelId(cid, Number(lid))
     }
     const all = []
     let page = 1

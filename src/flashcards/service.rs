@@ -3123,6 +3123,7 @@ pub async fn get_level_details(
         None
     };
 
+    // Guests: unlock when there are no prerequisites (client merges localStorage for gated levels).
     let is_locked = if let Some(uid) = user_id {
         !transaction
             .query_one(
@@ -3132,7 +3133,7 @@ pub async fn get_level_details(
             .await?
             .get::<_, bool>("unlocked")
     } else {
-        true
+        !prerequisites.is_empty()
     };
 
     let is_started = progress.as_ref().is_some_and(|p| p.total_answers > 0);
@@ -3192,6 +3193,8 @@ pub async fn get_collection_levels(
             None
         };
 
+        // Guests have no server progress: unlock levels with no prerequisites; gated
+        // levels stay locked until the client merges localStorage completions.
         let is_locked = if let Some(uid) = user_id {
             !transaction
                 .query_one(
@@ -3201,7 +3204,7 @@ pub async fn get_collection_levels(
                 .await?
                 .get::<_, bool>("unlocked")
         } else {
-            true
+            !prerequisites.is_empty()
         };
 
         let is_started = progress.as_ref().is_some_and(|p| p.total_answers > 0);

@@ -587,7 +587,12 @@ const props = defineProps({
 const auth = useAuth()
 const router = useRouter()
 const { t } = useI18n()
-const { getProgress } = useAnonymousProgress()
+const {
+  getProgress,
+  isLevelUnlockedForAnon,
+  resolveAndRememberActiveLevelId,
+  anonProgressVersion,
+} = useAnonymousProgress()
 
 function startStudy() {
   const sorted = [...levels.value].sort((a, b) => a.position - b.position)
@@ -600,8 +605,8 @@ function startStudy() {
     )
     targetLevelId = firstUnlockedIncomplete?.level_id ?? sorted[0]?.level_id
   } else {
-    const firstUnlocked = sorted.find((l) => isLevelUnlockedForAnon(l))
-    targetLevelId = firstUnlocked?.level_id ?? sorted[0]?.level_id
+    targetLevelId =
+      resolveAndRememberActiveLevelId(props.collectionId, sorted) ?? sorted[0]?.level_id
   }
 
   if (targetLevelId) {
@@ -654,25 +659,17 @@ function onCollectionMenuUpdated(next) {
   collection.value = next
 }
 
-// When anonymous, a level is unlocked if it has no prerequisites or all prerequisites are completed in localStorage
-function isLevelUnlockedForAnon(level) {
-  if (!level?.prerequisites?.length) return true
-  const cid = props.collectionId
-  return level.prerequisites.every((p) => {
-    const local = getProgress(cid, p.level_id) as LevelProgressData | null
-    return local?.completed_at != null
-  })
-}
-
 // Levels with anonymous progress merged in (is_locked, progress) when not logged in
 const effectiveLevels = computed(() => {
   const raw = levels.value
   if (auth.state.isLoggedIn || !raw.length) return raw
+  void anonProgressVersion.value
   const cid = props.collectionId
   return raw.map((level) => {
     const local = getProgress(cid, level.level_id) as LevelProgressData | null
     const hasLocal = local && (local.cards_completed > 0 || local.total_answers > 0)
-    const isLocked = hasLocal ? !isLevelUnlockedForAnon(level) : level.is_locked
+    // Guests: unlock from localStorage prerequisites (API has no anon progress).
+    const isLocked = !isLevelUnlockedForAnon(cid, level)
     const progress = hasLocal
       ? {
           cards_completed: local.cards_completed ?? 0,
@@ -681,7 +678,13 @@ const effectiveLevels = computed(() => {
           is_unlocked: !isLocked,
           is_completed: !!local.completed_at,
         }
-      : level.progress
+      : {
+          cards_completed: 0,
+          correct_answers: 0,
+          total_answers: 0,
+          is_unlocked: !isLocked,
+          is_completed: false,
+        }
     return { ...level, is_locked: isLocked, progress }
   })
 })

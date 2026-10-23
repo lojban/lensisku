@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 import { ArrowLeft, Dumbbell, GalleryVerticalIcon, Pencil } from '@lucide/vue'
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
@@ -112,7 +112,13 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { getProgress } = useAnonymousProgress()
+const {
+  getProgress,
+  isLevelUnlockedForAnon,
+  resolveAndRememberActiveLevelId,
+  getActiveLevelId,
+  anonProgressVersion,
+} = useAnonymousProgress()
 const { setActiveCourse } = useLingoProgress()
 
 const collection = ref(null)
@@ -176,11 +182,22 @@ const displayLevels = computed(() => {
 })
 
 const activeLevel = computed(() => {
-  return (
-    displayLevels.value.find((l) => isLevelUnlocked(l) && !l.progress?.is_completed) ??
-    displayLevels.value[0] ??
-    null
-  )
+  const list = displayLevels.value
+  if (!list.length) return null
+  if (auth.state.isLoggedIn) {
+    return list.find((l) => isLevelUnlocked(l) && !l.progress?.is_completed) ?? list[0] ?? null
+  }
+  // Guests: prefer remembered active level if still unlocked & incomplete (prereq-aware).
+  void anonProgressVersion.value
+  const real = list.filter((l) => l.level_id !== IMPLICIT_COURSE_LEVEL_ID)
+  if (real.length) {
+    const activeId = getActiveLevelId(props.collectionId)
+    const remembered = real.find(
+      (l) => Number(l.level_id) === activeId && isLevelUnlocked(l) && !l.progress?.is_completed
+    )
+    if (remembered) return remembered
+  }
+  return list.find((l) => isLevelUnlocked(l) && !l.progress?.is_completed) ?? list[0] ?? null
 })
 
 const activeLevelPercentage = computed(() => {
@@ -190,23 +207,16 @@ const activeLevelPercentage = computed(() => {
   return Math.round((done / level.card_count) * 100)
 })
 
-function isLevelUnlockedForAnon(level) {
-  if (!level?.prerequisites?.length) return true
-  const cid = props.collectionId
-  return level.prerequisites.every((p) => {
-    const local = getProgress(cid, p.level_id) as LevelProgressData | null
-    return local?.completed_at != null
-  })
-}
-
 const effectiveLevels = computed(() => {
   const raw = levels.value
   if (auth.state.isLoggedIn || !raw.length) return raw
+  void anonProgressVersion.value
   const cid = props.collectionId
   return raw.map((level) => {
     const local = getProgress(cid, level.level_id) as LevelProgressData | null
     const hasLocal = local && (local.cards_completed > 0 || local.total_answers > 0)
-    const isLocked = hasLocal ? !isLevelUnlockedForAnon(level) : level.is_locked
+    // Guests: unlock from localStorage prerequisites (API has no anon progress).
+    const isLocked = !isLevelUnlockedForAnon(cid, level)
     const progress = hasLocal
       ? {
           cards_completed: local.cards_completed ?? 0,
@@ -215,12 +225,28 @@ const effectiveLevels = computed(() => {
           is_unlocked: !isLocked,
           is_completed: !!local.completed_at,
         }
-      : level.progress
+      : {
+          cards_completed: 0,
+          correct_answers: 0,
+          total_answers: 0,
+          is_unlocked: !isLocked,
+          is_completed: false,
+        }
     return { ...level, is_locked: isLocked, progress }
   })
 })
 
 const isLevelUnlocked = (level) => level && (!level.is_locked || !!level.progress?.is_unlocked)
+
+// Persist the prereq-aware active level for guests (side effect kept out of computed).
+watch(
+  effectiveLevels,
+  (list) => {
+    if (auth.state.isLoggedIn || !list.length) return
+    resolveAndRememberActiveLevelId(props.collectionId, list)
+  },
+  { immediate: true }
+)
 
 /** Center the next required level (from study finish `?focusLevelId=`) or the active node. */
 function scrollFocusLevelIntoView() {

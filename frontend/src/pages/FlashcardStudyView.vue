@@ -575,7 +575,13 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const auth = useAuth()
-const { getProgress, saveLevelProgress } = useAnonymousProgress()
+const {
+  getProgress,
+  saveLevelProgress,
+  isLevelUnlockedForAnon,
+  resolveAndRememberActiveLevelId,
+  setActiveLevelId,
+} = useAnonymousProgress()
 
 const levelIdParam = computed((): number | null => {
   const s = queryStr(route.query.levelId)
@@ -753,9 +759,20 @@ const loadLevelCardsForAnon = async () => {
   isLoading.value = true
   try {
     const levelsRes = await getLevels(cid)
-    const level = (levelsRes.data.levels || []).find((l) => l.level_id === lid)
+    const list = levelsRes.data.levels || []
+    const level = list.find((l) => l.level_id === lid)
+    if (level && !isLevelUnlockedForAnon(cid, level)) {
+      const activeId = resolveAndRememberActiveLevelId(cid, list)
+      router.replace(
+        activeId != null
+          ? `/collections/${cid}/levels?focusLevelId=${activeId}`
+          : `/collections/${cid}/levels`
+      )
+      return
+    }
     if (level) {
       anonLevelMeta.value = { min_cards: level.min_cards, min_success_rate: level.min_success_rate }
+      setActiveLevelId(cid, Number(lid))
     }
     const all = []
     let page = 1
