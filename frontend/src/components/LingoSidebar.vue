@@ -1,6 +1,7 @@
 <template>
   <aside class="lingo-sidebar-rail" :class="railClass">
     <nav class="lingo-sidebar-nav">
+      <LingoSidebarItem :label="t('logoText')" href="/" icon="home" @navigate="$emit('navigate')" />
       <template v-if="showCourseList">
         <LingoSidebarItem
           :label="t('lingo.allCourses')"

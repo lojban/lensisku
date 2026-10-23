@@ -29,9 +29,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { BookOpen, Trophy, Target, ShoppingBag, Dumbbell, Library } from '@lucide/vue'
+import { BookOpen, Trophy, Target, ShoppingBag, Dumbbell, Library, Home } from '@lucide/vue'
 import { PlayingCardsFanIcon } from '@packages/ui'
 import { getCollectionImage } from '@/api'
+import { supportedLocales } from '@/config/locales'
+
+const localeRootPathRegex = new RegExp(`^/(?:${supportedLocales.join('|')})/?$`)
 
 const props = defineProps({
   label: { type: String, required: true },
@@ -44,7 +47,7 @@ const props = defineProps({
     default: 'learn',
     validator: (v: unknown) =>
       typeof v === 'string' &&
-      ['learn', 'courses', 'leaderboard', 'quests', 'shop', 'library'].includes(v),
+      ['home', 'learn', 'courses', 'leaderboard', 'quests', 'shop', 'library'].includes(v),
   },
 })
 
@@ -62,6 +65,12 @@ const resolvedImageUrl = computed(() => {
 
 const isActive = computed(() => {
   const hrefPath = props.href.split('?')[0]
+  // Home / locale root: exact match only (do not treat every page as a child of `/`).
+  if (hrefPath === '/' || localeRootPathRegex.test(hrefPath)) {
+    const normalized = route.path.replace(/\/$/, '') || '/'
+    const target = hrefPath.replace(/\/$/, '') || '/'
+    return normalized === target
+  }
   // Classic theme exit: never mark active while still inside Lingo chrome.
   if (/\/lingo\//.test(route.path) || /\/lingo\/?$/.test(route.path)) {
     if (
@@ -92,6 +101,7 @@ const linkClass = computed(() => {
 
 const iconComponent = computed(() => {
   const map = {
+    home: Home,
     learn: Dumbbell,
     courses: BookOpen,
     leaderboard: Trophy,

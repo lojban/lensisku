@@ -51,7 +51,7 @@
           </div>
           <!-- Desktop Navigation - Hidden on mobile -->
           <nav class="hidden sm:ml-4 sm:flex items-center space-x-0 md:space-x-1 lg:space-x-2">
-            <NavLink to="/collections" class="navbar-item">
+            <NavLink to="/lingo/courses" class="navbar-item">
               <GraduationCap class="h-5 w-5" /> {{ $t('nav.learn') }}
             </NavLink>
             <NavLink v-if="auth.state.isLoggedIn" to="/library" class="navbar-item">

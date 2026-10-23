@@ -5,7 +5,7 @@
   >
     <div class="nav-menu-grid">
       <NavLink
-        to="/collections"
+        to="/lingo/courses"
         class="mobile-nav-row"
         :class="{ 'nav-menu-grid__full': !auth.state.isLoggedIn }"
         @click="$emit('close')"

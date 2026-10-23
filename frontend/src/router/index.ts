@@ -295,7 +295,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/learn',
     name: 'LearnAlias',
     redirect: (to) => ({
-      path: to.path.replace(/\/learn\/?$/, '/collections'),
+      path: to.path.replace(/\/learn\/?$/, '/lingo/courses'),
       query: to.query,
       hash: to.hash,
     }),
