@@ -1,5 +1,6 @@
 use crate::flashcards::dto::{QuizAnswerResultDto, QuizFlashcardQuestionDto, SubmitQuizAnswerDto};
 use std::collections::HashMap;
+use std::error::Error;
 
 use actix_web::{delete, get, patch, post, put, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
@@ -7,11 +8,11 @@ use serde_json::json;
 
 use super::{
     dto::{
-        self, AddCardsRequest, CreateFlashcardRequest, CreateLevelRequest, DirectAnswerResponse,
-        FillInAnswerRequest, FlashcardListResponse, FlashcardResponse, ImportFromCollectionRequest,
+        self, AddCardsRequest, ClaimGuestProgressRequest, ClaimGuestProgressResponse,
+        CreateFlashcardRequest, CreateLevelRequest, DirectAnswerResponse, FillInAnswerRequest,
+        FlashcardListResponse, FlashcardResponse, ImportFromCollectionRequest,
         ImportFromCollectionResponse, LevelCardListResponse, LevelCardResponse, LevelListResponse,
-        ClaimGuestProgressRequest, ClaimGuestProgressResponse, LevelResponse, MergeProgressRequest,
-        MergeProgressResponse, ReviewRequest, ReviewResponse,
+        LevelResponse, MergeProgressRequest, MergeProgressResponse, ReviewRequest, ReviewResponse,
         StreakResponse, UpdateLevelRequest,
     },
     models::*,
@@ -24,6 +25,20 @@ use crate::{
         models::FlashcardQuizOptions,
     },
 };
+
+/// `tokio_postgres::Error` Display is often just `"db error"`; prefer the DbError message.
+fn boxed_err_msg(e: &(dyn Error + 'static)) -> String {
+    let mut best = e.to_string();
+    let mut cur = e.source();
+    while let Some(s) = cur {
+        let t = s.to_string();
+        if !t.is_empty() && t != "db error" {
+            best = t;
+        }
+        cur = s.source();
+    }
+    best
+}
 
 #[utoipa::path(
     post,
@@ -721,7 +736,8 @@ pub async fn merge_progress(
     match service::merge_anonymous_progress(&pool, claims.sub, &req).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            let msg = e.to_string();
+            let msg = boxed_err_msg(e.as_ref());
+            log::error!("merge_anonymous_progress failed: {msg}");
             if msg.to_lowercase().contains("access denied") {
                 HttpResponse::Forbidden().json(json!({ "error": msg }))
             } else {
@@ -760,7 +776,8 @@ pub async fn claim_guest_progress(
     match service::claim_guest_progress(&pool, claims.sub, &req.guest_access_token).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            let msg = e.to_string();
+            let msg = boxed_err_msg(e.as_ref());
+            log::error!("claim_guest_progress failed: {msg}");
             if msg.to_lowercase().contains("invalid guest")
                 || msg.to_lowercase().contains("not a guest")
                 || msg.to_lowercase().contains("no longer available")

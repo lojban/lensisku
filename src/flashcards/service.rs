@@ -3770,6 +3770,18 @@ pub async fn claim_guest_progress(
         )
         .await?;
 
+    // Guest insert trigger creates user_balances (no ON DELETE CASCADE). Drop that
+    // and any leftover review history that was not re-pointed before deleting the user.
+    transaction
+        .execute(
+            "DELETE FROM flashcard_review_history WHERE user_id = $1",
+            &[&guest_id],
+        )
+        .await?;
+    transaction
+        .execute("DELETE FROM user_balances WHERE user_id = $1", &[&guest_id])
+        .await?;
+
     // Drop guest account (CASCADE progress/sessions leftover).
     transaction
         .execute(
@@ -3821,10 +3833,21 @@ pub async fn merge_anonymous_progress(
                 r#"
                 INSERT INTO user_level_progress
                   (user_id, level_id, cards_completed, correct_answers, total_answers, last_activity_at, completed_at)
-                VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP,
-                  CASE WHEN (SELECT min_cards FROM flashcard_levels WHERE level_id = $2) <= $3
-                    AND (SELECT min_success_rate FROM flashcard_levels WHERE level_id = $2) <= (CASE WHEN $5 > 0 THEN $4::float / $5 ELSE 0 END)
-                  THEN CURRENT_TIMESTAMP ELSE NULL END)
+                VALUES (
+                  $1, $2, $3, $4, $5, CURRENT_TIMESTAMP,
+                  -- Keep $4/$5 typed as integer (column type); only the rate expr uses float8.
+                  CASE
+                    WHEN (SELECT min_cards FROM flashcard_levels WHERE level_id = $2) <= $3
+                     AND (SELECT min_success_rate FROM flashcard_levels WHERE level_id = $2)
+                         <= (CASE
+                               WHEN $5::integer > 0
+                               THEN ($4::integer)::float8 / ($5::integer)::float8
+                               ELSE 0::float8
+                             END)
+                    THEN CURRENT_TIMESTAMP
+                    ELSE NULL
+                  END
+                )
                 ON CONFLICT (user_id, level_id) DO UPDATE SET
                   cards_completed = GREATEST(user_level_progress.cards_completed, EXCLUDED.cards_completed),
                   correct_answers = GREATEST(user_level_progress.correct_answers, EXCLUDED.correct_answers),
