@@ -100,7 +100,7 @@ Every concept below has **three** glyphs. They share one hue. **One** is the sin
 1. **Import and upload** always use arrow-**up** icons; **export and download** always use arrow-**down** icons—do not swap them even if other products do.
 2. File-oriented menus: **`FileExportIcon`** / **`FileImportIcon`**; generic upload: **`UploadIcon`**; generic export, including search **Export results**: **`ExportIcon`** (down arrow); cached downloads / attachments: **`DownloadIcon`**; file import buttons: **`ImportIcon`**. In a plain menu, the down arrow uses **`.fab-menu-icon--export`** (cyan). Nav links keep the link color. Content-type glyphs (§5c) are not substitutes for these arrows.
 3. Voting, reorder, and unrelated arrows (`ArrowUp`, `ArrowDown`, …) are **out of scope**.
-4. ESLint blocks direct `@lucide/vue` use of `Upload`, `Download`, `FileUp`, `FileDown`, and `Import`; **`packages/ui/transferIcons.ts`** is the only re-export site. Do not use Lucide’s `Import` glyph (it is a down arrow).
+4. ESLint blocks direct `@lucide/vue` use of `Upload`, `Download`, `FileUp`, `FileDown`, and `Import`; **`packages/ui/icons/transferIcons.ts`** is the only re-export site. Do not use Lucide’s `Import` glyph (it is a down arrow).
 
 ---
 

@@ -7,7 +7,8 @@
  * - **Several**: the list glyph (Lucide waves, Lucide list, the wiki book, a star with its left half).
  * - **Create**: that concept’s one-glyph plus a plus (`StarPlus` corner).
  *
- * Custom SVG components (W, wiki book, star contour, create glyphs) are exported from `index.ts`.
+ * Custom SVG components (W, wiki book, star contour, create glyphs) live in this folder
+ * and are re-exported from `packages/ui/index.ts`.
  */
 export { BookA as EntryIcon } from '@lucide/vue'
 export { List as DefinitionsIcon, TextQuote as DefinitionIcon } from '@lucide/vue'

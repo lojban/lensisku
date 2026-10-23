@@ -112,7 +112,7 @@ import { computed } from 'vue'
 import { GraduationCap, List, GalleryHorizontalEnd, CalendarClock, Users } from '@lucide/vue'
 import Card from './Card.vue'
 import Button from './Button.vue'
-import PlayingCardsFanIcon from './PlayingCardsFanIcon.vue'
+import PlayingCardsFanIcon from './icons/PlayingCardsFanIcon.vue'
 
 export interface CollectionCardCollection {
   collection_id: number

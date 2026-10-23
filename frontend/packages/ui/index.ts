@@ -29,14 +29,14 @@ export {
   DownloadIcon,
   FileImportIcon,
   ImportIcon,
-} from './transferIcons'
-export { default as WikiIcon } from './WikiIcon.vue'
-export { default as WikisIcon } from './WikisIcon.vue'
-export { default as WikiCreateIcon } from './WikiCreateIcon.vue'
-export { default as DefinitionCreateIcon } from './DefinitionCreateIcon.vue'
-export { default as WaveCreateIcon } from './WaveCreateIcon.vue'
-export { default as StarsIcon } from './StarsIcon.vue'
-export { default as PlayingCardsFanIcon } from './PlayingCardsFanIcon.vue'
+} from './icons/transferIcons'
+export { default as WikiIcon } from './icons/WikiIcon.vue'
+export { default as WikisIcon } from './icons/WikisIcon.vue'
+export { default as WikiCreateIcon } from './icons/WikiCreateIcon.vue'
+export { default as DefinitionCreateIcon } from './icons/DefinitionCreateIcon.vue'
+export { default as WaveCreateIcon } from './icons/WaveCreateIcon.vue'
+export { default as StarsIcon } from './icons/StarsIcon.vue'
+export { default as PlayingCardsFanIcon } from './icons/PlayingCardsFanIcon.vue'
 export {
   EntryIcon,
   DefinitionsIcon,
@@ -45,4 +45,4 @@ export {
   WavesIcon,
   StarIcon,
   StarCreateIcon,
-} from './contentIcons'
+} from './icons/contentIcons'
