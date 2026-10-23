@@ -379,14 +379,14 @@ import {
   ToolbarSelectDropdownItem,
 } from '@packages/ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { fetchDefinitionsTypes, getCollection, listUsers, searchCollectionsAndUsers } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useRecentSelections } from '@/composables/useRecentSelections'
 
 import { defaultFilterLanguageTags } from '@/config/locales'
-import { parseWordTypeIds } from '@/utils/routeQuery'
+import { compactQuery, parseWordTypeIds } from '@/utils/routeQuery'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
 const { t, tm } = useI18n()
@@ -541,6 +541,7 @@ const lastAutoExpandedSelmaho = ref('')
 const wordTypes = ref<Array<{ type_id: number; descriptor: string }>>([])
 const selectedWordTypes = ref<WordTypeOption[]>([])
 const route = useRoute()
+const router = useRouter()
 
 const { recent: recentLanguages, record: recordRecentLanguage } =
   useRecentSelections<LanguageOption>('recentLanguageSelections', (lang) => lang.id)
@@ -1113,8 +1114,8 @@ function selectSourceLang(id: number) {
   emitUpdate()
 }
 
-const emitUpdate = () => {
-  const updatedValue = {
+function buildFiltersValue() {
+  return {
     selmaho: filters.value.selmaho,
     usernames: selectedUsers.value.map((u) => u.username),
     excludeUsernames: excludedUsers.value.map((u) => u.username),
@@ -1122,11 +1123,34 @@ const emitUpdate = () => {
     selectedLanguages: selectedLangs.value.map((lang) => lang.id),
     selectedCollections: selectedCollections.value.map((col) => col.collection_id),
     word_type: selectedWordTypes.value.map((type) => type.type_id),
-    source_langid: filters.value.source_langid || 1, // Include source_langid
+    source_langid: filters.value.source_langid || 1,
     isSemantic: isSemantic.value,
     searchInPhrases: true,
     includePopularCollections: includePopularCollections.value,
   }
+}
+
+/** Sync panel open/closed to the URL without resetting page or other search params. */
+function syncExpandedQueryParam() {
+  const want = expanded.value ? 'true' : undefined
+  const have = route.query.isExpanded === 'true' ? 'true' : undefined
+  if (want === have) return
+  void router.replace({
+    query: compactQuery({
+      ...route.query,
+      isExpanded: want,
+    }),
+  })
+}
+
+/** UI / v-model only — does not emit `change` (parents treat that as a search trigger). */
+function emitModelOnly() {
+  emit('update:modelValue', buildFiltersValue())
+}
+
+/** Real filter input change — parents update the URL and re-run search. */
+const emitUpdate = () => {
+  const updatedValue = buildFiltersValue()
   emit('update:modelValue', updatedValue)
   emit('change', updatedValue)
 }
@@ -1136,7 +1160,8 @@ function maybeAutoExpandForSelmaho(newSelmaho: string, prevSelmaho: string) {
     lastAutoExpandedSelmaho.value = newSelmaho
     if (!expanded.value) {
       expanded.value = true
-      emitUpdate()
+      emitModelOnly()
+      syncExpandedQueryParam()
     }
   }
   if (!newSelmaho) {
@@ -1208,7 +1233,8 @@ const resetAllFilters = () => {
 
 const toggleExpanded = () => {
   expanded.value = !expanded.value
-  emitUpdate()
+  emitModelOnly()
+  syncExpandedQueryParam()
 }
 
 function togglePopularCollections() {
