@@ -240,8 +240,22 @@
         </div>
 
         <div class="space-y-4">
-          <template v-if="!isLoading">
-            <template v-if="commentId > 0">
+          <div
+            class="comment-list-feed"
+            :class="{ 'comment-list-feed--embedded': embedded }"
+            :role="isLoading ? 'status' : undefined"
+            :aria-busy="isLoading || undefined"
+            :aria-live="isLoading ? 'polite' : undefined"
+          >
+            <template v-if="isLoading">
+              <SkeletonActivityItem v-for="n in skeletonCount" :key="`comment-skel-${n}`" />
+              <span class="sr-only">{{ t('components.loadingSpinner.loadingDefault') }}</span>
+            </template>
+            <div v-else-if="comments.length === 0" class="comment-list-status-panel">
+              <MessageSquare class="comment-list-status-panel__icon" aria-hidden="true" />
+              <p class="comment-list-status-panel__text">{{ t('commentList.noComments') }}</p>
+            </div>
+            <template v-else-if="commentId > 0">
               <div
                 v-for="comment in targetCommentThread"
                 :key="comment.comment_id"
@@ -302,7 +316,7 @@
                 </div>
               </div>
             </template>
-          </template>
+          </div>
 
           <div v-if="embedded && !isLoading && totalPages > 1" class="mt-6">
             <PaginationComponent
@@ -313,18 +327,6 @@
               @prev="changePage(currentPage - 1)"
               @next="changePage(currentPage + 1)"
             />
-          </div>
-
-          <div v-if="isLoading" class="flex justify-center py-8">
-            <Loader2 class="animate-spin h-8 w-8 text-blue-600" />
-          </div>
-
-          <div
-            v-if="!isLoading && comments.length === 0"
-            class="flex flex-col justify-center text-center py-8 bg-blue-50 rounded-lg border border-blue-100 p-4"
-          >
-            <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-            <p class="mt-4 text-gray-600">{{ t('commentList.noComments') }}</p>
           </div>
 
           <div
@@ -362,7 +364,7 @@
 
 <script setup lang="ts">
 import { Button, Checkbox } from '@packages/ui'
-import { ArrowLeft, Home, MessageSquare, Loader2, PanelLeft, Quote } from '@lucide/vue'
+import { ArrowLeft, Home, MessageSquare, PanelLeft, Quote } from '@lucide/vue'
 import { useMediaQuery, onKeyStroke } from '@vueuse/core'
 import { ref, computed, onMounted, watchEffect, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -377,6 +379,7 @@ import {
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue'
 import CommentForm from '@/components/CommentForm.vue'
 import CommentItem from '@/components/CommentItem.vue'
+import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
@@ -429,6 +432,9 @@ const props = defineProps({
     default: '',
   },
 })
+
+/** Match reserved `.comment-list-feed` height (embedded modal: 2 rows; full page: 3). */
+const skeletonCount = computed(() => (props.embedded ? 2 : 3))
 
 // Standalone pages dock pagination; embedded lists use an ancestor host when one exists.
 const paginationHost = props.embedded ? undefined : useFeedPaginationHost()

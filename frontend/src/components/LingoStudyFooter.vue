@@ -8,42 +8,6 @@
     <div
       class="lingo-study-chrome-inner lingo-study-footer__chrome !items-stretch flex-col justify-center gap-1.5 sm:gap-2"
     >
-      <div class="flex w-full min-w-0 items-center gap-2">
-        <div
-          v-if="showCardActions"
-          class="flex shrink-0 items-center justify-start gap-1.5 sm:gap-2"
-        >
-          <button
-            type="button"
-            class="lingo-btn lingo-btn--ghost lingo-btn--sm !normal-case !tracking-normal"
-            :class="{ 'lingo-btn--icon !min-w-9 !px-0': discussIconOnly }"
-            :aria-label="labelDiscuss || t('flashcardStudy.wavesButton')"
-            :title="labelDiscuss || t('flashcardStudy.wavesButton')"
-            @click="$emit('discuss')"
-          >
-            <MessagesSquare class="h-3.5 w-3.5 shrink-0" />
-            <span v-if="!discussIconOnly">{{
-              labelDiscuss || t('flashcardStudy.wavesButton')
-            }}</span>
-          </button>
-        </div>
-        <p
-          class="min-w-0 flex-1 truncate text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs"
-          :class="status === 'rate' && ratePrompt ? '' : 'invisible'"
-          :aria-hidden="status !== 'rate' || !ratePrompt"
-        >
-          {{ ratePrompt || '\u00a0' }}
-        </p>
-        <div
-          v-if="showCardActions && discussIconOnly"
-          class="invisible flex shrink-0 items-center gap-1.5 sm:gap-2"
-          aria-hidden="true"
-        >
-          <span class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon !min-w-9 !px-0">
-            <MessagesSquare class="h-3.5 w-3.5 shrink-0" />
-          </span>
-        </div>
-      </div>
       <div class="lingo-study-rate-row">
         <template v-if="status === 'rate'">
           <button
@@ -129,6 +93,42 @@
           </button>
         </template>
       </div>
+      <div class="flex w-full min-w-0 items-center gap-2">
+        <div
+          v-if="showCardActions"
+          class="flex shrink-0 items-center justify-start gap-1.5 sm:gap-2"
+        >
+          <button
+            type="button"
+            class="lingo-btn lingo-btn--ghost lingo-btn--sm !normal-case !tracking-normal"
+            :class="{ 'lingo-btn--icon !min-w-9 !px-0': discussIconOnly }"
+            :aria-label="labelDiscuss || t('flashcardStudy.wavesButton')"
+            :title="labelDiscuss || t('flashcardStudy.wavesButton')"
+            @click="$emit('discuss')"
+          >
+            <MessagesSquare class="h-3.5 w-3.5 shrink-0" />
+            <span v-if="!discussIconOnly">{{
+              labelDiscuss || t('flashcardStudy.wavesButton')
+            }}</span>
+          </button>
+        </div>
+        <p
+          class="min-w-0 flex-1 truncate text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs"
+          :class="status === 'rate' && ratePrompt ? '' : 'invisible'"
+          :aria-hidden="status !== 'rate' || !ratePrompt"
+        >
+          {{ ratePrompt || '\u00a0' }}
+        </p>
+        <div
+          v-if="showCardActions && discussIconOnly"
+          class="invisible flex shrink-0 items-center gap-1.5 sm:gap-2"
+          aria-hidden="true"
+        >
+          <span class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon !min-w-9 !px-0">
+            <MessagesSquare class="h-3.5 w-3.5 shrink-0" />
+          </span>
+        </div>
+      </div>
     </div>
   </footer>
 </template>
@@ -183,7 +183,7 @@ defineEmits(['check', 'rate', 'discuss', 'snooze'])
 
 const { t } = useI18n()
 
-/** Discussions: icon-only while the rate prompt shares the top row. */
+/** Discussions: icon-only while the rate prompt shares that row. */
 const discussIconOnly = computed(() => props.status === 'rate')
 
 const footerClass = computed(() => {

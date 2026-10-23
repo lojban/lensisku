@@ -659,6 +659,27 @@ export default {
           '@apply flex flex-col items-center justify-center text-center py-12 bg-gray-50 rounded-lg border border-blue-100':
             {},
         },
+        /**
+         * CommentList list region: reserved footprint so loading → empty / comments
+         * does not CLS. Loading uses SkeletonActivityItem; empty fills the box.
+         */
+        '.comment-list-feed': {
+          '@apply flex w-full min-h-[24rem] flex-col sm:min-h-[26rem]': {},
+        },
+        /** Embedded (e.g. Lingo modal): fixed height + internal scroll — no modal chrome CLS. */
+        '.comment-list-feed--embedded': {
+          '@apply h-[min(50vh,28rem)] min-h-[20rem] overflow-y-auto overscroll-contain': {},
+        },
+        '.comment-list-status-panel': {
+          '@apply flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-blue-100 bg-blue-50 p-4 text-center':
+            {},
+        },
+        '.comment-list-status-panel__icon': {
+          '@apply h-12 w-12 shrink-0 text-blue-400': {},
+        },
+        '.comment-list-status-panel__text': {
+          '@apply max-w-prose text-sm text-gray-600 sm:text-base': {},
+        },
         // --- Dropdowns & filters ---
         /** Teleported dropdown menu panel (FAB, ellipsis menus). */
         '.dropdown-menu-panel': {

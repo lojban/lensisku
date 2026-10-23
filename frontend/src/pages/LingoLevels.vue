@@ -27,7 +27,7 @@
               @click="startStudy"
             >
               <Dumbbell class="h-4 w-4 shrink-0" />
-              <span class="hidden sm:inline">{{ t('flashcardLevels.studyButton') }}</span>
+              <span>{{ t('flashcardLevels.studyButton') }}</span>
             </button>
             <RouterLink
               :to="reelsPath"
@@ -267,6 +267,9 @@ function scrollFocusLevelIntoView() {
         ? String(activeLevel.value.level_id)
         : ''
   if (!focusId) return
+  // First two ladder rows are already near the top; leave the feed at the tree start.
+  const focusIndex = displayLevels.value.findIndex((l) => String(l.level_id) === focusId)
+  if (focusIndex >= 0 && focusIndex < 2) return
   nextTick(() => {
     const el = document.querySelector(`[data-level-id="${CSS.escape(focusId)}"]`)
     el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
