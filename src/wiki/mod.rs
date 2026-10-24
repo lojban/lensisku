@@ -62,6 +62,10 @@ pub fn author_url_for_username(username: &str) -> Option<String> {
     mw_account_name(username).and_then(mw_user_page_url)
 }
 
+pub fn configure(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::scope("/wiki").service(controller::get_wiki_article));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -83,8 +87,4 @@ mod tests {
         );
         assert_eq!(author_url_for_username("localuser"), None);
     }
-}
-
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/wiki").service(controller::get_wiki_article));
 }

@@ -1443,14 +1443,16 @@ pub async fn get_recent_changes(
 
     match service::get_recent_changes(
         &pool,
-        limit,
-        types,
-        after,
-        home,
-        feed,
-        source.to_owned(),
         &redis_cache,
-        user_id,
+        service::GetRecentChangesParams {
+            limit,
+            types,
+            after,
+            home,
+            feed,
+            source: source.to_owned(),
+            user_id,
+        },
     )
     .await
     {

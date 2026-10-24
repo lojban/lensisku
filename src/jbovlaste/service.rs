@@ -5594,18 +5594,33 @@ async fn fetch_comment_bookmarks_for_changes(
 
 pub(crate) use super::activity::*;
 
+/// Arguments for [`get_recent_changes`] (keeps the service signature under clippy's arg limit).
+pub struct GetRecentChangesParams {
+    pub limit: Option<i64>,
+    pub types: Option<String>,
+    pub after: Option<String>,
+    pub home: bool,
+    pub feed: bool,
+    pub source: String,
+    pub user_id: Option<i32>,
+}
+
 pub async fn get_recent_changes(
     pool: &Pool,
-    limit: Option<i64>,
-    types: Option<String>,
-    after: Option<String>,
-    home: bool,
-    feed: bool,
-    source: String,
     redis_cache: &RedisCache,
-    user_id: Option<i32>,
+    params: GetRecentChangesParams,
 ) -> Result<RecentChangesResponse, Box<dyn std::error::Error>> {
     use std::time::Duration as StdDuration;
+
+    let GetRecentChangesParams {
+        limit,
+        types,
+        after,
+        home,
+        feed,
+        source,
+        user_id,
+    } = params;
 
     let cache_key = match user_id {
         None => format!(

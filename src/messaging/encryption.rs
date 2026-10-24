@@ -201,7 +201,7 @@ mod tests {
 
     #[test]
     fn round_trip_encrypts_and_signs() {
-        let key = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &[7u8; 32]);
+        let key = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, [7u8; 32]);
         let (ciphertext, nonce) = encrypt("coi ro do", &key).unwrap();
         assert_ne!(ciphertext, "coi ro do");
         assert_eq!(decrypt(&ciphertext, &nonce, &key).unwrap(), "coi ro do");

@@ -582,13 +582,7 @@ import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import LingoWordbankPanel from '@/components/LingoWordbankPanel.vue'
 import CommentList from '@/pages/CommentList.vue'
-import {
-  buildWordbankChips,
-  expectedFillinLikeAnswer,
-  flashcardDistractorTexts,
-  normalizeWordbankPhrase,
-  type WordbankChip,
-} from '@/utils/wordbank'
+import { expectedFillinLikeAnswer, type WordbankChip } from '@/utils/wordbank'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
@@ -708,6 +702,8 @@ const isQuizMode = computed(() => {
 
 const wordbankChips = ref<WordbankChip[]>([])
 const wordbankSelectedIds = ref<string[]>([])
+/** Server target: selected chip texts joined in order must equal this. */
+const wordbankExpectedNormalized = ref('')
 
 function syncUserAnswerFromWordbank() {
   if (!isWordbankMode.value) return
@@ -733,18 +729,13 @@ function unpickWordbankChip(id: string) {
 function rebuildWordbankForCard() {
   wordbankSelectedIds.value = []
   wordbankChips.value = []
+  wordbankExpectedNormalized.value = ''
   userAnswer.value = ''
   const card = currentCard.value
   if (!card || !isWordbankMode.value) return
-  const side = card.progress?.[0]?.card_side ?? 'direct'
-  const expected = expectedFillinLikeAnswer(card.flashcard, side)
-  const pool = [card, ...remainingCards.value]
-  const distractors: string[] = []
-  for (const other of pool) {
-    if (other.flashcard?.id === card.flashcard.id) continue
-    distractors.push(...flashcardDistractorTexts(other.flashcard || {}))
-  }
-  wordbankChips.value = buildWordbankChips(expected, distractors)
+  const fc = card.flashcard || {}
+  wordbankChips.value = (fc.wordbank_chips as WordbankChip[] | undefined) ?? []
+  wordbankExpectedNormalized.value = fc.wordbank_expected_normalized ?? ''
 }
 
 const showCanonicalForm = computed(() => {
@@ -778,17 +769,10 @@ function isAnonFillinAnswerCorrect() {
   if (!expectedRaw) return false
   const userRaw = userAnswer.value.trim()
   if (!userRaw) return false
-  // Wordbank chips are punct-stripped + lowercased; grade the same way.
+  // Chips are already normalized; correct iff selection order matches expected_normalized.
   if (isWordbankMode.value) {
-    const user = normalizeWordbankPhrase(userRaw)
-    if (expectedRaw.includes(';')) {
-      return expectedRaw
-        .split(';')
-        .map((s) => normalizeWordbankPhrase(s))
-        .filter(Boolean)
-        .some((opt) => opt === user)
-    }
-    return normalizeWordbankPhrase(expectedRaw) === user
+    const expected = wordbankExpectedNormalized.value
+    return expected.length > 0 && userRaw === expected
   }
   const user = userRaw.toLowerCase()
   const expectedLower = expectedRaw.toLowerCase()
@@ -962,6 +946,7 @@ const loadNextCard = () => {
     quizResult.value = null
     wordbankSelectedIds.value = []
     wordbankChips.value = []
+    wordbankExpectedNormalized.value = ''
   } else {
     currentCard.value = null
   }
@@ -1124,6 +1109,7 @@ const handleNextCard = async () => {
   userAnswer.value = ''
   wordbankSelectedIds.value = []
   wordbankChips.value = []
+  wordbankExpectedNormalized.value = ''
   loadNextCard()
   if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
 }

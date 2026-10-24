@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use crate::auth_utils::{
     verify_collection_ownership, verify_collection_read_access, verify_flashcard_ownership,
 };
+use crate::utils::wordbank::{normalize_wordbank_phrase, WordbankLang};
 
 use super::{
     dto::{
@@ -79,6 +80,8 @@ async fn get_flashcard(
         created_at: row.get("created_at"),
         question_text: None, // Will be populated later if it's a quiz
         quiz_options: None,  // Will be populated later if it's a quiz
+        wordbank_chips: None,
+        wordbank_expected_normalized: None,
     })
 }
 
@@ -226,6 +229,8 @@ pub async fn create_flashcard(
             item_id,
             question_text: None,
             quiz_options: None,
+            wordbank_chips: None,
+            wordbank_expected_normalized: None,
             sound_url: if row.get::<_, bool>("has_custom_sound") {
                 Some(format!(
                     "/api/collections/{}/items/{}/sound",
@@ -685,6 +690,216 @@ fn build_flashcard_from_row(
         created_at: row.get("created_at"),
         question_text,
         quiz_options,
+        wordbank_chips: None,
+        wordbank_expected_normalized: None,
+    }
+}
+
+/// Expected raw answer for fill-in / wordbank / listen-wordbank (preserves casing for wordbank).
+fn expected_fillin_like_raw(fc: &Flashcard, card_side: &str) -> Option<String> {
+    let pick_back = || {
+        fc.definition
+            .as_deref()
+            .or(fc.free_content_back.as_deref())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    };
+    let pick_front = || {
+        fc.word
+            .as_deref()
+            .or(fc.free_content_front.as_deref())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    };
+    match (&fc.direction, card_side) {
+        (
+            FlashcardDirection::FillIn
+            | FlashcardDirection::FillInBoth
+            | FlashcardDirection::Wordbank
+            | FlashcardDirection::WordbankBoth,
+            "direct",
+        ) => pick_back(),
+        (
+            FlashcardDirection::ListenWordbank | FlashcardDirection::ListenWordbankBoth,
+            "direct",
+        ) => pick_front(),
+        (
+            FlashcardDirection::FillInReverse
+            | FlashcardDirection::FillInBoth
+            | FlashcardDirection::WordbankReverse
+            | FlashcardDirection::WordbankBoth,
+            "reverse",
+        ) => pick_front(),
+        (
+            FlashcardDirection::ListenWordbankReverse | FlashcardDirection::ListenWordbankBoth,
+            "reverse",
+        ) => pick_back(),
+        _ => None,
+    }
+}
+
+/// Distractor phrases from the same language side as the assemble target.
+fn distractor_texts_for_lang(
+    word: Option<&String>,
+    definition: Option<&String>,
+    free_front: Option<&String>,
+    free_back: Option<&String>,
+    lang: WordbankLang,
+) -> Vec<String> {
+    let texts: [Option<&String>; 2] = match lang {
+        WordbankLang::Lojban => [word, free_front],
+        WordbankLang::Translation => [definition, free_back],
+    };
+    texts
+        .into_iter()
+        .flatten()
+        .filter(|s| !s.trim().is_empty())
+        .cloned()
+        .collect()
+}
+
+fn flashcard_distractor_texts(fc: &Flashcard, lang: WordbankLang) -> Vec<String> {
+    distractor_texts_for_lang(
+        fc.word.as_ref(),
+        fc.definition.as_ref(),
+        fc.free_content_front.as_ref(),
+        fc.free_content_back.as_ref(),
+        lang,
+    )
+}
+
+/// Lojban front vs translation back for chip / grade normalization.
+fn wordbank_lang_for(direction: &FlashcardDirection, card_side: &str) -> Option<WordbankLang> {
+    match (direction, card_side) {
+        (
+            FlashcardDirection::Wordbank | FlashcardDirection::WordbankBoth,
+            "direct",
+        )
+        | (
+            FlashcardDirection::ListenWordbankReverse | FlashcardDirection::ListenWordbankBoth,
+            "reverse",
+        ) => Some(WordbankLang::Translation),
+        (
+            FlashcardDirection::WordbankReverse | FlashcardDirection::WordbankBoth,
+            "reverse",
+        )
+        | (
+            FlashcardDirection::ListenWordbank | FlashcardDirection::ListenWordbankBoth,
+            "direct",
+        ) => Some(WordbankLang::Lojban),
+        _ => None,
+    }
+}
+
+/// Attach shuffled word-bank chips to study-queue cards (same idea as quiz_options).
+fn attach_wordbank_chips(cards: &mut [FlashcardResponse]) {
+    if cards.is_empty() {
+        return;
+    }
+
+    for i in 0..cards.len() {
+        if !is_wordbank_like_direction(&cards[i].flashcard.direction) {
+            continue;
+        }
+        let side = cards[i]
+            .progress
+            .first()
+            .map(|p| p.card_side.as_str())
+            .unwrap_or("direct");
+        let Some(lang) = wordbank_lang_for(&cards[i].flashcard.direction, side) else {
+            continue;
+        };
+        let Some(expected) = expected_fillin_like_raw(&cards[i].flashcard, side) else {
+            continue;
+        };
+        let id = cards[i].flashcard.id;
+        let distractors: Vec<String> = cards
+            .iter()
+            .enumerate()
+            .filter(|(j, _)| *j != i)
+            .filter(|(_, c)| c.flashcard.id != id)
+            .flat_map(|(_, c)| flashcard_distractor_texts(&c.flashcard, lang))
+            .collect();
+        let (chips, expected_normalized) =
+            crate::utils::wordbank::build_wordbank_chips(&expected, &distractors, lang, None);
+        if chips.is_empty() {
+            continue;
+        }
+        cards[i].flashcard.wordbank_chips = Some(chips);
+        cards[i].flashcard.wordbank_expected_normalized = Some(expected_normalized);
+    }
+}
+
+fn attach_wordbank_chips_to_level_cards(cards: &mut [LevelCardResponse]) {
+    if cards.is_empty() {
+        return;
+    }
+
+    for i in 0..cards.len() {
+        if !is_wordbank_like_direction(&cards[i].direction) {
+            continue;
+        }
+        // Guest/level listing studies the primary side for this direction family.
+        let side = match cards[i].direction {
+            FlashcardDirection::WordbankReverse
+            | FlashcardDirection::ListenWordbankReverse
+            | FlashcardDirection::FillInReverse => "reverse",
+            _ => "direct",
+        };
+        let Some(lang) = wordbank_lang_for(&cards[i].direction, side) else {
+            continue;
+        };
+        let stub = Flashcard {
+            id: cards[i].flashcard_id,
+            collection_id: cards[i].collection_id,
+            item_id: cards[i].item_id,
+            definition_id: cards[i].definition_id,
+            word: cards[i].word.clone(),
+            definition: cards[i].definition.clone(),
+            free_content_front: cards[i].free_content_front.clone(),
+            free_content_back: cards[i].free_content_back.clone(),
+            has_front_image: false,
+            has_back_image: false,
+            notes: None,
+            position: cards[i].position,
+            direction: cards[i].direction.clone(),
+            definition_language_id: None,
+            sound_url: None,
+            has_custom_sound: false,
+            canonical_form: None,
+            use_canonical_comparison: true,
+            created_at: DateTime::<Utc>::UNIX_EPOCH,
+            question_text: None,
+            quiz_options: None,
+            wordbank_chips: None,
+            wordbank_expected_normalized: None,
+        };
+        let Some(expected) = expected_fillin_like_raw(&stub, side) else {
+            continue;
+        };
+        let id = cards[i].flashcard_id;
+        let distractors: Vec<String> = cards
+            .iter()
+            .filter(|c| c.flashcard_id != id)
+            .flat_map(|c| {
+                distractor_texts_for_lang(
+                    c.word.as_ref(),
+                    c.definition.as_ref(),
+                    c.free_content_front.as_ref(),
+                    c.free_content_back.as_ref(),
+                    lang,
+                )
+            })
+            .collect();
+        let (chips, expected_normalized) =
+            crate::utils::wordbank::build_wordbank_chips(&expected, &distractors, lang, None);
+        if chips.is_empty() {
+            continue;
+        }
+        cards[i].wordbank_chips = Some(chips);
+        cards[i].wordbank_expected_normalized = Some(expected_normalized);
     }
 }
 
@@ -773,9 +988,14 @@ pub async fn list_flashcards_public(
             | FlashcardDirection::FillInBoth
             | FlashcardDirection::WordbankBoth
             | FlashcardDirection::ListenWordbankBoth => {
+                // One response per side so wordbank chips match card_side.
                 flashcards.push(FlashcardResponse {
                     flashcard: flashcard.clone(),
-                    progress: vec![synthetic_progress("direct"), synthetic_progress("reverse")],
+                    progress: vec![synthetic_progress("direct")],
+                });
+                flashcards.push(FlashcardResponse {
+                    flashcard: flashcard.clone(),
+                    progress: vec![synthetic_progress("reverse")],
                 });
             }
             FlashcardDirection::Reverse
@@ -795,6 +1015,8 @@ pub async fn list_flashcards_public(
             }
         }
     }
+
+    attach_wordbank_chips(&mut flashcards);
 
     let total = flashcards.len() as i64;
     transaction.commit().await?;
@@ -1164,12 +1386,13 @@ pub async fn list_flashcards(
     let per_page = query.per_page.unwrap_or(20);
     let offset = ((page - 1) * per_page) as usize;
 
-    let paginated_cards: Vec<FlashcardResponse> = all_flashcards_with_retrievability
+    let mut paginated_cards: Vec<FlashcardResponse> = all_flashcards_with_retrievability
         .iter()
         .skip(offset)
         .take(per_page as usize)
         .map(|(card, _)| card.clone())
         .collect();
+    attach_wordbank_chips(&mut paginated_cards);
 
     let due_count = if query.due.unwrap_or(false) {
         all_flashcards_with_retrievability.len() as i64
@@ -2348,25 +2571,6 @@ pub async fn check_answer(
     }
 }
 
-/// Chip / wordbank token: drop sentence punctuation, keep letters/numbers/'/- , lowercase.
-/// Matches `frontend/src/utils/wordbank.ts` `normalizeWordbankToken`.
-fn normalize_wordbank_token(token: &str) -> String {
-    token
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '\'' || *c == '\u{2019}' || *c == '-')
-        .collect::<String>()
-        .to_lowercase()
-}
-
-/// Phrase → space-joined normalized tokens (wordbank / listen-wordbank grading).
-fn normalize_wordbank_phrase(text: &str) -> String {
-    text.split_whitespace()
-        .map(normalize_wordbank_token)
-        .filter(|t| !t.is_empty())
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
 fn is_wordbank_like_direction(direction: &FlashcardDirection) -> bool {
     matches!(
         direction,
@@ -2451,85 +2655,39 @@ pub async fn review_flashcard_serverside(
     // Determine if it's free content
     let is_free_content = flashcard.definition_id.is_none();
 
-    // Get the expected answer string (raw, without lowercasing yet)
-    let expected_raw = match (&flashcard.direction, req.card_side.as_str()) {
-        // Fill-in / wordbank (and *Both), direct side: expect definition or back content
-        (&FlashcardDirection::FillIn, "direct")
-        | (&FlashcardDirection::FillInBoth, "direct")
-        | (&FlashcardDirection::Wordbank, "direct")
-        | (&FlashcardDirection::WordbankBoth, "direct") => {
-            if let Some(def) = &flashcard.definition {
-                def.trim().to_lowercase()
-            } else if let Some(content) = &flashcard.free_content_back {
-                content.trim().to_lowercase()
-            } else {
-                return Err("Invalid flashcard content for fill-in (direct)".into());
-            }
-        }
-        // Listen-tap recognition (Duo listenTap): hear front audio, assemble front text
-        (&FlashcardDirection::ListenWordbank, "direct")
-        | (&FlashcardDirection::ListenWordbankBoth, "direct") => {
-            if let Some(word) = &flashcard.word {
-                word.trim().to_lowercase()
-            } else if let Some(content) = &flashcard.free_content_front {
-                content.trim().to_lowercase()
-            } else {
-                return Err("Invalid flashcard content for listen-wordbank (direct)".into());
-            }
-        }
-        // Fill-in / wordbank reverse (and *Both), reverse side: expect word or front content
-        (&FlashcardDirection::FillInReverse, "reverse")
-        | (&FlashcardDirection::FillInBoth, "reverse")
-        | (&FlashcardDirection::WordbankReverse, "reverse")
-        | (&FlashcardDirection::WordbankBoth, "reverse") => {
-            if let Some(word) = &flashcard.word {
-                word.trim().to_lowercase()
-            } else if let Some(content) = &flashcard.free_content_front {
-                content.trim().to_lowercase()
-            } else {
-                return Err("Invalid flashcard content for fill-in (reverse)".into());
-            }
-        }
-        // Listen reverse / both-reverse: hear front, assemble back (comprehension)
-        (&FlashcardDirection::ListenWordbankReverse, "reverse")
-        | (&FlashcardDirection::ListenWordbankBoth, "reverse") => {
-            if let Some(def) = &flashcard.definition {
-                def.trim().to_lowercase()
-            } else if let Some(content) = &flashcard.free_content_back {
-                content.trim().to_lowercase()
-            } else {
-                return Err("Invalid flashcard content for listen-wordbank (reverse)".into());
-            }
-        }
-        // Handle other directions (Direct, Reverse, Both) - they shouldn't use this endpoint
-        (&FlashcardDirection::Direct, _)
-        | (&FlashcardDirection::Reverse, _)
-        | (&FlashcardDirection::Both, _) => {
-            return Err(format!(
-                "Fill-in endpoint called for non-fill-in direction '{:?}'",
-                flashcard.direction
-            )
-            .into());
-        }
-        // Catch any other invalid side combinations
-        (direction, side) => {
+    let expected_raw = match expected_fillin_like_raw(&flashcard, req.card_side.as_str()) {
+        Some(s) => s,
+        None => {
             return Err(format!(
                 "Invalid card side '{}' for fill-in direction '{:?}'",
-                side, direction
+                req.card_side, direction
             )
             .into());
         }
     };
+    // Typed fill-in lowercases for comparison; wordbank keeps casing until normalize
+    // (so English "I" survives). Direct/Reverse must not use this endpoint.
+    if matches!(
+        direction,
+        FlashcardDirection::Direct | FlashcardDirection::Reverse | FlashcardDirection::Both
+    ) {
+        return Err(format!(
+            "Fill-in endpoint called for non-fill-in direction '{:?}'",
+            flashcard.direction
+        )
+        .into());
+    }
 
     validate_fill_in_answers(&req.answer, &expected_raw)?;
-    let wordbank_grade = is_wordbank_like_direction(&direction);
-    let provided = if wordbank_grade {
-        normalize_wordbank_phrase(&req.answer)
+    let wordbank_lang = wordbank_lang_for(&direction, req.card_side.as_str());
+    let provided = if let Some(lang) = wordbank_lang {
+        // Chip-assembled answers are already normalized; normalize is idempotent.
+        normalize_wordbank_phrase(&req.answer, lang)
     } else {
         req.answer.trim().to_lowercase()
     };
-    let expected_for_grade = if wordbank_grade {
-        normalize_wordbank_phrase(&expected_raw)
+    let expected_for_grade = if let Some(lang) = wordbank_lang {
+        normalize_wordbank_phrase(&expected_raw, lang)
     } else {
         expected_raw.trim().to_lowercase()
     };
@@ -2540,8 +2698,8 @@ pub async fn review_flashcard_serverside(
         let possible_answers: Vec<String> = expected_raw
             .split(';')
             .map(|s| {
-                if wordbank_grade {
-                    normalize_wordbank_phrase(s)
+                if let Some(lang) = wordbank_lang {
+                    normalize_wordbank_phrase(s, lang)
                 } else {
                     s.trim().to_lowercase()
                 }
@@ -3436,7 +3594,7 @@ async fn get_level_cards(
 
     let rows = transaction
         .query(
-            "SELECT f.id, f.collection_id, ci.item_id, ci.definition_id, fli.position,
+            "SELECT f.id, f.collection_id, f.direction, ci.item_id, ci.definition_id, fli.position,
                 v.word, v.valsiid, d.definition, d.definitionid, ci.notes as ci_notes,
                 ci.free_content_front, ci.free_content_back, ci.canonical_form,
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'front') as has_front_image,
@@ -3455,8 +3613,8 @@ async fn get_level_cards(
              ON frh.flashcard_id = f.id
              AND frh.user_id = $2
          WHERE fli.level_id = $1
-         GROUP BY f.id, f.collection_id, ci.item_id, fli.position, v.word, d.definition, v.valsiid, d.definitionid,
-                  ci.free_content_front, ci.free_content_back, ci.canonical_form
+         GROUP BY f.id, f.collection_id, f.direction, ci.item_id, fli.position, v.word, d.definition, v.valsiid, d.definitionid,
+                  ci.free_content_front, ci.free_content_back, ci.canonical_form, ci.notes, ci.definition_id
          ORDER BY fli.position",
             &[&level_id, &user_id],
         )
@@ -3495,6 +3653,7 @@ async fn get_level_cards(
         cards.push(LevelCardResponse {
             flashcard_id: row.get("id"),
             position: row.get("position"),
+            direction: row.get("direction"),
             word: row.get("word"),
             definition: row.get("definition"),
             free_content_front: row.get("free_content_front"),
@@ -3510,9 +3669,12 @@ async fn get_level_cards(
             ci_notes: row.get("ci_notes"),
             canonical_form: row.get("canonical_form"),
             progress,
+            wordbank_chips: None,
+            wordbank_expected_normalized: None,
         });
     }
 
+    attach_wordbank_chips_to_level_cards(&mut cards);
     Ok(cards)
 }
 
@@ -3638,7 +3800,7 @@ pub async fn get_level_cards_paginated(
 
     let rows = client
         .query(
-            "SELECT f.id, f.collection_id, ci.item_id, ci.definition_id, fli.position,
+            "SELECT f.id, f.collection_id, f.direction, ci.item_id, ci.definition_id, fli.position,
                 v.word, v.valsiid, d.definition, d.definitionid, ci.notes as ci_notes,
                 ci.free_content_front, ci.free_content_back, ci.canonical_form,
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'front') as has_front_image,
@@ -3656,15 +3818,15 @@ pub async fn get_level_cards_paginated(
                 ON frh.flashcard_id = f.id
                 AND frh.user_id = $1
             WHERE fli.level_id = $2
-            GROUP BY f.id, f.collection_id, ci.item_id, fli.position, v.word, d.definition, v.valsiid, d.definitionid,
-                    ci.free_content_front, ci.free_content_back, ci.canonical_form
+            GROUP BY f.id, f.collection_id, f.direction, ci.item_id, fli.position, v.word, d.definition, v.valsiid, d.definitionid,
+                    ci.free_content_front, ci.free_content_back, ci.canonical_form, ci.notes, ci.definition_id
             ORDER BY fli.position
             LIMIT $3 OFFSET $4",
             &[&user_id, &level_id, &per_page, &offset],
         )
         .await?;
 
-    let cards = rows
+    let mut cards: Vec<LevelCardResponse> = rows
         .iter()
         .map(|row| {
             let success_rate = if row.get::<_, i64>("total_attempts") > 0 {
@@ -3700,6 +3862,7 @@ pub async fn get_level_cards_paginated(
             LevelCardResponse {
                 flashcard_id: row.get("id"),
                 position: row.get("position"),
+                direction: row.get("direction"),
                 word: row.get("word"),
                 definition: row.get("definition"),
                 definition_id: row.get("definitionid"),
@@ -3715,9 +3878,13 @@ pub async fn get_level_cards_paginated(
                 ci_notes: row.get("ci_notes"),
                 canonical_form: row.get("canonical_form"),
                 progress,
+                wordbank_chips: None,
+                wordbank_expected_normalized: None,
             }
         })
         .collect();
+
+    attach_wordbank_chips_to_level_cards(&mut cards);
 
     Ok(LevelCardListResponse {
         cards,
@@ -4049,15 +4216,35 @@ mod security_grading_tests {
         );
         assert_eq!(super::calculate_similarity(" 日本語 ", "日本語"), 1.0);
         assert_eq!(super::calculate_similarity("", "a"), 0.0);
+        use crate::utils::wordbank::WordbankLang;
         assert_eq!(
-            super::normalize_wordbank_phrase("Hello, world! How are you?"),
+            crate::utils::wordbank::normalize_wordbank_phrase(
+                "Hello, world! How are you?",
+                WordbankLang::Translation
+            ),
             "hello world how are you"
         );
-        assert_eq!(super::normalize_wordbank_phrase("coi do'u"), "coi do'u");
+        assert_eq!(
+            crate::utils::wordbank::normalize_wordbank_phrase(
+                "Hello, I love you!",
+                WordbankLang::Translation
+            ),
+            "hello I love you"
+        );
+        assert_eq!(
+            crate::utils::wordbank::normalize_wordbank_phrase("coi do'u", WordbankLang::Lojban),
+            "coi do'u"
+        );
         assert_eq!(
             super::calculate_similarity(
-                &super::normalize_wordbank_phrase("Hello, you!"),
-                &super::normalize_wordbank_phrase("hello you")
+                &crate::utils::wordbank::normalize_wordbank_phrase(
+                    "Hello, you!",
+                    WordbankLang::Translation
+                ),
+                &crate::utils::wordbank::normalize_wordbank_phrase(
+                    "hello you",
+                    WordbankLang::Translation
+                )
             ),
             1.0
         );

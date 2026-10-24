@@ -146,6 +146,12 @@ pub struct Flashcard {
     pub question_text: Option<String>, // Populated by service if it's a quiz
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quiz_options: Option<Vec<String>>, // Populated by service if it's a quiz
+    /// Word-bank / listen-wordbank: shuffled chips (server-normalized text).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wordbank_chips: Option<Vec<crate::utils::wordbank::WordbankChip>>,
+    /// Target phrase for chip assemble (same normalization as chip text).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wordbank_expected_normalized: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -272,6 +278,7 @@ pub struct AddCardsRequest {
 pub struct LevelCardResponse {
     pub flashcard_id: i32,
     pub position: i32,
+    pub direction: FlashcardDirection,
     pub word: Option<String>,
     pub definition: Option<String>,
     pub free_content_front: Option<String>,
@@ -288,6 +295,10 @@ pub struct LevelCardResponse {
     pub ci_notes: Option<String>,
     pub canonical_form: Option<String>,
     pub progress: Option<LevelCardProgress>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wordbank_chips: Option<Vec<crate::utils::wordbank::WordbankChip>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wordbank_expected_normalized: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

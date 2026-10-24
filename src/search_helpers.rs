@@ -149,6 +149,8 @@ pub fn mail_word_like_patterns(query: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
+    // Bench `#[path]` include can flag this while unit tests need it.
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]

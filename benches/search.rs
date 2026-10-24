@@ -11,8 +11,8 @@ mod search_helpers;
 
 use search_helpers::{
     escape_like, like_contains_pattern, lojbanize_search_term, looks_like_possible_lujvo_query,
-    mail_word_like_patterns, pipe_list_contains, space_list_contains, wiki_relevance_score,
-    word_boundary_pattern, DictionarySearchPatterns,
+    mail_word_like_patterns, pipe_list_contains, space_list_contains, valsi_regex_pattern,
+    wiki_relevance_score, word_boundary_pattern, CollectionSearchPattern, DictionarySearchPatterns,
 };
 
 fn bench_escape_like(c: &mut Criterion) {
@@ -61,6 +61,12 @@ fn bench_lojbanize_and_gates(c: &mut Criterion) {
     });
     c.bench_function("lujvo_gate_false_phrase", |b| {
         b.iter(|| looks_like_possible_lujvo_query(black_box("hello world")))
+    });
+    c.bench_function("valsi_regex_pattern", |b| {
+        b.iter(|| valsi_regex_pattern(black_box("/mlatu|gerku/")))
+    });
+    c.bench_function("collection_search_pattern", |b| {
+        b.iter(|| CollectionSearchPattern::from_query(black_box("coi")))
     });
 }
 

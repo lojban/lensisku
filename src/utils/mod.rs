@@ -6,6 +6,7 @@ mod kokoro_voice_gguf;
 pub mod lojban_ipa;
 pub mod openrouter_models;
 pub mod seo;
+pub mod wordbank;
 
 use actix_web::{HttpResponse, ResponseError};
 use ammonia::Builder as AmmoniaBuilder;
@@ -45,6 +46,7 @@ pub fn decode_html_entities(text: &str) -> String {
             let mut numeric_hex = false;
             let mut numeric_val: u32 = 0;
             let mut is_numeric = false;
+            let mut numeric_overflow = false;
             while i < bytes.len() && bytes[i] != b';' {
                 let b = bytes[i];
                 if b == b'#' && name.is_empty() {
@@ -59,10 +61,22 @@ pub fn decode_html_entities(text: &str) -> String {
                 if is_numeric {
                     if numeric_hex {
                         if b.is_ascii_hexdigit() {
-                            numeric_val = numeric_val * 16 + (b as char).to_digit(16).unwrap_or(0);
+                            match numeric_val
+                                .checked_mul(16)
+                                .and_then(|v| v.checked_add((b as char).to_digit(16).unwrap_or(0)))
+                            {
+                                Some(v) => numeric_val = v,
+                                None => numeric_overflow = true,
+                            }
                         }
                     } else if b.is_ascii_digit() {
-                        numeric_val = numeric_val * 10 + (b - b'0') as u32;
+                        match numeric_val
+                            .checked_mul(10)
+                            .and_then(|v| v.checked_add((b - b'0') as u32))
+                        {
+                            Some(v) => numeric_val = v,
+                            None => numeric_overflow = true,
+                        }
                     }
                 } else if b.is_ascii_alphanumeric() {
                     name.push(b as char);
@@ -72,7 +86,12 @@ pub fn decode_html_entities(text: &str) -> String {
             if i < bytes.len() && bytes[i] == b';' {
                 i += 1;
                 let replacement: Option<char> = if is_numeric {
-                    char::from_u32(numeric_val)
+                    // Overflowing or invalid code points stay as literal text.
+                    if numeric_overflow {
+                        None
+                    } else {
+                        char::from_u32(numeric_val)
+                    }
                 } else {
                     match name.as_str() {
                         "lt" => Some('<'),
@@ -96,8 +115,10 @@ pub fn decode_html_entities(text: &str) -> String {
             }
             continue;
         }
-        out.push(bytes[i] as char);
-        i += 1;
+        // Copy the whole UTF-8 character, not one byte (`i` is always on a char boundary here).
+        let ch = text[i..].chars().next().unwrap_or('\u{FFFD}');
+        out.push(ch);
+        i += ch.len_utf8().max(1);
     }
     out
 }
@@ -222,6 +243,19 @@ mod tests {
     fn decode_html_entities_numeric() {
         assert_eq!(decode_html_entities("&#60;"), "<");
         assert_eq!(decode_html_entities("&#x3C;"), "<");
+    }
+
+    #[test]
+    fn decode_html_entities_preserves_utf8() {
+        assert_eq!(decode_html_entities("Č é"), "Č é");
+        assert_eq!(decode_html_entities("mi &lt; ĉu 😀"), "mi < ĉu 😀");
+    }
+
+    #[test]
+    fn decode_html_entities_numeric_overflow_is_literal() {
+        assert_eq!(decode_html_entities("&#99999999999;"), "&#99999999999;");
+        assert_eq!(decode_html_entities("&#xFFFFFFFFF;"), "&#xFFFFFFFFF;");
+        assert_eq!(decode_html_entities("&#xD800;"), "&#xD800;");
     }
 
     #[test]
