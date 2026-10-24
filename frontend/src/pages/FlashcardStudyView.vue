@@ -746,12 +746,15 @@ const showCanonicalForm = computed(() => {
   return main !== canonical
 })
 
-/** True when fill-in answer was correct (API `answer_correct`, or anon/legacy `correct`/`success`). */
+/**
+ * True when fill-in / wordbank answer was correct.
+ * Prefer `answer_correct`. Do not treat ReviewResponse.`success` as correctness (always true on 200).
+ */
 const isFillinCorrect = computed(() => {
   const r = fillinResult.value
   if (!r) return false
   if (r.answer_correct !== undefined && r.answer_correct !== null) return r.answer_correct === true
-  return r.correct === true || r.success === true
+  return r.correct === true
 })
 
 const getLanguageName = (langId: number) => {
@@ -956,6 +959,8 @@ const userAnswer = ref('')
 const isSubmitting = ref(false)
 const fillinResult = ref(null)
 const quizResult = ref(null)
+/** After Check grades fill-in/quiz; FSRS / anon progress commit on Next. */
+const pendingGradeCommit = ref(null)
 
 /** Image quiz: options are "item_id:side"; build list with image URLs for current collection. */
 const quizImageOptions = computed(() => {
@@ -986,7 +991,11 @@ const submitAnswer = async (rating?: number) => {
         if (isWordbankMode.value) syncUserAnswerFromWordbank()
         correct = isAnonFillinAnswerCorrect()
         fillinResult.value = { correct, message: correct ? t('flashcardStudy.correctAnswer') : '' }
-        applyAnonLevelProgress(correct)
+        pendingGradeCommit.value = {
+          kind: 'fillin',
+          answer: userAnswer.value.trim(),
+          correct,
+        }
         await nextTick()
         if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
       } else {
@@ -999,13 +1008,18 @@ const submitAnswer = async (rating?: number) => {
     }
     if (isFillInLikeMode.value) {
       if (isWordbankMode.value) syncUserAnswerFromWordbank()
+      const answer = userAnswer.value.trim()
       const response = await submitFillinAnswer({
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
-        answer: userAnswer.value.trim(),
+        answer,
       })
       fillinResult.value = response.data
-      await checkForDueChanges()
+      pendingGradeCommit.value = {
+        kind: 'fillin',
+        answer,
+        correct: response.data?.answer_correct === true || response.data?.correct === true,
+      }
       await nextTick()
       if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
     } else if (!isQuizMode.value) {
@@ -1045,7 +1059,12 @@ const submitQuizOption = async (selectedOption) => {
           .trim()
           .toLowerCase()
       quizResult.value = { correct, message: correct ? '' : t('flashcardStudy.correctAnswer') }
-      applyAnonLevelProgress(correct)
+      pendingGradeCommit.value = {
+        kind: 'quiz',
+        selectedOption,
+        options,
+        correct,
+      }
     } else {
       const response = await submitQuizAnswer({
         flashcard_id: fc.id,
@@ -1054,7 +1073,12 @@ const submitQuizOption = async (selectedOption) => {
         presented_options: options,
       })
       quizResult.value = response.data
-      await checkForDueChanges()
+      pendingGradeCommit.value = {
+        kind: 'quiz',
+        selectedOption,
+        options,
+        correct: !!response.data?.correct,
+      }
     }
     await nextTick()
     if (quizResult.value?.correct && fc.sound_url) answerAudioPlayerRef.value?.play()
@@ -1065,10 +1089,47 @@ const submitQuizOption = async (selectedOption) => {
   }
 }
 
+async function commitPendingGrade(rating: number) {
+  const pending = pendingGradeCommit.value
+  if (!pending || !currentCard.value) return
+  if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
+    applyAnonLevelProgress(rating >= 3)
+    pendingGradeCommit.value = null
+    return
+  }
+  if (pending.kind === 'fillin') {
+    await submitFillinAnswer({
+      flashcard_id: currentCard.value.flashcard.id,
+      card_side: currentCard.value.progress[0].card_side,
+      answer: pending.answer,
+      rating,
+    })
+  } else if (pending.kind === 'quiz') {
+    await submitQuizAnswer({
+      flashcard_id: currentCard.value.flashcard.id,
+      card_side: currentCard.value.progress[0].card_side,
+      selected_answer_text: pending.selectedOption,
+      presented_options: pending.options,
+      rating,
+    })
+  }
+  pendingGradeCommit.value = null
+}
+
 const handleQuizNextCard = async () => {
-  quizResult.value = null
-  loadNextCard()
-  if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  try {
+    const correct = quizResult.value?.correct === true
+    await commitPendingGrade(correct ? 3 : 1)
+    quizResult.value = null
+    loadNextCard()
+    if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
+  } catch (error) {
+    console.error(t('flashcardStudy.submitError'), error)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 const snoozeCard = async () => {
@@ -1105,13 +1166,24 @@ const openWavesModal = () => {
 }
 
 const handleNextCard = async () => {
-  fillinResult.value = null
-  userAnswer.value = ''
-  wordbankSelectedIds.value = []
-  wordbankChips.value = []
-  wordbankExpectedNormalized.value = ''
-  loadNextCard()
-  if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  try {
+    const correct = isFillinCorrect.value
+    await commitPendingGrade(correct ? 3 : 1)
+    fillinResult.value = null
+    pendingGradeCommit.value = null
+    userAnswer.value = ''
+    wordbankSelectedIds.value = []
+    wordbankChips.value = []
+    wordbankExpectedNormalized.value = ''
+    loadNextCard()
+    if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
+  } catch (error) {
+    console.error(t('flashcardStudy.submitError'), error)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 watch(currentCard, () => {

@@ -1100,7 +1100,10 @@
     "continue": "Continue",
     "check": "Check",
     "next": "Next",
-    "retry": "Try again"
+    "retry": "Try again",
+    "correctSolution": "Correct solution:",
+    "tooEasy": "Too easy",
+    "tooDifficult": "Too difficult"
   },
   "languageList": {
     "title": "Supported languages",
@@ -1787,8 +1790,12 @@
       "viewCards": "View cards",
       "edit": "Edit",
       "addCards": "Add Cards",
-      "practice": "Practice"
+      "practice": "Practice",
+      "applyChallengeMix": "Apply challenge mix"
     },
+    "applyChallengeMix": "Apply challenge mix",
+    "applyChallengeMixConfirmCollection": "Overwrite directions on every level with the quiz / wordbank / listen mix? Manual direction overrides will be replaced.",
+    "applyChallengeMixConfirmLevel": "Overwrite directions on this level with the quiz / wordbank / listen mix? Manual direction overrides will be replaced.",
     "status": {
       "completed": "Completed",
       "unlocked": "Unlocked",

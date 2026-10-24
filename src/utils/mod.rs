@@ -1,4 +1,5 @@
 pub mod canonical;
+pub mod challenge_mix;
 pub mod embeddings;
 pub mod kokoro_tts;
 pub mod kokoro_tts_singleton;

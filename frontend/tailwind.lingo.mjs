@@ -539,11 +539,69 @@ export function buildLingoThemeLayer() {
     '.lingo-study-footer--idle': {
       '@apply border-slate-200 bg-white': {},
     },
+    /**
+     * Duo graded result row: feedback + soft rates on the left, Continue on the right.
+     * Taller than the idle Check row so solution copy fits without CLS on wrong.
+     */
+    '.lingo-study-graded-row': {
+      '@apply flex w-full shrink-0 items-end justify-between gap-3': {},
+    },
+    '.lingo-study-graded-feedback': {
+      '@apply flex min-w-0 flex-1 flex-col items-stretch justify-end gap-1': {},
+    },
+    '.lingo-study-footer-solution': {
+      '@apply m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-xs font-bold leading-snug text-rose-600 sm:text-sm':
+        {},
+    },
+    '.lingo-study-footer-solution__label': {
+      '@apply shrink-0 font-bold text-rose-500': {},
+    },
+    '.lingo-study-footer-solution__text': {
+      '@apply min-w-0 break-words font-bold text-rose-700': {},
+    },
+    '.lingo-study-footer-soft-rates': {
+      '@apply flex flex-wrap items-center gap-x-3 gap-y-0.5': {},
+    },
+    '.lingo-study-footer-soft-rate': {
+      '@apply border-0 bg-transparent p-0 text-xs font-bold text-green-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm':
+        {},
+    },
+    '.lingo-study-footer-soft-rate--wrong': {
+      '@apply text-rose-600': {},
+    },
+    '.lingo-study-footer-meta__discuss--wrong': {
+      '@apply !text-rose-600 hover:!text-rose-700': {},
+    },
+    /** Roomier shell when Duo graded chrome (solution + soft rates) is visible. */
+    '.lingo-study-footer--graded.lingo-study-footer--compact': {
+      '@apply h-auto min-h-24 py-1': {},
+    },
+    '.lingo-study-footer--graded.lingo-study-footer--roomy': {
+      '@apply h-auto min-h-24 py-1 lg:min-h-36': {},
+    },
     '.lingo-study-footer-meta': {
       '@apply grid h-9 w-full shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2': {},
     },
     '.lingo-study-footer-meta__prompt': {
       '@apply min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs':
+        {},
+    },
+    /**
+     * Duo-style clickable hint tokens on the stimulus line.
+     */
+    '.lingo-hint-phrase': {
+      '@apply inline': {},
+    },
+    '.lingo-hint-token': {
+      '@apply relative inline cursor-pointer rounded-sm border-0 border-b border-dashed border-slate-400 bg-transparent px-0 py-0 text-inherit font-inherit leading-inherit hover:border-sky-500 hover:text-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500':
+        {},
+    },
+    '.lingo-hint-popover': {
+      '@apply absolute bottom-full left-1/2 z-40 mb-1.5 max-w-[min(18rem,70vw)] -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-800 shadow-md shadow-slate-200/80':
+        {},
+    },
+    '.lingo-hint-popover__arrow': {
+      '@apply absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-white drop-shadow-[0_1px_0_rgba(148,163,184,0.5)]':
         {},
     },
 

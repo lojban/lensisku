@@ -4,15 +4,65 @@
     :class="[
       footerToneClass,
       compact ? 'lingo-study-footer--compact' : 'lingo-study-footer--roomy',
+      status === 'correct' || status === 'wrong' ? 'lingo-study-footer--graded' : undefined,
     ]"
   >
-    <!--
-      Same max-w-[600px] as header `.lingo-study-chrome-inner` / lesson column.
-      Bottom-pinned rows + 3 equal cells keep Check and Easy aligned (no CLS).
-    -->
     <div class="lingo-study-footer-chrome">
-      <!-- Row 1: Check / rate buttons. Row 2: discuss + prompt (justify-end packs this pair to the bottom). -->
-      <div class="lingo-study-rate-row" role="group">
+      <!-- Graded result (Duo): feedback + Too easy/Too difficult | Continue -->
+      <div v-if="status === 'correct' || status === 'wrong'" class="lingo-study-graded-row">
+        <div class="lingo-study-graded-feedback" :class="feedbackToneClass">
+          <div class="lingo-study-footer-feedback">
+            <CheckCircle
+              v-if="status === 'correct'"
+              class="lingo-study-footer-feedback__icon"
+              aria-hidden="true"
+            />
+            <XCircle v-else class="lingo-study-footer-feedback__icon" aria-hidden="true" />
+            <span class="lingo-study-footer-feedback__label">{{
+              status === 'correct' ? correctLabel : wrongLabel
+            }}</span>
+          </div>
+          <p v-if="status === 'wrong' && solutionText" class="lingo-study-footer-solution">
+            <span class="lingo-study-footer-solution__label">{{
+              labelCorrectSolution || t('flashcardStudy.correctAnswer')
+            }}</span>
+            <span class="lingo-study-footer-solution__text">{{ solutionText }}</span>
+          </p>
+          <div class="lingo-study-footer-soft-rates" role="group">
+            <button
+              type="button"
+              class="lingo-study-footer-soft-rate"
+              :class="status === 'wrong' ? 'lingo-study-footer-soft-rate--wrong' : undefined"
+              :disabled="disabled"
+              @click="$emit('rate', 1)"
+            >
+              {{ labelTooDifficult || labelForgot || t('flashcardStudy.forgot') }}
+            </button>
+            <button
+              type="button"
+              class="lingo-study-footer-soft-rate"
+              :class="status === 'wrong' ? 'lingo-study-footer-soft-rate--wrong' : undefined"
+              :disabled="disabled"
+              @click="$emit('rate', 4)"
+            >
+              {{ labelTooEasy || labelEasy || t('flashcardStudy.easy') }}
+            </button>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="lingo-btn lingo-btn--sm !normal-case !tracking-normal min-w-[7.5rem] shrink-0"
+          :class="buttonVariantClass"
+          :disabled="disabled"
+          :aria-disabled="disabled"
+          @click="$emit('check')"
+        >
+          {{ labelContinue || t('flashcardStudy.continue') }}
+        </button>
+      </div>
+
+      <!-- Classical rate triad / idle Check -->
+      <div v-else class="lingo-study-rate-row" role="group">
         <div class="lingo-study-footer-feedback" :class="feedbackToneClass">
           <template v-if="status === 'rate'">
             <button
@@ -39,14 +89,6 @@
               <AlarmClock v-else class="h-3.5 w-3.5 shrink-0" />
               <span>{{ leftActionLabel }}</span>
             </button>
-          </template>
-          <template v-else-if="status === 'correct'">
-            <CheckCircle class="lingo-study-footer-feedback__icon" aria-hidden="true" />
-            <span class="lingo-study-footer-feedback__label">{{ correctLabel }}</span>
-          </template>
-          <template v-else-if="status === 'wrong'">
-            <XCircle class="lingo-study-footer-feedback__icon" aria-hidden="true" />
-            <span class="lingo-study-footer-feedback__label">{{ wrongLabel }}</span>
           </template>
         </div>
 
@@ -95,6 +137,7 @@
           v-if="showCardActions"
           type="button"
           class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon !min-w-9 !px-0 !normal-case !tracking-normal"
+          :class="status === 'wrong' ? 'lingo-study-footer-meta__discuss--wrong' : undefined"
           :aria-label="labelDiscuss || t('flashcardStudy.wavesButton')"
           :title="labelDiscuss || t('flashcardStudy.wavesButton')"
           @click="$emit('discuss')"
@@ -111,7 +154,6 @@
           {{ ratePrompt || '\u00a0' }}
         </p>
 
-        <!-- Width mirror so the prompt stays centered in every status. -->
         <span class="inline-flex h-9 w-9 shrink-0" aria-hidden="true" />
       </div>
     </div>
@@ -142,7 +184,6 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  /** Discussions + snooze (classical study parity). */
   showCardActions: {
     type: Boolean,
     default: false,
@@ -151,24 +192,17 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  /**
-   * Left chrome action while status is `none`:
-   * `snooze` | `cant-listen` (Duo listenTap) | `none`.
-   */
   leftAction: {
     type: String,
     default: 'snooze',
     validator: (v: unknown) =>
       typeof v === 'string' && ['snooze', 'cant-listen', 'none'].includes(v),
   },
-  correctLabel: {
-    type: String,
-    default: '',
-  },
-  wrongLabel: {
-    type: String,
-    default: '',
-  },
+  correctLabel: { type: String, default: '' },
+  wrongLabel: { type: String, default: '' },
+  /** Wrong-answer “Correct solution: …” body text. */
+  solutionText: { type: String, default: '' },
+  labelCorrectSolution: { type: String, default: '' },
   labelCheck: { type: String, default: '' },
   labelNext: { type: String, default: '' },
   labelRetry: { type: String, default: '' },
@@ -176,6 +210,8 @@ const props = defineProps({
   labelForgot: { type: String, default: '' },
   labelGood: { type: String, default: '' },
   labelEasy: { type: String, default: '' },
+  labelTooEasy: { type: String, default: '' },
+  labelTooDifficult: { type: String, default: '' },
   labelDiscuss: { type: String, default: '' },
   labelSnooze: { type: String, default: '' },
   labelCantListen: { type: String, default: '' },
@@ -213,13 +249,14 @@ const feedbackToneClass = computed(() => {
 
 const buttonVariantClass = computed(() => {
   if (props.status === 'wrong') return 'lingo-btn--danger'
+  if (props.status === 'correct' || props.status === 'completed') return 'lingo-btn--secondary'
   return 'lingo-btn--secondary'
 })
 
 const buttonLabel = computed(() => {
   if (props.status === 'none') return props.labelCheck || t('flashcardStudy.check')
-  if (props.status === 'correct') return props.labelNext || t('flashcardStudy.next')
-  if (props.status === 'wrong') return props.labelRetry || t('flashcardStudy.retry')
+  if (props.status === 'correct') return props.labelContinue || t('flashcardStudy.continue')
+  if (props.status === 'wrong') return props.labelContinue || t('flashcardStudy.continue')
   return props.labelContinue || t('flashcardStudy.continue')
 })
 </script>

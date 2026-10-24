@@ -23,6 +23,15 @@
           <Button variant="warning-orange" size="lg" @click="startStudy">
             {{ t('flashcardLevels.studyButton') }}
           </Button>
+          <Button
+            v-if="isOwner && levels.length > 0"
+            variant="neutral"
+            size="lg"
+            :disabled="isApplyingChallengeMix"
+            @click="applyChallengeMixAll"
+          >
+            {{ t('flashcardLevels.applyChallengeMix') }}
+          </Button>
           <IconButton
             v-if="isOwner"
             :label="t('flashcardLevels.createLevel')"
@@ -121,6 +130,15 @@
                   >
                     <PlusCircle class="h-4 w-4" /> {{ t('flashcardLevels.actions.addCards') }}
                   </Button>
+                  <Button
+                    variant="neutral"
+                    type="button"
+                    class="level-card-btn level-card-btn-ghost"
+                    :disabled="isApplyingChallengeMix"
+                    @click="applyChallengeMixLevel(nodeProps.data)"
+                  >
+                    {{ t('flashcardLevels.actions.applyChallengeMix') }}
+                  </Button>
                 </div>
               </div>
               <!-- Unlocked / Completed: progress + actions -->
@@ -183,6 +201,15 @@
                       @click="showAddCardsModal(nodeProps.data)"
                     >
                       <PlusCircle class="h-4 w-4" /> {{ t('flashcardLevels.actions.addCards') }}
+                    </Button>
+                    <Button
+                      variant="neutral"
+                      type="button"
+                      class="level-card-btn level-card-btn-ghost"
+                      :disabled="isApplyingChallengeMix"
+                      @click="applyChallengeMixLevel(nodeProps.data)"
+                    >
+                      {{ t('flashcardLevels.actions.applyChallengeMix') }}
                     </Button>
                   </template>
                 </div>
@@ -566,7 +593,9 @@ import {
   getLevels,
   getLevelCards,
   removeCardFromLevel,
-  deleteLevel, // Import the new function
+  deleteLevel,
+  applyChallengeMixToLevel,
+  applyChallengeMixToCollection,
 } from '@/api'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import { Button, IconButton, Input, MultiSelectDropdown, Textarea } from '@packages/ui'
@@ -771,6 +800,37 @@ const editLevel = (level) => {
     prerequisite_ids: level.prerequisites.map((p) => p.level_id),
   }
   showEditModal.value = true
+}
+
+const isApplyingChallengeMix = ref(false)
+
+async function applyChallengeMixAll() {
+  if (!confirm(t('flashcardLevels.applyChallengeMixConfirmCollection'))) {
+    return
+  }
+  isApplyingChallengeMix.value = true
+  try {
+    await applyChallengeMixToCollection(props.collectionId)
+    await fetchLevels()
+  } catch (error) {
+    console.error('Error applying challenge mix:', error)
+  } finally {
+    isApplyingChallengeMix.value = false
+  }
+}
+
+async function applyChallengeMixLevel(level) {
+  if (!level?.level_id) return
+  if (!confirm(t('flashcardLevels.applyChallengeMixConfirmLevel'))) return
+  isApplyingChallengeMix.value = true
+  try {
+    await applyChallengeMixToLevel(level.level_id)
+    await fetchLevels()
+  } catch (error) {
+    console.error('Error applying challenge mix:', error)
+  } finally {
+    isApplyingChallengeMix.value = false
+  }
 }
 
 const closeModal = () => {

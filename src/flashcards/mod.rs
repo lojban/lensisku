@@ -41,7 +41,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::submit_fillin_answer)
                     .service(controller::snooze_flashcard)
                     .service(controller::submit_quiz_answer)
-                    .service(controller::generate_quiz_options),
+                    .service(controller::generate_quiz_options)
+                    .service(controller::apply_challenge_mix_level)
+                    .service(controller::apply_challenge_mix_collection),
             ),
     );
 }

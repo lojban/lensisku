@@ -2099,6 +2099,7 @@ pub async fn review_flashcard(
         ),
         next_review: Some(next_review),
         answer_correct: None,
+        suggested_rating: None,
     })
 }
 
@@ -2725,33 +2726,55 @@ pub async fn review_flashcard_serverside(
         calculate_similarity(&expected_for_grade, &provided)
     };
 
-    // Determine rating based on similarity
-    let rating = if similarity >= 0.99 {
-        4 // Perfect match - "Easy"
+    // Similarity-based suggested rating (used for grade-only Check / answer_correct).
+    let suggested_rating = if similarity >= 0.99 {
+        4u32
     } else if similarity >= 0.9 {
-        3 // Good match - "Good"
+        3
     } else if similarity >= 0.7 {
-        2 // Fair match - "Hard"
+        2
     } else {
-        1 // Poor match - "Again"
+        1
+    };
+    let answer_correct = suggested_rating >= 3;
+
+    // Duo flow: Check grades only; Continue / Too easy / Too difficult commit with `rating`.
+    let Some(commit_rating) = req.rating else {
+        return Ok(ReviewResponse {
+            success: true,
+            card_side: req.card_side.clone(),
+            message: format!(
+                "Graded (Similarity: {:.1}%, suggested: {})",
+                similarity * 100.0,
+                match suggested_rating {
+                    4 => "Easy",
+                    3 => "Good",
+                    2 => "Hard",
+                    _ => "Again",
+                }
+            ),
+            next_review: None,
+            answer_correct: Some(answer_correct),
+            suggested_rating: Some(suggested_rating),
+        });
     };
 
-    // Create a review request with the determined rating
+    if !(1..=4).contains(&commit_rating) {
+        return Err("rating must be 1–4".into());
+    }
+
     let review_req = ReviewRequest {
         flashcard_id: req.flashcard_id,
-        rating,
+        rating: commit_rating,
         card_side: req.card_side.clone(),
     };
-
-    // Process the review
     let review_result = review_flashcard(pool, user_id, &review_req).await?;
 
-    // Add similarity info to the response message
     let message = format!(
         "{} (Similarity: {:.1}%, Rating: {})",
         review_result.message,
         similarity * 100.0,
-        match rating {
+        match commit_rating {
             4 => "Easy",
             3 => "Good",
             2 => "Hard",
@@ -2764,7 +2787,8 @@ pub async fn review_flashcard_serverside(
         card_side: req.card_side.clone(),
         message,
         next_review: review_result.next_review,
-        answer_correct: Some(rating >= 3),
+        answer_correct: Some(answer_correct),
+        suggested_rating: None,
     })
 }
 
@@ -3042,34 +3066,48 @@ pub async fn submit_quiz_answer(
         || correct == format!("{}:front", selected)
         || correct == format!("{}:back", selected);
 
-    // Log the attempt with all presented options
+    let suggested_rating = if is_correct { 4u32 } else { 1 };
+    let message = if is_correct {
+        "Correct!".to_string()
+    } else {
+        format!("Incorrect. The correct answer was: {}", correct_answer_text)
+    };
+
+    // Duo Check: grade only (no history / FSRS until Continue commits a rating).
+    let Some(commit_rating) = answer_data.rating else {
+        transaction.commit().await?;
+        return Ok(dto::QuizAnswerResultDto {
+            correct: is_correct,
+            message,
+            next_review: None,
+            suggested_rating: Some(suggested_rating),
+        });
+    };
+
+    if !(1..=4).contains(&commit_rating) {
+        return Err("rating must be 1–4".into());
+    }
+
     transaction.execute(
         "INSERT INTO user_quiz_answer_history (user_id, flashcard_id, selected_option_text, is_correct_selection, presented_options, answered_at)
          VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)",
         &[&user_id, &flashcard_id, &answer_data.selected_answer_text, &is_correct, &serde_json::to_value(&answer_data.presented_options)?]
     ).await?;
 
-    // Determine FSRS rating and call review_flashcard
-    let rating = if is_correct { 4 } else { 1 }; // 4 for Easy (correct), 1 for Again (incorrect)
     let review_req = ReviewRequest {
         flashcard_id,
-        rating,
+        rating: commit_rating,
         card_side: answer_data.card_side.clone(),
     };
-
-    // Commit quiz history before calling review_flashcard which uses its own transaction.
     transaction.commit().await?;
 
     let review_response = review_flashcard(pool, user_id, &review_req).await?;
 
     Ok(dto::QuizAnswerResultDto {
         correct: is_correct,
-        message: if is_correct {
-            "Correct!".to_string()
-        } else {
-            format!("Incorrect. The correct answer was: {}", correct_answer_text)
-        },
+        message,
         next_review: review_response.next_review,
+        suggested_rating: None,
     })
 }
 
@@ -4201,6 +4239,244 @@ fn validate_fill_in_answers(
         return Err("Fill-in answers exceed the supported grading limit".into());
     }
     Ok(())
+}
+
+fn direction_from_challenge_mix_str(s: &str) -> Result<FlashcardDirection, Box<dyn std::error::Error>> {
+    match s {
+        "direct" => Ok(FlashcardDirection::Direct),
+        "reverse" => Ok(FlashcardDirection::Reverse),
+        "both" => Ok(FlashcardDirection::Both),
+        "fillin" => Ok(FlashcardDirection::FillIn),
+        "fillin_reverse" => Ok(FlashcardDirection::FillInReverse),
+        "fillin_both" => Ok(FlashcardDirection::FillInBoth),
+        "wordbank" => Ok(FlashcardDirection::Wordbank),
+        "wordbank_reverse" => Ok(FlashcardDirection::WordbankReverse),
+        "wordbank_both" => Ok(FlashcardDirection::WordbankBoth),
+        "listen_wordbank" => Ok(FlashcardDirection::ListenWordbank),
+        "listen_wordbank_reverse" => Ok(FlashcardDirection::ListenWordbankReverse),
+        "listen_wordbank_both" => Ok(FlashcardDirection::ListenWordbankBoth),
+        "just_information" => Ok(FlashcardDirection::JustInformation),
+        "quiz_direct" => Ok(FlashcardDirection::QuizDirect),
+        "quiz_reverse" => Ok(FlashcardDirection::QuizReverse),
+        "quiz_both" => Ok(FlashcardDirection::QuizBoth),
+        "quiz_image_direct" => Ok(FlashcardDirection::QuizImageDirect),
+        "quiz_image_reverse" => Ok(FlashcardDirection::QuizImageReverse),
+        "quiz_image_both" => Ok(FlashcardDirection::QuizImageBoth),
+        _ => Err(format!("Unknown challenge-mix direction: {s}").into()),
+    }
+}
+
+async fn reseed_owner_progress_for_direction(
+    transaction: &Transaction<'_>,
+    user_id: i32,
+    flashcard_id: i32,
+    direction: &FlashcardDirection,
+) -> Result<(), Box<dyn std::error::Error>> {
+    transaction
+        .execute(
+            "UPDATE user_flashcard_progress
+             SET archived = true
+             WHERE flashcard_id = $1 AND NOT archived",
+            &[&flashcard_id],
+        )
+        .await?;
+
+    match direction {
+        FlashcardDirection::Direct
+        | FlashcardDirection::FillIn
+        | FlashcardDirection::Wordbank
+        | FlashcardDirection::ListenWordbank
+        | FlashcardDirection::JustInformation
+        | FlashcardDirection::QuizDirect
+        | FlashcardDirection::QuizReverse
+        | FlashcardDirection::QuizBoth
+        | FlashcardDirection::QuizImageDirect
+        | FlashcardDirection::QuizImageReverse
+        | FlashcardDirection::QuizImageBoth => {
+            initialize_progress(transaction, user_id, flashcard_id, "direct").await?;
+        }
+        FlashcardDirection::Reverse
+        | FlashcardDirection::FillInReverse
+        | FlashcardDirection::WordbankReverse
+        | FlashcardDirection::ListenWordbankReverse => {
+            initialize_progress(transaction, user_id, flashcard_id, "reverse").await?;
+        }
+        FlashcardDirection::Both
+        | FlashcardDirection::FillInBoth
+        | FlashcardDirection::WordbankBoth
+        | FlashcardDirection::ListenWordbankBoth => {
+            initialize_progress(transaction, user_id, flashcard_id, "direct").await?;
+            initialize_progress(transaction, user_id, flashcard_id, "reverse").await?;
+        }
+    }
+    Ok(())
+}
+
+/// Apply challenge-mix directions to every flashcard in a level (owner only).
+pub async fn apply_challenge_mix_to_level(
+    pool: &Pool,
+    user_id: i32,
+    level_id: i32,
+) -> Result<dto::ApplyChallengeMixResponse, Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    let collection_id = get_collection_id(&transaction, level_id).await?;
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    let rows = transaction
+        .query(
+            "SELECT f.id, f.direction,
+                    COALESCE(v.word, ci.free_content_front, '') as front,
+                    EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_custom_sound,
+                    v.word as valsi_word
+             FROM flashcard_level_items fli
+             JOIN flashcards f ON f.id = fli.flashcard_id
+             JOIN collection_items ci ON f.item_id = ci.item_id
+             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
+             LEFT JOIN valsi v ON d.valsiid = v.valsiid
+             WHERE fli.level_id = $1
+             ORDER BY fli.position",
+            &[&level_id],
+        )
+        .await?;
+
+    let fronts: Vec<String> = rows.iter().map(|r| r.get::<_, String>("front")).collect();
+    let valsi_words: Vec<Option<String>> = rows
+        .iter()
+        .map(|r| r.get::<_, Option<String>>("valsi_word"))
+        .collect();
+    let words_for_sound: Vec<String> = valsi_words.iter().filter_map(|w| w.clone()).collect();
+    let sound_urls = if words_for_sound.is_empty() {
+        HashMap::new()
+    } else {
+        get_valsi_sound_urls_from_db(pool, &words_for_sound)
+            .await
+            .unwrap_or_default()
+    };
+
+    let mix_cards: Vec<crate::utils::challenge_mix::ChallengeMixCard<'_>> = rows
+        .iter()
+        .enumerate()
+        .map(|(i, row)| {
+            let has_custom: bool = row.get("has_custom_sound");
+            let has_valsi = valsi_words[i]
+                .as_ref()
+                .and_then(|w| sound_urls.get(w))
+                .and_then(|u| u.as_ref())
+                .is_some();
+            crate::utils::challenge_mix::ChallengeMixCard {
+                front: fronts[i].as_str(),
+                has_sound: has_custom || has_valsi,
+            }
+        })
+        .collect();
+
+    let directions = crate::utils::challenge_mix::assign_challenge_mix(&mix_cards);
+    let mut updated_count = 0i32;
+    let mut quiz_ids: Vec<i32> = Vec::new();
+
+    for (row, dir_str) in rows.iter().zip(directions.iter()) {
+        let flashcard_id: i32 = row.get("id");
+        let existing: FlashcardDirection = row.get("direction");
+        let new_dir = direction_from_challenge_mix_str(dir_str)?;
+        if existing == new_dir {
+            if matches!(
+                new_dir,
+                FlashcardDirection::QuizDirect
+                    | FlashcardDirection::QuizReverse
+                    | FlashcardDirection::QuizBoth
+                    | FlashcardDirection::QuizImageDirect
+                    | FlashcardDirection::QuizImageReverse
+                    | FlashcardDirection::QuizImageBoth
+            ) {
+                quiz_ids.push(flashcard_id);
+            }
+            continue;
+        }
+        transaction
+            .execute(
+                "UPDATE flashcards SET direction = $1 WHERE id = $2",
+                &[&new_dir, &flashcard_id],
+            )
+            .await?;
+        reseed_owner_progress_for_direction(&transaction, user_id, flashcard_id, &new_dir).await?;
+        updated_count += 1;
+        if matches!(
+            new_dir,
+            FlashcardDirection::QuizDirect
+                | FlashcardDirection::QuizReverse
+                | FlashcardDirection::QuizBoth
+                | FlashcardDirection::QuizImageDirect
+                | FlashcardDirection::QuizImageReverse
+                | FlashcardDirection::QuizImageBoth
+        ) {
+            quiz_ids.push(flashcard_id);
+        }
+    }
+
+    transaction.commit().await?;
+
+    let mut quiz_seeded_count = 0i32;
+    for fid in quiz_ids {
+        match generate_and_set_quiz_options(pool, user_id, fid).await {
+            Ok(_) => quiz_seeded_count += 1,
+            Err(e) => {
+                error!(
+                    "challenge-mix: failed to seed quiz options for flashcard {}: {}",
+                    fid, e
+                );
+            }
+        }
+    }
+
+    Ok(dto::ApplyChallengeMixResponse {
+        updated_count,
+        quiz_seeded_count,
+    })
+}
+
+/// Apply challenge-mix to every level in a collection (owner only).
+pub async fn apply_challenge_mix_to_collection(
+    pool: &Pool,
+    user_id: i32,
+    collection_id: i32,
+) -> Result<dto::ApplyChallengeMixResponse, Box<dyn std::error::Error>> {
+    let client = pool.get().await?;
+    // Ownership check without holding a long transaction across levels.
+    {
+        let mut c = pool.get().await?;
+        let tx = c.transaction().await?;
+        verify_collection_ownership(&tx, collection_id, user_id).await?;
+        tx.commit().await?;
+    }
+    drop(client);
+
+    let level_ids: Vec<i32> = {
+        let client = pool.get().await?;
+        client
+            .query(
+                "SELECT level_id FROM flashcard_levels WHERE collection_id = $1 ORDER BY position",
+                &[&collection_id],
+            )
+            .await?
+            .iter()
+            .map(|r| r.get("level_id"))
+            .collect()
+    };
+
+    let mut updated_count = 0i32;
+    let mut quiz_seeded_count = 0i32;
+    for level_id in level_ids {
+        let res = apply_challenge_mix_to_level(pool, user_id, level_id).await?;
+        updated_count += res.updated_count;
+        quiz_seeded_count += res.quiz_seeded_count;
+    }
+
+    Ok(dto::ApplyChallengeMixResponse {
+        updated_count,
+        quiz_seeded_count,
+    })
 }
 #[cfg(test)]
 mod security_grading_tests {

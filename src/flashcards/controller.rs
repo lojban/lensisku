@@ -8,12 +8,12 @@ use serde_json::json;
 
 use super::{
     dto::{
-        self, AddCardsRequest, ClaimGuestProgressRequest, ClaimGuestProgressResponse,
-        CreateFlashcardRequest, CreateLevelRequest, DirectAnswerResponse, FillInAnswerRequest,
-        FlashcardListResponse, FlashcardResponse, ImportFromCollectionRequest,
-        ImportFromCollectionResponse, LevelCardListResponse, LevelCardResponse, LevelListResponse,
-        LevelResponse, MergeProgressRequest, MergeProgressResponse, ReviewRequest, ReviewResponse,
-        StreakResponse, UpdateLevelRequest,
+        self, AddCardsRequest, ApplyChallengeMixResponse, ClaimGuestProgressRequest,
+        ClaimGuestProgressResponse, CreateFlashcardRequest, CreateLevelRequest,
+        DirectAnswerResponse, FillInAnswerRequest, FlashcardListResponse, FlashcardResponse,
+        ImportFromCollectionRequest, ImportFromCollectionResponse, LevelCardListResponse,
+        LevelCardResponse, LevelListResponse, LevelResponse, MergeProgressRequest,
+        MergeProgressResponse, ReviewRequest, ReviewResponse, StreakResponse, UpdateLevelRequest,
     },
     models::*,
     service,
@@ -990,5 +990,65 @@ pub async fn generate_quiz_options(
                     .body(format!("Failed to generate quiz options: {}", e))
             }
         }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/flashcards/levels/{level_id}/apply-challenge-mix",
+    tag = "flashcards",
+    params(
+        ("level_id" = i32, Path, description = "Level ID")
+    ),
+    responses(
+        (status = 200, description = "Challenge mix applied", body = ApplyChallengeMixResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Apply challenge mix to a level",
+    description = "Overwrites flashcard directions in the level using the shared challenge-mix assigner and reseeds quiz options for quiz cards."
+)]
+#[post("/levels/{level_id}/apply-challenge-mix")]
+pub async fn apply_challenge_mix_level(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    level_id: web::Path<i32>,
+) -> impl Responder {
+    match service::apply_challenge_mix_to_level(&pool, claims.sub, level_id.into_inner()).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => crate::utils::handle_error(e, "Failed to apply challenge mix"),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/flashcards/collections/{collection_id}/apply-challenge-mix",
+    tag = "flashcards",
+    params(
+        ("collection_id" = i32, Path, description = "Collection ID")
+    ),
+    responses(
+        (status = 200, description = "Challenge mix applied", body = ApplyChallengeMixResponse),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Apply challenge mix to a collection",
+    description = "Overwrites flashcard directions for every level in the collection using the shared challenge-mix assigner."
+)]
+#[post("/collections/{collection_id}/apply-challenge-mix")]
+pub async fn apply_challenge_mix_collection(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    collection_id: web::Path<i32>,
+) -> impl Responder {
+    match service::apply_challenge_mix_to_collection(&pool, claims.sub, collection_id.into_inner())
+        .await
+    {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => crate::utils::handle_error(e, "Failed to apply challenge mix"),
     }
 }

@@ -677,6 +677,16 @@ export const getLevels = async (collectionId: number | string) => {
   return api.get(`/flashcards/levels/${collectionId}`)
 }
 
+/** Opt-in: overwrite directions for one level via the challenge-mix assigner. */
+export const applyChallengeMixToLevel = async (levelId: number | string) => {
+  return api.post(`/flashcards/levels/${levelId}/apply-challenge-mix`)
+}
+
+/** Opt-in: overwrite directions for every level in a collection. */
+export const applyChallengeMixToCollection = async (collectionId: number | string) => {
+  return api.post(`/flashcards/collections/${collectionId}/apply-challenge-mix`)
+}
+
 export const getCollectionFlashcardsPublic = async (collectionId: number | string) => {
   return api.get(`/collections/${collectionId}/flashcards`)
 }

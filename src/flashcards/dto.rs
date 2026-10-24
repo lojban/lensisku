@@ -54,9 +54,12 @@ pub struct ReviewResponse {
     pub card_side: String,
     #[schema(value_type = String, format = DateTime)]
     pub next_review: Option<DateTime<Utc>>,
-    /// When set (fill-in endpoint), true if the answer was correct (rating >= 3).
+    /// When set (fill-in endpoint), true if the answer was correct (similarity rating >= 3).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub answer_correct: Option<bool>,
+    /// Similarity-based suggested FSRS rating (1–4) from grade-only Check; omit after commit.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub suggested_rating: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -107,6 +110,9 @@ pub struct FillInAnswerRequest {
     pub flashcard_id: i32,
     pub card_side: String,
     pub answer: String,
+    /// When set, commit FSRS with this rating (1–4). When omitted, grade only (Duo Check).
+    #[serde(default)]
+    pub rating: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, ToSchema, Validate)]
@@ -115,6 +121,9 @@ pub struct SubmitQuizAnswerDto {
     pub selected_answer_text: String,
     pub card_side: String, // "direct" or "reverse" to match FSRS progress side
     pub presented_options: Vec<String>, // For logging what was shown
+    /// When set, commit FSRS with this rating (1–4). When omitted, grade only (Duo Check).
+    #[serde(default)]
+    pub rating: Option<u32>,
 }
 
 #[derive(Debug, Serialize, ToSchema, Clone)]
@@ -170,7 +179,9 @@ pub struct QuizAnswerResultDto {
     pub message: String,
     #[schema(value_type = String, format = DateTime)]
     pub next_review: Option<DateTime<Utc>>,
-    // Add any other fields relevant to the quiz answer result, e.g., correct answer if different
+    /// Suggested FSRS rating from grade-only Check (4 correct / 1 wrong).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub suggested_rating: Option<u32>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -364,4 +375,11 @@ pub struct ClaimGuestProgressResponse {
     pub guest_user_id: i32,
     pub moved_card_rows: i64,
     pub moved_level_rows: i64,
+}
+
+/// Result of applying the challenge-mix assigner to a level or collection.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ApplyChallengeMixResponse {
+    pub updated_count: i32,
+    pub quiz_seeded_count: i32,
 }

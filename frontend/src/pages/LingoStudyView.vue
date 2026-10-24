@@ -170,11 +170,15 @@
                   class="flex items-start justify-between gap-2"
                 >
                   <p class="lingo-study-stimulus min-w-0 flex-1 [overflow-wrap:anywhere]">
-                    {{
-                      currentCard.flashcard.question_text ??
-                      currentCard.flashcard.word ??
-                      currentCard.flashcard.free_content_front
-                    }}
+                    <LingoHintPhrase
+                      v-if="showStimulusHints"
+                      :text="stimulusText"
+                      :phrase-gloss="stimulusPhraseGloss"
+                      :token-glosses="stimulusTokenGlosses"
+                      :auto-open-first="stimulusAutoHint"
+                      @auto-opened="markStimulusHintSeen"
+                    />
+                    <template v-else>{{ stimulusText }}</template>
                   </p>
                   <AudioPlayer
                     v-if="currentCard.flashcard.sound_url"
@@ -197,13 +201,15 @@
                   />
                 </div>
                 <div v-else class="lingo-study-stimulus prose prose-sm max-w-none">
-                  <LazyMathJax
-                    :content="
-                      currentCard.flashcard.question_text ??
-                      currentCard.flashcard.definition ??
-                      currentCard.flashcard.free_content_back
-                    "
+                  <LingoHintPhrase
+                    v-if="showStimulusHints && !stimulusLooksLikeMath"
+                    :text="stimulusText"
+                    :phrase-gloss="stimulusPhraseGloss"
+                    :token-glosses="stimulusTokenGlosses"
+                    :auto-open-first="stimulusAutoHint"
+                    @auto-opened="markStimulusHintSeen"
                   />
+                  <LazyMathJax v-else :content="stimulusText" />
                 </div>
               </div>
             </div>
@@ -424,6 +430,10 @@
       :snooze-disabled="isSubmitting"
       :correct-label="t('flashcardStudy.nicelyDone')"
       :wrong-label="t('flashcardStudy.tryAgain')"
+      :solution-text="footerSolutionText"
+      :label-correct-solution="t('flashcardStudy.correctSolution')"
+      :label-too-easy="t('flashcardStudy.tooEasy')"
+      :label-too-difficult="t('flashcardStudy.tooDifficult')"
       :rate-prompt="t('flashcardStudy.howWellRemembered')"
       :label-check="
         showEncouragement || showNoListening || isJustInformationMode
@@ -431,7 +441,7 @@
           : ''
       "
       @check="onStudyFooterCheck"
-      @rate="submitAnswer"
+      @rate="onStudyFooterRate"
       @discuss="openWavesModal"
       @snooze="snoozeCard"
       @skip-listening="skipListeningExercises"
@@ -464,6 +474,7 @@ import LingoGuestSaveAlert from '@/components/LingoGuestSaveAlert.vue'
 import LingoModal from '@/components/LingoModal.vue'
 import LingoStudyHeader from '@/components/LingoStudyHeader.vue'
 import LingoStudyFooter from '@/components/LingoStudyFooter.vue'
+import LingoHintPhrase from '@/components/LingoHintPhrase.vue'
 import LingoResultCard from '@/components/LingoResultCard.vue'
 import LingoUserProgress from '@/components/LingoUserProgress.vue'
 import LingoWordbankPanel from '@/components/LingoWordbankPanel.vue'
@@ -799,13 +810,85 @@ const showCanonicalForm = computed(() => {
   return main !== canonical
 })
 
-/** True when fill-in answer was correct (API `answer_correct`, or anon/legacy `correct`/`success`). */
+/**
+ * True when fill-in / wordbank answer was correct.
+ * Prefer `answer_correct` from the fill-in API. Do **not** treat `success` as correctness —
+ * ReviewResponse.success means the request succeeded, and is always true on HTTP 200.
+ */
 const isFillinCorrect = computed(() => {
   const r = fillinResult.value
   if (!r) return false
   if (r.answer_correct !== undefined && r.answer_correct !== null) return r.answer_correct === true
-  return r.correct === true || r.success === true
+  return r.correct === true
 })
+
+/** Hide Duo hint tokens after Check / when answer chrome is showing (avoid spoiling). */
+const showStimulusHints = computed(
+  () =>
+    !!currentCard.value &&
+    !isListenModeActive.value &&
+    !fillinResult.value &&
+    !quizResult.value &&
+    !showAnswer.value &&
+    !showEncouragement.value
+)
+
+const stimulusText = computed(() => {
+  const fc = currentCard.value?.flashcard
+  if (!fc) return ''
+  if (currentCard.value?.progress?.[0]?.card_side === 'direct') {
+    return String(fc.question_text ?? fc.word ?? fc.free_content_front ?? '')
+  }
+  return String(fc.question_text ?? fc.definition ?? fc.free_content_back ?? '')
+})
+
+const stimulusLooksLikeMath = computed(() => /\$|\\[a-zA-Z]/.test(stimulusText.value))
+
+/** Opposite-side phrase used as whole-phrase gloss when no per-token map. */
+const stimulusPhraseGloss = computed(() => {
+  const fc = currentCard.value?.flashcard
+  if (!fc) return ''
+  if (currentCard.value?.progress?.[0]?.card_side === 'direct') {
+    return String(fc.definition ?? fc.free_content_back ?? '').trim()
+  }
+  return String(fc.word ?? fc.free_content_front ?? '').trim()
+})
+
+/** Optional `token|gloss` lines in flashcard notes. */
+const stimulusTokenGlosses = computed(() => {
+  const notes = currentCard.value?.flashcard?.notes
+  if (!notes || typeof notes !== 'string') return {}
+  const map: Record<string, string> = {}
+  for (const line of notes.split(/\r?\n/)) {
+    const m = line.match(/^\s*([^|]+)\|(.+)\s*$/)
+    if (!m) continue
+    const tok = m[1].trim()
+    const gloss = m[2].trim()
+    if (tok && gloss) map[tok] = gloss
+  }
+  return map
+})
+
+function hintSeenStorageKey(): string {
+  const id = currentCard.value?.flashcard?.id
+  const side = currentCard.value?.progress?.[0]?.card_side || 'direct'
+  return `lingo-hint-seen:${id}:${side}`
+}
+
+const stimulusAutoHint = computed(() => {
+  if (!showStimulusHints.value || !currentCard.value?.flashcard?.id) return false
+  try {
+    return sessionStorage.getItem(hintSeenStorageKey()) !== '1'
+  } catch {
+    return false
+  }
+})
+
+function markStimulusHintSeen() {
+  try {
+    sessionStorage.setItem(hintSeenStorageKey(), '1')
+  } catch (_) {}
+}
 
 const getLanguageName = (langId) => {
   const lang = languages.value.find((l) => l.id === langId)
@@ -833,7 +916,7 @@ function bumpGuestAnswersThisVisit() {
   guestAnswersThisVisit.value += 1
 }
 
-/** After Check reveals the answer on a graded card, footer shows Forgot/Good/Easy. */
+/** After Check reveals the answer on a classical card, footer shows Forgot/Good/Easy. */
 const footerShowsRate = computed(
   () =>
     !!currentCard.value &&
@@ -843,9 +926,17 @@ const footerShowsRate = computed(
     !quizResult.value
 )
 
+/**
+ * Pending graded commit after Duo Check (fill-in / quiz).
+ * FSRS / anon progress apply on Continue / Too easy / Too difficult.
+ */
+const pendingGradeCommit = ref(null)
+
 /** Single footer status — Check / correct / wrong / rate (fixed-height chrome). */
 const studyFooterStatus = computed(() => {
-  if (showEncouragement.value || showNoListening.value) return 'none'
+  if (showEncouragement.value) return 'correct'
+  // Skip listening → red Continue (Duo “can’t listen”).
+  if (showNoListening.value) return 'wrong'
   if (footerShowsRate.value) return 'rate'
   if (quizResult.value) return quizResult.value.correct ? 'correct' : 'wrong'
   if (fillinResult.value) return isFillinCorrect.value ? 'correct' : 'wrong'
@@ -853,9 +944,32 @@ const studyFooterStatus = computed(() => {
   return 'none'
 })
 
+/** Wrong-panel “Correct solution: …” body. */
+const footerSolutionText = computed(() => {
+  if (studyFooterStatus.value !== 'wrong' || showNoListening.value) return ''
+  const card = currentCard.value
+  if (!card) return ''
+  if (quizResult.value) {
+    const correctId = quizCorrectOptionId.value
+    if (correctId == null) return ''
+    const img = quizImageOptions.value?.find(
+      (o) => String(o.id).trim().toLowerCase() === String(correctId).trim().toLowerCase()
+    )
+    if (img?.label) return String(img.label)
+    return String(correctId)
+  }
+  if (fillinResult.value) {
+    return expectedFillinLikeAnswer(card.flashcard, card.progress[0].card_side)
+  }
+  return ''
+})
+
 const studyFooterDisabled = computed(() => {
   if (showEncouragement.value || showNoListening.value) return false
   if (isJustInformationMode.value) return isSubmitting.value
+  if (studyFooterStatus.value === 'correct' || studyFooterStatus.value === 'wrong') {
+    return isSubmitting.value
+  }
   if (studyFooterStatus.value !== 'none') return false
   if (isQuizMode.value) return !selectedQuizOption.value || isSubmitting.value
   if (isFillInLikeMode.value) return !userAnswer.value.trim() || isSubmitting.value
@@ -878,6 +992,14 @@ function onStudyFooterCheck() {
   onFooterCheck()
 }
 
+function onStudyFooterRate(rating: number) {
+  if (fillinResult.value || quizResult.value) {
+    void commitGradedAndAdvance(rating)
+    return
+  }
+  void submitAnswer(rating)
+}
+
 function handleExit() {
   router.push(returnToUrl.value)
 }
@@ -887,12 +1009,16 @@ function onFooterCheck() {
   void unlockStudySfx()
   const status = studyFooterStatus.value
   if (status === 'correct' || status === 'wrong') {
+    // Duo: Continue commits FSRS with default rating (correct→3, wrong→1).
+    if (fillinResult.value || quizResult.value) {
+      void commitGradedAndAdvance(status === 'correct' ? 3 : 1)
+      return
+    }
     if (status === 'correct' && shouldOfferEncouragement()) {
       openEncouragement()
       return
     }
-    if (quizResult.value) handleQuizNextCard()
-    else handleNextCard()
+    handleNextCard()
     return
   }
   if (isQuizMode.value && selectedQuizOption.value) {
@@ -901,6 +1027,53 @@ function onFooterCheck() {
   }
   if (isFillInLikeMode.value) submitAnswer()
   else revealAnswerAndPlayAudio()
+}
+
+/**
+ * Commit deferred FSRS (or anon progress) after Duo footer Continue / soft rates, then advance.
+ */
+async function commitGradedAndAdvance(rating: number) {
+  if (!currentCard.value || isSubmitting.value) return
+  const pending = pendingGradeCommit.value
+  const wasCorrect =
+    quizResult.value?.correct === true || (fillinResult.value != null && isFillinCorrect.value)
+  isSubmitting.value = true
+  try {
+    if (isAnonStudy.value) {
+      applyAnonLevelProgress(rating >= 3)
+    } else if (pending?.kind === 'fillin') {
+      await submitFillinAnswer({
+        flashcard_id: currentCard.value.flashcard.id,
+        card_side: currentCard.value.progress[0].card_side,
+        answer: pending.answer,
+        rating,
+      })
+      await checkForDueChanges()
+    } else if (pending?.kind === 'quiz') {
+      await submitQuizAnswer({
+        flashcard_id: currentCard.value.flashcard.id,
+        card_side: currentCard.value.progress[0].card_side,
+        selected_answer_text: pending.selectedOption,
+        presented_options: pending.options,
+        rating,
+      })
+      await checkForDueChanges()
+    }
+    pendingGradeCommit.value = null
+    if (wasCorrect && rating >= 3 && shouldOfferEncouragement()) {
+      // Clear chrome before pep-talk so footer shows encouragement Continue.
+      fillinResult.value = null
+      quizResult.value = null
+      openEncouragement()
+      return
+    }
+    if (quizResult.value) await handleQuizNextCard()
+    else await handleNextCard()
+  } catch (error) {
+    console.error(t('flashcardStudy.submitError'), error)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 /** Anonymous fill-in / wordbank: check if user answer matches expected. */
@@ -1154,6 +1327,7 @@ const loadNextCard = () => {
     userAnswer.value = ''
     fillinResult.value = null
     quizResult.value = null
+    pendingGradeCommit.value = null
     selectedQuizOption.value = null
   } else {
     currentCard.value = null
@@ -1311,7 +1485,12 @@ const submitAnswer = async (rating?: number) => {
         if (isWordbankMode.value) syncUserAnswerFromWordbank()
         correct = isAnonFillinAnswerCorrect()
         fillinResult.value = { correct, message: correct ? t('flashcardStudy.correctAnswer') : '' }
-        applyAnonLevelProgress(correct)
+        pendingGradeCommit.value = {
+          kind: 'fillin',
+          answer: userAnswer.value.trim(),
+          correct,
+        }
+        // SFX now; anon XP/hearts defer to Continue / Too easy / Too difficult.
         if (correct) registerCorrectAnswer()
         else registerWrongAnswer()
         await nextTick()
@@ -1331,20 +1510,24 @@ const submitAnswer = async (rating?: number) => {
     }
     if (isFillInLikeMode.value) {
       if (isWordbankMode.value) syncUserAnswerFromWordbank()
+      const answer = userAnswer.value.trim()
+      // Check: grade only (no `rating` → no FSRS commit).
       const response = await submitFillinAnswer({
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
-        answer: userAnswer.value.trim(),
+        answer,
       })
       fillinResult.value = response.data
-      const ok =
-        response.data &&
-        (response.data.answer_correct === true ||
-          response.data.correct === true ||
-          response.data.success === true)
+      // `success` = request OK (always true on 200); grading lives in `answer_correct`.
+      const ok = response.data?.answer_correct === true || response.data?.correct === true
+      pendingGradeCommit.value = {
+        kind: 'fillin',
+        answer,
+        correct: ok,
+        suggestedRating: response.data?.suggested_rating,
+      }
       if (ok) registerCorrectAnswer()
       else registerWrongAnswer()
-      await checkForDueChanges()
       await nextTick()
       if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
     } else if (!isQuizMode.value) {
@@ -1389,10 +1572,16 @@ const submitQuizOption = async (selectedOption) => {
           .trim()
           .toLowerCase()
       quizResult.value = { correct, message: correct ? '' : t('flashcardStudy.correctAnswer') }
-      applyAnonLevelProgress(correct)
+      pendingGradeCommit.value = {
+        kind: 'quiz',
+        selectedOption,
+        options,
+        correct,
+      }
       if (correct) registerCorrectAnswer()
       else registerWrongAnswer()
     } else {
+      // Check: grade only (no `rating` → no FSRS commit).
       const response = await submitQuizAnswer({
         flashcard_id: fc.id,
         card_side: currentCard.value.progress[0].card_side,
@@ -1400,9 +1589,15 @@ const submitQuizOption = async (selectedOption) => {
         presented_options: options,
       })
       quizResult.value = response.data
+      pendingGradeCommit.value = {
+        kind: 'quiz',
+        selectedOption,
+        options,
+        correct: !!response.data?.correct,
+        suggestedRating: response.data?.suggested_rating,
+      }
       if (response.data?.correct) registerCorrectAnswer()
       else registerWrongAnswer()
-      await checkForDueChanges()
     }
     await nextTick()
     if (quizResult.value?.correct && fc.sound_url) answerAudioPlayerRef.value?.play()
@@ -1416,6 +1611,7 @@ const submitQuizOption = async (selectedOption) => {
 const handleQuizNextCard = async () => {
   quizResult.value = null
   selectedQuizOption.value = null
+  pendingGradeCommit.value = null
   loadNextCard()
   if (!isAnonStudy.value) await checkForDueChanges()
 }
@@ -1455,6 +1651,7 @@ const revealAnswerAndPlayAudio = async () => {
 
 const handleNextCard = async () => {
   fillinResult.value = null
+  pendingGradeCommit.value = null
   userAnswer.value = ''
   wordbankSelectedIds.value = []
   wordbankChips.value = []
