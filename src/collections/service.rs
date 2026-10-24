@@ -1806,6 +1806,12 @@ fn parse_export_direction(s: Option<&String>) -> FlashcardDirection {
         "fillin" => FlashcardDirection::FillIn,
         "fillin_reverse" => FlashcardDirection::FillInReverse,
         "fillin_both" => FlashcardDirection::FillInBoth,
+        "wordbank" => FlashcardDirection::Wordbank,
+        "wordbank_reverse" => FlashcardDirection::WordbankReverse,
+        "wordbank_both" => FlashcardDirection::WordbankBoth,
+        "listen_wordbank" => FlashcardDirection::ListenWordbank,
+        "listen_wordbank_reverse" => FlashcardDirection::ListenWordbankReverse,
+        "listen_wordbank_both" => FlashcardDirection::ListenWordbankBoth,
         "just_information" => FlashcardDirection::JustInformation,
         "quiz_direct" => FlashcardDirection::QuizDirect,
         "quiz_reverse" => FlashcardDirection::QuizReverse,
@@ -2041,10 +2047,49 @@ pub async fn import_full(
                         .map_err(|e| AppError::Database(e.to_string()))?
                         .try_get(0)
                         .map_err(|e| AppError::Database(e.to_string()))?;
-                    initialize_flashcard_progress(&transaction, user_id, flashcard_id, "direct")
-                        .await?;
-                    initialize_flashcard_progress(&transaction, user_id, flashcard_id, "reverse")
-                        .await?;
+                    // Seed progress sides to match direction (same as create_flashcard).
+                    match direction {
+                        FlashcardDirection::Reverse
+                        | FlashcardDirection::FillInReverse
+                        | FlashcardDirection::WordbankReverse
+                        | FlashcardDirection::ListenWordbankReverse => {
+                            initialize_flashcard_progress(
+                                &transaction,
+                                user_id,
+                                flashcard_id,
+                                "reverse",
+                            )
+                            .await?;
+                        }
+                        FlashcardDirection::Both
+                        | FlashcardDirection::FillInBoth
+                        | FlashcardDirection::WordbankBoth
+                        | FlashcardDirection::ListenWordbankBoth => {
+                            initialize_flashcard_progress(
+                                &transaction,
+                                user_id,
+                                flashcard_id,
+                                "direct",
+                            )
+                            .await?;
+                            initialize_flashcard_progress(
+                                &transaction,
+                                user_id,
+                                flashcard_id,
+                                "reverse",
+                            )
+                            .await?;
+                        }
+                        _ => {
+                            initialize_flashcard_progress(
+                                &transaction,
+                                user_id,
+                                flashcard_id,
+                                "direct",
+                            )
+                            .await?;
+                        }
+                    }
                     Some(flashcard_id)
                 }
                 None => None,
@@ -2624,6 +2669,12 @@ pub async fn upsert_item(
                 "fillin" => FlashcardDirection::FillIn,
                 "fillin_reverse" => FlashcardDirection::FillInReverse,
                 "fillin_both" => FlashcardDirection::FillInBoth,
+                "wordbank" => FlashcardDirection::Wordbank,
+                "wordbank_reverse" => FlashcardDirection::WordbankReverse,
+                "wordbank_both" => FlashcardDirection::WordbankBoth,
+                "listen_wordbank" => FlashcardDirection::ListenWordbank,
+                "listen_wordbank_reverse" => FlashcardDirection::ListenWordbankReverse,
+                "listen_wordbank_both" => FlashcardDirection::ListenWordbankBoth,
                 "just_information" => FlashcardDirection::JustInformation,
                 _ => FlashcardDirection::Both, // Default to Both if unspecified or invalid
             }
@@ -2741,7 +2792,9 @@ pub async fn upsert_item(
                             mark_progress_graduated(&transaction, user_id, existing_id, "direct")
                                 .await?;
                         }
-                        FlashcardDirection::FillIn => {
+                        FlashcardDirection::FillIn
+                        | FlashcardDirection::Wordbank
+                        | FlashcardDirection::ListenWordbank => {
                             restore_or_initialize_progress(
                                 &transaction,
                                 user_id,
@@ -2750,7 +2803,9 @@ pub async fn upsert_item(
                             )
                             .await?;
                         }
-                        FlashcardDirection::FillInReverse => {
+                        FlashcardDirection::FillInReverse
+                        | FlashcardDirection::WordbankReverse
+                        | FlashcardDirection::ListenWordbankReverse => {
                             restore_or_initialize_progress(
                                 &transaction,
                                 user_id,
@@ -2759,7 +2814,9 @@ pub async fn upsert_item(
                             )
                             .await?;
                         }
-                        FlashcardDirection::FillInBoth => {
+                        FlashcardDirection::FillInBoth
+                        | FlashcardDirection::WordbankBoth
+                        | FlashcardDirection::ListenWordbankBoth => {
                             restore_or_initialize_progress(
                                 &transaction,
                                 user_id,
@@ -2863,15 +2920,21 @@ pub async fn upsert_item(
                         initialize_flashcard_progress(&transaction, user_id, new_id, "reverse")
                             .await?;
                     }
-                    FlashcardDirection::FillIn => {
+                    FlashcardDirection::FillIn
+                    | FlashcardDirection::Wordbank
+                    | FlashcardDirection::ListenWordbank => {
                         initialize_flashcard_progress(&transaction, user_id, new_id, "direct")
                             .await?;
                     }
-                    FlashcardDirection::FillInReverse => {
+                    FlashcardDirection::FillInReverse
+                    | FlashcardDirection::WordbankReverse
+                    | FlashcardDirection::ListenWordbankReverse => {
                         initialize_flashcard_progress(&transaction, user_id, new_id, "reverse")
                             .await?;
                     }
-                    FlashcardDirection::FillInBoth => {
+                    FlashcardDirection::FillInBoth
+                    | FlashcardDirection::WordbankBoth
+                    | FlashcardDirection::ListenWordbankBoth => {
                         initialize_flashcard_progress(&transaction, user_id, new_id, "direct")
                             .await?;
                         initialize_flashcard_progress(&transaction, user_id, new_id, "reverse")

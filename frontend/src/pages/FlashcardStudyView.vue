@@ -132,7 +132,7 @@
             </div>
             <!-- Canonical Comparison Indicator for Fill-in Mode -->
             <div
-              v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison"
+              v-if="isFillInLikeMode && currentCard.flashcard.use_canonical_comparison"
               class="badge-streak-success"
             >
               <CheckCircle2 class="h-3.5 w-3.5" />
@@ -242,7 +242,7 @@
                 </Button>
               </div>
             </div>
-            <!-- Answer Input (for fill-in modes) -->
+            <!-- Answer Input (typed fill-in) -->
             <div v-if="isFillInMode" class="mt-4">
               <Textarea
                 ref="fillInTextareaRef"
@@ -253,6 +253,26 @@
                 :placeholder="t('flashcardStudy.typeAnswer')"
                 :disabled="!!fillinResult"
                 @keydown.enter.prevent="() => submitAnswer()"
+              />
+            </div>
+            <!-- Word-bank assemble -->
+            <div v-if="isWordbankMode" class="mt-4 space-y-3">
+              <LingoWordbankPanel
+                mode="line"
+                :bank="wordbankChips"
+                :selected-ids="wordbankSelectedIds"
+                :disabled="!!fillinResult"
+                :placeholder="t('flashcardStudy.assembleAnswerHint')"
+                :aria-label="t('flashcardStudy.assembleAnswer')"
+                @unpick="unpickWordbankChip"
+              />
+              <LingoWordbankPanel
+                mode="bank"
+                :bank="wordbankChips"
+                :selected-ids="wordbankSelectedIds"
+                :disabled="!!fillinResult"
+                :aria-label="t('flashcardStudy.wordBank')"
+                @pick="pickWordbankChip"
               />
             </div>
             <!-- Quiz result (correct/incorrect + correct answer) -->
@@ -377,9 +397,10 @@
             class="flex justify-center px-4"
           >
             <Button
-              v-if="isFillInMode"
+              v-if="isFillInLikeMode"
               variant="read"
               class="w-auto !h-auto px-5 py-2.5 rounded-xl text-sm shadow-sm"
+              :disabled="!userAnswer.trim()"
               @click="submitAnswer()"
             >
               {{ t('flashcardStudy.submitAnswer') }}
@@ -423,7 +444,7 @@
           </div>
           <!-- Rating buttons (for non-fill-in modes after showing answer) -->
           <div
-            v-else-if="showAnswer && !isFillInMode && !isJustInformationMode"
+            v-else-if="showAnswer && !isFillInLikeMode && !isJustInformationMode"
             class="flex flex-col gap-4"
           >
             <h4 class="text-lg font-medium text-center text-gray-700">
@@ -560,7 +581,14 @@ import {
 } from '@/api'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
+import LingoWordbankPanel from '@/components/LingoWordbankPanel.vue'
 import CommentList from '@/pages/CommentList.vue'
+import {
+  buildWordbankChips,
+  expectedFillinLikeAnswer,
+  flashcardDistractorTexts,
+  type WordbankChip,
+} from '@/utils/wordbank'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
@@ -660,6 +688,13 @@ const isFillInMode = computed(() => {
   return dir && dir.toLowerCase().includes('fillin')
 })
 
+const isWordbankMode = computed(() => {
+  const dir = currentCard.value?.flashcard?.direction
+  return dir && dir.toLowerCase().includes('wordbank')
+})
+
+const isFillInLikeMode = computed(() => isFillInMode.value || isWordbankMode.value)
+
 const isJustInformationMode = computed(() => {
   const dir = currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase() === 'justinformation'
@@ -670,6 +705,47 @@ const isQuizMode = computed(() => {
   const dir = currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase().startsWith('quiz')
 })
+
+const wordbankChips = ref<WordbankChip[]>([])
+const wordbankSelectedIds = ref<string[]>([])
+
+function syncUserAnswerFromWordbank() {
+  if (!isWordbankMode.value) return
+  const byId = new Map(wordbankChips.value.map((c) => [c.id, c]))
+  userAnswer.value = wordbankSelectedIds.value
+    .map((id) => byId.get(id)?.text)
+    .filter(Boolean)
+    .join(' ')
+}
+
+function pickWordbankChip(id: string) {
+  if (fillinResult.value || wordbankSelectedIds.value.includes(id)) return
+  wordbankSelectedIds.value = [...wordbankSelectedIds.value, id]
+  syncUserAnswerFromWordbank()
+}
+
+function unpickWordbankChip(id: string) {
+  if (fillinResult.value) return
+  wordbankSelectedIds.value = wordbankSelectedIds.value.filter((x) => x !== id)
+  syncUserAnswerFromWordbank()
+}
+
+function rebuildWordbankForCard() {
+  wordbankSelectedIds.value = []
+  wordbankChips.value = []
+  userAnswer.value = ''
+  const card = currentCard.value
+  if (!card || !isWordbankMode.value) return
+  const side = card.progress?.[0]?.card_side ?? 'direct'
+  const expected = expectedFillinLikeAnswer(card.flashcard, side)
+  const pool = [card, ...remainingCards.value]
+  const distractors: string[] = []
+  for (const other of pool) {
+    if (other.flashcard?.id === card.flashcard.id) continue
+    distractors.push(...flashcardDistractorTexts(other.flashcard || {}))
+  }
+  wordbankChips.value = buildWordbankChips(expected, distractors)
+}
 
 const showCanonicalForm = computed(() => {
   const fc = currentCard.value?.flashcard
@@ -692,21 +768,14 @@ const getLanguageName = (langId: number) => {
   return lang?.real_name || 'Unknown'
 }
 
-/** Anonymous fill-in: check if user answer matches expected (direct → definition/back, reverse → word/front). */
+/** Anonymous fill-in / wordbank: check if user answer matches expected. */
 function isAnonFillinAnswerCorrect() {
   const card = currentCard.value
   const side = card?.progress?.[0]?.card_side
-  const dir = (card?.flashcard?.direction ?? '').toLowerCase()
   const fc = card?.flashcard
   if (!fc || !side) return false
-  let expectedRaw
-  if (side === 'direct' && (dir === 'fillin' || dir === 'fillin_both')) {
-    expectedRaw = (fc.definition ?? fc.free_content_back ?? '').trim()
-  } else if (side === 'reverse' && (dir === 'fillin_reverse' || dir === 'fillin_both')) {
-    expectedRaw = (fc.word ?? fc.free_content_front ?? '').trim()
-  } else {
-    return false
-  }
+  const expectedRaw = expectedFillinLikeAnswer(fc, side)
+  if (!expectedRaw) return false
   const user = userAnswer.value.trim().toLowerCase()
   if (!user) return false
   const expectedLower = expectedRaw.toLowerCase()
@@ -878,6 +947,8 @@ const loadNextCard = () => {
     userAnswer.value = ''
     fillinResult.value = null
     quizResult.value = null
+    wordbankSelectedIds.value = []
+    wordbankChips.value = []
   } else {
     currentCard.value = null
   }
@@ -913,7 +984,8 @@ const submitAnswer = async (rating?: number) => {
     } catch (_) {}
     if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
       let correct
-      if (isFillInMode.value) {
+      if (isFillInLikeMode.value) {
+        if (isWordbankMode.value) syncUserAnswerFromWordbank()
         correct = isAnonFillinAnswerCorrect()
         fillinResult.value = { correct, message: correct ? t('flashcardStudy.correctAnswer') : '' }
         applyAnonLevelProgress(correct)
@@ -927,7 +999,8 @@ const submitAnswer = async (rating?: number) => {
       isSubmitting.value = false
       return
     }
-    if (isFillInMode.value) {
+    if (isFillInLikeMode.value) {
+      if (isWordbankMode.value) syncUserAnswerFromWordbank()
       const response = await submitFillinAnswer({
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
@@ -1036,6 +1109,8 @@ const openWavesModal = () => {
 const handleNextCard = async () => {
   fillinResult.value = null
   userAnswer.value = ''
+  wordbankSelectedIds.value = []
+  wordbankChips.value = []
   loadNextCard()
   if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
 }
@@ -1067,10 +1142,11 @@ async function checkForDueChanges() {
 
 // --- Focus and Keyboard Handling ---
 
-// Watch for changes in the current card: focus textarea for fill-in, auto-play question audio for direct
+// Watch for changes in the current card: focus textarea for fill-in, rebuild wordbank, auto-play
 watch(
   currentCard,
   (newCard) => {
+    rebuildWordbankForCard()
     if (newCard && isFillInMode.value && !fillinResult.value) {
       nextTick(() => {
         fillInTextareaRef.value?.focus()
@@ -1100,10 +1176,10 @@ watch(
 )
 
 watch(showAnswer, (newValue) => {
-  if (newValue && !isFillInMode.value) {
+  if (newValue && !isFillInLikeMode.value) {
     // Focus rating buttons container or first button? For now, just log.
     // Consider focusing the "Forgot" button as a default.
-  } else if (!newValue && !isFillInMode.value) {
+  } else if (!newValue && !isFillInLikeMode.value) {
     nextTick(() => {
       showAnswerButtonRef.value?.focus()
     })
@@ -1129,15 +1205,15 @@ const handleKeydown = (event) => {
 
     if (fillinResult.value && nextCardButtonRef.value) {
       nextCardButtonRef.value.click()
-    } else if (!showAnswer.value && !isFillInMode.value && showAnswerButtonRef.value) {
+    } else if (!showAnswer.value && !isFillInLikeMode.value && showAnswerButtonRef.value) {
       // For JustInformation mode, Enter/Space should act like clicking "OK"
       if (isJustInformationMode.value) {
         submitAnswer(4) // Rating 4 for "Easy" / "Learned"
       } else {
         showAnswerButtonRef.value.click()
       }
-    } else if (isFillInMode.value && !fillinResult.value) {
-      // Trigger submit for fill-in mode if answer is present
+    } else if (isFillInLikeMode.value && !fillinResult.value) {
+      // Trigger submit for fill-in / wordbank if answer is present
       if (userAnswer.value.trim()) {
         submitAnswer()
       }
@@ -1150,7 +1226,7 @@ const handleKeydown = (event) => {
       // Trigger "Return to Deck" button at the end of the session
       returnToDeckButtonRef.value.click()
     }
-  } else if (showAnswer.value && !isFillInMode.value) {
+  } else if (showAnswer.value && !isFillInLikeMode.value) {
     // Handle rating button shortcuts
     if (event.key === '1') {
       submitAnswer(1) // Forgot

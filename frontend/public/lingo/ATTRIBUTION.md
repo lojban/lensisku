@@ -33,3 +33,11 @@ From Lojban Through Dialogues icon set (`lojban.pw` pixra
 - `bla5.webp`
 - `lif7.webp`
 - `lin5.webp`
+
+**Mid-lesson encouragement / “proud” poses:**
+
+- `lif5.webp`
+- `lin1.webp`
+- `lin3.webp`
+- `lin6.webp`
+- `lin7.webp`

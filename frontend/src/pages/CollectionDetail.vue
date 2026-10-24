@@ -426,21 +426,7 @@
               <Select
                 v-model="addItemDirection"
                 class="w-full input-field text-sm"
-                :options="[
-                  { value: 'direct', label: t('collectionDetail.direction.direct') },
-                  { value: 'reverse', label: t('collectionDetail.direction.reverse') },
-                  { value: 'both', label: t('collectionDetail.direction.both') },
-                  { value: 'fillin', label: t('collectionDetail.direction.fillin') },
-                  {
-                    value: 'fillin_reverse',
-                    label: t('collectionDetail.direction.fillin_reverse'),
-                  },
-                  { value: 'fillin_both', label: t('collectionDetail.direction.fillin_both') },
-                  {
-                    value: 'justinformation',
-                    label: t('collectionDetail.direction.justinformation'),
-                  },
-                ]"
+                :options="flashcardDirectionOptions"
               />
               <div class="flex items-center space-x-2">
                 <Checkbox
@@ -456,11 +442,8 @@
               <p class="text-xs text-gray-500">
                 {{ t('collectionDetail.autoProgressDescription') }}
               </p>
-              <!-- Canonical Comparison Checkbox for Fill-in Mode -->
-              <div
-                v-if="addItemDirection.toLowerCase().includes('fillin')"
-                class="flex items-center space-x-2 mt-3"
-              >
+              <!-- Canonical Comparison Checkbox for Fill-in / Word-bank Mode -->
+              <div v-if="showCanonicalComparisonOption" class="flex items-center space-x-2 mt-3">
                 <Checkbox
                   id="use_canonical_comparison"
                   v-model="useCanonicalComparison"
@@ -471,10 +454,7 @@
                 </label>
               </div>
 
-              <p
-                v-if="addItemDirection.toLowerCase().includes('fillin')"
-                class="text-xs text-gray-500"
-              >
+              <p v-if="showCanonicalComparisonOption" class="text-xs text-gray-500">
                 {{ t('collectionDetail.useCanonicalComparisonDescription') }}
               </p>
             </div>
@@ -621,21 +601,7 @@
                 <Select
                   v-model="addItemDirection"
                   class="w-full input-field text-sm"
-                  :options="[
-                    { value: 'direct', label: t('collectionDetail.direction.direct') },
-                    { value: 'reverse', label: t('collectionDetail.direction.reverse') },
-                    { value: 'both', label: t('collectionDetail.direction.both') },
-                    { value: 'fillin', label: t('collectionDetail.direction.fillin') },
-                    {
-                      value: 'fillin_reverse',
-                      label: t('collectionDetail.direction.fillin_reverse'),
-                    },
-                    { value: 'fillin_both', label: t('collectionDetail.direction.fillin_both') },
-                    {
-                      value: 'justinformation',
-                      label: t('collectionDetail.direction.justinformation'),
-                    },
-                  ]"
+                  :options="flashcardDirectionOptions"
                 />
               </div>
 
@@ -653,9 +619,9 @@
               <p v-if="enableFlashcard" class="text-xs text-gray-500">
                 {{ t('collectionDetail.autoProgressDescription') }}
               </p>
-              <!-- Canonical Comparison for Definition Fill-in -->
+              <!-- Canonical Comparison for Definition Fill-in / Word-bank -->
               <div
-                v-if="enableFlashcard && addItemDirection.toLowerCase().includes('fillin')"
+                v-if="enableFlashcard && showCanonicalComparisonOption"
                 class="flex items-center space-x-2 mt-3"
               >
                 <Checkbox
@@ -669,7 +635,7 @@
               </div>
 
               <p
-                v-if="enableFlashcard && addItemDirection.toLowerCase().includes('fillin')"
+                v-if="enableFlashcard && showCanonicalComparisonOption"
                 class="text-xs text-gray-500"
               >
                 {{ t('collectionDetail.useCanonicalComparisonDescription') }}
@@ -991,21 +957,7 @@
               <Select
                 v-model="addItemDirection"
                 class="w-full input-field text-sm"
-                :options="[
-                  { value: 'direct', label: t('collectionDetail.direction.direct') },
-                  { value: 'reverse', label: t('collectionDetail.direction.reverse') },
-                  { value: 'both', label: t('collectionDetail.direction.both') },
-                  { value: 'fillin', label: t('collectionDetail.direction.fillin') },
-                  {
-                    value: 'fillin_reverse',
-                    label: t('collectionDetail.direction.fillin_reverse'),
-                  },
-                  { value: 'fillin_both', label: t('collectionDetail.direction.fillin_both') },
-                  {
-                    value: 'justinformation',
-                    label: t('collectionDetail.direction.justinformation'),
-                  },
-                ]"
+                :options="flashcardDirectionOptions"
               />
               <div class="flex items-center space-x-2">
                 <Checkbox
@@ -1021,11 +973,8 @@
               <p class="text-xs text-gray-500">
                 {{ t('collectionDetail.autoProgressDescription') }}
               </p>
-              <!-- Canonical Comparison for New Definition Fill-in -->
-              <div
-                v-if="addItemDirection.toLowerCase().includes('fillin')"
-                class="flex items-center space-x-2 mt-3"
-              >
+              <!-- Canonical Comparison for New Definition Fill-in / Word-bank -->
+              <div v-if="showCanonicalComparisonOption" class="flex items-center space-x-2 mt-3">
                 <Checkbox
                   id="new_def_canonical_comparison"
                   v-model="useCanonicalComparison"
@@ -1036,10 +985,7 @@
                 </label>
               </div>
 
-              <p
-                v-if="addItemDirection.toLowerCase().includes('fillin')"
-                class="text-xs text-gray-500"
-              >
+              <p v-if="showCanonicalComparisonOption" class="text-xs text-gray-500">
                 {{ t('collectionDetail.useCanonicalComparisonDescription') }}
               </p>
             </div>
@@ -1357,6 +1303,30 @@ const definitionBackImage = ref(null)
 const definitionSound = ref(null)
 const definitionRemoveSound = ref(false)
 const addItemDirection = ref('direct')
+
+const flashcardDirectionOptions = computed(() => [
+  { value: 'direct', label: t('collectionDetail.direction.direct') },
+  { value: 'reverse', label: t('collectionDetail.direction.reverse') },
+  { value: 'both', label: t('collectionDetail.direction.both') },
+  { value: 'fillin', label: t('collectionDetail.direction.fillin') },
+  { value: 'fillin_reverse', label: t('collectionDetail.direction.fillin_reverse') },
+  { value: 'fillin_both', label: t('collectionDetail.direction.fillin_both') },
+  { value: 'wordbank', label: t('collectionDetail.direction.wordbank') },
+  { value: 'wordbank_reverse', label: t('collectionDetail.direction.wordbank_reverse') },
+  { value: 'wordbank_both', label: t('collectionDetail.direction.wordbank_both') },
+  { value: 'listen_wordbank', label: t('collectionDetail.direction.listen_wordbank') },
+  {
+    value: 'listen_wordbank_reverse',
+    label: t('collectionDetail.direction.listen_wordbank_reverse'),
+  },
+  { value: 'listen_wordbank_both', label: t('collectionDetail.direction.listen_wordbank_both') },
+  { value: 'justinformation', label: t('collectionDetail.direction.justinformation') },
+])
+
+const showCanonicalComparisonOption = computed(() => {
+  const dir = addItemDirection.value.toLowerCase()
+  return dir.includes('fillin') || dir.includes('wordbank')
+})
 const useCanonicalComparison = ref(true)
 const enableFlashcard = ref(false)
 const customContentContainer = ref<HTMLElement | null>(null)

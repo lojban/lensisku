@@ -23,17 +23,18 @@
               <span class="hidden opacity-70 sm:inline">(1)</span>
             </button>
           </template>
-          <template v-else-if="showCardActions && status === 'none'">
+          <template v-else-if="showCardActions && status === 'none' && leftAction !== 'none'">
             <button
               type="button"
               class="lingo-btn lingo-btn--default lingo-btn--sm !normal-case !tracking-normal"
               :disabled="snoozeDisabled"
-              :aria-label="labelSnooze || t('flashcardStudy.snooze')"
-              :title="labelSnooze || t('flashcardStudy.snooze')"
-              @click="$emit('snooze')"
+              :aria-label="leftActionLabel"
+              :title="leftActionLabel"
+              @click="onLeftAction"
             >
-              <AlarmClock class="h-3.5 w-3.5 shrink-0" />
-              <span>{{ labelSnooze || t('flashcardStudy.snooze') }}</span>
+              <VolumeX v-if="leftAction === 'cant-listen'" class="h-3.5 w-3.5 shrink-0" />
+              <AlarmClock v-else class="h-3.5 w-3.5 shrink-0" />
+              <span>{{ leftActionLabel }}</span>
             </button>
           </template>
           <template v-else-if="status === 'correct'">
@@ -131,7 +132,15 @@
 </template>
 
 <script setup lang="ts">
-import { AlarmClock, Check, CheckCircle, MessagesSquare, Smile, XCircle } from '@lucide/vue'
+import {
+  AlarmClock,
+  Check,
+  CheckCircle,
+  MessagesSquare,
+  Smile,
+  VolumeX,
+  XCircle,
+} from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -155,6 +164,16 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /**
+   * Left chrome action while status is `none`:
+   * `snooze` | `cant-listen` (Duo listenTap) | `none`.
+   */
+  leftAction: {
+    type: String,
+    default: 'snooze',
+    validator: (v: unknown) =>
+      typeof v === 'string' && ['snooze', 'cant-listen', 'none'].includes(v),
+  },
   correctLabel: {
     type: String,
     default: '',
@@ -172,13 +191,26 @@ const props = defineProps({
   labelEasy: { type: String, default: '' },
   labelDiscuss: { type: String, default: '' },
   labelSnooze: { type: String, default: '' },
+  labelCantListen: { type: String, default: '' },
   ratePrompt: { type: String, default: '' },
   compact: { type: Boolean, default: false },
 })
 
-defineEmits(['check', 'rate', 'discuss', 'snooze'])
+const emit = defineEmits(['check', 'rate', 'discuss', 'snooze', 'skipListening'])
 
 const { t } = useI18n()
+
+const leftActionLabel = computed(() => {
+  if (props.leftAction === 'cant-listen') {
+    return props.labelCantListen || t('flashcardStudy.cantListenNow')
+  }
+  return props.labelSnooze || t('flashcardStudy.snooze')
+})
+
+function onLeftAction() {
+  if (props.leftAction === 'cant-listen') emit('skipListening')
+  else emit('snooze')
+}
 
 const footerClass = computed(() => {
   if (props.status === 'correct') return 'border-transparent bg-green-100'

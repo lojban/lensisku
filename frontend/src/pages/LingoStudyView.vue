@@ -2,7 +2,7 @@
   <div class="lingo-study-root flex h-full min-h-0 flex-col overflow-hidden bg-slate-50">
     <!-- Full-bleed header stripe; inner chrome matches the lesson column width -->
     <LingoStudyHeader
-      v-if="(currentCard || outOfHearts) && !isLoading"
+      v-if="(currentCard || showEncouragement || outOfHearts) && !isLoading"
       :percentage="progressPercentage"
       @exit="handleExit"
     >
@@ -36,6 +36,30 @@
         >
           {{ t('lingo.goToShop') }}
         </RouterLink>
+      </div>
+      <!-- Mid-lesson encouragement (Duo “I’m so proud of you!” beat). -->
+      <div v-else-if="showEncouragement" class="lingo-study-encourage">
+        <div class="lingo-study-encourage-stage">
+          <div
+            class="lingo-study-encourage-mascot"
+            role="img"
+            aria-hidden="true"
+            :style="{ backgroundImage: `url(${encouragementMascotSrc})` }"
+          />
+          <p class="lingo-study-encourage-bubble">{{ encouragementMessage }}</p>
+        </div>
+      </div>
+      <!-- Duo “Can't listen now” → drop listening for this session. -->
+      <div v-else-if="showNoListening" class="lingo-study-encourage">
+        <div class="lingo-study-encourage-stage">
+          <div
+            class="lingo-study-encourage-mascot"
+            role="img"
+            aria-hidden="true"
+            :style="{ backgroundImage: `url(${studyQuestionCharacterSrc})` }"
+          />
+          <p class="lingo-study-encourage-bubble">{{ t('flashcardStudy.noListeningExercises') }}</p>
+        </div>
       </div>
       <!-- Lesson finish (clone quiz.tsx: finish art + XP/hearts + continue to path) -->
       <div
@@ -92,8 +116,48 @@
               }}
             </div>
 
+            <!-- Listen-tap: big speaker + slow (no written prompt). -->
+            <div
+              v-if="isListenModeActive && currentCard.flashcard.sound_url"
+              class="lingo-study-listen-prompt"
+            >
+              <AudioPlayer
+                :key="'listen-' + currentCard.flashcard.id"
+                ref="questionAudioPlayerRef"
+                variant="lingo-speaker"
+                :url="currentCard.flashcard.sound_url"
+                :collection-id="
+                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                    ? currentCard.flashcard.collection_id
+                    : undefined
+                "
+                :item-id="
+                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                    ? currentCard.flashcard.item_id
+                    : undefined
+                "
+                :suppress-play-errors="true"
+              />
+              <AudioPlayer
+                :key="'listen-slow-' + currentCard.flashcard.id"
+                variant="lingo-speaker-slow"
+                :url="currentCard.flashcard.sound_url"
+                :collection-id="
+                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                    ? currentCard.flashcard.collection_id
+                    : undefined
+                "
+                :item-id="
+                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                    ? currentCard.flashcard.item_id
+                    : undefined
+                "
+                :suppress-play-errors="true"
+              />
+            </div>
+
             <!-- Stimulus: question speaker + bubble (caret sits in the gap). -->
-            <div class="lingo-study-question-row">
+            <div v-else class="lingo-study-question-row">
               <div
                 class="lingo-study-mascot"
                 role="img"
@@ -145,6 +209,7 @@
 
             <div
               v-if="
+                !isListenModeActive &&
                 currentCard.progress[0].card_side === 'direct' &&
                 currentCard.flashcard.has_front_image
               "
@@ -170,8 +235,11 @@
               />
             </div>
 
-            <!-- Reply: empty/fill-in bubble + speaker on the right (mirrored). -->
-            <div class="lingo-study-question-row lingo-study-question-row--reply">
+            <!-- Reply: empty/fill-in bubble + speaker on the right (mirrored). Hidden for quiz assist. -->
+            <div
+              v-if="!isQuizMode"
+              class="lingo-study-question-row lingo-study-question-row--reply"
+            >
               <div
                 class="lingo-study-question-bubble"
                 :class="showAnswerBubble ? 'lingo-study-answer-bubble' : 'lingo-study-reply-bubble'"
@@ -258,6 +326,17 @@
                     <LazyMathJax :content="currentCard.flashcard.notes" :enable-markdown="true" />
                   </div>
                 </template>
+                <template v-else-if="isWordbankMode">
+                  <LingoWordbankPanel
+                    mode="line"
+                    :bank="wordbankChips"
+                    :selected-ids="wordbankSelectedIds"
+                    :disabled="!!fillinResult"
+                    :placeholder="t('flashcardStudy.assembleAnswerHint')"
+                    :aria-label="t('flashcardStudy.assembleAnswer')"
+                    @unpick="unpickWordbankChip"
+                  />
+                </template>
                 <template v-else-if="isFillInMode">
                   <Textarea
                     ref="fillInTextareaRef"
@@ -282,74 +361,54 @@
             </div>
 
             <div
-              v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison"
+              v-if="isFillInLikeMode && currentCard.flashcard.use_canonical_comparison"
               class="badge-streak-success--compact"
             >
               <CheckCircle2 class="h-3 w-3" />
               <span>{{ t('flashcardStudy.canonicalComparisonEnabled') }}</span>
             </div>
 
-            <!-- Quiz options / result (fill-in lives in the reply bubble above). -->
-            <div v-if="showStudyCardShell" class="lingo-study-card-shell">
-              <div class="flex min-h-0 flex-col gap-1">
-                <div
-                  v-if="
-                    isQuizMode &&
-                    !quizResult &&
-                    (currentCard.flashcard.quiz_options?.length || quizImageOptions?.length)
-                  "
-                >
-                  <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
-                    <template v-if="quizImageOptions?.length">
-                      <Button
-                        v-for="opt in quizImageOptions"
-                        :key="opt.id"
-                        variant="neutral"
-                        type="button"
-                        class="study-quiz-option-lingo-image"
-                        :disabled="isSubmitting"
-                        @click="submitQuizOption(opt.id)"
-                      >
-                        <img
-                          :src="opt.imageUrl"
-                          class="h-16 w-full rounded-lg object-contain sm:h-20"
-                          :alt="opt.id"
-                        />
-                      </Button>
-                    </template>
-                    <Button
-                      v-for="(opt, idx) in currentCard.flashcard.quiz_options"
-                      v-else
-                      :key="idx"
-                      variant="neutral"
-                      type="button"
-                      class="study-quiz-option-lingo-text"
-                      :disabled="isSubmitting"
-                      @click="submitQuizOption(opt)"
-                    >
-                      <LazyMathJax :content="opt" />
-                    </Button>
-                  </div>
-                </div>
-                <div v-if="quizResult" class="flex flex-col gap-1">
-                  <div
-                    class="text-center text-sm font-semibold"
-                    :class="quizResult.correct ? 'text-green-600' : 'text-red-600'"
-                  >
-                    {{
-                      quizResult.correct
-                        ? t('flashcardStudy.answerCorrect')
-                        : t('flashcardStudy.answerIncorrect')
-                    }}
-                  </div>
-                  <p
-                    v-if="!quizResult.correct && quizResult.message"
-                    class="text-center text-xs text-gray-600"
-                  >
-                    {{ quizResult.message }}
-                  </p>
-                </div>
-              </div>
+            <!-- Word bank tray (typed fill-in lives in the reply bubble). -->
+            <div v-if="isWordbankMode && !showAnswerBubble" class="lingo-study-card-shell">
+              <LingoWordbankPanel
+                mode="bank"
+                :bank="wordbankChips"
+                :selected-ids="wordbankSelectedIds"
+                :disabled="!!fillinResult"
+                :aria-label="t('flashcardStudy.wordBank')"
+                @pick="pickWordbankChip"
+              />
+            </div>
+
+            <!-- Quiz assist: Duo-style numbered choices (select, then Check). -->
+            <div
+              v-if="isQuizMode && quizChoiceItems.length"
+              class="lingo-study-quiz-list"
+              role="radiogroup"
+              :aria-label="lessonPrompt"
+            >
+              <button
+                v-for="(opt, idx) in quizChoiceItems"
+                :key="opt.id"
+                type="button"
+                role="radio"
+                class="lingo-study-quiz-choice"
+                :class="quizChoiceClass(opt.id)"
+                :aria-checked="selectedQuizOption === opt.id"
+                :disabled="!!quizResult || isSubmitting"
+                @click="selectQuizOption(opt.id)"
+              >
+                <span class="lingo-study-quiz-choice__num" aria-hidden="true">{{ idx + 1 }}</span>
+                <span class="lingo-study-quiz-choice__label">
+                  <img
+                    v-if="opt.imageUrl"
+                    :src="opt.imageUrl"
+                    class="lingo-study-quiz-choice__image"
+                    alt=""
+                  />
+                  <LazyMathJax v-else :content="opt.label" />
+                </span>
+              </button>
             </div>
 
             <LingoGuestSaveAlert
@@ -364,20 +423,26 @@
 
     <!-- Single footer instance — status swaps inside a fixed-height chrome box. -->
     <LingoStudyFooter
-      v-if="currentCard && !isLoading && !outOfHearts"
+      v-if="(currentCard || showEncouragement || showNoListening) && !isLoading && !outOfHearts"
       :status="studyFooterStatus"
       :disabled="studyFooterDisabled"
       :compact="true"
-      :show-card-actions="true"
+      :show-card-actions="!showEncouragement && !showNoListening"
+      :left-action="isListenModeActive ? 'cant-listen' : 'snooze'"
       :snooze-disabled="isSubmitting"
       :correct-label="t('flashcardStudy.nicelyDone')"
       :wrong-label="t('flashcardStudy.tryAgain')"
       :rate-prompt="t('flashcardStudy.howWellRemembered')"
-      :label-check="isJustInformationMode ? t('flashcardStudy.continue') : ''"
+      :label-check="
+        showEncouragement || showNoListening || isJustInformationMode
+          ? t('flashcardStudy.continue')
+          : ''
+      "
       @check="onStudyFooterCheck"
       @rate="submitAnswer"
       @discuss="openWavesModal"
       @snooze="snoozeCard"
+      @skip-listening="skipListeningExercises"
     />
 
     <LingoModal
@@ -398,7 +463,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Textarea } from '@packages/ui'
+import { Textarea } from '@packages/ui'
 import { CheckCircle2, EqualApproximately, Heart } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -409,13 +474,22 @@ import LingoStudyHeader from '@/components/LingoStudyHeader.vue'
 import LingoStudyFooter from '@/components/LingoStudyFooter.vue'
 import LingoResultCard from '@/components/LingoResultCard.vue'
 import LingoUserProgress from '@/components/LingoUserProgress.vue'
+import LingoWordbankPanel from '@/components/LingoWordbankPanel.vue'
+import {
+  buildWordbankChips,
+  expectedFillinLikeAnswer,
+  flashcardDistractorTexts,
+  type WordbankChip,
+} from '@/utils/wordbank'
 import CommentList from '@/pages/CommentList.vue'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 import {
   hashLingoQuestionKey,
   pickLingoStudyCharacterPair,
+  pickLingoProudCharacter,
   useLingoStudySfx,
   lingoStudyPose1Src,
+  LINGO_STUDY_PROUD_CHARACTERS,
 } from '@/composables/useLingoStudySfx'
 
 import {
@@ -453,6 +527,20 @@ const guestAnswersThisVisit = ref(0)
 const sessionXpAwarded = ref(0)
 const sessionXpClaimed = ref(false)
 
+/** Mid-lesson Duo-style pep talk (once around halfway after a correct answer). */
+const showEncouragement = ref(false)
+const encouragementShownThisSession = ref(false)
+const encouragementMessage = ref('')
+const encouragementMascotSrc = ref(LINGO_STUDY_PROUD_CHARACTERS[0])
+const lastAnswerWasCorrect = ref(false)
+const ENCOURAGEMENT_MESSAGE_KEYS = [
+  'flashcardStudy.encouragement.proud',
+  'flashcardStudy.encouragement.doingGreat',
+  'flashcardStudy.encouragement.keepGoing',
+  'flashcardStudy.encouragement.niceWork',
+  'flashcardStudy.encouragement.onARoll',
+] as const
+
 const { t } = useI18n()
 
 const route = useRoute()
@@ -475,12 +563,52 @@ const studyAnswerIdleSrc = ref(initialStudyCharacters.answer)
 const outOfHearts = computed(() => !hasUnlimitedHearts.value && hearts.value <= 0)
 
 function registerWrongAnswer() {
+  lastAnswerWasCorrect.value = false
   playIncorrect()
   loseHeart()
 }
 
 function registerCorrectAnswer() {
+  lastAnswerWasCorrect.value = true
   playCorrect()
+}
+
+function pickEncouragementMessage(): string {
+  const key =
+    ENCOURAGEMENT_MESSAGE_KEYS[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGE_KEYS.length)]!
+  return t(key)
+}
+
+function pickEncouragementMascot(): string {
+  return pickLingoProudCharacter()
+}
+
+/** Once mid-lesson after a correct card, if enough work remains. */
+function shouldOfferEncouragement(): boolean {
+  if (encouragementShownThisSession.value || showEncouragement.value) return false
+  if (!lastAnswerWasCorrect.value) return false
+  if (remainingCards.value.length < 2) return false
+  if (sessionTotal.value < 6) return false
+  const milestone = Math.max(4, Math.floor(sessionTotal.value / 2))
+  return cardsAnsweredInSession.value >= milestone
+}
+
+function openEncouragement() {
+  encouragementShownThisSession.value = true
+  encouragementMessage.value = pickEncouragementMessage()
+  encouragementMascotSrc.value = pickEncouragementMascot()
+  fillinResult.value = null
+  quizResult.value = null
+  selectedQuizOption.value = null
+  showAnswer.value = false
+  userAnswer.value = ''
+  wordbankSelectedIds.value = []
+  showEncouragement.value = true
+}
+
+function continueFromEncouragement() {
+  showEncouragement.value = false
+  loadNextCard()
 }
 
 function claimSessionXpOnce() {
@@ -569,11 +697,63 @@ const questionAudioPlayerRef = ref(null)
 
 const languages = ref([])
 
-/** Fill-in is supported: direction must include 'fillin' (e.g. fillin, fillin_both, fillin_reverse). API "both" = reveal then rate. */
+/** Typed fill-in: direction must include 'fillin' (e.g. fillin, fillin_both, fillin_reverse). */
 const isFillInMode = computed(() => {
   const dir = currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase().includes('fillin')
 })
+
+/** Word-bank assemble: direction must include 'wordbank' (incl. listen_wordbank*). */
+const isWordbankMode = computed(() => {
+  const dir = currentCard.value?.flashcard?.direction
+  return dir && dir.toLowerCase().includes('wordbank')
+})
+
+/** Duo listenTap: listen_wordbank* with audio, until session opts out. */
+const isListenDirection = computed(() => {
+  const dir = currentCard.value?.flashcard?.direction
+  if (!dir) return false
+  const n = String(dir).toLowerCase().replace(/_/g, '')
+  return n.startsWith('listenwordbank')
+})
+
+const skipListeningSession = ref(false)
+const showNoListening = ref(false)
+
+const isListenModeActive = computed(
+  () =>
+    isListenDirection.value &&
+    !skipListeningSession.value &&
+    !!currentCard.value?.flashcard?.sound_url &&
+    !fillinResult.value
+)
+
+function isListenCard(card) {
+  const dir = card?.flashcard?.direction
+  if (!dir) return false
+  const n = String(dir).toLowerCase().replace(/_/g, '')
+  return n.startsWith('listenwordbank')
+}
+
+/** Drop listen cards for the rest of this lesson (Duo “Can't listen now”). */
+function skipListeningExercises() {
+  skipListeningSession.value = true
+  remainingCards.value = remainingCards.value.filter((c) => !isListenCard(c))
+  showNoListening.value = true
+  fillinResult.value = null
+  quizResult.value = null
+  showAnswer.value = false
+  userAnswer.value = ''
+  wordbankSelectedIds.value = []
+}
+
+function continueFromNoListening() {
+  showNoListening.value = false
+  loadNextCard()
+}
+
+/** Fill-in or wordbank — both submit via the fill-in grading path. */
+const isFillInLikeMode = computed(() => isFillInMode.value || isWordbankMode.value)
 
 const isJustInformationMode = computed(() => {
   const dir = currentCard.value?.flashcard?.direction
@@ -585,6 +765,47 @@ const isQuizMode = computed(() => {
   const dir = currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase().startsWith('quiz')
 })
+
+const wordbankChips = ref<WordbankChip[]>([])
+const wordbankSelectedIds = ref<string[]>([])
+
+function syncUserAnswerFromWordbank() {
+  if (!isWordbankMode.value) return
+  const byId = new Map(wordbankChips.value.map((c) => [c.id, c]))
+  userAnswer.value = wordbankSelectedIds.value
+    .map((id) => byId.get(id)?.text)
+    .filter(Boolean)
+    .join(' ')
+}
+
+function pickWordbankChip(id: string) {
+  if (fillinResult.value || wordbankSelectedIds.value.includes(id)) return
+  wordbankSelectedIds.value = [...wordbankSelectedIds.value, id]
+  syncUserAnswerFromWordbank()
+}
+
+function unpickWordbankChip(id: string) {
+  if (fillinResult.value) return
+  wordbankSelectedIds.value = wordbankSelectedIds.value.filter((x) => x !== id)
+  syncUserAnswerFromWordbank()
+}
+
+function rebuildWordbankForCard() {
+  wordbankSelectedIds.value = []
+  wordbankChips.value = []
+  userAnswer.value = ''
+  const card = currentCard.value
+  if (!card || !isWordbankMode.value) return
+  const side = card.progress?.[0]?.card_side ?? 'direct'
+  const expected = expectedFillinLikeAnswer(card.flashcard, side)
+  const pool = [card, ...remainingCards.value]
+  const distractors: string[] = []
+  for (const other of pool) {
+    if (other.flashcard?.id === card.flashcard.id) continue
+    distractors.push(...flashcardDistractorTexts(other.flashcard || {}))
+  }
+  wordbankChips.value = buildWordbankChips(expected, distractors)
+}
 
 const showCanonicalForm = computed(() => {
   const fc = currentCard.value?.flashcard
@@ -633,29 +854,39 @@ const footerShowsRate = computed(
   () =>
     !!currentCard.value &&
     showAnswer.value &&
-    !isFillInMode.value &&
+    !isFillInLikeMode.value &&
     !isJustInformationMode.value &&
     !quizResult.value
 )
 
 /** Single footer status — Check / correct / wrong / rate (fixed-height chrome). */
 const studyFooterStatus = computed(() => {
+  if (showEncouragement.value || showNoListening.value) return 'none'
   if (footerShowsRate.value) return 'rate'
   if (quizResult.value) return quizResult.value.correct ? 'correct' : 'wrong'
   if (fillinResult.value) return isFillinCorrect.value ? 'correct' : 'wrong'
-  if (showAnswer.value && isFillInMode.value) return 'correct'
+  if (showAnswer.value && isFillInLikeMode.value) return 'correct'
   return 'none'
 })
 
 const studyFooterDisabled = computed(() => {
+  if (showEncouragement.value || showNoListening.value) return false
   if (isJustInformationMode.value) return isSubmitting.value
   if (studyFooterStatus.value !== 'none') return false
-  if (isQuizMode.value) return true // User must tap an option
-  if (isFillInMode.value) return !userAnswer.value.trim() || isSubmitting.value
+  if (isQuizMode.value) return !selectedQuizOption.value || isSubmitting.value
+  if (isFillInLikeMode.value) return !userAnswer.value.trim() || isSubmitting.value
   return isSubmitting.value
 })
 
 function onStudyFooterCheck() {
+  if (showEncouragement.value) {
+    continueFromEncouragement()
+    return
+  }
+  if (showNoListening.value) {
+    continueFromNoListening()
+    return
+  }
   if (isJustInformationMode.value) {
     submitAnswer(4)
     return
@@ -672,29 +903,30 @@ function onFooterCheck() {
   void unlockStudySfx()
   const status = studyFooterStatus.value
   if (status === 'correct' || status === 'wrong') {
+    if (status === 'correct' && shouldOfferEncouragement()) {
+      openEncouragement()
+      return
+    }
     if (quizResult.value) handleQuizNextCard()
     else handleNextCard()
     return
   }
-  if (isFillInMode.value) submitAnswer()
+  if (isQuizMode.value && selectedQuizOption.value) {
+    void submitQuizOption(selectedQuizOption.value)
+    return
+  }
+  if (isFillInLikeMode.value) submitAnswer()
   else revealAnswerAndPlayAudio()
 }
 
-/** Anonymous fill-in: check if user answer matches expected (direct → definition/back, reverse → word/front). */
+/** Anonymous fill-in / wordbank: check if user answer matches expected. */
 function isAnonFillinAnswerCorrect() {
   const card = currentCard.value
   const side = card?.progress?.[0]?.card_side
-  const dir = (card?.flashcard?.direction ?? '').toLowerCase()
   const fc = card?.flashcard
   if (!fc || !side) return false
-  let expectedRaw
-  if (side === 'direct' && (dir === 'fillin' || dir === 'fillin_both')) {
-    expectedRaw = (fc.definition ?? fc.free_content_back ?? '').trim()
-  } else if (side === 'reverse' && (dir === 'fillin_reverse' || dir === 'fillin_both')) {
-    expectedRaw = (fc.word ?? fc.free_content_front ?? '').trim()
-  } else {
-    return false
-  }
+  const expectedRaw = expectedFillinLikeAnswer(fc, side)
+  if (!expectedRaw) return false
   const user = userAnswer.value.trim().toLowerCase()
   if (!user) return false
   const expectedLower = expectedRaw.toLowerCase()
@@ -920,12 +1152,14 @@ const applyAnonLevelProgress = (correct: boolean) => {
 }
 
 const loadNextCard = () => {
+  showEncouragement.value = false
   if (remainingCards.value.length > 0) {
     currentCard.value = remainingCards.value.shift()
     showAnswer.value = false
     userAnswer.value = ''
     fillinResult.value = null
     quizResult.value = null
+    selectedQuizOption.value = null
   } else {
     currentCard.value = null
   }
@@ -961,6 +1195,8 @@ const userAnswer = ref('')
 const isSubmitting = ref(false)
 const fillinResult = ref(null)
 const quizResult = ref(null)
+/** Selected quiz choice id/text before Check (Duo assist select-then-confirm). */
+const selectedQuizOption = ref(null)
 
 /** True when stimulus is definition/back (user recalls the word). */
 const isReverseSide = computed(() => currentCard.value?.progress?.[0]?.card_side !== 'direct')
@@ -971,6 +1207,12 @@ const lessonPrompt = computed(() => {
   const reverse = isReverseSide.value
   if (isQuizMode.value && !quizResult.value) {
     return reverse ? t('flashcardStudy.howDoYouSayThis') : t('flashcardStudy.selectOption')
+  }
+  if (isListenModeActive.value) {
+    return t('flashcardStudy.tapWhatYouHear')
+  }
+  if (isWordbankMode.value && !fillinResult.value) {
+    return reverse ? t('flashcardStudy.howDoYouSayThis') : t('flashcardStudy.assembleAnswer')
   }
   if (isFillInMode.value && !fillinResult.value) {
     return reverse ? t('flashcardStudy.howDoYouSayThis') : t('flashcardStudy.typeYourAnswer')
@@ -992,14 +1234,6 @@ const studyAnswerCharacterSrc = computed(() =>
   showAnswerBubble.value ? lingoStudyPose1Src(studyAnswerIdleSrc.value) : studyAnswerIdleSrc.value
 )
 
-/** Quiz options / result surface (fill-in types inside the reply bubble). */
-const showStudyCardShell = computed(() => {
-  if (!currentCard.value) return false
-  if (isQuizMode.value) return true
-  if (quizResult.value) return true
-  return false
-})
-
 /** Image quiz: options are "item_id:side"; build list with image URLs for current collection. */
 const quizImageOptions = computed(() => {
   const fc = currentCard.value?.flashcard
@@ -1012,6 +1246,58 @@ const quizImageOptions = computed(() => {
     imageUrl: `/api/collections/${fc.collection_id}/items/${id.split(':')[0]}/image/${id.split(':')[1] || 'front'}`,
   }))
 })
+
+/** Normalized choice rows for the assist-style list (text or image). */
+const quizChoiceItems = computed(() => {
+  if (!isQuizMode.value) return []
+  const images = quizImageOptions.value
+  if (images?.length) {
+    return images.map((o) => ({ id: o.id, label: o.id, imageUrl: o.imageUrl }))
+  }
+  const opts = currentCard.value?.flashcard?.quiz_options
+  if (!opts?.length) return []
+  return opts.map((text) => ({ id: text, label: text, imageUrl: null }))
+})
+
+function selectQuizOption(optionId) {
+  if (quizResult.value || isSubmitting.value) return
+  selectedQuizOption.value = optionId
+}
+
+/** Correct option text for post-check highlighting (anon: first stored option). */
+const quizCorrectOptionId = computed(() => {
+  if (!quizResult.value) return null
+  if (quizResult.value.correct) return selectedQuizOption.value
+  const msg = String(quizResult.value.message || '')
+  const marker = 'The correct answer was: '
+  const idx = msg.indexOf(marker)
+  if (idx >= 0) {
+    const fromMsg = msg.slice(idx + marker.length).trim()
+    const match = quizChoiceItems.value.find(
+      (o) =>
+        String(o.id).trim().toLowerCase() === fromMsg.toLowerCase() ||
+        String(o.id).split(':')[0] === fromMsg ||
+        fromMsg.startsWith(String(o.id))
+    )
+    if (match) return match.id
+  }
+  const first = currentCard.value?.flashcard?.quiz_options?.[0]
+  return first ?? null
+})
+
+function quizChoiceClass(optionId) {
+  const selected = selectedQuizOption.value === optionId
+  if (!quizResult.value) {
+    return selected ? 'lingo-study-quiz-choice--selected' : ''
+  }
+  const correctId = quizCorrectOptionId.value
+  const isCorrectChoice =
+    correctId != null &&
+    String(optionId).trim().toLowerCase() === String(correctId).trim().toLowerCase()
+  if (isCorrectChoice) return 'lingo-study-quiz-choice--correct'
+  if (selected) return 'lingo-study-quiz-choice--wrong'
+  return ''
+}
 
 const submitAnswer = async (rating?: number) => {
   if (!currentCard.value || isSubmitting.value) return
@@ -1026,7 +1312,8 @@ const submitAnswer = async (rating?: number) => {
     } catch (_) {}
     if (isAnonStudy.value) {
       let correct
-      if (isFillInMode.value) {
+      if (isFillInLikeMode.value) {
+        if (isWordbankMode.value) syncUserAnswerFromWordbank()
         correct = isAnonFillinAnswerCorrect()
         fillinResult.value = { correct, message: correct ? t('flashcardStudy.correctAnswer') : '' }
         applyAnonLevelProgress(correct)
@@ -1039,14 +1326,16 @@ const submitAnswer = async (rating?: number) => {
         applyAnonLevelProgress(correct)
         if (correct) registerCorrectAnswer()
         else registerWrongAnswer()
-        // SFX already played on Check; advance after rate.
+        // SFX already played on Check; advance after rate (maybe pep-talk first).
         showAnswer.value = false
-        loadNextCard()
+        if (correct && shouldOfferEncouragement()) openEncouragement()
+        else loadNextCard()
       }
       isSubmitting.value = false
       return
     }
-    if (isFillInMode.value) {
+    if (isFillInLikeMode.value) {
+      if (isWordbankMode.value) syncUserAnswerFromWordbank()
       const response = await submitFillinAnswer({
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
@@ -1073,7 +1362,8 @@ const submitAnswer = async (rating?: number) => {
         rating,
         card_side: currentCard.value.progress[0].card_side,
       })
-      loadNextCard()
+      if (rating >= 3 && shouldOfferEncouragement()) openEncouragement()
+      else loadNextCard()
       await checkForDueChanges()
     }
   } catch (error) {
@@ -1130,6 +1420,7 @@ const submitQuizOption = async (selectedOption) => {
 
 const handleQuizNextCard = async () => {
   quizResult.value = null
+  selectedQuizOption.value = null
   loadNextCard()
   if (!isAnonStudy.value) await checkForDueChanges()
 }
@@ -1170,6 +1461,8 @@ const revealAnswerAndPlayAudio = async () => {
 const handleNextCard = async () => {
   fillinResult.value = null
   userAnswer.value = ''
+  wordbankSelectedIds.value = []
+  wordbankChips.value = []
   loadNextCard()
   if (!isAnonStudy.value) await checkForDueChanges()
 }
@@ -1213,6 +1506,7 @@ watch(
       studyAnswerIdleSrc.value = pair.answer
     }
     syncQuestionHash(newCard)
+    rebuildWordbankForCard()
     if (newCard && isFillInMode.value && !fillinResult.value) {
       nextTick(() => {
         fillInTextareaRef.value?.focus()
@@ -1241,10 +1535,10 @@ watch(
 )
 
 watch(showAnswer, (newValue) => {
-  if (newValue && !isFillInMode.value) {
+  if (newValue && !isFillInLikeMode.value) {
     // Focus rating buttons container or first button? For now, just log.
     // Consider focusing the "Forgot" button as a default.
-  } else if (!newValue && !isFillInMode.value) {
+  } else if (!newValue && !isFillInLikeMode.value) {
     nextTick(() => {
       showAnswerButtonRef.value?.focus()
     })
@@ -1273,6 +1567,14 @@ const handleKeydown = (event) => {
 
   if (event.key === ' ' || event.key === 'Enter') {
     event.preventDefault()
+    if (showEncouragement.value) {
+      continueFromEncouragement()
+      return
+    }
+    if (showNoListening.value) {
+      continueFromNoListening()
+      return
+    }
     if (!currentCard.value && remainingCards.value.length === 0) {
       returnToDeckButtonRef.value?.click()
       return
@@ -1285,9 +1587,18 @@ const handleKeydown = (event) => {
       submitAnswer(4)
       return
     }
-    if (showAnswer.value && !isFillInMode.value) return // rating buttons use 1/2/3
+    if (showAnswer.value && !isFillInLikeMode.value) return // rating buttons use 1/2/3
     if (!studyFooterDisabled.value) onFooterCheck()
-  } else if (showAnswer.value && !isFillInMode.value) {
+  } else if (
+    isQuizMode.value &&
+    !quizResult.value &&
+    !showEncouragement.value &&
+    /^[1-9]$/.test(event.key)
+  ) {
+    const idx = Number(event.key) - 1
+    const item = quizChoiceItems.value[idx]
+    if (item) selectQuizOption(item.id)
+  } else if (showAnswer.value && !isFillInLikeMode.value && !showEncouragement.value) {
     if (event.key === '1') submitAnswer(1)
     else if (event.key === '2') submitAnswer(3)
     else if (event.key === '3') submitAnswer(4)

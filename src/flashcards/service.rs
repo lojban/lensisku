@@ -289,13 +289,19 @@ pub async fn create_flashcard(
             initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
             initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
         }
-        FlashcardDirection::FillIn => {
+        FlashcardDirection::FillIn
+        | FlashcardDirection::Wordbank
+        | FlashcardDirection::ListenWordbank => {
             initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
         }
-        FlashcardDirection::FillInReverse => {
+        FlashcardDirection::FillInReverse
+        | FlashcardDirection::WordbankReverse
+        | FlashcardDirection::ListenWordbankReverse => {
             initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
         }
-        FlashcardDirection::FillInBoth => {
+        FlashcardDirection::FillInBoth
+        | FlashcardDirection::WordbankBoth
+        | FlashcardDirection::ListenWordbankBoth => {
             initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
             initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
         }
@@ -763,13 +769,19 @@ pub async fn list_flashcards_public(
         };
 
         match direction {
-            FlashcardDirection::Both | FlashcardDirection::FillInBoth => {
+            FlashcardDirection::Both
+            | FlashcardDirection::FillInBoth
+            | FlashcardDirection::WordbankBoth
+            | FlashcardDirection::ListenWordbankBoth => {
                 flashcards.push(FlashcardResponse {
                     flashcard: flashcard.clone(),
                     progress: vec![synthetic_progress("direct"), synthetic_progress("reverse")],
                 });
             }
-            FlashcardDirection::Reverse | FlashcardDirection::FillInReverse => {
+            FlashcardDirection::Reverse
+            | FlashcardDirection::FillInReverse
+            | FlashcardDirection::WordbankReverse
+            | FlashcardDirection::ListenWordbankReverse => {
                 flashcards.push(FlashcardResponse {
                     flashcard: flashcard.clone(),
                     progress: vec![synthetic_progress("reverse")],
@@ -916,13 +928,19 @@ pub async fn list_flashcards(
                 initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
                 initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
             }
-            FlashcardDirection::FillIn => {
+            FlashcardDirection::FillIn
+            | FlashcardDirection::Wordbank
+            | FlashcardDirection::ListenWordbank => {
                 initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
             }
-            FlashcardDirection::FillInReverse => {
+            FlashcardDirection::FillInReverse
+            | FlashcardDirection::WordbankReverse
+            | FlashcardDirection::ListenWordbankReverse => {
                 initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
             }
-            FlashcardDirection::FillInBoth => {
+            FlashcardDirection::FillInBoth
+            | FlashcardDirection::WordbankBoth
+            | FlashcardDirection::ListenWordbankBoth => {
                 initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
                 initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
             }
@@ -1069,7 +1087,10 @@ pub async fn list_flashcards(
         };
 
         // Check if this is a "both" direction card and how to handle it
-        if (direction == FlashcardDirection::Both || direction == FlashcardDirection::FillInBoth)
+        if (direction == FlashcardDirection::Both
+            || direction == FlashcardDirection::FillInBoth
+            || direction == FlashcardDirection::WordbankBoth
+            || direction == FlashcardDirection::ListenWordbankBoth)
             && !query.due.unwrap_or(false)
         {
             // For non-due listing, combine progresses into single card
@@ -2401,8 +2422,11 @@ pub async fn review_flashcard_serverside(
 
     // Get the expected answer string (raw, without lowercasing yet)
     let expected_raw = match (&flashcard.direction, req.card_side.as_str()) {
-        // FillIn or FillInBoth, direct side: Expect definition or back content
-        (&FlashcardDirection::FillIn, "direct") | (&FlashcardDirection::FillInBoth, "direct") => {
+        // Fill-in / wordbank (and *Both), direct side: expect definition or back content
+        (&FlashcardDirection::FillIn, "direct")
+        | (&FlashcardDirection::FillInBoth, "direct")
+        | (&FlashcardDirection::Wordbank, "direct")
+        | (&FlashcardDirection::WordbankBoth, "direct") => {
             if let Some(def) = &flashcard.definition {
                 def.trim().to_lowercase()
             } else if let Some(content) = &flashcard.free_content_back {
@@ -2411,15 +2435,39 @@ pub async fn review_flashcard_serverside(
                 return Err("Invalid flashcard content for fill-in (direct)".into());
             }
         }
-        // FillInReverse or FillInBoth, reverse side: Expect word or front content
+        // Listen-tap recognition (Duo listenTap): hear front audio, assemble front text
+        (&FlashcardDirection::ListenWordbank, "direct")
+        | (&FlashcardDirection::ListenWordbankBoth, "direct") => {
+            if let Some(word) = &flashcard.word {
+                word.trim().to_lowercase()
+            } else if let Some(content) = &flashcard.free_content_front {
+                content.trim().to_lowercase()
+            } else {
+                return Err("Invalid flashcard content for listen-wordbank (direct)".into());
+            }
+        }
+        // Fill-in / wordbank reverse (and *Both), reverse side: expect word or front content
         (&FlashcardDirection::FillInReverse, "reverse")
-        | (&FlashcardDirection::FillInBoth, "reverse") => {
+        | (&FlashcardDirection::FillInBoth, "reverse")
+        | (&FlashcardDirection::WordbankReverse, "reverse")
+        | (&FlashcardDirection::WordbankBoth, "reverse") => {
             if let Some(word) = &flashcard.word {
                 word.trim().to_lowercase()
             } else if let Some(content) = &flashcard.free_content_front {
                 content.trim().to_lowercase()
             } else {
                 return Err("Invalid flashcard content for fill-in (reverse)".into());
+            }
+        }
+        // Listen reverse / both-reverse: hear front, assemble back (comprehension)
+        (&FlashcardDirection::ListenWordbankReverse, "reverse")
+        | (&FlashcardDirection::ListenWordbankBoth, "reverse") => {
+            if let Some(def) = &flashcard.definition {
+                def.trim().to_lowercase()
+            } else if let Some(content) = &flashcard.free_content_back {
+                content.trim().to_lowercase()
+            } else {
+                return Err("Invalid flashcard content for listen-wordbank (reverse)".into());
             }
         }
         // Handle other directions (Direct, Reverse, Both) - they shouldn't use this endpoint
@@ -2779,15 +2827,15 @@ pub async fn submit_quiz_answer(
         .await?;
     let correct_answer_text: String = correct_answer_row.get("correct_answer_text");
 
-    // For image quiz (QuizImageBoth) we store "item_id" only; user submits "item_id:front" or "item_id:back"
-    let is_correct = if correct_answer_text.contains(':') {
-        answer_data.selected_answer_text.trim().to_lowercase()
-            == correct_answer_text.trim().to_lowercase()
-    } else {
-        let ct = correct_answer_text.trim();
-        let st = answer_data.selected_answer_text.trim();
-        st == format!("{}:front", ct) || st == format!("{}:back", ct)
-    };
+    // Text quiz: plain string match. Image quiz may store "item_id" while the client
+    // submits "item_id:front" / "item_id:back" (or the reverse when the DB has a side).
+    let selected = answer_data.selected_answer_text.trim().to_lowercase();
+    let correct = correct_answer_text.trim().to_lowercase();
+    let is_correct = selected == correct
+        || selected == format!("{}:front", correct)
+        || selected == format!("{}:back", correct)
+        || correct == format!("{}:front", selected)
+        || correct == format!("{}:back", selected);
 
     // Log the attempt with all presented options
     transaction.execute(

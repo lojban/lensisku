@@ -605,8 +605,142 @@ export function buildLingoThemeLayer() {
       '@apply w-full min-h-[2.75rem] resize-none border-0 bg-transparent p-0 text-center text-sm leading-snug shadow-none outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 sm:min-h-[3rem] sm:text-base':
         {},
     },
+    /**
+     * Listen-tap (Duo challenge-listenTap): big speaker + optional slow (½×) control.
+     */
+    '.lingo-study-listen-prompt': {
+      '@apply flex flex-wrap items-end justify-center gap-3 sm:gap-4': {},
+    },
+    '.lingo-study-listen-speaker': {
+      '@apply relative inline-flex h-16 w-16 cursor-pointer items-center justify-center rounded-2xl border-2 border-b-4 border-sky-500 bg-sky-400 text-white transition-colors hover:bg-sky-400/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:border-b-2 active:translate-y-px sm:h-20 sm:w-20':
+        {},
+    },
+    '.lingo-study-listen-speaker--slow': {
+      '@apply h-12 w-12 rounded-xl sm:h-14 sm:w-14': {},
+    },
+    '.lingo-study-listen-speaker--playing': {
+      '@apply bg-sky-500': {},
+    },
+    '.lingo-study-listen-speaker__icon': {
+      '@apply h-8 w-8 sm:h-9 sm:w-9': {},
+    },
+    '.lingo-study-listen-speaker--slow .lingo-study-listen-speaker__icon': {
+      '@apply h-5 w-5 sm:h-6 sm:w-6': {},
+    },
+    '.lingo-study-listen-speaker__rate': {
+      '@apply absolute bottom-1 right-1 text-[10px] font-black leading-none sm:text-xs': {},
+    },
+    /**
+     * Quiz assist (Duo challenge-assist): full-width numbered choices under the prompt bubble.
+     * Select then Check — not instant-submit tiles.
+     */
+    '.lingo-study-quiz-list': {
+      '@apply flex w-full flex-col gap-2 sm:gap-2.5': {},
+    },
+    '.lingo-study-quiz-choice': {
+      '@apply flex w-full min-h-[3.25rem] cursor-pointer select-none items-center gap-3 rounded-xl border-2 border-b-4 border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-bold text-slate-700 transition-colors hover:bg-sky-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-60 active:border-b-2 active:translate-y-px sm:min-h-[3.5rem] sm:gap-4 sm:px-4 sm:text-base':
+        {},
+    },
+    '.lingo-study-quiz-choice--selected': {
+      '@apply border-sky-400 bg-sky-50 text-sky-900 hover:bg-sky-50': {},
+    },
+    '.lingo-study-quiz-choice--correct': {
+      '@apply border-green-500 bg-green-50 text-green-800 hover:bg-green-50': {},
+    },
+    '.lingo-study-quiz-choice--wrong': {
+      '@apply border-rose-400 bg-rose-50 text-rose-800 hover:bg-rose-50': {},
+    },
+    '.lingo-study-quiz-choice__num': {
+      '@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 border-slate-200 bg-white text-xs font-bold text-slate-500 sm:h-8 sm:w-8 sm:text-sm':
+        {},
+    },
+    '.lingo-study-quiz-choice--selected .lingo-study-quiz-choice__num': {
+      '@apply border-sky-400 text-sky-700': {},
+    },
+    '.lingo-study-quiz-choice--correct .lingo-study-quiz-choice__num': {
+      '@apply border-green-500 text-green-700': {},
+    },
+    '.lingo-study-quiz-choice--wrong .lingo-study-quiz-choice__num': {
+      '@apply border-rose-400 text-rose-700': {},
+    },
+    '.lingo-study-quiz-choice__label': {
+      '@apply min-w-0 flex-1 text-center [overflow-wrap:anywhere]': {},
+    },
+    '.lingo-study-quiz-choice__image': {
+      '@apply mx-auto max-h-20 w-full object-contain sm:max-h-24': {},
+    },
+    /**
+     * Word-bank assemble (Duolingo-style): answer line in the reply bubble + chip tray below.
+     * Chunky chips align with `.lingo-btn` (rounded-xl, border-b-4).
+     */
+    '.lingo-study-wordbank-line': {
+      '@apply flex w-full min-h-[2.75rem] flex-wrap content-center items-center justify-center gap-1.5 border-b-2 border-dashed border-slate-300 pb-1 sm:min-h-[3rem] sm:gap-2':
+        {},
+    },
+    '.lingo-study-wordbank-line-placeholder': {
+      '@apply w-full text-center text-sm text-slate-400 sm:text-base': {},
+    },
+    '.lingo-study-wordbank-bank': {
+      '@apply flex flex-wrap justify-center gap-1.5 sm:gap-2': {},
+    },
+    '.lingo-study-wordbank-chip': {
+      '@apply relative inline-flex min-h-9 cursor-pointer select-none items-center justify-center rounded-xl border-2 border-b-4 border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-sky-50 hover:border-sky-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1 disabled:pointer-events-none active:border-b-2 active:translate-y-px':
+        {},
+    },
+    '.lingo-study-wordbank-chip--selected': {
+      '@apply border-sky-400 bg-sky-50 text-sky-800 hover:bg-sky-100': {},
+    },
+    /** Used bank chip: keep layout slot, hide label (Duo ghost gap). */
+    '.lingo-study-wordbank-chip--used': {
+      '@apply pointer-events-none border-transparent bg-slate-100 text-transparent shadow-none hover:bg-slate-100':
+        {},
+    },
+    '.lingo-study-wordbank-chip--used .lingo-study-wordbank-chip__label': {
+      '@apply invisible': {},
+    },
     '.lingo-study-stimulus': {
       '@apply text-sm font-medium text-neutral-700 lg:text-base': {},
+    },
+    /**
+     * Mid-lesson encouragement (Duo “I’m so proud of you!” beat):
+     * large mascot + chunky speech bubble, Continue in the study footer.
+     */
+    '.lingo-study-encourage': {
+      '@apply flex flex-1 min-h-0 flex-col items-center justify-center gap-4 px-4 py-6 sm:gap-6':
+        {},
+    },
+    '.lingo-study-encourage-stage': {
+      '@apply relative flex w-full max-w-md items-end justify-center gap-3 sm:gap-4': {},
+    },
+    '.lingo-study-encourage-mascot': {
+      '@apply h-36 w-28 shrink-0 bg-contain bg-bottom bg-no-repeat sm:h-48 sm:w-36 lg:h-56 lg:w-40':
+        {},
+    },
+    '.lingo-study-encourage-bubble': {
+      '@apply relative mb-8 max-w-[14rem] rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-center text-base font-bold text-neutral-700 shadow-sm sm:mb-12 sm:max-w-[16rem] sm:px-5 sm:py-4 sm:text-lg lg:text-xl':
+        {},
+    },
+    '.lingo-study-encourage-bubble::before': {
+      content: '""',
+      position: 'absolute',
+      left: '-0.65rem',
+      bottom: '1.25rem',
+      width: '0',
+      height: '0',
+      borderTop: '8px solid transparent',
+      borderBottom: '8px solid transparent',
+      borderRight: '10px solid #e2e8f0', // slate-200
+    },
+    '.lingo-study-encourage-bubble::after': {
+      content: '""',
+      position: 'absolute',
+      left: '-0.4rem',
+      bottom: '1.35rem',
+      width: '0',
+      height: '0',
+      borderTop: '6px solid transparent',
+      borderBottom: '6px solid transparent',
+      borderRight: '8px solid #ffffff',
     },
     /**
      * Top-anchored column (not vertically centered) so revealing the answer bubble

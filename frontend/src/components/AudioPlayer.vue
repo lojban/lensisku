@@ -1,6 +1,37 @@
 <template>
   <div class="inline-flex items-center gap-2">
-    <Button variant="read" class="audio-player-btn" :disabled="isLoading" @click="togglePlay">
+    <!-- Lingo listen-tap: chunky speaker (Duo challenge-listenTap). -->
+    <button
+      v-if="variant === 'lingo-speaker' || variant === 'lingo-speaker-slow'"
+      type="button"
+      class="lingo-study-listen-speaker"
+      :class="{
+        'lingo-study-listen-speaker--slow': variant === 'lingo-speaker-slow',
+        'lingo-study-listen-speaker--playing': isPlaying,
+      }"
+      :disabled="isLoading"
+      :aria-label="
+        variant === 'lingo-speaker-slow'
+          ? t('flashcardStudy.playSlow')
+          : t('flashcardStudy.playAudio')
+      "
+      @click="togglePlay"
+    >
+      <Loader v-if="isLoading" class="animate-spin" />
+      <Pause v-else-if="isPlaying" />
+      <template v-else-if="variant === 'lingo-speaker-slow'">
+        <Volume2 class="lingo-study-listen-speaker__icon" />
+        <span class="lingo-study-listen-speaker__rate" aria-hidden="true">½</span>
+      </template>
+      <Volume2 v-else class="lingo-study-listen-speaker__icon" />
+    </button>
+    <Button
+      v-else
+      variant="read"
+      class="audio-player-btn"
+      :disabled="isLoading"
+      @click="togglePlay"
+    >
       <Pause v-if="isPlaying" />
       <Loader v-else-if="isLoading" class="animate-spin" />
       <Play v-else />
@@ -10,8 +41,8 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { Play, Pause, Loader } from '@lucide/vue'
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { Play, Pause, Loader, Volume2 } from '@lucide/vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useError } from '@/composables/useError'
@@ -31,6 +62,10 @@ const props = defineProps({
   valsiIdOrWord: { type: String, default: null },
   /** When true, log load/play errors to console only (no user-facing showError). Use for auto-play contexts. */
   suppressPlayErrors: { type: Boolean, default: false },
+  /** `default` | `lingo-speaker` | `lingo-speaker-slow` (0.5×). */
+  variant: { type: String, default: 'default' },
+  /** Playback rate (slow speaker uses 0.5 when variant is lingo-speaker-slow). */
+  playbackRate: { type: Number, default: 1 },
 })
 
 const isPlaying = ref(false)
@@ -129,6 +164,7 @@ const loadAudio = async () => {
   if (cacheEntry && (await validateBlobUrl(cacheEntry.blob))) {
     const blob = await fetch(cacheEntry.blob).then((r) => r.blob())
     audio.value = new Audio(URL.createObjectURL(blob))
+    applyPlaybackRate()
     cache.set(cacheKey, {
       blob: cacheEntry.blob,
       lastAccessed: Date.now(),
@@ -169,6 +205,7 @@ const loadAudio = async () => {
 
     const blobUrl = URL.createObjectURL(blob)
     audio.value = new Audio(blobUrl)
+    applyPlaybackRate()
     audio.value.addEventListener('ended', handleEnded)
 
     cleanCache(cache)
@@ -185,6 +222,16 @@ const loadAudio = async () => {
   }
 }
 
+function effectivePlaybackRate() {
+  if (props.variant === 'lingo-speaker-slow') return 0.5
+  const rate = Number(props.playbackRate)
+  return Number.isFinite(rate) && rate > 0 ? rate : 1
+}
+
+function applyPlaybackRate() {
+  if (audio.value) audio.value.playbackRate = effectivePlaybackRate()
+}
+
 const togglePlay = async () => {
   if (!audio.value) {
     await loadAudio()
@@ -197,6 +244,8 @@ const togglePlay = async () => {
     isPlaying.value = false
   } else {
     try {
+      applyPlaybackRate()
+      audio.value.currentTime = 0
       await audio.value.play()
       isPlaying.value = true
     } catch (e) {
@@ -209,6 +258,11 @@ const togglePlay = async () => {
 const handleEnded = () => {
   isPlaying.value = false
 }
+
+watch(
+  () => [props.playbackRate, props.variant],
+  () => applyPlaybackRate()
+)
 
 onMounted(() => {
   if (audio.value) {

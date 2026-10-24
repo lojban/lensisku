@@ -45,19 +45,20 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::post_kokoro_tts)
                     .service(controller::update_item_media)
                     .service(controller::import_json)
-                    .service(
-                        web::scope("")
-                            .app_data(web::PayloadConfig::new(100 * 1024 * 1024))
-                            .service(controller::post_collection_media_bulk_multipart)
-                            .service(controller::post_collection_media_bulk_zip),
-                    )
+                    // Register /import/full before /{id}/import/json so "import" is not captured as {id}.
                     .service(
                         web::scope("")
                             .app_data(
                                 web::JsonConfig::default().limit(100 * 1024 * 1024), // large data URL payloads
                             )
-                            .service(controller::import_collection_from_json)
-                            .service(controller::import_full),
+                            .service(controller::import_full)
+                            .service(controller::import_collection_from_json),
+                    )
+                    .service(
+                        web::scope("")
+                            .app_data(web::PayloadConfig::new(100 * 1024 * 1024))
+                            .service(controller::post_collection_media_bulk_multipart)
+                            .service(controller::post_collection_media_bulk_zip),
                     ),
             ),
     );

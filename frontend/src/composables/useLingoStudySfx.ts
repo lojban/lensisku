@@ -165,12 +165,28 @@ export const LINGO_STUDY_ANSWER_CHARACTERS = [
   '/lingo/lin5.webp',
 ] as const
 
+/**
+ * Mid-lesson encouragement (“proud”) sprites — expressive poses from LTD icons.
+ * `lif5`, `lin1`, `lin3`, `lin6`, `lin7`.
+ */
+export const LINGO_STUDY_PROUD_CHARACTERS = [
+  '/lingo/lif5.webp',
+  '/lingo/lin1.webp',
+  '/lingo/lin3.webp',
+  '/lingo/lin6.webp',
+  '/lingo/lin7.webp',
+] as const
+
 /** @deprecated Prefer question/answer pools; kept for any single-sprite callers. */
 export const LINGO_STUDY_CHARACTERS = LINGO_STUDY_ANSWER_CHARACTERS
 
-/** All unique study mascot URLs (idle + pose-1 reveal). */
+/** All unique study mascot URLs (idle + pose-1 reveal + proud). */
 export const LINGO_STUDY_SPRITE_URLS = [
-  ...new Set([...LINGO_STUDY_QUESTION_CHARACTERS, ...LINGO_STUDY_ANSWER_CHARACTERS]),
+  ...new Set([
+    ...LINGO_STUDY_QUESTION_CHARACTERS,
+    ...LINGO_STUDY_ANSWER_CHARACTERS,
+    ...LINGO_STUDY_PROUD_CHARACTERS,
+  ]),
 ] as const
 
 let spritePreloadPromise: Promise<void> | null = null
@@ -202,6 +218,11 @@ function pickFrom(pool: readonly string[]): string {
 
 export function pickRandomLingoCharacter(): string {
   return pickFrom(LINGO_STUDY_ANSWER_CHARACTERS)
+}
+
+/** Random mascot for the mid-lesson encouragement beat. */
+export function pickLingoProudCharacter(): string {
+  return pickFrom(LINGO_STUDY_PROUD_CHARACTERS)
 }
 
 /** Same character family, pose `1` (e.g. `/lingo/lin5.webp` → `/lingo/lin1.webp`). */
