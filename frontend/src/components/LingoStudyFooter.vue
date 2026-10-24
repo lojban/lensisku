@@ -1,50 +1,30 @@
 <template>
   <footer
-    class="lingo-study-footer sticky bottom-0 z-30 w-full border-t-2 transition-colors shrink-0"
+    class="lingo-study-footer sticky bottom-0 z-30 w-full shrink-0 border-t-2 transition-colors"
     :class="[footerClass, compact ? 'lingo-study-footer--compact' : 'lingo-study-footer--roomy']"
   >
-    <!-- One chrome box for Check and rate — fixed height avoids CLS (clone footer.tsx). -->
-    <!-- Same chrome for Check and rate so the Easy/Check cell never moves. -->
-    <div
-      class="lingo-study-chrome-inner lingo-study-footer__chrome !items-stretch flex-col justify-center gap-1.5 sm:gap-2"
-    >
-      <div class="lingo-study-rate-row">
-        <template v-if="status === 'rate'">
-          <button
-            type="button"
-            class="lingo-btn lingo-btn--danger lingo-btn--sm w-full !normal-case !tracking-normal"
-            :disabled="disabled"
-            @click="$emit('rate', 1)"
-          >
-            <XCircle class="h-3.5 w-3.5 shrink-0" />
-            <span>{{ labelForgot || t('flashcardStudy.forgot') }}</span>
-            <span class="hidden opacity-70 sm:inline">(1)</span>
-          </button>
-          <button
-            type="button"
-            class="lingo-btn lingo-btn--primary lingo-btn--sm w-full !normal-case !tracking-normal"
-            :disabled="disabled"
-            @click="$emit('rate', 3)"
-          >
-            <Smile class="h-3.5 w-3.5 shrink-0" />
-            <span>{{ labelGood || t('flashcardStudy.good') }}</span>
-            <span class="hidden opacity-70 sm:inline">(2)</span>
-          </button>
-          <button
-            type="button"
-            class="lingo-btn lingo-btn--secondary lingo-btn--sm w-full !normal-case !tracking-normal"
-            :disabled="disabled"
-            @click="$emit('rate', 4)"
-          >
-            <Check class="h-3.5 w-3.5 shrink-0" />
-            <span>{{ labelEasy || t('flashcardStudy.easy') }}</span>
-            <span class="hidden opacity-70 sm:inline">(3)</span>
-          </button>
-        </template>
-        <template v-else>
-          <div class="flex min-w-0 items-center justify-start gap-1.5 sm:gap-2">
+    <!--
+      Same max-w-[600px] as header `.lingo-study-chrome-inner` / lesson column.
+      Bottom-pinned rows + 3 equal cells keep Check and Easy aligned (no CLS).
+    -->
+    <div class="lingo-study-footer-chrome">
+      <!-- Row 1: Check / rate buttons. Row 2: discuss + prompt (justify-end packs this pair to the bottom). -->
+      <div class="lingo-study-rate-row" role="group">
+        <div class="flex h-9 min-w-0 items-center justify-start">
+          <template v-if="status === 'rate'">
             <button
-              v-if="showCardActions && status === 'none'"
+              type="button"
+              class="lingo-btn lingo-btn--danger lingo-btn--sm w-full !normal-case !tracking-normal"
+              :disabled="disabled"
+              @click="$emit('rate', 1)"
+            >
+              <XCircle class="h-3.5 w-3.5 shrink-0" />
+              <span>{{ labelForgot || t('flashcardStudy.forgot') }}</span>
+              <span class="hidden opacity-70 sm:inline">(1)</span>
+            </button>
+          </template>
+          <template v-else-if="showCardActions && status === 'none'">
+            <button
               type="button"
               class="lingo-btn lingo-btn--default lingo-btn--sm !normal-case !tracking-normal"
               :disabled="snoozeDisabled"
@@ -55,33 +35,61 @@
               <AlarmClock class="h-3.5 w-3.5 shrink-0" />
               <span>{{ labelSnooze || t('flashcardStudy.snooze') }}</span>
             </button>
-            <template v-else-if="status === 'correct'">
-              <CheckCircle
-                class="h-4 w-4 shrink-0 text-green-600 sm:h-5 sm:w-5"
-                :class="{ 'lg:h-6 lg:w-6': !compact }"
-              />
-              <span
-                class="truncate text-xs font-bold text-green-600 sm:text-sm"
-                :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
-              >
-                {{ correctLabel }}
-              </span>
-            </template>
-            <template v-else-if="status === 'wrong'">
-              <XCircle
-                class="h-4 w-4 shrink-0 text-rose-500 sm:h-5 sm:w-5"
-                :class="{ 'lg:h-6 lg:w-6': !compact }"
-              />
-              <span
-                class="truncate text-xs font-bold text-rose-500 sm:text-sm"
-                :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
-              >
-                {{ wrongLabel }}
-              </span>
-            </template>
-          </div>
-          <div aria-hidden="true" />
+          </template>
+          <template v-else-if="status === 'correct'">
+            <CheckCircle
+              class="h-4 w-4 shrink-0 text-green-600 sm:h-5 sm:w-5"
+              :class="{ 'lg:h-6 lg:w-6': !compact }"
+            />
+            <span
+              class="truncate text-xs font-bold text-green-600 sm:text-sm"
+              :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
+            >
+              {{ correctLabel }}
+            </span>
+          </template>
+          <template v-else-if="status === 'wrong'">
+            <XCircle
+              class="h-4 w-4 shrink-0 text-rose-500 sm:h-5 sm:w-5"
+              :class="{ 'lg:h-6 lg:w-6': !compact }"
+            />
+            <span
+              class="truncate text-xs font-bold text-rose-500 sm:text-sm"
+              :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
+            >
+              {{ wrongLabel }}
+            </span>
+          </template>
+        </div>
+
+        <div class="flex h-9 min-w-0 items-center">
           <button
+            v-if="status === 'rate'"
+            type="button"
+            class="lingo-btn lingo-btn--primary lingo-btn--sm w-full !normal-case !tracking-normal"
+            :disabled="disabled"
+            @click="$emit('rate', 3)"
+          >
+            <Smile class="h-3.5 w-3.5 shrink-0" />
+            <span>{{ labelGood || t('flashcardStudy.good') }}</span>
+            <span class="hidden opacity-70 sm:inline">(2)</span>
+          </button>
+        </div>
+
+        <div class="flex h-9 min-w-0 items-center">
+          <button
+            v-if="status === 'rate'"
+            type="button"
+            class="lingo-btn lingo-btn--secondary lingo-btn--sm w-full !normal-case !tracking-normal"
+            :disabled="disabled"
+            @click="$emit('rate', 4)"
+          >
+            <Check class="h-3.5 w-3.5 shrink-0" />
+            <span>{{ labelEasy || t('flashcardStudy.easy') }}</span>
+            <span class="hidden opacity-70 sm:inline">(3)</span>
+          </button>
+          <button
+            v-else
             type="button"
             class="lingo-btn lingo-btn--sm w-full !normal-case !tracking-normal"
             :class="buttonVariantClass"
@@ -91,43 +99,32 @@
           >
             {{ buttonLabel }}
           </button>
-        </template>
-      </div>
-      <div class="flex w-full min-w-0 items-center gap-2">
-        <div
-          v-if="showCardActions"
-          class="flex shrink-0 items-center justify-start gap-1.5 sm:gap-2"
-        >
-          <button
-            type="button"
-            class="lingo-btn lingo-btn--ghost lingo-btn--sm !normal-case !tracking-normal"
-            :class="{ 'lingo-btn--icon !min-w-9 !px-0': discussIconOnly }"
-            :aria-label="labelDiscuss || t('flashcardStudy.wavesButton')"
-            :title="labelDiscuss || t('flashcardStudy.wavesButton')"
-            @click="$emit('discuss')"
-          >
-            <MessagesSquare class="h-3.5 w-3.5 shrink-0" />
-            <span v-if="!discussIconOnly">{{
-              labelDiscuss || t('flashcardStudy.wavesButton')
-            }}</span>
-          </button>
         </div>
+      </div>
+
+      <div class="lingo-study-footer-meta">
+        <button
+          v-if="showCardActions"
+          type="button"
+          class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon !min-w-9 !px-0 !normal-case !tracking-normal"
+          :aria-label="labelDiscuss || t('flashcardStudy.wavesButton')"
+          :title="labelDiscuss || t('flashcardStudy.wavesButton')"
+          @click="$emit('discuss')"
+        >
+          <MessagesSquare class="h-3.5 w-3.5 shrink-0" />
+        </button>
+        <span v-else class="inline-block h-9 w-9 shrink-0" aria-hidden="true" />
+
         <p
-          class="min-w-0 flex-1 truncate text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs"
-          :class="status === 'rate' && ratePrompt ? '' : 'invisible'"
+          class="lingo-study-footer-meta__prompt"
+          :class="{ invisible: status !== 'rate' || !ratePrompt }"
           :aria-hidden="status !== 'rate' || !ratePrompt"
         >
           {{ ratePrompt || '\u00a0' }}
         </p>
-        <div
-          v-if="showCardActions && discussIconOnly"
-          class="invisible flex shrink-0 items-center gap-1.5 sm:gap-2"
-          aria-hidden="true"
-        >
-          <span class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon !min-w-9 !px-0">
-            <MessagesSquare class="h-3.5 w-3.5 shrink-0" />
-          </span>
-        </div>
+
+        <!-- Width mirror so the prompt stays centered in every status. -->
+        <span class="inline-flex h-9 w-9 shrink-0" aria-hidden="true" />
       </div>
     </div>
   </footer>
@@ -183,9 +180,6 @@ defineEmits(['check', 'rate', 'discuss', 'snooze'])
 
 const { t } = useI18n()
 
-/** Discussions: icon-only while the rate prompt shares that row. */
-const discussIconOnly = computed(() => props.status === 'rate')
-
 const footerClass = computed(() => {
   if (props.status === 'correct') return 'border-transparent bg-green-100'
   if (props.status === 'wrong') return 'border-transparent bg-rose-100'
@@ -211,10 +205,5 @@ const buttonLabel = computed(() => {
 }
 .lingo-study-footer button:disabled {
   cursor: not-allowed;
-}
-/* Equal Check/Easy cells even if Tailwind layer lags on HMR. */
-.lingo-study-footer :deep(.lingo-study-rate-row) {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 </style>

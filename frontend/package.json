@@ -5,7 +5,8 @@
   "type": "module",
   "packageManager": "pnpm@12.3.4",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "node ./scripts/dev-with-tailwind-reload.mjs",
+    "dev:vite": "vite --host",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json",
     "typecheck:watch": "vue-tsc --noEmit -p tsconfig.app.json --watch",
     "typecheck:pretty": "vue-tsc --noEmit -p tsconfig.app.json --pretty",

@@ -481,27 +481,30 @@ export function buildLingoThemeLayer() {
 
 
     /**
-     * Study footer action row — three equal columns so Check occupies the same
-     * cell as Easy (Forgot | Good | Easy / Check).
-     */
-    '.lingo-study-rate-row': {
-      '@apply grid w-full grid-cols-3 items-stretch gap-1.5 sm:gap-2': {},
-    },
-    /**
-     * Fixed footer box (clone `footer.tsx` h-[100px]/Check and rate share one height so
-     * revealing Forgot/Good/Easy does not shift the lesson column (CLS).
+     * Fixed footer shell (clone `footer.tsx`) — Tailwind spacing scale only (`h-24` /
+     * `lg:h-36`). Both action + meta rows stay `h-9` so Check↔Rate does not CLS.
      */
     '.lingo-study-footer--compact': {
-      height: '5.5rem',
+      '@apply h-24': {},
     },
     '.lingo-study-footer--roomy': {
-      height: '100px',
-      '@screen lg': {
-        height: '140px',
-      },
+      '@apply h-24 lg:h-36': {},
     },
-    '.lingo-study-footer__chrome': {
-      '@apply h-full w-full': {},
+    /** Same max-w as `.lingo-study-chrome-inner`; packs to the bottom of the shell. */
+    '.lingo-study-footer-chrome': {
+      '@apply mx-auto box-border flex h-full min-h-0 w-full max-w-[600px] flex-col items-stretch justify-end gap-y-1.5 overflow-hidden px-2 py-1.5 sm:px-3':
+        {},
+    },
+    /** Three equal action cells; Check shares the third cell with Easy. */
+    '.lingo-study-rate-row': {
+      '@apply grid h-9 w-full shrink-0 grid-cols-3 items-center gap-1.5 sm:gap-2': {},
+    },
+    '.lingo-study-footer-meta': {
+      '@apply grid h-9 w-full shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2': {},
+    },
+    '.lingo-study-footer-meta__prompt': {
+      '@apply min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs':
+        {},
     },
     /** Clone lesson title (`quiz.tsx` h1). */
     '.lingo-study-lesson-title': {

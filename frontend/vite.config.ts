@@ -7,6 +7,9 @@ import { defineConfig } from 'vite'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
+// Tailwind brand layers (`tailwind.*.mjs`): `pnpm dev` uses
+// `scripts/dev-with-tailwind-reload.mjs` so edits restart Vite in a new process
+// (Node ESM cache would otherwise keep stale `addComponents`).
 export default defineConfig({
   plugins: [
     vue({
