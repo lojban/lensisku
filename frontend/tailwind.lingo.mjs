@@ -593,7 +593,7 @@ export function buildLingoThemeLayer() {
       '@apply inline': {},
     },
     '.lingo-hint-token': {
-      '@apply relative inline cursor-pointer rounded-sm border-0 border-b border-dashed border-slate-400 bg-transparent px-0 py-0 text-inherit font-inherit leading-inherit hover:border-sky-500 hover:text-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500':
+      '@apply relative inline cursor-pointer rounded-sm border-0 border-b border-dashed border-slate-400 bg-transparent px-0 py-0 text-inherit [font:inherit] leading-[inherit] hover:border-sky-500 hover:text-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500':
         {},
     },
     '.lingo-hint-popover': {
