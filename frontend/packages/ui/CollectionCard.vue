@@ -9,12 +9,10 @@
           :aria-label="collection.name"
         >
           <div class="collection-card-logo">
-            <img
-              :src="coverImageUrl"
-              alt=""
+            <div
               class="collection-cover-thumb"
-              loading="lazy"
-              decoding="async"
+              aria-hidden="true"
+              :style="{ backgroundImage: `url(${coverImageUrl})` }"
             />
           </div>
         </RouterLink>

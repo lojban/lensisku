@@ -2,12 +2,11 @@
   <RouterLink :to="href" class="lingo-btn" :class="linkClass" @click="$emit('navigate')">
     <template v-if="isCourseRow">
       <div class="lingo-sidebar-course__media">
-        <img
+        <div
           v-if="resolvedImageUrl && !imageFailed"
-          :src="resolvedImageUrl"
-          alt=""
-          class="h-full w-full object-cover"
-          @error="imageFailed = true"
+          class="collection-cover-thumb"
+          aria-hidden="true"
+          :style="{ backgroundImage: `url(${resolvedImageUrl})` }"
         />
         <PlayingCardsFanIcon v-else class="h-5 w-5 text-green-600" aria-hidden="true" />
       </div>
@@ -113,9 +112,16 @@ const iconComponent = computed(() => {
 })
 
 watch(
-  () => props.collectionId,
-  () => {
+  resolvedImageUrl,
+  (url) => {
     imageFailed.value = false
-  }
+    if (!url) return
+    const probe = new Image()
+    probe.onerror = () => {
+      imageFailed.value = true
+    }
+    probe.src = url
+  },
+  { immediate: true }
 )
 </script>

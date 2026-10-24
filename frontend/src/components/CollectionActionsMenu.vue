@@ -101,15 +101,12 @@
               :close-aria-label="t('collectionDetail.coverLightboxClose')"
             >
               <div class="collection-edit-logo">
-                <img
+                <div
                   :key="editCollectionImageUrl || 'none'"
-                  :src="editCollectionImageUrl"
-                  :alt="t('collectionDetail.coverImageAlt', { name: editForm.name })"
                   class="collection-cover-thumb"
-                  loading="eager"
-                  decoding="async"
-                  @load="handleEditCollectionImageLoad"
-                  @error="handleEditCollectionImageError"
+                  role="img"
+                  :aria-label="t('collectionDetail.coverImageAlt', { name: editForm.name })"
+                  :style="{ backgroundImage: `url(${editCollectionImageUrl})` }"
                 />
               </div>
             </CollectionCoverLightbox>
@@ -455,7 +452,16 @@ function handleEditCollectionImageError() {
 function refreshEditCollectionCoverUrl() {
   if (props.collection?.has_cover_image) {
     isEditCollectionImageLoading.value = true
-    editCollectionImageUrl.value = `${getCollectionImage(props.collectionId)}?t=${Date.now()}`
+    const url = `${getCollectionImage(props.collectionId)}?t=${Date.now()}`
+    const probe = new Image()
+    probe.onload = () => {
+      editCollectionImageUrl.value = url
+      handleEditCollectionImageLoad()
+    }
+    probe.onerror = () => {
+      handleEditCollectionImageError()
+    }
+    probe.src = url
   } else {
     editCollectionImageUrl.value = null
     isEditCollectionImageLoading.value = false
@@ -496,8 +502,8 @@ async function handleCollectionCoverFileChange(event: Event) {
         const base64Data = typeof raw === 'string' ? (raw.split(',')[1] ?? '') : ''
         const imageData = { data: base64Data, mime_type: file.type }
 
-        isEditCollectionImageLoading.value = true
         editCollectionImageUrl.value = URL.createObjectURL(file)
+        isEditCollectionImageLoading.value = false
 
         let progress = 0
         progressInterval = setInterval(() => {

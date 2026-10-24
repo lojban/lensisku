@@ -14,12 +14,11 @@
     </span>
 
     <div class="lingo-course-card__media">
-      <img
+      <div
         v-if="coverImageUrl && !imageFailed"
-        :src="coverImageUrl"
-        alt=""
         class="collection-cover-thumb"
-        @error="imageFailed = true"
+        aria-hidden="true"
+        :style="{ backgroundImage: `url(${coverImageUrl})` }"
       />
       <PlayingCardsFanIcon v-else class="h-9 w-9 text-green-600" aria-hidden="true" />
     </div>
@@ -62,9 +61,16 @@ const cardAriaLabel = computed(() => {
 })
 
 watch(
-  () => props.collection?.collection_id,
-  () => {
+  coverImageUrl,
+  (url) => {
     imageFailed.value = false
-  }
+    if (!url) return
+    const probe = new Image()
+    probe.onerror = () => {
+      imageFailed.value = true
+    }
+    probe.src = url
+  },
+  { immediate: true }
 )
 </script>

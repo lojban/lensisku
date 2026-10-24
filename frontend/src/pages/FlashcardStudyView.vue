@@ -19,16 +19,15 @@
           "
         >
           <div class="collection-header-logo">
-            <img
-              :src="collectionCoverDisplayUrl"
-              :alt="
+            <div
+              class="collection-header-cover-thumb"
+              role="img"
+              :aria-label="
                 collectionMeta?.name
                   ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
                   : t('flashcardStudy.title')
               "
-              class="collection-header-cover-thumb"
-              loading="lazy"
-              decoding="async"
+              :style="{ backgroundImage: `url(${collectionCoverDisplayUrl})` }"
             />
           </div>
         </RouterLink>

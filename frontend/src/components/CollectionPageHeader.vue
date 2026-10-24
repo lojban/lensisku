@@ -48,12 +48,11 @@
         :close-aria-label="coverLightboxCloseLabel"
       >
         <div class="collection-header-logo">
-          <img
-            :src="coverImageUrl"
-            :alt="coverImageAlt"
+          <div
             class="collection-header-cover-thumb"
-            loading="lazy"
-            decoding="async"
+            role="img"
+            :aria-label="coverImageAlt"
+            :style="{ backgroundImage: `url(${coverImageUrl})` }"
           />
         </div>
       </CollectionCoverLightbox>

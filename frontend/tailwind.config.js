@@ -979,7 +979,7 @@ export default {
           '@apply w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
             {},
         },
-        /** Collection cover on list cards: fixed square; image uses `.collection-cover-thumb` (contain, no crop). */
+        /** Collection cover on list cards: fixed square; thumb uses `.collection-cover-thumb` (bg contain). */
         '.collection-card-logo': {
           '@apply flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden':
             {},
@@ -989,22 +989,28 @@ export default {
           '@apply flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-gray-50 text-gray-400 border border-gray-100 shadow-sm':
             {},
         },
-        /** Collection detail header: fixed width, height follows hint+title row (`items-stretch`). */
+        /**
+         * Collection detail / study header cover frame: fixed widths match placeholder
+         * (background thumbs have no intrinsic size — brandbook §9.1).
+         */
         '.collection-header-logo': {
-          '@apply box-border flex h-full min-h-0 w-max max-w-24 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-md overflow-hidden':
+          '@apply box-border flex h-full min-h-0 w-16 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-md overflow-hidden md:w-24 lg:w-28':
             {},
         },
         '.collection-header-logo-placeholder': {
           '@apply box-border flex h-full min-h-0 w-16 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-gray-50 text-gray-400 border border-gray-100 shadow-md md:w-24 lg:w-28':
             {},
         },
-        /** Image inside collection thumbs: fill frame without cropping (letterboxing as needed). */
+        /**
+         * Collection / course cover thumb: a `div` with `background-image`, not `<img>`.
+         * Contain + center — letterbox inside the frame; never crop (brandbook §9.1).
+         */
         '.collection-cover-thumb': {
-          '@apply h-full w-full max-h-full max-w-full object-contain': {},
+          '@apply h-full w-full max-h-full max-w-full bg-contain bg-center bg-no-repeat': {},
         },
-        /** Collection header cover: full row height, intrinsic width (contain, no crop). */
+        /** Header / study-strip cover thumb — same bg pattern; fills `.collection-header-logo`. */
         '.collection-header-cover-thumb': {
-          '@apply block h-full w-auto max-h-full max-w-full object-contain': {},
+          '@apply block h-full w-full max-h-full max-w-full bg-contain bg-center bg-no-repeat': {},
         },
         /**
          * `PageHeader` card shell (Courses / Library / collection detail).
