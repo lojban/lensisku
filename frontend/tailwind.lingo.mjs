@@ -276,6 +276,18 @@ export function buildLingoThemeLayer() {
       '@apply flex w-full flex-col gap-4 rounded-xl bg-green-500 p-5 text-white shadow-md shadow-green-600/25 sm:flex-row sm:items-center sm:justify-between':
         {},
     },
+    /**
+     * Guest “log in to save progress” strip — white/gray (not amber warning).
+     * Layout utilities stay on the Vue host; chrome lives here.
+     */
+    '.lingo-guest-save-alert': {
+      '@apply rounded-xl border-2 border-neutral-200 bg-white text-slate-700 shadow-sm shadow-slate-200/50':
+        {},
+    },
+    '.lingo-guest-save-alert__copy': {
+      '@apply min-w-0 flex-1 text-center text-xs font-bold text-slate-600 sm:text-left sm:text-sm':
+        {},
+    },
 
     /** Ladder lesson circle (clone: secondary / locked + border-b-8). */
     '.lingo-lesson-node': {
@@ -499,6 +511,34 @@ export function buildLingoThemeLayer() {
     '.lingo-study-rate-row': {
       '@apply grid h-9 w-full shrink-0 grid-cols-3 items-center gap-1.5 sm:gap-2': {},
     },
+    /**
+     * Correct / wrong status copy in the first rate cell (not a `.lingo-btn`).
+     * Icon + label use parent `gap-2` — same rule as `.lingo-btn` (brandbook §1 / §10.3).
+     */
+    '.lingo-study-footer-feedback': {
+      '@apply flex h-9 min-w-0 items-center justify-start gap-2': {},
+    },
+    '.lingo-study-footer-feedback__icon': {
+      '@apply h-4 w-4 shrink-0 sm:h-5 sm:w-5': {},
+    },
+    '.lingo-study-footer-feedback__label': {
+      '@apply min-w-0 truncate text-xs font-bold sm:text-sm': {},
+    },
+    '.lingo-study-footer-feedback--correct': {
+      '@apply text-green-600': {},
+    },
+    '.lingo-study-footer-feedback--wrong': {
+      '@apply text-rose-500': {},
+    },
+    '.lingo-study-footer--correct': {
+      '@apply border-transparent bg-green-100': {},
+    },
+    '.lingo-study-footer--wrong': {
+      '@apply border-transparent bg-rose-100': {},
+    },
+    '.lingo-study-footer--idle': {
+      '@apply border-slate-200 bg-white': {},
+    },
     '.lingo-study-footer-meta': {
       '@apply grid h-9 w-full shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2': {},
     },
@@ -506,6 +546,7 @@ export function buildLingoThemeLayer() {
       '@apply min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs':
         {},
     },
+
     /** Clone lesson title (`quiz.tsx` h1). */
     '.lingo-study-lesson-title': {
       '@apply shrink-0 text-center text-lg font-bold text-neutral-700 lg:text-start lg:text-3xl':
@@ -618,6 +659,10 @@ export function buildLingoThemeLayer() {
     '.lingo-study-listen-speaker--slow': {
       '@apply h-12 w-12 rounded-xl sm:h-14 sm:w-14': {},
     },
+    /** Compact speaker inside question/answer bubbles (not the big listen-tap control). */
+    '.lingo-study-listen-speaker--inline': {
+      '@apply h-9 w-9 rounded-xl sm:h-10 sm:w-10': {},
+    },
     '.lingo-study-listen-speaker--playing': {
       '@apply bg-sky-500': {},
     },
@@ -627,8 +672,22 @@ export function buildLingoThemeLayer() {
     '.lingo-study-listen-speaker--slow .lingo-study-listen-speaker__icon': {
       '@apply h-5 w-5 sm:h-6 sm:w-6': {},
     },
+    '.lingo-study-listen-speaker--inline .lingo-study-listen-speaker__icon': {
+      '@apply h-4 w-4 sm:h-5 sm:w-5': {},
+    },
     '.lingo-study-listen-speaker__rate': {
       '@apply absolute bottom-1 right-1 text-[10px] font-black leading-none sm:text-xs': {},
+    },
+    /** Canonical (tersmu) line under the revealed correct answer. */
+    '.lingo-study-canonical': {
+      '@apply mt-1.5 flex flex-col gap-0.5 border-t border-slate-200/80 pt-1.5': {},
+    },
+    '.lingo-study-canonical__label': {
+      '@apply flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400':
+        {},
+    },
+    '.lingo-study-canonical__value': {
+      '@apply code-snippet-inline select-text text-left': {},
     },
     /**
      * Quiz assist (Duo challenge-assist): full-width numbered choices under the prompt bubble.
@@ -678,7 +737,7 @@ export function buildLingoThemeLayer() {
         {},
     },
     '.lingo-study-wordbank-line-placeholder': {
-      '@apply w-full text-center text-sm text-slate-400 sm:text-base': {},
+      '@apply w-full select-none text-center text-sm text-slate-400 sm:text-base': {},
     },
     '.lingo-study-wordbank-bank': {
       '@apply flex flex-wrap justify-center gap-1.5 sm:gap-2': {},

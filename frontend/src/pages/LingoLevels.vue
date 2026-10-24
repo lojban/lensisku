@@ -24,7 +24,8 @@
             <button
               type="button"
               class="lingo-btn lingo-btn--secondary lingo-btn--sm"
-              @click="startStudy"
+              :disabled="pendingStudyLevelId != null"
+              @click="startStudy()"
             >
               <Dumbbell class="h-4 w-4 shrink-0" />
               <span>{{ t('flashcardLevels.studyButton') }}</span>
@@ -56,7 +57,7 @@
           :title="collection?.name || ''"
           :description="collection?.description || ''"
           :continue-label="t('flashcardLevels.continueLabel')"
-          @continue="startStudy"
+          @continue="startStudy()"
         />
         <LingoGuestSaveAlert class="mt-3 w-full" :return-to="levelsReturnTo" />
         <div class="relative mt-4 flex w-full flex-col items-center">
@@ -76,6 +77,8 @@
             :start-label="t('flashcardLevels.start')"
             :label="level.name || ''"
             :show-owner-menu="false"
+            :pending="pendingStudyLevelId === level.level_id"
+            @start="startStudy(level)"
           />
         </div>
       </div>
@@ -152,9 +155,13 @@ const isOwner = computed(
 /** When the collection has no levels, treat the whole course as one playable lesson. */
 const IMPLICIT_COURSE_LEVEL_ID = 'course'
 
-function startStudy() {
-  const target = activeLevel.value
-  router.push(studyUrlFor(target ?? displayLevels.value[0]))
+/** Which ladder node is opening study (drives immediate spinner on that node). */
+const pendingStudyLevelId = ref<string | number | null>(null)
+
+function startStudy(level = activeLevel.value ?? displayLevels.value[0]) {
+  if (!level || pendingStudyLevelId.value != null) return
+  pendingStudyLevelId.value = level.level_id
+  void router.push(studyUrlFor(level))
 }
 
 function studyUrlFor(level) {

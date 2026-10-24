@@ -181,6 +181,7 @@
                     :key="'q-' + currentCard.flashcard.id"
                     ref="questionAudioPlayerRef"
                     class="shrink-0"
+                    variant="lingo-speaker-inline"
                     :url="currentCard.flashcard.sound_url"
                     :collection-id="
                       currentCard.flashcard.sound_url?.startsWith?.('/api/')
@@ -274,6 +275,7 @@
                         <AudioPlayer
                           v-if="currentCard.flashcard.sound_url"
                           ref="answerAudioPlayerRef"
+                          variant="lingo-speaker-inline"
                           :url="currentCard.flashcard.sound_url"
                           :collection-id="
                             currentCard.flashcard.sound_url?.startsWith?.('/api/')
@@ -289,20 +291,6 @@
                         />
                       </div>
                       <div
-                        v-if="showCanonicalForm"
-                        class="mt-1 flex flex-col gap-0.5 border-t border-green-100 pt-1"
-                      >
-                        <div
-                          class="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
-                        >
-                          <EqualApproximately class="h-3 text-blue-400" />
-                          <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
-                        </div>
-                        <div class="code-snippet-inline">
-                          {{ currentCard.flashcard.canonical_form }}
-                        </div>
-                      </div>
-                      <div
                         v-if="currentCard.flashcard.has_front_image"
                         class="mt-1 flex justify-center"
                       >
@@ -313,6 +301,16 @@
                         />
                       </div>
                     </template>
+                  </div>
+                  <!-- Tersmu / canonical form under the revealed answer (not a “feature on” badge). -->
+                  <div v-if="showCanonicalForm" class="lingo-study-canonical">
+                    <div class="lingo-study-canonical__label">
+                      <EqualApproximately class="h-3 w-3 text-sky-500" aria-hidden="true" />
+                      <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+                    </div>
+                    <div class="lingo-study-canonical__value">
+                      {{ currentCard.flashcard.canonical_form }}
+                    </div>
                   </div>
                   <div
                     v-if="
@@ -358,14 +356,6 @@
                 aria-hidden="true"
                 :style="{ backgroundImage: `url(${studyAnswerCharacterSrc})` }"
               />
-            </div>
-
-            <div
-              v-if="isFillInLikeMode && currentCard.flashcard.use_canonical_comparison"
-              class="badge-streak-success--compact"
-            >
-              <CheckCircle2 class="h-3 w-3" />
-              <span>{{ t('flashcardStudy.canonicalComparisonEnabled') }}</span>
             </div>
 
             <!-- Word bank tray (typed fill-in lives in the reply bubble). -->
@@ -466,7 +456,7 @@
 
 <script setup lang="ts">
 import { Textarea } from '@packages/ui'
-import { CheckCircle2, EqualApproximately, Heart } from '@lucide/vue'
+import { EqualApproximately, Heart } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
@@ -481,6 +471,7 @@ import {
   buildWordbankChips,
   expectedFillinLikeAnswer,
   flashcardDistractorTexts,
+  normalizeWordbankPhrase,
   type WordbankChip,
 } from '@/utils/wordbank'
 import CommentList from '@/pages/CommentList.vue'
@@ -929,8 +920,21 @@ function isAnonFillinAnswerCorrect() {
   if (!fc || !side) return false
   const expectedRaw = expectedFillinLikeAnswer(fc, side)
   if (!expectedRaw) return false
-  const user = userAnswer.value.trim().toLowerCase()
-  if (!user) return false
+  const userRaw = userAnswer.value.trim()
+  if (!userRaw) return false
+  // Wordbank chips are punct-stripped + lowercased; grade the same way.
+  if (isWordbankMode.value) {
+    const user = normalizeWordbankPhrase(userRaw)
+    if (expectedRaw.includes(';')) {
+      return expectedRaw
+        .split(';')
+        .map((s) => normalizeWordbankPhrase(s))
+        .filter(Boolean)
+        .some((opt) => opt === user)
+    }
+    return normalizeWordbankPhrase(expectedRaw) === user
+  }
+  const user = userRaw.toLowerCase()
   const expectedLower = expectedRaw.toLowerCase()
   if (expectedLower.includes(';')) {
     const options = expectedLower

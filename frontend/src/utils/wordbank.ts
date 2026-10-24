@@ -14,12 +14,29 @@ export function primaryExpectedAnswer(expected: string): string {
   return first ?? expected.trim()
 }
 
-/** Whitespace-tokenize expected answer; punctuation stays on tokens. */
+/**
+ * Strip sentence punctuation from a chip token and lowercase it.
+ * Keeps letters/numbers, apostrophe (Lojban denpa bu / EN contractions), and hyphen.
+ * Hides periods/commas/caps that would otherwise reconstruct the sentence.
+ */
+export function normalizeWordbankToken(token: string): string {
+  return token
+    .replace(/[^\p{L}\p{N}'\u2019-]+/gu, '')
+    .normalize('NFC')
+    .toLocaleLowerCase()
+}
+
+/** Full phrase → normalized chip tokens (punct gone, no sentence-initial caps). */
 export function tokenizeWordbankAnswer(text: string): string[] {
   return primaryExpectedAnswer(text)
     .split(/\s+/)
-    .map((t) => t.trim())
+    .map((t) => normalizeWordbankToken(t.trim()))
     .filter(Boolean)
+}
+
+/** Same rules as chips, joined — for grading wordbank / listen-wordbank answers. */
+export function normalizeWordbankPhrase(text: string): string {
+  return tokenizeWordbankAnswer(text).join(' ')
 }
 
 function normalizeDirection(dir: string): string {

@@ -254,6 +254,7 @@
           <!-- Previous route frozen until API traffic after navigation goes quiet. -->
           <div
             v-if="routeOverlayHtml != null"
+            ref="routeFreezeRef"
             class="route-view-freeze"
             aria-hidden="true"
             v-html="routeOverlayHtml"
@@ -370,6 +371,7 @@ import UnsavedChangesDialog from './components/UnsavedChangesDialog.vue'
 import {
   beginRouteOverlay,
   clearRouteOverlay,
+  restoreRouteOverlayScroll,
   scheduleRouteOverlaySettle,
   useRouteOverlay,
 } from './composables/useRouteOverlay'
@@ -391,7 +393,15 @@ const $locale = i18n.locale
 const router = useRouter()
 const route = useRoute()
 const routeStageRef = ref<HTMLElement | null>(null)
+const routeFreezeRef = ref<HTMLElement | null>(null)
 const { freezeHtml: routeOverlayHtml } = useRouteOverlay()
+
+// Frozen HTML loses scrollTop; re-apply so Lingo lesson trees do not jump to the top.
+watch(routeOverlayHtml, async (html) => {
+  if (html == null) return
+  await nextTick()
+  restoreRouteOverlayScroll(routeFreezeRef.value)
+})
 
 const seoRouteName = computed(() => String(route.name || '').replace(/-(en|jbo|ru|ja|zh)$/, ''))
 const seoNoindex = computed(() => noindexRoutes.has(seoRouteName.value))

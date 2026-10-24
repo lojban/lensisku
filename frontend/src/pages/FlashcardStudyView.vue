@@ -586,6 +586,7 @@ import {
   buildWordbankChips,
   expectedFillinLikeAnswer,
   flashcardDistractorTexts,
+  normalizeWordbankPhrase,
   type WordbankChip,
 } from '@/utils/wordbank'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -775,8 +776,21 @@ function isAnonFillinAnswerCorrect() {
   if (!fc || !side) return false
   const expectedRaw = expectedFillinLikeAnswer(fc, side)
   if (!expectedRaw) return false
-  const user = userAnswer.value.trim().toLowerCase()
-  if (!user) return false
+  const userRaw = userAnswer.value.trim()
+  if (!userRaw) return false
+  // Wordbank chips are punct-stripped + lowercased; grade the same way.
+  if (isWordbankMode.value) {
+    const user = normalizeWordbankPhrase(userRaw)
+    if (expectedRaw.includes(';')) {
+      return expectedRaw
+        .split(';')
+        .map((s) => normalizeWordbankPhrase(s))
+        .filter(Boolean)
+        .some((opt) => opt === user)
+    }
+    return normalizeWordbankPhrase(expectedRaw) === user
+  }
+  const user = userRaw.toLowerCase()
   const expectedLower = expectedRaw.toLowerCase()
   if (expectedLower.includes(';')) {
     const options = expectedLower

@@ -1,10 +1,10 @@
 <template>
   <div
     v-if="!auth.state.isLoggedIn"
-    class="lingo-guest-save-alert mx-auto flex w-full max-w-[600px] shrink-0 flex-col gap-2 rounded-xl border-2 border-amber-200 bg-amber-50 px-3 py-2.5 text-slate-700 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+    class="lingo-guest-save-alert mx-auto flex w-full max-w-[600px] shrink-0 flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
     role="status"
   >
-    <p class="min-w-0 flex-1 text-center text-xs font-bold text-slate-700 sm:text-left sm:text-sm">
+    <p class="lingo-guest-save-alert__copy">
       {{ t('anonymousProgress.loginToSaveProgress') }}
     </p>
     <div class="flex shrink-0 items-center justify-center gap-1.5 sm:justify-end">

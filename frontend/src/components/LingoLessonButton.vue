@@ -5,13 +5,16 @@
     :data-level-id="levelId || undefined"
     :style="nodeStyle"
   >
-    <RouterLink
-      :to="studyUrl"
+    <a
+      :href="studyUrl"
       class="flex shrink-0 flex-col items-center no-underline"
       :aria-label="accessibleName"
+      :aria-busy="showSpinner || undefined"
+      @click="onStudyClick"
     >
       <div v-if="current" class="relative h-[102px] w-[102px]">
         <div
+          v-if="!showSpinner"
           class="absolute -top-6 left-2.5 z-10 animate-bounce rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 font-bold uppercase tracking-wide text-green-500"
         >
           {{ startLabel }}
@@ -37,16 +40,22 @@
           </svg>
           <div class="absolute inset-0 flex items-center justify-center">
             <div class="lingo-lesson-node lingo-lesson-node--open">
-              <component :is="iconComponent" class="h-10 w-10" :class="iconClass" />
+              <Loader
+                v-if="showSpinner"
+                class="h-10 w-10 animate-spin text-white"
+                aria-hidden="true"
+              />
+              <component :is="iconComponent" v-else class="h-10 w-10" :class="iconClass" />
             </div>
           </div>
         </div>
       </div>
       <div v-else class="lingo-lesson-node lingo-lesson-node--open">
-        <component :is="iconComponent" class="h-10 w-10" :class="iconClass" />
+        <Loader v-if="showSpinner" class="h-10 w-10 animate-spin text-white" aria-hidden="true" />
+        <component :is="iconComponent" v-else class="h-10 w-10" :class="iconClass" />
       </div>
       <span v-if="label" class="lingo-lesson-label" :title="label">{{ label }}</span>
-    </RouterLink>
+    </a>
     <div v-if="showOwnerMenu" class="relative z-20 flex shrink-0 items-center" @click.stop>
       <button
         type="button"
@@ -131,8 +140,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { RouterLink } from 'vue-router'
-import { Check, Crown, Star, Settings } from '@lucide/vue'
+import { Check, Crown, Star, Settings, Loader } from '@lucide/vue'
 
 const props = defineProps({
   index: { type: Number, required: true },
@@ -148,9 +156,26 @@ const props = defineProps({
   /** Stable id for scroll-into-view from study finish (`?focusLevelId=`). */
   levelId: { type: [Number, String], default: '' },
   showOwnerMenu: { type: Boolean, default: false },
+  /** Parent is navigating into this lesson (header Continue / sibling click). */
+  pending: { type: Boolean, default: false },
 })
 
+const emit = defineEmits<{ start: [] }>()
+
 const menuOpen = ref(false)
+/** Sync paint on click before parent `pending` / route freeze. */
+const starting = ref(false)
+const showSpinner = computed(() => props.pending || starting.value)
+
+function onStudyClick(event: MouseEvent) {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+    return
+  }
+  event.preventDefault()
+  if (showSpinner.value || !props.studyUrl) return
+  starting.value = true
+  emit('start')
+}
 
 const accessibleName = computed(() => {
   if (props.label) return props.label

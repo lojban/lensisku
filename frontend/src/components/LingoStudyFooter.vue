@@ -1,7 +1,10 @@
 <template>
   <footer
     class="lingo-study-footer sticky bottom-0 z-30 w-full shrink-0 border-t-2 transition-colors"
-    :class="[footerClass, compact ? 'lingo-study-footer--compact' : 'lingo-study-footer--roomy']"
+    :class="[
+      footerToneClass,
+      compact ? 'lingo-study-footer--compact' : 'lingo-study-footer--roomy',
+    ]"
   >
     <!--
       Same max-w-[600px] as header `.lingo-study-chrome-inner` / lesson column.
@@ -10,7 +13,7 @@
     <div class="lingo-study-footer-chrome">
       <!-- Row 1: Check / rate buttons. Row 2: discuss + prompt (justify-end packs this pair to the bottom). -->
       <div class="lingo-study-rate-row" role="group">
-        <div class="flex h-9 min-w-0 items-center justify-start">
+        <div class="lingo-study-footer-feedback" :class="feedbackToneClass">
           <template v-if="status === 'rate'">
             <button
               type="button"
@@ -38,28 +41,12 @@
             </button>
           </template>
           <template v-else-if="status === 'correct'">
-            <CheckCircle
-              class="h-4 w-4 shrink-0 text-green-600 sm:h-5 sm:w-5"
-              :class="{ 'lg:h-6 lg:w-6': !compact }"
-            />
-            <span
-              class="truncate text-xs font-bold text-green-600 sm:text-sm"
-              :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
-            >
-              {{ correctLabel }}
-            </span>
+            <CheckCircle class="lingo-study-footer-feedback__icon" aria-hidden="true" />
+            <span class="lingo-study-footer-feedback__label">{{ correctLabel }}</span>
           </template>
           <template v-else-if="status === 'wrong'">
-            <XCircle
-              class="h-4 w-4 shrink-0 text-rose-500 sm:h-5 sm:w-5"
-              :class="{ 'lg:h-6 lg:w-6': !compact }"
-            />
-            <span
-              class="truncate text-xs font-bold text-rose-500 sm:text-sm"
-              :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
-            >
-              {{ wrongLabel }}
-            </span>
+            <XCircle class="lingo-study-footer-feedback__icon" aria-hidden="true" />
+            <span class="lingo-study-footer-feedback__label">{{ wrongLabel }}</span>
           </template>
         </div>
 
@@ -212,10 +199,16 @@ function onLeftAction() {
   else emit('snooze')
 }
 
-const footerClass = computed(() => {
-  if (props.status === 'correct') return 'border-transparent bg-green-100'
-  if (props.status === 'wrong') return 'border-transparent bg-rose-100'
-  return 'border-slate-200 bg-white'
+const footerToneClass = computed(() => {
+  if (props.status === 'correct') return 'lingo-study-footer--correct'
+  if (props.status === 'wrong') return 'lingo-study-footer--wrong'
+  return 'lingo-study-footer--idle'
+})
+
+const feedbackToneClass = computed(() => {
+  if (props.status === 'correct') return 'lingo-study-footer-feedback--correct'
+  if (props.status === 'wrong') return 'lingo-study-footer-feedback--wrong'
+  return undefined
 })
 
 const buttonVariantClass = computed(() => {

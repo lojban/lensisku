@@ -2348,6 +2348,37 @@ pub async fn check_answer(
     }
 }
 
+/// Chip / wordbank token: drop sentence punctuation, keep letters/numbers/'/- , lowercase.
+/// Matches `frontend/src/utils/wordbank.ts` `normalizeWordbankToken`.
+fn normalize_wordbank_token(token: &str) -> String {
+    token
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '\'' || *c == '\u{2019}' || *c == '-')
+        .collect::<String>()
+        .to_lowercase()
+}
+
+/// Phrase → space-joined normalized tokens (wordbank / listen-wordbank grading).
+fn normalize_wordbank_phrase(text: &str) -> String {
+    text.split_whitespace()
+        .map(normalize_wordbank_token)
+        .filter(|t| !t.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn is_wordbank_like_direction(direction: &FlashcardDirection) -> bool {
+    matches!(
+        direction,
+        FlashcardDirection::Wordbank
+            | FlashcardDirection::WordbankReverse
+            | FlashcardDirection::WordbankBoth
+            | FlashcardDirection::ListenWordbank
+            | FlashcardDirection::ListenWordbankReverse
+            | FlashcardDirection::ListenWordbankBoth
+    )
+}
+
 // Calculate similarity between two strings (0.0 to 1.0)
 fn calculate_similarity(s1: &str, s2: &str) -> f32 {
     let s1 = s1.trim().to_lowercase();
@@ -2491,14 +2522,30 @@ pub async fn review_flashcard_serverside(
     };
 
     validate_fill_in_answers(&req.answer, &expected_raw)?;
-    let provided = req.answer.trim().to_lowercase();
+    let wordbank_grade = is_wordbank_like_direction(&direction);
+    let provided = if wordbank_grade {
+        normalize_wordbank_phrase(&req.answer)
+    } else {
+        req.answer.trim().to_lowercase()
+    };
+    let expected_for_grade = if wordbank_grade {
+        normalize_wordbank_phrase(&expected_raw)
+    } else {
+        expected_raw.trim().to_lowercase()
+    };
 
     // Calculate similarity, handling semicolon-separated answers for free content
     let similarity = if is_free_content && expected_raw.contains(';') {
-        // 1. Split, trim, lowercase, and filter empty parts
+        // 1. Split, trim, (wordbank-normalize or lowercase), and filter empty parts
         let possible_answers: Vec<String> = expected_raw
             .split(';')
-            .map(|s| s.trim().to_lowercase())
+            .map(|s| {
+                if wordbank_grade {
+                    normalize_wordbank_phrase(s)
+                } else {
+                    s.trim().to_lowercase()
+                }
+            })
             .filter(|s| !s.is_empty()) // Filter out empty strings after trimming
             .collect();
 
@@ -2513,11 +2560,11 @@ pub async fn review_flashcard_serverside(
         } else {
             // Fallback: If splitting results in no valid answers (e.g., ";;"),
             // calculate similarity against the original string.
-            calculate_similarity(&expected_raw.trim().to_lowercase(), &provided)
+            calculate_similarity(&expected_for_grade, &provided)
         }
     } else {
         // Not free content or no semicolons, use standard similarity calculation
-        calculate_similarity(&expected_raw.trim().to_lowercase(), &provided)
+        calculate_similarity(&expected_for_grade, &provided)
     };
 
     // Determine rating based on similarity
@@ -4002,5 +4049,17 @@ mod security_grading_tests {
         );
         assert_eq!(super::calculate_similarity(" 日本語 ", "日本語"), 1.0);
         assert_eq!(super::calculate_similarity("", "a"), 0.0);
+        assert_eq!(
+            super::normalize_wordbank_phrase("Hello, world! How are you?"),
+            "hello world how are you"
+        );
+        assert_eq!(super::normalize_wordbank_phrase("coi do'u"), "coi do'u");
+        assert_eq!(
+            super::calculate_similarity(
+                &super::normalize_wordbank_phrase("Hello, you!"),
+                &super::normalize_wordbank_phrase("hello you")
+            ),
+            1.0
+        );
     }
 }

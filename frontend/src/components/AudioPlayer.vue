@@ -2,11 +2,12 @@
   <div class="inline-flex items-center gap-2">
     <!-- Lingo listen-tap: chunky speaker (Duo challenge-listenTap). -->
     <button
-      v-if="variant === 'lingo-speaker' || variant === 'lingo-speaker-slow'"
+      v-if="isLingoSpeakerVariant"
       type="button"
       class="lingo-study-listen-speaker"
       :class="{
         'lingo-study-listen-speaker--slow': variant === 'lingo-speaker-slow',
+        'lingo-study-listen-speaker--inline': variant === 'lingo-speaker-inline',
         'lingo-study-listen-speaker--playing': isPlaying,
       }"
       :disabled="isLoading"
@@ -42,10 +43,16 @@
 <script setup lang="ts">
 import { Button } from '@packages/ui'
 import { Play, Pause, Loader, Volume2 } from '@lucide/vue'
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useError } from '@/composables/useError'
+import {
+  playSharedAudio,
+  pauseSharedAudio,
+  stopSharedAudio,
+  registerSharedAudioOwner,
+} from '@/composables/useSharedAudio'
 import { getItemSoundBlob, getValsiSoundBlob } from '@/api'
 
 const { showError, clearError } = useError()
@@ -62,15 +69,25 @@ const props = defineProps({
   valsiIdOrWord: { type: String, default: null },
   /** When true, log load/play errors to console only (no user-facing showError). Use for auto-play contexts. */
   suppressPlayErrors: { type: Boolean, default: false },
-  /** `default` | `lingo-speaker` | `lingo-speaker-slow` (0.5×). */
+  /** `default` | `lingo-speaker` | `lingo-speaker-slow` (0.5×) | `lingo-speaker-inline`. */
   variant: { type: String, default: 'default' },
   /** Playback rate (slow speaker uses 0.5 when variant is lingo-speaker-slow). */
   playbackRate: { type: Number, default: 1 },
 })
 
+const isLingoSpeakerVariant = computed(() =>
+  ['lingo-speaker', 'lingo-speaker-slow', 'lingo-speaker-inline'].includes(props.variant)
+)
+
+const ownerId = `audio-${Math.random().toString(36).slice(2, 10)}`
 const isPlaying = ref(false)
 const isLoading = ref(false)
-const audio = ref(null)
+/** Resolved blob/http URL ready for the shared element. */
+const resolvedSrc = ref<string | null>(null)
+
+const unregister = registerSharedAudioOwner(ownerId, (active) => {
+  isPlaying.value = active
+})
 
 const CACHE_SIZE = 20
 const CACHE_KEY = 'audioCache'
@@ -96,7 +113,6 @@ const loadCacheFromStorage = async (): Promise<AudioCache> => {
       ? new Map(JSON.parse(cached) as [string, AudioCacheEntry][])
       : new Map()
 
-    // Validate all blob URLs in cache
     for (const [key, value] of cache.entries()) {
       if (!(await validateBlobUrl(value.blob))) {
         cache.delete(key)
@@ -125,7 +141,7 @@ const cleanCache = (cache: AudioCache) => {
     const entries = Array.from(cache.entries())
     const sortedEntries = entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed)
     while (cache.size > CACHE_SIZE) {
-      const [oldestKey] = sortedEntries.shift()
+      const [oldestKey] = sortedEntries.shift()!
       const oldBlob = cache.get(oldestKey)?.blob
       if (oldBlob) {
         URL.revokeObjectURL(oldBlob)
@@ -147,7 +163,6 @@ const isCollectionItemSoundUrl = () =>
   props.url.endsWith('/sound')
 
 const getCacheKey = () => {
-  // Prefer URL-based keys so valsi fallback and collection custom sound don't share cache
   const valsiKey = props.valsiIdOrWord ?? props.url.match(/\/jbovlaste\/valsi\/([^/]+)\/sound/)?.[1]
   if (valsiKey) return `valsi:${valsiKey}`
   if (props.collectionId != null && props.itemId != null && isCollectionItemSoundUrl()) {
@@ -156,29 +171,30 @@ const getCacheKey = () => {
   return props.url
 }
 
-const loadAudio = async () => {
+const loadAudioSrc = async (): Promise<string | null> => {
+  if (resolvedSrc.value) return resolvedSrc.value
+
   const cacheKey = getCacheKey()
   const cache = await loadCacheFromStorage()
   const cacheEntry = cache.get(cacheKey)
 
   if (cacheEntry && (await validateBlobUrl(cacheEntry.blob))) {
     const blob = await fetch(cacheEntry.blob).then((r) => r.blob())
-    audio.value = new Audio(URL.createObjectURL(blob))
-    applyPlaybackRate()
+    const blobUrl = URL.createObjectURL(blob)
+    resolvedSrc.value = blobUrl
     cache.set(cacheKey, {
       blob: cacheEntry.blob,
       lastAccessed: Date.now(),
     })
     saveCacheToStorage(cache)
-    return
+    return blobUrl
   }
 
   isLoading.value = true
   clearError()
 
   try {
-    let blob
-    // Prefer URL type: valsi fallback vs collection item custom sound (both can have collectionId/itemId set)
+    let blob: Blob
     if (props.valsiIdOrWord != null || isValsiSoundUrl()) {
       const idOrWord =
         props.valsiIdOrWord ??
@@ -204,9 +220,7 @@ const loadAudio = async () => {
     }
 
     const blobUrl = URL.createObjectURL(blob)
-    audio.value = new Audio(blobUrl)
-    applyPlaybackRate()
-    audio.value.addEventListener('ended', handleEnded)
+    resolvedSrc.value = blobUrl
 
     cleanCache(cache)
     cache.set(cacheKey, {
@@ -214,9 +228,11 @@ const loadAudio = async () => {
       lastAccessed: Date.now(),
     })
     saveCacheToStorage(cache)
+    return blobUrl
   } catch (e) {
     console.error('Error loading audio:', e)
     if (!props.suppressPlayErrors) showError(t('audioPlayer.playError'))
+    return null
   } finally {
     isLoading.value = false
   }
@@ -228,56 +244,56 @@ function effectivePlaybackRate() {
   return Number.isFinite(rate) && rate > 0 ? rate : 1
 }
 
-function applyPlaybackRate() {
-  if (audio.value) audio.value.playbackRate = effectivePlaybackRate()
+/** Always start (fade previous shared clip). Used by study auto-play. */
+const startPlay = async () => {
+  const src = await loadAudioSrc()
+  if (!src) return
+  try {
+    await playSharedAudio({
+      ownerId,
+      src,
+      playbackRate: effectivePlaybackRate(),
+      onActiveChange: (active) => {
+        isPlaying.value = active
+      },
+    })
+  } catch (e) {
+    console.error('Error playing audio:', e)
+    isPlaying.value = false
+    if (!props.suppressPlayErrors) showError(t('audioPlayer.playError'))
+  }
 }
 
 const togglePlay = async () => {
-  if (!audio.value) {
-    await loadAudio()
-  }
-
-  if (!audio.value) return
-
   if (isPlaying.value) {
-    audio.value.pause()
+    pauseSharedAudio(ownerId)
     isPlaying.value = false
-  } else {
-    try {
-      applyPlaybackRate()
-      audio.value.currentTime = 0
-      await audio.value.play()
-      isPlaying.value = true
-    } catch (e) {
-      console.error('Error playing audio:', e)
-      if (!props.suppressPlayErrors) showError(t('audioPlayer.playError'))
-    }
+    return
   }
-}
-
-const handleEnded = () => {
-  isPlaying.value = false
+  await startPlay()
 }
 
 watch(
-  () => [props.playbackRate, props.variant],
-  () => applyPlaybackRate()
+  () => [props.url, props.collectionId, props.itemId, props.valsiIdOrWord],
+  () => {
+    if (resolvedSrc.value) {
+      // Drop local resolved URL; cache entry may still hold a blob for the old key.
+      resolvedSrc.value = null
+    }
+    if (isPlaying.value) {
+      void stopSharedAudio(ownerId)
+      isPlaying.value = false
+    }
+  }
 )
 
-onMounted(() => {
-  if (audio.value) {
-    audio.value.addEventListener('ended', handleEnded)
-  }
-})
-
 onBeforeUnmount(() => {
-  if (audio.value) {
-    audio.value.removeEventListener('ended', handleEnded)
-    URL.revokeObjectURL(audio.value.src)
-  }
+  unregister()
+  void stopSharedAudio(ownerId)
 })
 
 defineExpose({
-  play: togglePlay,
+  play: startPlay,
+  toggle: togglePlay,
 })
 </script>
