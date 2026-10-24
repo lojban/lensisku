@@ -398,7 +398,9 @@
                 :disabled="!!quizResult || isSubmitting"
                 @click="selectQuizOption(opt.id)"
               >
-                <span class="lingo-study-quiz-choice__num" aria-hidden="true">{{ idx + 1 }}</span>
+                <span class="lingo-study-quiz-choice__num" aria-hidden="true">{{
+                  Number(idx) + 1
+                }}</span>
                 <span class="lingo-study-quiz-choice__label">
                   <img
                     v-if="opt.imageUrl"
@@ -531,7 +533,7 @@ const sessionXpClaimed = ref(false)
 const showEncouragement = ref(false)
 const encouragementShownThisSession = ref(false)
 const encouragementMessage = ref('')
-const encouragementMascotSrc = ref(LINGO_STUDY_PROUD_CHARACTERS[0])
+const encouragementMascotSrc = ref<string>(LINGO_STUDY_PROUD_CHARACTERS[0])
 const lastAnswerWasCorrect = ref(false)
 const ENCOURAGEMENT_MESSAGE_KEYS = [
   'flashcardStudy.encouragement.proud',
