@@ -74,12 +74,7 @@ mod tests {
         ];
         assert_eq!(
             assign_challenge_mix(&cards),
-            vec![
-                "quiz_direct",
-                "wordbank",
-                "listen_wordbank",
-                "quiz_direct",
-            ]
+            vec!["quiz_direct", "wordbank", "listen_wordbank", "quiz_direct",]
         );
     }
 

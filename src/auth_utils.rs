@@ -10,12 +10,13 @@ pub async fn verify_collection_read_access(
     user_id: Option<i32>,
 ) -> AppResult<()> {
     let row = transaction
-        .query_one(
+        .query_opt(
             "SELECT user_id, is_public FROM collections WHERE collection_id = $1 FOR SHARE",
             &[&collection_id],
         )
         .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Collection not found".to_string()))?;
     let owner_id: i32 = row.get("user_id");
     let is_public: bool = row.get("is_public");
     match user_id {
@@ -58,11 +59,12 @@ pub async fn verify_collection_ownership(
     user_id: i32,
 ) -> AppResult<()> {
     let owner_id: i32 = transaction
-        .query_one(
+        .query_opt(
             "SELECT user_id FROM collections WHERE collection_id = $1",
             &[&collection_id],
         )
         .await?
+        .ok_or_else(|| AppError::NotFound("Collection not found".to_string()))?
         .get("user_id");
 
     if owner_id != user_id {

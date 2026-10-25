@@ -67,9 +67,6 @@ impl PermissionCache {
         let cache = self.cache.read().await;
         // Normalize role to lowercase for case-insensitive lookup
         let role_lower = role.to_lowercase();
-        cache
-            .get(&role_lower)
-            .map(|v| v.to_vec())
-            .unwrap_or_default()
+        cache.get(&role_lower).cloned().unwrap_or_default()
     }
 }

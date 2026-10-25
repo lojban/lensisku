@@ -36,6 +36,8 @@ mod security_regression_tests;
 mod server;
 pub mod sessions;
 mod subscriptions;
+#[cfg(test)]
+mod test_db_guard;
 mod users;
 mod utils;
 mod versions;

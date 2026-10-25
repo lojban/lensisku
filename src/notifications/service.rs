@@ -1,5 +1,3 @@
-#![allow(clippy::expect_used, clippy::unwrap_used)]
-
 use chrono::Datelike;
 use lettre::{
     message::MultiPart,
@@ -12,45 +10,10 @@ use lettre::{
 use std::{env, num::ParseIntError};
 use thiserror::Error;
 
-use once_cell::sync::Lazy;
-use std::collections::HashMap;
-
-static LOCALES: Lazy<HashMap<&'static str, serde_json::Value>> = Lazy::new(|| {
-    let mut m = HashMap::new();
-    m.insert(
-        "en",
-        serde_json::from_str(include_str!("../../locales/en.json")).unwrap(),
-    );
-    m.insert(
-        "jbo",
-        serde_json::from_str(include_str!("../../locales/jbo.json")).unwrap(),
-    );
-    m.insert(
-        "ja",
-        serde_json::from_str(include_str!("../../locales/ja.json")).unwrap(),
-    );
-    m.insert(
-        "zh",
-        serde_json::from_str(include_str!("../../locales/zh.json")).unwrap(),
-    );
-    m
-});
-
 fn t(lang: &str, key: &str) -> String {
-    let locale = LOCALES
-        .get(lang)
-        .unwrap_or_else(|| LOCALES.get("en").unwrap());
-    if let Some(val) = locale.get(key) {
-        if let Some(s) = val.as_str() {
-            return s.to_string();
-        }
-    }
-    if let Some(val) = LOCALES.get("en").unwrap().get(key) {
-        if let Some(s) = val.as_str() {
-            return s.to_string();
-        }
-    }
-    key.to_string()
+    crate::utils::locales::lookup(lang, key)
+        .unwrap_or(key)
+        .to_string()
 }
 
 use crate::versions::models::{Change, ChangeType};
@@ -332,7 +295,7 @@ impl EmailService {
                         let esc = escape(v);
                         if esc.len() > 120 { format!("{}...", esc.chars().take(120).collect::<String>()) } else { esc }
                     })
-                    .unwrap_or_else(|| t(lang, "text_empty").to_string());
+                    .unwrap_or_else(|| t(lang, "text_empty"));
                 format!(
                     r#"<tr><td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-align: left;"><div style="margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 600; color: #334155;">{}</span> <span style="display: inline-block; background-color: {}; color: {}; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; margin-left: 8px; vertical-align: middle;">{}</span></div><div style="font-size: 14px; color: #64748b; line-height: 1.5;">{}</div></td></tr>"#,
                     field_esc, bg, color, label, content.replace('\n', " ")
@@ -353,7 +316,7 @@ impl EmailService {
             if actor_line.is_empty() {
                 String::new()
             } else {
-                actor_line.to_string()
+                actor_line.clone()
             },
             if changes.as_ref().map(|c| c.is_empty()).unwrap_or(true) {
                 t(lang, "html_new_valsi_added")
@@ -461,7 +424,14 @@ impl EmailService {
             ))
             .map_err(|e| EmailError::Other(e.to_string()))?;
 
-        self.mailer.send(&email).map_err(EmailError::SmtpError)?;
+        // `SmtpTransport` is synchronous: a slow or unreachable relay would block the
+        // runtime thread (and every pooled DB connection driven by it) for the whole
+        // SMTP timeout. Run it on the blocking pool instead.
+        let mailer = self.mailer.clone();
+        tokio::task::spawn_blocking(move || mailer.send(&email))
+            .await
+            .map_err(|e| EmailError::Other(e.to_string()))?
+            .map_err(EmailError::SmtpError)?;
         let client = pool.get().await?;
         let mut params = notification.params;
         params["from_name"] = serde_json::json!("la lensisku");

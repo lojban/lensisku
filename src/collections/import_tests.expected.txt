@@ -1,0 +1,39 @@
+json imported=2 skipped=2 warnings=["Definition ID MISSING not found for word 'brode'", "Skipping word 'brodi' - no definition ID provided"] count=2 public=false
+item pos=0 def=true front=None back=None notes=Some("n1") canon=Some("broda") imgs=None
+item pos=1 def=true front=None back=None notes=Some("n2") canon=Some("brodu") imgs=None
+json dup imported=1 skipped=1 warnings=["Definition ID D1 listed more than once, skipped duplicate for word 'brodo'"]
+into imported=3 skipped=5 skipped_items=["definition_id: D1|Definition already exists in target collection", "definition_id: D3|Definition already exists in target collection", "free_content_front: <b>F</b>|Free content item already exists in target collection", "free_content_front: F|Free content item already exists in target collection", "item_id: 7|Invalid item format (missing definition_id or free content)"]
+item pos=0 def=true front=None back=None notes=Some("n1") canon=Some("broda") imgs=None
+item pos=1 def=true front=None back=None notes=Some("n2") canon=Some("brodu") imgs=None
+item pos=2 def=true front=None back=None notes=Some("new") canon=None imgs=Some("front")
+item pos=3 def=false front=Some("F") back=Some("B") notes=None canon=Some("cmene") imgs=None
+item pos=4 def=false front=Some("G") back=Some("H") notes=None canon=None imgs=Some("back")
+into bad image -> Bad request: Invalid data URL format
+full imported=4 skipped=3 levels=2 name=full desc=Some("d") warnings=["Definition ID MISSING not found for word 'brode', skipped", "Item at position 2: missing definition_id and free content, skipped", "Item at position 3: invalid back image data URL: Bad request: Invalid base64 data: Invalid symbol 33, offset 0.", "Item at position 4: invalid back image data URL: Bad request: Invalid data URL format", "Item at position 6: definition ID D2 listed more than once, skipped"]
+item pos=0 def=true front=None back=None notes=None canon=Some("broda") imgs=None
+item pos=3 def=false front=Some("Q") back=Some("A") notes=None canon=None imgs=Some("front")
+item pos=4 def=false front=Some("Q2") back=Some("A2") notes=None canon=None imgs=None
+item pos=5 def=true front=None back=None notes=None canon=None imgs=None
+card pos=0 dir=reverse item_pos=0 progress=Some("reverse")
+card pos=3 dir=both item_pos=3 progress=Some("direct,reverse")
+card pos=4 dir=quiz_direct item_pos=4 progress=Some("direct")
+card pos=5 dir=both item_pos=5 progress=Some("direct,reverse")
+level pos=0 name=L1 desc=None min_cards=2 rate=0.5 prereqs=None cards=Some("0@0,3@3")
+level pos=1 name=L2 desc=Some("two") min_cards=3 rate=0.75 prereqs=Some("0") cards=Some("5@0,4@1,0@2")
+inferred imported=6 skipped=1 levels=2
+item pos=0 def=false front=Some("a") back=Some("1") notes=None canon=Some("a ") imgs=None
+item pos=1 def=false front=Some("b") back=Some("2") notes=None canon=None imgs=None
+item pos=2 def=false front=Some("c") back=Some("3") notes=None canon=None imgs=None
+item pos=3 def=false front=Some("d") back=Some("4") notes=None canon=None imgs=None
+item pos=5 def=false front=Some("e") back=Some("5") notes=None canon=Some("e ") imgs=None
+item pos=6 def=false front=Some("f") back=Some("6") notes=None canon=None imgs=None
+card pos=0 dir=wordbank item_pos=0 progress=Some("direct")
+card pos=1 dir=wordbank item_pos=1 progress=Some("direct")
+card pos=2 dir=quiz_direct item_pos=2 progress=Some("direct")
+card pos=3 dir=both item_pos=3 progress=Some("direct,reverse")
+card pos=5 dir=listen_wordbank item_pos=5 progress=Some("direct")
+card pos=6 dir=quiz_direct item_pos=6 progress=Some("direct")
+level pos=0 name=Level 1 desc=None min_cards=5 rate=0.800000011920929 prereqs=None cards=Some("1@1,5@2,6@3")
+level pos=2 name=Level 3 desc=None min_cards=5 rate=0.800000011920929 prereqs=Some("0") cards=Some("2@0,0@1")
+inferred warnings=["Definition ID 2147483640 not found for word '', skipped", "Item at position 6: sound skipped: Invalid audio type. Supported types: MP3, OGG, WEBM (WAV is not supported)."]
+inferred exported sounds=["e=data:audio/mpeg;base64,SUQzBAA="]

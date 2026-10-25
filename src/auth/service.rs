@@ -44,6 +44,26 @@ pub fn hash_password(password: &str) -> Result<String, PasswordHashError> {
     Ok(hash(password, DEFAULT_COST)?)
 }
 
+/// Hash on the blocking pool: bcrypt at `DEFAULT_COST` takes ~100+ ms of CPU and would
+/// otherwise stall an actix worker (and every request queued on it).
+pub async fn hash_password_async(password: &str) -> Result<String, PasswordHashError> {
+    let password = password.to_owned();
+    tokio::task::spawn_blocking(move || hash_password(&password))
+        .await
+        .map_err(|e| PasswordHashError::TaskJoin(e.to_string()))?
+}
+
+/// [`verify_password`] on the blocking pool; see [`hash_password_async`].
+pub async fn verify_password_async(
+    password: &str,
+    stored_hash: &str,
+) -> Result<bool, PasswordHashError> {
+    let (password, stored_hash) = (password.to_owned(), stored_hash.to_owned());
+    tokio::task::spawn_blocking(move || verify_password(&password, &stored_hash))
+        .await
+        .map_err(|e| PasswordHashError::TaskJoin(e.to_string()))?
+}
+
 pub fn sanitize_html(html: &str) -> String {
     remove_html_tags(html)
 }
@@ -53,8 +73,8 @@ pub(crate) async fn create_default_collections(
     transaction: &tokio_postgres::Transaction<'_>,
     user_id: i32,
 ) -> AppResult<()> {
-    let locale: serde_json::Value = serde_json::from_str(include_str!("../../locales/en.json"))
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    let locale = crate::utils::locales::catalog("en")
+        .ok_or_else(|| AppError::Database("bundled en locale is invalid".to_string()))?;
     let description = locale["collection_default_description"]
         .as_str()
         .unwrap_or("A starter collection created automatically to show how collections work. You can rename, edit, or delete it.");
@@ -253,16 +273,15 @@ pub async fn create_role(
     }
 
     // Add permissions
-    for permission in &request.permissions {
-        transaction
-            .execute(
-                "INSERT INTO role_permissions (role, permission_id)
-             SELECT $1, id FROM permissions WHERE name = $2
+    // One round trip for all permissions instead of one INSERT each.
+    transaction
+        .execute(
+            "INSERT INTO role_permissions (role, permission_id)
+             SELECT $1, id FROM permissions WHERE name = ANY($2)
              ON CONFLICT DO NOTHING",
-                &[&request.name, &permission],
-            )
-            .await?;
-    }
+            &[&request.name, &request.permissions],
+        )
+        .await?;
 
     transaction.commit().await?;
 
@@ -286,6 +305,20 @@ pub async fn update_role(
         .transaction()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // A role exists when it has permissions or users hold it (same rule as the role list).
+    // Updating an unknown name used to create it silently.
+    let exists: bool = transaction
+        .query_one(
+            "SELECT EXISTS (SELECT 1 FROM role_permissions WHERE LOWER(role::text) = LOWER($1::text))
+                 OR EXISTS (SELECT 1 FROM users WHERE LOWER(role::text) = LOWER($1::text))",
+            &[&role_name],
+        )
+        .await?
+        .get(0);
+    if !exists {
+        return Err(AppError::NotFound(format!("Role '{role_name}' not found")));
+    }
 
     // Get actor's permissions (case-insensitive role lookup)
     let actor_permissions: Vec<String> = transaction
@@ -320,15 +353,14 @@ pub async fn update_role(
         .await?;
 
     // Add new permissions
-    for permission in &request.permissions {
-        transaction
-            .execute(
-                "INSERT INTO role_permissions (role, permission_id)
-             SELECT $1, id FROM permissions WHERE name = $2",
-                &[&role_name, &permission],
-            )
-            .await?;
-    }
+    // One round trip for all permissions instead of one INSERT each.
+    transaction
+        .execute(
+            "INSERT INTO role_permissions (role, permission_id)
+             SELECT $1, id FROM permissions WHERE name = ANY($2)",
+            &[&role_name, &request.permissions],
+        )
+        .await?;
 
     transaction.commit().await?;
 
@@ -590,7 +622,8 @@ pub async fn signup(
     }
 
     // Hash password
-    let password_hash = hash_password(&user_data.password)
+    let password_hash = hash_password_async(&user_data.password)
+        .await
         .map_err(|e| AppError::Auth(format!("Password hashing failed: {}", e)))?;
     let created_at = Utc::now();
 
@@ -807,7 +840,8 @@ pub async fn create_guest_session(
         .take(48)
         .map(char::from)
         .collect();
-    let password_hash = hash_password(&raw)
+    let password_hash = hash_password_async(&raw)
+        .await
         .map_err(|e| AppError::Auth(format!("Password hashing failed: {}", e)))?;
     let created_at = Utc::now();
     let role = UserRole::Guest.to_string();
@@ -889,11 +923,15 @@ pub async fn login(
                 Err(AppError::Auth("Account is blocked".to_string()))
             } else if user.role.to_lowercase() == UserRole::Guest.to_string() {
                 Err(AppError::Auth("Invalid credentials".to_string()))
-            } else if verify_password(&user_data.password, &user.password).unwrap_or(false) {
+            } else if verify_password_async(&user_data.password, &user.password)
+                .await
+                .unwrap_or(false)
+            {
                 let mut user_for_token = user.clone();
 
                 if needs_rehash(&user_for_token.password) {
-                    let new_hash = hash_password(&user_data.password)
+                    let new_hash = hash_password_async(&user_data.password)
+                        .await
                         .map_err(|e| AppError::Auth(format!("Password hashing failed: {}", e)))?;
                     transaction
                         .execute(
@@ -1265,7 +1303,7 @@ pub async fn restore_password(
     }
 
     // Update password
-    let password_hash = hash_password(&req.new_password).map_err(|e| {
+    let password_hash = hash_password_async(&req.new_password).await.map_err(|e| {
         error!("Password hashing failed during restore: {}", e);
         AppError::Internal("Password hashing failed".to_string())
     })?;
@@ -1517,7 +1555,8 @@ pub async fn initiate_password_change(
         .await?
         .get("password");
 
-    if !verify_password(&request.current_password, &stored_password)
+    if !verify_password_async(&request.current_password, &stored_password)
+        .await
         .map_err(|e| AppError::Auth(e.to_string()))?
     {
         return Err(AppError::Auth("Invalid password".to_string()));
@@ -1625,10 +1664,12 @@ pub async fn complete_password_change(
     };
 
     // Hash new password
-    let password_hash = hash_password(&request.new_password).map_err(|e| {
-        error!("Password hashing failed during change: {}", e);
-        AppError::Internal("Password hashing failed".to_string())
-    })?;
+    let password_hash = hash_password_async(&request.new_password)
+        .await
+        .map_err(|e| {
+            error!("Password hashing failed during change: {}", e);
+            AppError::Internal("Password hashing failed".to_string())
+        })?;
 
     // Update password
     transaction

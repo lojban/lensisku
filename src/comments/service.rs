@@ -391,27 +391,24 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
         .flatten()
         .collect::<HashSet<_>>();
 
-    for tag in hashtags {
-        // Insert hashtag if it doesn't exist and get its ID
-        let hashtag_id = transaction
-            .query_one(
-                "INSERT INTO hashtags (tag)
-                 VALUES ($1)
-                 ON CONFLICT (tag) DO UPDATE
-                 SET tag = EXCLUDED.tag
-                 RETURNING id",
-                &[&tag],
-            )
-            .await?
-            .get::<_, i32>("id");
-
-        // Link hashtag to comment
+    if !hashtags.is_empty() {
+        // Upsert every hashtag and link it to the comment in one round trip.
+        // Sorted so concurrent posts lock hashtag rows in the same order.
+        let mut tags: Vec<String> = hashtags.into_iter().collect();
+        tags.sort_unstable();
         transaction
             .execute(
-                "INSERT INTO post_hashtags (post_id, hashtag_id)
-                 VALUES ($1, $2)
+                "WITH h AS (
+                     INSERT INTO hashtags (tag)
+                     SELECT t FROM UNNEST($2::text[]) AS t
+                     ON CONFLICT (tag) DO UPDATE
+                     SET tag = EXCLUDED.tag
+                     RETURNING id
+                 )
+                 INSERT INTO post_hashtags (post_id, hashtag_id)
+                 SELECT $1, id FROM h
                  ON CONFLICT (post_id, hashtag_id) DO NOTHING",
-                &[&comment_id, &hashtag_id],
+                &[&comment_id, &tags],
             )
             .await?;
     }
@@ -1448,10 +1445,10 @@ pub async fn get_trending_hashtags(
             FROM post_hashtags ph
             JOIN hashtags h ON h.id = ph.hashtag_id
             JOIN comments c ON c.commentid = ph.post_id
-            WHERE can_read_comment_thread(c.threadid, NULL) AND to_timestamp(c.time) >= NOW() - ($1 || ' hours')::INTERVAL
+            WHERE can_read_comment_thread(c.threadid, NULL) AND to_timestamp(c.time) >= NOW() - make_interval(hours => $1::int)
             GROUP BY h.tag
             ORDER BY usage_count DESC
-            LIMIT $2
+            LIMIT $2::int
             "#,
             &[&hours, &limit],
         )
@@ -1902,7 +1899,7 @@ async fn search_comments_inner(
     let where_clause = if !conditions.is_empty() {
         format!("{} AND {}", base_query, conditions.join(" AND "))
     } else {
-        base_query.to_string()
+        base_query.clone()
     };
 
     // Add sorting

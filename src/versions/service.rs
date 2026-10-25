@@ -377,39 +377,34 @@ pub async fn revert_to_version(
             )
             .await?;
 
-        // Add gloss keywords
-        for keyword in gloss_keywords {
+        // Re-add gloss (place 0) and place keywords (1-based) in one statement.
+        // Keywords whose natlang word/meaning no longer exists are skipped, as before.
+        let place_keywords = old_version.content.place_keywords.as_deref().unwrap_or(&[]);
+        let places: Vec<i32> = std::iter::repeat_n(0, gloss_keywords.len())
+            .chain((1..).take(place_keywords.len()))
+            .collect();
+        let (words, meanings): (Vec<&str>, Vec<Option<&str>>) = gloss_keywords
+            .iter()
+            .chain(place_keywords)
+            .map(|k| (k.word.as_str(), k.meaning.as_deref()))
+            .unzip();
+        if !words.is_empty() {
             transaction
                 .execute(
                     "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
-                     SELECT $1, 0, wordid
-                     FROM natlangwords
-                     WHERE word = $2 AND (meaning = $3 OR ($3 IS NULL AND meaning IS NULL))
-                     LIMIT 1",
-                    &[&old_version.definition_id, &keyword.word, &keyword.meaning],
+                     SELECT $1, k.place, nw.wordid
+                     FROM UNNEST($2::text[], $3::text[], $4::int4[])
+                          WITH ORDINALITY AS k(word, meaning, place, ord)
+                     CROSS JOIN LATERAL (
+                         SELECT wordid FROM natlangwords
+                         WHERE word = k.word
+                           AND (meaning = k.meaning OR (k.meaning IS NULL AND meaning IS NULL))
+                         LIMIT 1
+                     ) nw
+                     ORDER BY k.ord",
+                    &[&old_version.definition_id, &words, &meanings, &places],
                 )
                 .await?;
-        }
-
-        // Add place keywords
-        if let Some(place_keywords) = &old_version.content.place_keywords {
-            for (i, keyword) in place_keywords.iter().enumerate() {
-                transaction
-                    .execute(
-                        "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
-                         SELECT $1, $2, wordid
-                         FROM natlangwords
-                         WHERE word = $3 AND (meaning = $4 OR ($4 IS NULL AND meaning IS NULL))
-                         LIMIT 1",
-                        &[
-                            &old_version.definition_id,
-                            &((i + 1) as i32),
-                            &keyword.word,
-                            &keyword.meaning,
-                        ],
-                    )
-                    .await?;
-            }
         }
     }
 

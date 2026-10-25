@@ -81,7 +81,7 @@ pub async fn download_cached_export(
                 format!("attachment; filename=\"{}\"", filename),
             ))
             .body(content),
-        Err(e) if e.to_string() == "Export not found" => HttpResponse::NotFound().finish(),
+        Err(service::ExportError::NotFound(_)) => HttpResponse::NotFound().finish(),
         Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
 }
@@ -137,11 +137,12 @@ pub async fn export_dictionary(
                 format!("attachment; filename=\"{}\"", filename),
             ))
             .body(content),
-        Err(e) => match e.to_string().as_str() {
-            "Access denied" => HttpResponse::Forbidden().finish(),
-            "Invalid language tag" => HttpResponse::BadRequest().body(e.to_string()),
-            _ => HttpResponse::InternalServerError().body(e.to_string()),
-        },
+        Err(service::ExportError::AccessDenied) => HttpResponse::Forbidden().finish(),
+        Err(e @ (service::ExportError::InvalidLanguage | service::ExportError::BadRequest(_))) => {
+            HttpResponse::BadRequest().body(e.to_string())
+        }
+        Err(e @ service::ExportError::NotFound(_)) => HttpResponse::NotFound().body(e.to_string()),
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
 }
 
@@ -195,18 +196,11 @@ pub async fn export_search(
                 format!("attachment; filename=\"{}\"", filename),
             ))
             .body(content),
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.starts_with("Add a search")
-                || msg.starts_with("Too many matching")
-                || msg.starts_with("No matching")
-                || msg.starts_with("Invalid format")
-                || msg.starts_with("Semantic search is disabled")
-            {
-                HttpResponse::BadRequest().body(msg)
-            } else {
-                HttpResponse::InternalServerError().body(msg)
-            }
+        Err(e @ service::ExportError::BadRequest(_)) => {
+            HttpResponse::BadRequest().body(e.to_string())
         }
+        Err(service::ExportError::AccessDenied) => HttpResponse::Forbidden().finish(),
+        Err(e @ service::ExportError::NotFound(_)) => HttpResponse::NotFound().body(e.to_string()),
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
 }

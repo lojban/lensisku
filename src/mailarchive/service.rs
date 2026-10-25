@@ -454,10 +454,8 @@ async fn process_email(
     let content_str = &String::from_utf8_lossy(&content)
         .lines()
         .collect::<Vec<_>>()
-        .join("\r\n")
-        // .replace('\0', "") // Remove null bytes
-        // .replace(|c: char| c.is_control() && c != '\n' && c != '\r', "") // Remove other control chars
-        .to_string();
+        .join("\r\n");
+    // Not applied: .replace('\0', "") and stripping other control chars.
 
     let index_headers_end = content_str.find("\r\n\r\n").unwrap_or(content_str.len());
     let headers: &str = &content_str[..index_headers_end];
@@ -879,7 +877,7 @@ fn parse_content_type(header: &str) -> (String, String) {
     let content_type = parsed
         .params
         .get("type")
-        .map(|s| s.to_string())
+        .cloned()
         .unwrap_or_else(|| "binary".to_string());
 
     (mime_type, content_type)

@@ -3,6 +3,9 @@
 //! Crawlers and Open Graph clients do not run the Vue app, so nginx proxies selected
 //! page routes to Actix handlers that rewrite `<title>` / meta tags from DB content.
 
+use std::sync::{Arc, Mutex};
+use std::time::SystemTime;
+
 use actix_web::{http::header, HttpResponse};
 
 pub const SITE_ORIGIN: &str = "https://lensisku.lojban.org";
@@ -125,13 +128,37 @@ fn index_html_path() -> String {
         })
 }
 
+/// `(path, mtime, len)` identifies a template version; any change triggers a reload.
+type TemplateKey = (String, Option<SystemTime>, u64);
+
+static TEMPLATE_CACHE: Mutex<Option<(TemplateKey, Arc<str>)>> = Mutex::new(None);
+
+/// Read `path`, reusing the previous contents while its mtime and size are unchanged.
+/// A `stat` per request replaces a full read, and a rebuilt frontend is picked up
+/// without restarting the server.
+fn cached_template(path: &str) -> Option<Arc<str>> {
+    let meta = std::fs::metadata(path).ok()?;
+    let key: TemplateKey = (path.to_owned(), meta.modified().ok(), meta.len());
+    // A poisoned lock only means another request panicked mid-update; the cache
+    // is rebuilt from disk below, so recovering the guard is safe.
+    let mut cache = TEMPLATE_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some((cached_key, contents)) = cache.as_ref() {
+        if *cached_key == key {
+            return Some(Arc::clone(contents));
+        }
+    }
+    let contents: Arc<str> = std::fs::read_to_string(path).ok()?.into();
+    *cache = Some((key, Arc::clone(&contents)));
+    Some(contents)
+}
+
 pub fn html_response(
     locale: &str,
     page_title: &str,
     description: &str,
     path: &str,
 ) -> HttpResponse {
-    let Ok(template) = std::fs::read_to_string(index_html_path()) else {
+    let Some(template) = cached_template(&index_html_path()) else {
         return HttpResponse::InternalServerError().finish();
     };
     let Some(page) = render_spa_page(&template, locale, page_title, description, path) else {
@@ -170,6 +197,30 @@ pub fn plain_preview(text: &str, limit: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::render_spa_page;
+
+    #[test]
+    fn cached_template_reloads_when_file_changes() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("index.html");
+        let path_str = path.to_str().unwrap();
+        std::fs::write(&path, "<html>one</html>").unwrap();
+        assert_eq!(
+            &*super::cached_template(path_str).unwrap(),
+            "<html>one</html>"
+        );
+        assert_eq!(
+            &*super::cached_template(path_str).unwrap(),
+            "<html>one</html>"
+        );
+        // Different length guarantees a new key even on coarse-mtime filesystems.
+        std::fs::write(&path, "<html>two!</html>").unwrap();
+        assert_eq!(
+            &*super::cached_template(path_str).unwrap(),
+            "<html>two!</html>"
+        );
+        std::fs::remove_file(&path).unwrap();
+        assert!(super::cached_template(path_str).is_none());
+    }
 
     #[test]
     fn replaces_default_tags_and_escapes_title() {

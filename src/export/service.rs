@@ -5,7 +5,6 @@ use deadpool_postgres::Pool;
 use deadpool_postgres::Transaction;
 use log::info;
 use log::{debug, error};
-use std::error::Error;
 use std::io::{Cursor, Write};
 use tempfile::tempdir;
 use tokio::process::Command;
@@ -65,7 +64,7 @@ async fn load_pdf_images(
     transaction: &Transaction<'_>,
     latex: &str,
     allowed_item_ids: &[i32],
-) -> Result<Vec<PdfExportImage>, Box<dyn Error + Send + Sync>> {
+) -> Result<Vec<PdfExportImage>, ExportError> {
     let definition_ids = pdf_image_ids(latex, "definitionimages");
     let item_ids: Vec<i32> = pdf_image_ids(latex, "collectionimages")
         .into_iter()
@@ -124,7 +123,7 @@ fn materialize_pdf_images(
     latex: &str,
     images: &[PdfExportImage],
     directory: &std::path::Path,
-) -> Result<String, Box<dyn Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let mut replacements: HashMap<&str, String> = HashMap::new();
     for (index, image) in images.iter().enumerate() {
         let filename = format!("export-image-{index}.png");
@@ -171,7 +170,7 @@ fn materialize_pdf_images(
 async fn generate_pdf(
     latex_content: &str,
     images: &[PdfExportImage],
-) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Vec<u8>, ExportError> {
     // Create a temporary directory for working files
     let dir = tempdir()?;
     let dir_path = dir.path();
@@ -179,7 +178,7 @@ async fn generate_pdf(
     // Create temporary file for LaTeX content
     let file_path = dir_path.join("output.tex");
     let latex_content = materialize_pdf_images(latex_content, images, dir_path)?;
-    std::fs::write(&file_path, latex_content)?;
+    tokio::fs::write(&file_path, latex_content).await?;
 
     debug!("Created temporary directory at: {:?}", dir_path);
     debug!("LaTeX file written to: {:?}", file_path);
@@ -208,7 +207,7 @@ async fn generate_pdf(
         Ok(Ok(out)) => out,
         Ok(Err(e)) => {
             error!("xelatex failed to run: {}", e);
-            return Err(Box::new(e));
+            return Err(boxed(e));
         }
         Err(_) => {
             error!("xelatex timed out after 300s");
@@ -227,9 +226,9 @@ async fn generate_pdf(
 
     if !output.status.success() {
         // List directory contents for debugging
-        if let Ok(entries) = std::fs::read_dir(dir_path) {
+        if let Ok(mut entries) = tokio::fs::read_dir(dir_path).await {
             debug!("Directory contents after xelatex run:");
-            for entry in entries.flatten() {
+            while let Ok(Some(entry)) = entries.next_entry().await {
                 debug!("  {:?}", entry.path());
             }
         }
@@ -259,7 +258,7 @@ async fn generate_pdf(
     let pdf_path = dir_path.join("output.pdf");
     debug!("Attempting to read PDF from: {:?}", pdf_path);
 
-    match std::fs::read(&pdf_path) {
+    match tokio::fs::read(&pdf_path).await {
         Ok(content) => {
             debug!("Successfully read PDF of size {} bytes", content.len());
             Ok(content)
@@ -268,7 +267,7 @@ async fn generate_pdf(
             let error_msg = format!("Failed to read generated PDF: {}", e);
             error!("{}", error_msg);
             error!("PDF path: {:?}", pdf_path);
-            Err(Box::new(e))
+            Err(boxed(e))
         }
     }
 }
@@ -278,7 +277,7 @@ use super::latex::*;
 pub async fn verify_language_exists(
     transaction: &mut Transaction<'_>,
     lang: &str,
-) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<bool, ExportError> {
     let row = transaction
         .query_one("SELECT COUNT(*) FROM languages WHERE tag = $1", &[&lang])
         .await?;
@@ -290,7 +289,7 @@ pub async fn verify_collection_access(
     transaction: &mut Transaction<'_>,
     collection_id: i32,
     user_id: Option<i32>,
-) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<bool, ExportError> {
     let row = transaction
         .query_one(
             "SELECT user_id, is_public FROM collections WHERE collection_id = $1",
@@ -312,7 +311,7 @@ const DEFAULT_SOURCE_LANGUAGE_TAG: &str = "jbo";
 pub async fn resolve_source_language(
     transaction: &mut Transaction<'_>,
     source_lang: Option<&str>,
-) -> Result<(i32, String), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(i32, String), ExportError> {
     match source_lang {
         Some(tag) if !tag.is_empty() => {
             let row = transaction
@@ -320,7 +319,10 @@ pub async fn resolve_source_language(
                 .await?;
             match row {
                 Some(r) => Ok((r.get(0), r.get(1))),
-                None => Err(format!("Unknown source language tag: {}", tag).into()),
+                None => Err(ExportError::BadRequest(format!(
+                    "Unknown source language tag: {}",
+                    tag
+                ))),
             }
         }
         _ => Ok((
@@ -330,28 +332,83 @@ pub async fn resolve_source_language(
     }
 }
 
+/// Typed failures of [`export_with_access_check`], so the controller maps them to
+/// HTTP statuses by variant instead of by comparing error strings.
+#[derive(Debug, thiserror::Error)]
+pub enum ExportError {
+    #[error("Invalid language tag")]
+    InvalidLanguage,
+    #[error("Access denied")]
+    AccessDenied,
+    /// Client-side problem with an export request (maps to 400).
+    #[error("{0}")]
+    BadRequest(String),
+    /// Requested resource does not exist (maps to 404).
+    #[error("{0}")]
+    NotFound(String),
+    #[error(transparent)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+}
+
+impl From<String> for ExportError {
+    fn from(msg: String) -> Self {
+        ExportError::Other(msg.into())
+    }
+}
+
+impl From<&str> for ExportError {
+    fn from(msg: &str) -> Self {
+        ExportError::Other(msg.into())
+    }
+}
+
+macro_rules! export_error_from {
+    ($($t:ty),* $(,)?) => {$(
+        impl From<$t> for ExportError {
+            fn from(e: $t) -> Self {
+                ExportError::Other(Box::new(e))
+            }
+        }
+    )*};
+}
+
+export_error_from!(
+    tokio_postgres::Error,
+    deadpool_postgres::PoolError,
+    std::io::Error,
+    serde_json::Error,
+    xml::writer::Error,
+    image::ImageError,
+    zip::result::ZipError,
+    std::string::FromUtf8Error,
+);
+
+fn boxed(e: impl std::error::Error + Send + Sync + 'static) -> ExportError {
+    ExportError::Other(Box::new(e))
+}
+
 pub async fn export_with_access_check(
     pool: &Pool,
     lang: &str,
     format: ExportFormat,
     options: &ExportOptions,
     user_id: Option<i32>,
-) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
-    let mut client = pool.get().await?;
-    let mut transaction = client.transaction().await?;
+) -> Result<(Vec<u8>, String, String), ExportError> {
+    let mut client = pool.get().await.map_err(boxed)?;
+    let mut transaction = client.transaction().await.map_err(boxed)?;
 
     if !verify_language_exists(&mut transaction, lang).await? {
-        return Err("Invalid language tag".into());
+        return Err(ExportError::InvalidLanguage);
     }
     if let Some(collection_id) = options.collection_id {
         if !verify_collection_access(&mut transaction, collection_id, user_id).await? {
-            return Err("Access denied".into());
+            return Err(ExportError::AccessDenied);
         }
     }
     let (source_langid, source_language_tag) =
         resolve_source_language(&mut transaction, options.source_lang.as_deref()).await?;
 
-    transaction.commit().await?;
+    transaction.commit().await.map_err(boxed)?;
     export_dictionary(
         pool,
         lang,
@@ -378,7 +435,7 @@ pub async fn export_dictionary(
     source_langid: i32,
     source_language_tag: &str,
     use_dictionary_cache: bool,
-) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<u8>, String, String), ExportError> {
     let positive_scores_only = options.positive_scores_only.unwrap_or(true);
 
     // For collection exports, bypass cache
@@ -486,16 +543,11 @@ pub async fn export_dictionary(
     Ok(result)
 }
 
-fn zip_tsv_content(
-    tsv_content: &str,
-    filename: &str,
-) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
+fn zip_tsv_content(tsv_content: &str, filename: &str) -> Result<Vec<u8>, ExportError> {
     zip_tsv_files(&[(filename, tsv_content)])
 }
 
-fn zip_tsv_files(
-    files: &[(&str, &str)],
-) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
+fn zip_tsv_files(files: &[(&str, &str)]) -> Result<Vec<u8>, ExportError> {
     let mut zip_buffer = Vec::new();
     {
         let mut zip = ZipWriter::new(Cursor::new(&mut zip_buffer));
@@ -534,7 +586,7 @@ async fn generate_export(
     collection_id: Option<i32>,
     source_langid: i32,
     source_language_tag: &str,
-) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<u8>, String, String), ExportError> {
     let filename = build_export_filename(
         collection_id,
         source_language_tag,
@@ -637,7 +689,7 @@ async fn fetch_keywords_for_export(
         HashMap<i32, Vec<KeywordMapping>>, // Gloss keywords
         HashMap<i32, Vec<KeywordMapping>>, // Place keywords
     ),
-    Box<dyn std::error::Error + Send + Sync>,
+    ExportError,
 > {
     let mut gloss_map: HashMap<i32, Vec<KeywordMapping>> = HashMap::new();
     let mut place_map: HashMap<i32, Vec<KeywordMapping>> = HashMap::new();
@@ -696,7 +748,7 @@ async fn generate_xml(
     options: &ExportOptions,
     collection_id: Option<i32>,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     if let Some(id) = collection_id {
         // Handle collection export
         let query = "
@@ -1000,6 +1052,7 @@ impl CollectionExportItem {
             free_content_back: row.get("free_content_back"),
             front_image_url,
             back_image_url,
+            sound_url: None,
             direction: None, // only set in full collection export
             level_index: None,
             position_in_level: None,
@@ -1013,7 +1066,7 @@ async fn generate_latex(
     options: &ExportOptions,
     collection_id: Option<i32>,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let lang_row = transaction
         .query_one(
             "SELECT tag, realname FROM languages WHERE tag = $1",
@@ -1067,7 +1120,7 @@ async fn generate_chapters(
     collection_id: Option<i32>,
     options: &ExportOptions,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let lang_id: i32 = transaction
         .query_one("SELECT langid FROM languages WHERE tag = $1", &[&lang])
         .await?
@@ -1106,7 +1159,7 @@ async fn generate_lojban_chapter(
     collection_id: Option<i32>,
     options: &ExportOptions,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let entries = generate_lojban_entries(
         transaction,
         lang_id,
@@ -1124,7 +1177,7 @@ async fn generate_collection_latex(
     lang: &str, // lang tag needed for escape_tex logic
     collection_id: i32,
     _source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let mut entries = String::new();
 
     let query = "
@@ -1200,9 +1253,7 @@ fn format_lojban_entry_text(valsi_row: &ValsiRow, lang: &str) -> String {
 
 // Helper to create ValsiRow from collection item row
 impl ValsiRow {
-    fn from_collection_row(
-        row: &tokio_postgres::Row,
-    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    fn from_collection_row(row: &tokio_postgres::Row) -> Result<Self, ExportError> {
         Ok(ValsiRow {
             definition_id: row.try_get("definition_id")?,
             word: row.try_get("word")?,
@@ -1261,7 +1312,7 @@ async fn generate_lojban_and_natural_chapters(
     collection_id: Option<i32>,
     options: &ExportOptions,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let (vlaste_from_jbo, vlaste_to_jbo) = if collection_id.is_some() {
         (
             "fanva fo la .lojban.".to_string(),
@@ -1308,7 +1359,7 @@ async fn check_natural_entries(
     collection_id: Option<i32>,
     options: &ExportOptions,
     source_langid: i32,
-) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<bool, ExportError> {
     let positive_scores_only = options.positive_scores_only.unwrap_or(true);
 
     let collection_join = collection_id
@@ -1350,7 +1401,7 @@ async fn generate_lojban_entries(
     collection_id: Option<i32>,
     options: &ExportOptions,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let mut entries = String::new();
     let positive_scores_only = options.positive_scores_only.unwrap_or(true);
 
@@ -1406,7 +1457,7 @@ async fn generate_natural_chapter(
     collection_id: Option<i32>,
     options: &ExportOptions,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let positive_scores_only = options.positive_scores_only.unwrap_or(true);
 
     let collection_join = collection_id
@@ -1475,7 +1526,7 @@ async fn generate_tsv(
     options: &ExportOptions,
     collection_id: Option<i32>,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     if let Some(id) = collection_id {
         // Handle collection export
         let query = "
@@ -1687,9 +1738,7 @@ async fn generate_tsv(
     Ok(tsv)
 }
 
-fn generate_collection_tsv(
-    rows: Vec<tokio_postgres::Row>,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+fn generate_collection_tsv(rows: Vec<tokio_postgres::Row>) -> Result<String, ExportError> {
     let mut tsv = String::new();
     // Write header for collection items
     tsv.push_str("item_id\tposition\tdefinition_id\tword\tword_type\trafsi\texperimental_rafsi\tselmaho\tdefinition\tdefinition_notes\tjargon\tfree_content_front\tfree_content_back\tcollection_note\n");
@@ -1737,7 +1786,7 @@ async fn generate_json(
     options: &ExportOptions,
     collection_id: Option<i32>,
     source_langid: i32,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     if let Some(id) = collection_id {
         // Handle collection export
         let query = "
@@ -1865,9 +1914,7 @@ async fn generate_json(
     Ok(serde_json::to_string_pretty(&entries)?)
 }
 
-pub async fn list_cached_exports(
-    pool: &Pool,
-) -> Result<Vec<CachedExport>, Box<dyn Error + Send + Sync>> {
+pub async fn list_cached_exports(pool: &Pool) -> Result<Vec<CachedExport>, ExportError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1908,7 +1955,7 @@ pub async fn get_cached_export(
     source_language_tag: &str,
     format: &str,
     positive_scores_only: bool,
-) -> Result<(Vec<u8>, String, String), Box<dyn Error + Send + Sync>> {
+) -> Result<(Vec<u8>, String, String), ExportError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1936,14 +1983,14 @@ pub async fn get_cached_export(
             row.get("content_type"),
             row.get("filename"),
         )),
-        None => Err("Export not found".into()),
+        None => Err(ExportError::NotFound("Export not found".to_string())),
     };
 
     transaction.commit().await?;
     result
 }
 
-pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), ExportError> {
     let client = pool.get().await?;
 
     let languages = client
@@ -2180,7 +2227,7 @@ fn write_keyword_xml(
     writer: &mut EventWriter<Cursor<Vec<u8>>>,
     tag: &str,
     keywords: &[crate::jbovlaste::KeywordMapping],
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(), ExportError> {
     if keywords.is_empty() {
         return Ok(());
     }
@@ -2205,7 +2252,7 @@ fn write_optional_xml(
     writer: &mut EventWriter<Cursor<Vec<u8>>>,
     tag: &str,
     value: Option<&str>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(), ExportError> {
     if let Some(v) = value.filter(|s| !s.is_empty()) {
         writer.write(XmlEvent::start_element(tag))?;
         writer.write(XmlEvent::Characters(v))?;
@@ -2217,7 +2264,7 @@ fn write_optional_xml(
 fn generate_search_export_xml(
     collection_items: &[CollectionExportItem],
     definitions: &[DictionaryEntry],
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let mut writer = EventWriter::new(Cursor::new(Vec::new()));
     writer.write(XmlEvent::StartDocument {
         version: xml::common::XmlVersion::Version10,
@@ -2395,7 +2442,7 @@ fn generate_collection_items_tsv(items: &[CollectionExportItem]) -> String {
 async fn resolve_preamble_language_tag(
     pool: &Pool,
     language_ids: &Option<Vec<i32>>,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, ExportError> {
     let Some(id) = language_ids.as_ref().and_then(|ids| ids.first().copied()) else {
         return Ok("en".to_string());
     };
@@ -2413,18 +2460,19 @@ pub async fn export_search_results(
     pool: &Pool,
     query: &SearchExportQuery,
     user_id: Option<i32>,
-) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<u8>, String, String), ExportError> {
     if query.full_collection.unwrap_or(false) {
         return export_full_collection_json(pool, query, user_id).await;
     }
 
     if !super::models::has_search_export_constraint(query) {
-        return Err(
+        return Err(ExportError::BadRequest(
             "Add a search query or at least one filter (collection, word type, author, selmaho, source language, or search-in-phrases off).".into(),
-        );
+        ));
     }
 
-    let format = ExportFormat::from_query(query.format.as_deref()).map_err(|e| e.to_string())?;
+    let format = ExportFormat::from_query(query.format.as_deref())
+        .map_err(|e| ExportError::BadRequest(e.to_string()))?;
     let search_term = query.search.as_deref().unwrap_or("").trim().to_string();
     let languages = parse_i32_csv(&query.languages);
     let usernames = crate::jbovlaste::dto::parse_username_list(&query.username);
@@ -2442,8 +2490,9 @@ pub async fn export_search_results(
         .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
         .unwrap_or_default();
     if query.include_popular_collections == Some(true) {
-        let popular =
-            crate::collections::service::query_popular_learnt_collection_ids(pool).await?;
+        let popular = crate::collections::service::query_popular_learnt_collection_ids(pool)
+            .await
+            .map_err(boxed)?;
         collection_ids = crate::collections::service::merge_collection_ids(collection_ids, popular);
     }
 
@@ -2464,9 +2513,13 @@ pub async fn export_search_results(
 
     if use_semantic {
         if crate::utils::embeddings::embeddings_disabled() {
-            return Err("Semantic search is disabled. Use text search instead.".into());
+            return Err(ExportError::BadRequest(
+                "Semantic search is disabled. Use text search instead.".into(),
+            ));
         }
-        let embedding = crate::utils::embeddings::get_embedding(&search_term).await?;
+        let embedding = crate::utils::embeddings::get_embedding(&search_term)
+            .await
+            .map_err(boxed)?;
         let semantic_embedding = Some(pgvector::Vector::from(embedding.clone()));
 
         let collection_fut = async {
@@ -2641,17 +2694,18 @@ async fn finalize_search_export(
     definitions: Vec<DictionaryEntry>,
     definition_total: i64,
     languages: &Option<Vec<i32>>,
-) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<u8>, String, String), ExportError> {
     let combined = collection_total.saturating_add(definition_total);
     if combined > SEARCH_EXPORT_ROW_CAP {
-        return Err(format!(
+        return Err(ExportError::BadRequest(format!(
             "Too many matching rows ({}). Narrow the search (limit is {}).",
             combined, SEARCH_EXPORT_ROW_CAP
-        )
-        .into());
+        )));
     }
     if collection_items.is_empty() && definitions.is_empty() {
-        return Err("No matching definitions or collection items to export.".into());
+        return Err(ExportError::BadRequest(
+            "No matching definitions or collection items to export.".into(),
+        ));
     }
 
     let lang = resolve_preamble_language_tag(pool, languages).await?;
@@ -2661,12 +2715,12 @@ async fn finalize_search_export(
     let content = match format {
         ExportFormat::Pdf => {
             let latex = generate_search_export_latex(&collection_items, &definitions, &lang);
-            let mut client = pool.get().await?;
-            let transaction = client.transaction().await?;
+            let mut client = pool.get().await.map_err(boxed)?;
+            let transaction = client.transaction().await.map_err(boxed)?;
             let allowed_item_ids: Vec<i32> =
                 collection_items.iter().map(|item| item.item_id).collect();
             let images = load_pdf_images(&transaction, &latex, &allowed_item_ids).await?;
-            transaction.commit().await?;
+            transaction.commit().await.map_err(boxed)?;
             generate_pdf(&latex, &images).await?
         }
         ExportFormat::LaTeX => {
@@ -2678,7 +2732,8 @@ async fn finalize_search_export(
         ExportFormat::Json => serde_json::to_vec_pretty(&SearchExportJson {
             collection_items,
             definitions,
-        })?,
+        })
+        .map_err(boxed)?,
         ExportFormat::Tsv => {
             let mut files: Vec<(String, String)> = Vec::new();
             if !collection_items.is_empty() {
@@ -2727,10 +2782,13 @@ async fn export_full_collection_json(
     pool: &Pool,
     query: &SearchExportQuery,
     user_id: Option<i32>,
-) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
-    let format = ExportFormat::from_query(query.format.as_deref()).map_err(|e| e.to_string())?;
+) -> Result<(Vec<u8>, String, String), ExportError> {
+    let format = ExportFormat::from_query(query.format.as_deref())
+        .map_err(|e| ExportError::BadRequest(e.to_string()))?;
     if format != ExportFormat::Json {
-        return Err("Full collection export supports JSON format only.".into());
+        return Err(ExportError::BadRequest(
+            "Full collection export supports JSON format only.".to_string(),
+        ));
     }
 
     let collection_ids = query
@@ -2739,16 +2797,22 @@ async fn export_full_collection_json(
         .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
         .unwrap_or_default();
     if collection_ids.len() != 1 {
-        return Err("Full collection export requires exactly one collection id.".into());
+        return Err(ExportError::BadRequest(
+            "Full collection export requires exactly one collection id.".to_string(),
+        ));
     }
 
     let export =
         crate::collections::service::export_collection_full(pool, collection_ids[0], user_id)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| match e {
+                crate::error::AppError::Auth(_) => ExportError::AccessDenied,
+                crate::error::AppError::NotFound(_) => ExportError::NotFound(e.to_string()),
+                other => ExportError::from(other.to_string()),
+            })?;
 
     let filename = collection_export_filename(&export.collection.name);
-    let content = serde_json::to_vec_pretty(&export)?;
+    let content = serde_json::to_vec_pretty(&export).map_err(boxed)?;
     Ok((
         content,
         ExportFormat::Json.content_type().to_string(),

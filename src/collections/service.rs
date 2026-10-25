@@ -1511,21 +1511,37 @@ pub async fn import_json(
     let mut skipped_count = 0;
     let mut warnings = Vec::new();
 
-    // Process each item
+    // Which referenced definitions exist (one round trip instead of one per item).
+    let requested_def_ids: Vec<i32> = req.items.iter().filter_map(|i| i.definition_id).collect();
+    let existing_def_ids: std::collections::HashSet<i32> = transaction
+        .query(
+            "SELECT definitionid FROM definitions WHERE definitionid = ANY($1)",
+            &[&requested_def_ids],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .iter()
+        .map(|r| r.get(0))
+        .collect();
+
+    let max_position: i32 = transaction
+        .query_one(
+            "SELECT COALESCE(MAX(position), -1) FROM collection_items WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .try_get(0)
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut ins_def_ids: Vec<i32> = Vec::new();
+    let mut ins_notes: Vec<Option<String>> = Vec::new();
+    let mut ins_positions: Vec<i32> = Vec::new();
+    let mut ins_canonical: Vec<Option<String>> = Vec::new();
+
     for item in &req.items {
         if let Some(def_id) = item.definition_id {
-            // Verify definition exists
-            let exists = transaction
-                .query_one(
-                    "SELECT EXISTS(SELECT 1 FROM definitions WHERE definitionid = $1)",
-                    &[&def_id],
-                )
-                .await
-                .map_err(|e| AppError::Database(e.to_string()))?
-                .try_get::<_, bool>(0)
-                .map_err(|e| AppError::Database(e.to_string()))?;
-
-            if !exists {
+            if !existing_def_ids.contains(&def_id) {
                 warnings.push(format!(
                     "Definition ID {} not found for word '{}'",
                     def_id, item.word
@@ -1533,34 +1549,18 @@ pub async fn import_json(
                 skipped_count += 1;
                 continue;
             }
-
-            // Get current max position
-            let max_position: i32 = transaction
-                .query_one(
-                    "SELECT COALESCE(MAX(position), -1) FROM collection_items WHERE collection_id = $1",
-                    &[&collection_id],
-                )
-                .await.map_err(|e| AppError::Database(e.to_string()))?
-                .try_get(0).map_err(|e| AppError::Database(e.to_string()))?;
-
-            let canonical_form = crate::utils::canonical::get_canonical_form(&item.word);
-
-            // Add item
-            transaction
-                .execute(
-                    "INSERT INTO collection_items (collection_id, definition_id, notes, position, canonical_form)
-                     VALUES ($1, $2, $3, $4, $5)",
-                    &[
-                        &collection_id,
-                        &def_id,
-                        &item.collection_note,
-                        &(max_position + 1),
-                        &canonical_form,
-                    ],
-                )
-                .await
-                .map_err(|e| AppError::Database(e.to_string()))?;
-
+            if ins_def_ids.contains(&def_id) {
+                warnings.push(format!(
+                    "Definition ID {} listed more than once, skipped duplicate for word '{}'",
+                    def_id, item.word
+                ));
+                skipped_count += 1;
+                continue;
+            }
+            ins_def_ids.push(def_id);
+            ins_notes.push(item.collection_note.clone());
+            ins_positions.push(max_position + 1 + imported_count);
+            ins_canonical.push(crate::utils::canonical::get_canonical_form(&item.word));
             imported_count += 1;
         } else {
             warnings.push(format!(
@@ -1569,6 +1569,26 @@ pub async fn import_json(
             ));
             skipped_count += 1;
         }
+    }
+
+    if !ins_def_ids.is_empty() {
+        transaction
+            .execute(
+                "INSERT INTO collection_items (collection_id, definition_id, notes, position, canonical_form)
+                 SELECT $1, t.definition_id, t.notes, t.position, t.canonical_form
+                 FROM UNNEST($2::int[], $3::text[], $4::int[], $5::text[])
+                      WITH ORDINALITY AS t(definition_id, notes, position, canonical_form, ord)
+                 ORDER BY t.ord",
+                &[
+                    &collection_id,
+                    &ins_def_ids,
+                    &ins_notes,
+                    &ins_positions,
+                    &ins_canonical,
+                ],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
     }
 
     let username = transaction
@@ -1668,21 +1688,49 @@ pub async fn import_collection_from_json(
         .try_get(0)
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    // Prefetch what already exists in the target collection, then track what this
+    // import adds, so duplicate detection matches the old per-item queries.
+    let requested_def_ids: Vec<i32> = items.iter().filter_map(|i| i.definition_id).collect();
+    let mut present_def_ids: std::collections::HashSet<i32> = transaction
+        .query(
+            "SELECT definition_id FROM collection_items
+             WHERE collection_id = $1 AND definition_id = ANY($2)",
+            &[&target_collection_id, &requested_def_ids],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .iter()
+        .map(|r| r.get(0))
+        .collect();
+    let mut present_free: std::collections::HashSet<(String, String)> = transaction
+        .query(
+            "SELECT free_content_front, free_content_back FROM collection_items
+             WHERE collection_id = $1
+               AND free_content_front IS NOT NULL AND free_content_back IS NOT NULL",
+            &[&target_collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .iter()
+        .map(|r| (r.get(0), r.get(1)))
+        .collect();
+
+    // Rows to insert, in input order, plus the export item each came from.
+    let mut ins_items: Vec<&CollectionExportItem> = Vec::new();
+    let mut ins_def_ids: Vec<Option<i32>> = Vec::new();
+    let mut ins_fronts: Vec<Option<String>> = Vec::new();
+    let mut ins_backs: Vec<Option<String>> = Vec::new();
+    let mut ins_notes: Vec<Option<String>> = Vec::new();
+    let mut ins_positions: Vec<i32> = Vec::new();
+    let mut ins_canonical: Vec<Option<String>> = Vec::new();
+
     for item in items {
         let mut skip_reason: Option<String> = None;
         let identifier: String;
 
-        // Check for conflicts
         if let Some(def_id) = item.definition_id {
             identifier = format!("definition_id: {}", def_id);
-            let exists = transaction
-                .query_one(
-                    "SELECT EXISTS(SELECT 1 FROM collection_items WHERE collection_id = $1 AND definition_id = $2)",
-                    &[&target_collection_id, &def_id],
-                )
-                .await.map_err(|e| AppError::Database(e.to_string()))?
-                .try_get::<_, bool>(0).map_err(|e| AppError::Database(e.to_string()))?;
-            if exists {
+            if present_def_ids.contains(&def_id) {
                 skip_reason = Some("Definition already exists in target collection".to_string());
             }
         } else if let (Some(front), Some(back)) =
@@ -1692,20 +1740,12 @@ pub async fn import_collection_from_json(
                 "free_content_front: {}",
                 front.chars().take(30).collect::<String>()
             );
-            let exists = transaction
-                .query_one(
-                    "SELECT EXISTS(SELECT 1 FROM collection_items WHERE collection_id = $1 AND free_content_front = $2 AND free_content_back = $3)",
-                    &[&target_collection_id, front, back],
-                )
-                .await.map_err(|e| AppError::Database(e.to_string()))?
-                .try_get::<_, bool>(0).map_err(|e| AppError::Database(e.to_string()))?;
-            if exists {
+            if present_free.contains(&(sanitize_html(front), sanitize_html(back))) {
                 skip_reason =
                     Some("Free content item already exists in target collection".to_string());
             }
         } else {
-            // Invalid item format in export
-            identifier = format!("item_id: {}", item.item_id); // Use item_id from export for identification
+            identifier = format!("item_id: {}", item.item_id);
             skip_reason =
                 Some("Invalid item format (missing definition_id or free content)".to_string());
         }
@@ -1716,7 +1756,6 @@ pub async fn import_collection_from_json(
             continue;
         }
 
-        // Insert the item
         current_max_position += 1;
         let sanitized_front = item.free_content_front.as_ref().map(|f| sanitize_html(f));
         let sanitized_back = item.free_content_back.as_ref().map(|b| sanitize_html(b));
@@ -1731,24 +1770,53 @@ pub async fn import_collection_from_json(
                     .and_then(|w| crate::utils::canonical::get_canonical_form(w))
             });
 
-        let new_item_id: i32 = transaction
-            .query_one(
+        if let Some(def_id) = item.definition_id {
+            present_def_ids.insert(def_id);
+        }
+        if let (Some(f), Some(b)) = (&sanitized_front, &sanitized_back) {
+            present_free.insert((f.clone(), b.clone()));
+        }
+
+        ins_items.push(item);
+        ins_def_ids.push(item.definition_id);
+        ins_fronts.push(sanitized_front);
+        ins_backs.push(sanitized_back);
+        ins_notes.push(sanitized_note);
+        ins_positions.push(current_max_position);
+        ins_canonical.push(canonical_form);
+        imported_count += 1;
+    }
+
+    let mut item_id_by_position: HashMap<i32, i32> = HashMap::new();
+    if !ins_items.is_empty() {
+        for row in transaction
+            .query(
                 "INSERT INTO collection_items (collection_id, definition_id, free_content_front, free_content_back, notes, position, canonical_form)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING item_id",
+                 SELECT $1, t.definition_id, t.front, t.back, t.notes, t.position, t.canonical_form
+                 FROM UNNEST($2::int[], $3::text[], $4::text[], $5::text[], $6::int[], $7::text[])
+                      WITH ORDINALITY AS t(definition_id, front, back, notes, position, canonical_form, ord)
+                 ORDER BY t.ord
+                 RETURNING item_id, position",
                 &[
                     &target_collection_id,
-                    &item.definition_id,
-                    &sanitized_front,
-                    &sanitized_back,
-                    &sanitized_note,
-                    &current_max_position,
-                    &canonical_form,
+                    &ins_def_ids,
+                    &ins_fronts,
+                    &ins_backs,
+                    &ins_notes,
+                    &ins_positions,
+                    &ins_canonical,
                 ],
             )
-            .await.map_err(|e| AppError::Database(e.to_string()))?
-            .try_get(0).map_err(|e| AppError::Database(e.to_string()))?;
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+        {
+            item_id_by_position.insert(row.get("position"), row.get("item_id"));
+        }
+    }
 
-        // Handle images
+    // Images, in input order (only items that carry one).
+    for (item, position) in ins_items.iter().zip(&ins_positions) {
+        let new_item_id = item_id_by_position[position];
         for (side, url_option) in [
             ("front", &item.front_image_url),
             ("back", &item.back_image_url),
@@ -1775,8 +1843,6 @@ pub async fn import_collection_from_json(
                     .map_err(|e| AppError::Database(e.to_string()))?;
             }
         }
-
-        imported_count += 1;
     }
 
     transaction
@@ -1818,6 +1884,84 @@ fn parse_export_direction(s: Option<&String>) -> FlashcardDirection {
         "quiz_both" => FlashcardDirection::QuizBoth,
         _ => FlashcardDirection::Both,
     }
+}
+
+/// Store an imported `data:audio/...;base64,` sound for an item (same limits as item upload).
+async fn attach_imported_sound(
+    transaction: &Transaction<'_>,
+    item_id: i32,
+    url: &str,
+) -> Result<(), String> {
+    let (mime_type, data) = url
+        .strip_prefix("data:")
+        .and_then(|rest| rest.split_once(";base64,"))
+        .ok_or_else(|| "not a base64 data URL".to_string())?;
+    let sound = crate::collections::models::SoundData {
+        data: data.to_string(),
+        mime_type: mime_type.to_string(),
+    };
+    validate_item_audio(&sound)?;
+    let bytes = BASE64.decode(data).map_err(|e| e.to_string())?;
+    transaction
+        .execute(
+            "INSERT INTO collection_item_sounds (item_id, sound_data, mime_type) VALUES ($1, $2, $3)",
+            &[&item_id, &bytes, &mime_type],
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn is_quiz_direction(d: &FlashcardDirection) -> bool {
+    matches!(
+        d,
+        FlashcardDirection::QuizDirect
+            | FlashcardDirection::QuizReverse
+            | FlashcardDirection::QuizBoth
+    )
+}
+
+/// Challenge-mix directions for imported level items that carry no `direction`.
+///
+/// Without this every such card became `both` (plain flip cards) and a course had no
+/// Duolingo-style variety. Levels where every item already has a direction are left alone.
+/// The listen slot needs the item's imported `sound_url`; without one it is a flip card.
+fn auto_mix_directions_for_import(
+    items: &[CollectionExportItem],
+    levels: &[LevelExport],
+) -> HashMap<usize, &'static str> {
+    let mut out = HashMap::new();
+    for level in levels {
+        let positions: Vec<usize> = level
+            .item_positions
+            .iter()
+            .copied()
+            .filter(|&i| i < items.len())
+            .collect();
+        if positions.iter().all(|&i| items[i].direction.is_some()) {
+            continue;
+        }
+        let cards: Vec<crate::utils::challenge_mix::ChallengeMixCard<'_>> = positions
+            .iter()
+            .map(|&i| crate::utils::challenge_mix::ChallengeMixCard {
+                front: items[i]
+                    .free_content_front
+                    .as_deref()
+                    .or(items[i].word.as_deref())
+                    .unwrap_or(""),
+                has_sound: items[i].sound_url.is_some(),
+            })
+            .collect();
+        for (&i, dir) in positions
+            .iter()
+            .zip(crate::utils::challenge_mix::assign_challenge_mix(&cards))
+        {
+            if items[i].direction.is_none() {
+                out.entry(i).or_insert(dir);
+            }
+        }
+    }
+    out
 }
 
 /// Full import: create collection, items, then (if levels present) flashcards and levels.
@@ -1867,38 +2011,55 @@ pub async fn import_full(
     let mut inserted_item_ids_by_export_index: Vec<Option<i32>> =
         Vec::with_capacity(req.items.len());
 
+    // Pass 1: decide, in input order, which items are inserted. Definition existence
+    // is checked in one query instead of one per item.
+    let requested_def_ids: Vec<i32> = req.items.iter().filter_map(|i| i.definition_id).collect();
+    let existing_def_ids: HashSet<i32> = transaction
+        .query(
+            "SELECT definitionid FROM definitions WHERE definitionid = ANY($1)",
+            &[&requested_def_ids],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .iter()
+        .map(|r| r.get(0))
+        .collect();
+
+    // Some(skip warning) for skipped items, None for items to insert.
+    let mut skip_warning_by_index: Vec<Option<String>> = Vec::with_capacity(req.items.len());
+    let mut ins_def_ids: Vec<Option<i32>> = Vec::new();
+    let mut ins_fronts: Vec<Option<String>> = Vec::new();
+    let mut ins_backs: Vec<Option<String>> = Vec::new();
+    let mut ins_notes: Vec<Option<String>> = Vec::new();
+    let mut ins_positions: Vec<i32> = Vec::new();
+    let mut ins_canonical: Vec<Option<String>> = Vec::new();
+
     for (pos, item) in req.items.iter().enumerate() {
         let has_definition = item.definition_id.is_some();
         let has_free_content =
             item.free_content_front.is_some() && item.free_content_back.is_some();
 
         if !has_definition && !has_free_content {
-            warnings.push(format!(
+            skip_warning_by_index.push(Some(format!(
                 "Item at position {}: missing definition_id and free content, skipped",
                 pos
-            ));
-            skipped_count += 1;
-            inserted_item_ids_by_export_index.push(None);
+            )));
             continue;
         }
-
         if let Some(def_id) = item.definition_id {
-            let exists = transaction
-                .query_one(
-                    "SELECT EXISTS(SELECT 1 FROM definitions WHERE definitionid = $1)",
-                    &[&def_id],
-                )
-                .await
-                .map_err(|e| AppError::Database(e.to_string()))?
-                .try_get::<_, bool>(0)
-                .map_err(|e| AppError::Database(e.to_string()))?;
-            if !exists {
-                warnings.push(format!(
-                    "Definition ID {} not found for word '{:?}', skipped",
-                    def_id, item.word
-                ));
-                skipped_count += 1;
-                inserted_item_ids_by_export_index.push(None);
+            if !existing_def_ids.contains(&def_id) {
+                skip_warning_by_index.push(Some(format!(
+                    "Definition ID {} not found for word '{}', skipped",
+                    def_id,
+                    item.word.as_deref().unwrap_or("")
+                )));
+                continue;
+            }
+            if ins_def_ids.contains(&Some(def_id)) {
+                skip_warning_by_index.push(Some(format!(
+                    "Item at position {}: definition ID {} listed more than once, skipped",
+                    pos, def_id
+                )));
                 continue;
             }
         }
@@ -1915,24 +2076,52 @@ pub async fn import_full(
                     .and_then(|w| crate::utils::canonical::get_canonical_form(w))
             });
 
-        let new_item_id: i32 = transaction
-            .query_one(
+        skip_warning_by_index.push(None);
+        ins_def_ids.push(item.definition_id);
+        ins_fronts.push(sanitized_front);
+        ins_backs.push(sanitized_back);
+        ins_notes.push(sanitized_note);
+        ins_positions.push(pos as i32);
+        ins_canonical.push(canonical_form);
+    }
+
+    // One INSERT for all items; position is the export index, which is unique here.
+    let mut item_id_by_position: HashMap<i32, i32> = HashMap::new();
+    if !ins_positions.is_empty() {
+        for row in transaction
+            .query(
                 "INSERT INTO collection_items (collection_id, definition_id, free_content_front, free_content_back, notes, position, canonical_form)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING item_id",
+                 SELECT $1, t.definition_id, t.front, t.back, t.notes, t.position, t.canonical_form
+                 FROM UNNEST($2::int[], $3::text[], $4::text[], $5::text[], $6::int[], $7::text[])
+                      WITH ORDINALITY AS t(definition_id, front, back, notes, position, canonical_form, ord)
+                 ORDER BY t.ord
+                 RETURNING item_id, position",
                 &[
                     &collection_id,
-                    &item.definition_id,
-                    &sanitized_front,
-                    &sanitized_back,
-                    &sanitized_note,
-                    &(pos as i32),
-                    &canonical_form,
+                    &ins_def_ids,
+                    &ins_fronts,
+                    &ins_backs,
+                    &ins_notes,
+                    &ins_positions,
+                    &ins_canonical,
                 ],
             )
             .await
             .map_err(|e| AppError::Database(e.to_string()))?
-            .try_get(0)
-            .map_err(|e| AppError::Database(e.to_string()))?;
+        {
+            item_id_by_position.insert(row.get("position"), row.get("item_id"));
+        }
+    }
+
+    // Pass 2, in input order: skip warnings and images (keeps the warning order).
+    for (pos, item) in req.items.iter().enumerate() {
+        if let Some(w) = skip_warning_by_index[pos].take() {
+            warnings.push(w);
+            skipped_count += 1;
+            inserted_item_ids_by_export_index.push(None);
+            continue;
+        }
+        let new_item_id = item_id_by_position[&(pos as i32)];
 
         for (side, url_option) in [
             ("front", &item.front_image_url),
@@ -1985,6 +2174,12 @@ pub async fn import_full(
             }
         }
 
+        if let Some(url) = &item.sound_url {
+            if let Err(e) = attach_imported_sound(&transaction, new_item_id, url).await {
+                warnings.push(format!("Item at position {}: sound skipped: {}", pos, e));
+            }
+        }
+
         inserted_item_ids_by_export_index.push(Some(new_item_id));
         imported_count += 1;
     }
@@ -2026,76 +2221,90 @@ pub async fn import_full(
     };
 
     let mut levels_created = 0i32;
+    let mut quiz_flashcard_positions: Vec<i32> = Vec::new();
+    let mut quiz_flashcard_ids: Vec<i32> = Vec::new();
     if !levels_to_use.is_empty() {
-        // For each export index, Some(flashcard_id) if we have a flashcard for that item, None if skipped
-        let mut flashcard_id_by_export_index: Vec<Option<i32>> =
-            Vec::with_capacity(inserted_item_ids_by_export_index.len());
+        // One flashcard per inserted item (position = export index), then the progress
+        // rows for the sides each direction needs, each in a single statement.
+        let mut fc_positions: Vec<i32> = Vec::new();
+        let mut fc_item_ids: Vec<i32> = Vec::new();
+        let mut fc_directions: Vec<FlashcardDirection> = Vec::new();
+        let auto_directions = auto_mix_directions_for_import(&req.items, &levels_to_use);
         for (idx, item_id_opt) in inserted_item_ids_by_export_index.iter().enumerate() {
-            let flashcard_id_opt = match *item_id_opt {
-                Some(item_id) => {
-                    let direction = parse_export_direction(
-                        req.items.get(idx).and_then(|i| i.direction.as_ref()),
-                    );
-                    let flashcard_id: i32 = transaction
-                        .query_one(
-                            "INSERT INTO flashcards (collection_id, position, item_id, direction)
-                     VALUES ($1, $2, $3, $4)
-                     RETURNING id",
-                            &[&collection_id, &(idx as i32), &item_id, &direction],
-                        )
-                        .await
-                        .map_err(|e| AppError::Database(e.to_string()))?
-                        .try_get(0)
-                        .map_err(|e| AppError::Database(e.to_string()))?;
-                    // Seed progress sides to match direction (same as create_flashcard).
-                    match direction {
-                        FlashcardDirection::Reverse
-                        | FlashcardDirection::FillInReverse
-                        | FlashcardDirection::WordbankReverse
-                        | FlashcardDirection::ListenWordbankReverse => {
-                            initialize_flashcard_progress(
-                                &transaction,
-                                user_id,
-                                flashcard_id,
-                                "reverse",
-                            )
-                            .await?;
-                        }
-                        FlashcardDirection::Both
-                        | FlashcardDirection::FillInBoth
-                        | FlashcardDirection::WordbankBoth
-                        | FlashcardDirection::ListenWordbankBoth => {
-                            initialize_flashcard_progress(
-                                &transaction,
-                                user_id,
-                                flashcard_id,
-                                "direct",
-                            )
-                            .await?;
-                            initialize_flashcard_progress(
-                                &transaction,
-                                user_id,
-                                flashcard_id,
-                                "reverse",
-                            )
-                            .await?;
-                        }
-                        _ => {
-                            initialize_flashcard_progress(
-                                &transaction,
-                                user_id,
-                                flashcard_id,
-                                "direct",
-                            )
-                            .await?;
-                        }
-                    }
-                    Some(flashcard_id)
+            if let Some(item_id) = *item_id_opt {
+                fc_positions.push(idx as i32);
+                fc_item_ids.push(item_id);
+                let explicit = req.items.get(idx).and_then(|i| i.direction.as_ref());
+                let direction = match (explicit, auto_directions.get(&idx)) {
+                    (None, Some(auto)) => parse_export_direction(Some(&auto.to_string())),
+                    _ => parse_export_direction(explicit),
+                };
+                if is_quiz_direction(&direction) {
+                    quiz_flashcard_positions.push(idx as i32);
                 }
-                None => None,
-            };
-            flashcard_id_by_export_index.push(flashcard_id_opt);
+                fc_directions.push(direction);
+            }
         }
+        let mut flashcard_id_by_position: HashMap<i32, i32> = HashMap::new();
+        if !fc_positions.is_empty() {
+            for row in transaction
+                .query(
+                    "INSERT INTO flashcards (collection_id, position, item_id, direction)
+                     SELECT $1, t.position, t.item_id, t.direction::flashcard_direction
+                     FROM UNNEST($2::int[], $3::int[], $4::text[]) WITH ORDINALITY AS t(position, item_id, direction, ord)
+                     ORDER BY t.ord
+                     RETURNING id, position",
+                    &[&collection_id, &fc_positions, &fc_item_ids, &fc_directions],
+                )
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?
+            {
+                flashcard_id_by_position.insert(row.get("position"), row.get("id"));
+            }
+        }
+        quiz_flashcard_ids.extend(
+            quiz_flashcard_positions
+                .iter()
+                .filter_map(|p| flashcard_id_by_position.get(p).copied()),
+        );
+        // Seed progress sides to match direction (same as create_flashcard).
+        let mut progress_ids: Vec<i32> = Vec::new();
+        let mut progress_sides: Vec<&str> = Vec::new();
+        for (position, direction) in fc_positions.iter().zip(&fc_directions) {
+            let flashcard_id = flashcard_id_by_position[position];
+            let sides: &[&str] = match direction {
+                FlashcardDirection::Reverse
+                | FlashcardDirection::FillInReverse
+                | FlashcardDirection::WordbankReverse
+                | FlashcardDirection::ListenWordbankReverse => &["reverse"],
+                FlashcardDirection::Both
+                | FlashcardDirection::FillInBoth
+                | FlashcardDirection::WordbankBoth
+                | FlashcardDirection::ListenWordbankBoth => &["direct", "reverse"],
+                _ => &["direct"],
+            };
+            for side in sides {
+                progress_ids.push(flashcard_id);
+                progress_sides.push(side);
+            }
+        }
+        if !progress_ids.is_empty() {
+            transaction
+                .execute(
+                    "INSERT INTO user_flashcard_progress
+                     (user_id, flashcard_id, card_side, status, next_review_at)
+                     SELECT $1, t.flashcard_id, t.card_side, 'new', CURRENT_TIMESTAMP
+                     FROM UNNEST($2::int[], $3::text[]) AS t(flashcard_id, card_side)
+                     ON CONFLICT (user_id, flashcard_id, card_side) WHERE NOT archived DO NOTHING",
+                    &[&user_id, &progress_ids, &progress_sides],
+                )
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+        }
+        let flashcard_id_by_export_index: Vec<Option<i32>> = (0..inserted_item_ids_by_export_index
+            .len())
+            .map(|idx| flashcard_id_by_position.get(&(idx as i32)).copied())
+            .collect();
 
         let mut new_level_ids: Vec<i32> = Vec::with_capacity(levels_to_use.len());
         for level in &levels_to_use {
@@ -2121,33 +2330,59 @@ pub async fn import_full(
             levels_created += 1;
         }
 
+        // Prerequisites and level membership, one statement each. For a flashcard listed
+        // twice in a level the last position wins, as with the old per-row upsert.
+        let mut pre_level_ids: Vec<i32> = Vec::new();
+        let mut pre_ids: Vec<i32> = Vec::new();
+        let mut member_pos: HashMap<(i32, i32), i32> = HashMap::new();
+        let mut member_order: Vec<(i32, i32)> = Vec::new();
         for (level_idx, level) in levels_to_use.iter().enumerate() {
             let level_id = new_level_ids[level_idx];
             for &prereq_idx in &level.prerequisite_positions {
                 if prereq_idx < new_level_ids.len() {
                     let prereq_id = new_level_ids[prereq_idx];
                     if level_id != prereq_id {
-                        let _ = transaction
-                            .execute(
-                                "INSERT INTO level_prerequisites (level_id, prerequisite_id) VALUES ($1, $2)
-                                 ON CONFLICT (level_id, prerequisite_id) DO NOTHING",
-                                &[&level_id, &prereq_id],
-                            )
-                            .await;
+                        pre_level_ids.push(level_id);
+                        pre_ids.push(prereq_id);
                     }
                 }
             }
             for (pos_in_level, &item_idx) in level.item_positions.iter().enumerate() {
                 if let Some(Some(flashcard_id)) = flashcard_id_by_export_index.get(item_idx) {
-                    let _ = transaction
-                        .execute(
-                            "INSERT INTO flashcard_level_items (level_id, flashcard_id, position)
-                             VALUES ($1, $2, $3)
-                             ON CONFLICT (level_id, flashcard_id) DO UPDATE SET position = EXCLUDED.position",
-                            &[&level_id, &flashcard_id, &(pos_in_level as i32)],
-                        )
-                        .await;
+                    let key = (level_id, *flashcard_id);
+                    if member_pos.insert(key, pos_in_level as i32).is_none() {
+                        member_order.push(key);
+                    }
                 }
+            }
+        }
+        if !pre_level_ids.is_empty() {
+            if let Err(e) = transaction
+                .execute(
+                    "INSERT INTO level_prerequisites (level_id, prerequisite_id)
+                     SELECT * FROM UNNEST($1::int[], $2::int[])
+                     ON CONFLICT (level_id, prerequisite_id) DO NOTHING",
+                    &[&pre_level_ids, &pre_ids],
+                )
+                .await
+            {
+                warnings.push(format!("Failed to save level prerequisites: {}", e));
+            }
+        }
+        if !member_order.is_empty() {
+            let m_levels: Vec<i32> = member_order.iter().map(|k| k.0).collect();
+            let m_cards: Vec<i32> = member_order.iter().map(|k| k.1).collect();
+            let m_pos: Vec<i32> = member_order.iter().map(|k| member_pos[k]).collect();
+            if let Err(e) = transaction
+                .execute(
+                    "INSERT INTO flashcard_level_items (level_id, flashcard_id, position)
+                     SELECT * FROM UNNEST($1::int[], $2::int[], $3::int[])
+                     ON CONFLICT (level_id, flashcard_id) DO UPDATE SET position = EXCLUDED.position",
+                    &[&m_levels, &m_cards, &m_pos],
+                )
+                .await
+            {
+                warnings.push(format!("Failed to save level memberships: {}", e));
             }
         }
     }
@@ -2181,6 +2416,19 @@ pub async fn import_full(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     invalidate_public_collections_cache(redis).await;
+
+    // Quiz cards need their correct answer stored, or the learner gets no options.
+    // Seeded after commit (the helper opens its own transaction); a failure only warns.
+    for flashcard_id in quiz_flashcard_ids {
+        if let Err(e) =
+            crate::flashcards::generate_and_set_quiz_options(pool, user_id, flashcard_id).await
+        {
+            warnings.push(format!(
+                "Could not seed quiz options for flashcard {}: {}",
+                flashcard_id, e
+            ));
+        }
+    }
 
     Ok(ImportFullResponse {
         collection: collection_resp,
@@ -2229,6 +2477,8 @@ pub async fn export_collection_full(
                 (SELECT img.mime_type FROM collection_item_images cii
                     INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
                     WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_mime,
+                (SELECT s.sound_data FROM collection_item_sounds s WHERE s.item_id = ci.item_id) as sound_data,
+                (SELECT s.mime_type FROM collection_item_sounds s WHERE s.item_id = ci.item_id) as sound_mime,
                 f.direction::text as flashcard_direction
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
@@ -2263,6 +2513,12 @@ pub async fn export_collection_full(
                         row.get::<_, Option<String>>("back_image_mime")
                             .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(&data)))
                     });
+            let sound_url = row
+                .get::<_, Option<Vec<u8>>>("sound_data")
+                .and_then(|data| {
+                    row.get::<_, Option<String>>("sound_mime")
+                        .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(&data)))
+                });
             let direction: Option<String> = row.get("flashcard_direction");
             CollectionExportItem {
                 item_id: row.get("item_id"),
@@ -2284,6 +2540,7 @@ pub async fn export_collection_full(
                 free_content_back: row.get("free_content_back"),
                 front_image_url,
                 back_image_url,
+                sound_url,
                 direction,
                 level_index: None,
                 position_in_level: None,
@@ -2309,50 +2566,59 @@ pub async fn export_collection_full(
         .map(|(i, &id)| (id, i))
         .collect();
 
-    let mut levels: Vec<LevelExport> = Vec::with_capacity(level_rows.len());
-    for row in &level_rows {
-        let level_id: i32 = row.get("level_id");
-        let prerequisite_ids: Vec<i32> = client
+    // Load prerequisites and level items for every level up front (two queries
+    // in total) instead of 2 + items queries per level.
+    let mut prereqs_by_level: HashMap<i32, Vec<i32>> = HashMap::new();
+    let mut item_ids_by_level: HashMap<i32, Vec<i32>> = HashMap::new();
+    if !level_ids.is_empty() {
+        for r in client
             .query(
-                "SELECT prerequisite_id FROM level_prerequisites WHERE level_id = $1",
-                &[&level_id],
+                "SELECT level_id, prerequisite_id FROM level_prerequisites
+                 WHERE level_id = ANY($1)",
+                &[&level_ids],
             )
             .await
             .map_err(|e| AppError::Database(e.to_string()))?
-            .iter()
-            .map(|r| r.get::<_, i32>("prerequisite_id"))
-            .collect();
-        let prerequisite_positions: Vec<usize> = prerequisite_ids
-            .iter()
-            .filter_map(|&pid| level_id_to_index.get(&pid).copied())
-            .collect();
-
-        let fli_rows = client
+        {
+            prereqs_by_level
+                .entry(r.get("level_id"))
+                .or_default()
+                .push(r.get("prerequisite_id"));
+        }
+        for r in client
             .query(
-                "SELECT fli.flashcard_id, fli.position
+                "SELECT fli.level_id, f.item_id
                  FROM flashcard_level_items fli
-                 WHERE fli.level_id = $1
-                 ORDER BY fli.position",
-                &[&level_id],
+                 JOIN flashcards f ON f.id = fli.flashcard_id
+                 WHERE fli.level_id = ANY($1)
+                 ORDER BY fli.level_id, fli.position",
+                &[&level_ids],
             )
             .await
-            .map_err(|e| AppError::Database(e.to_string()))?;
-
-        let mut item_positions_for_level: Vec<usize> = Vec::with_capacity(fli_rows.len());
-        for fli_row in &fli_rows {
-            let flashcard_id: i32 = fli_row.get("flashcard_id");
-            let item_id: i32 = client
-                .query_one(
-                    "SELECT item_id FROM flashcards WHERE id = $1",
-                    &[&flashcard_id],
-                )
-                .await
-                .map_err(|e| AppError::Database(e.to_string()))?
-                .get("item_id");
-            if let Some(&idx) = item_id_to_index.get(&item_id) {
-                item_positions_for_level.push(idx);
-            }
+            .map_err(|e| AppError::Database(e.to_string()))?
+        {
+            item_ids_by_level
+                .entry(r.get("level_id"))
+                .or_default()
+                .push(r.get("item_id"));
         }
+    }
+
+    let mut levels: Vec<LevelExport> = Vec::with_capacity(level_rows.len());
+    for row in &level_rows {
+        let level_id: i32 = row.get("level_id");
+        let prerequisite_positions: Vec<usize> = prereqs_by_level
+            .get(&level_id)
+            .into_iter()
+            .flatten()
+            .filter_map(|pid| level_id_to_index.get(pid).copied())
+            .collect();
+        let item_positions_for_level: Vec<usize> = item_ids_by_level
+            .get(&level_id)
+            .into_iter()
+            .flatten()
+            .filter_map(|item_id| item_id_to_index.get(item_id).copied())
+            .collect();
 
         levels.push(LevelExport {
             name: row.get("name"),
@@ -2413,10 +2679,10 @@ pub async fn upsert_item(
 
     // Validate images if present
     if let Some(img) = &req.front_image {
-        validate_item_image(img).map_err(|e| AppError::BadRequest(e.to_string()))?;
+        validate_item_image(img).map_err(|e| AppError::BadRequest(e.clone()))?;
     }
     if let Some(img) = &req.back_image {
-        validate_item_image(img).map_err(|e| AppError::BadRequest(e.to_string()))?;
+        validate_item_image(img).map_err(|e| AppError::BadRequest(e.clone()))?;
     }
 
     // Get highest current position
@@ -2635,7 +2901,7 @@ pub async fn upsert_item(
             .map_err(|e| AppError::Database(e.to_string()))?;
     }
     if let Some(sound) = &req.sound {
-        validate_item_audio(sound).map_err(|e| AppError::BadRequest(e.to_string()))?;
+        validate_item_audio(sound).map_err(|e| AppError::BadRequest(e.clone()))?;
         let sound_data = BASE64
             .decode(&sound.data)
             .map_err(|e| AppError::BadRequest(format!("Invalid sound base64: {}", e)))?;
@@ -4873,6 +5139,7 @@ pub async fn search_items_in_collections_for_export(
             free_content_front: row.get("free_content_front"),
             free_content_back: row.get("free_content_back"),
             front_image_url: None,
+            sound_url: None,
             back_image_url: None,
             direction: None,
             level_index: None,
@@ -5236,7 +5503,7 @@ pub async fn update_item_images(
     }
 
     if let Some(image) = &req.front_image {
-        validate_item_image(image).map_err(|e| AppError::BadRequest(e.to_string()))?;
+        validate_item_image(image).map_err(|e| AppError::BadRequest(e.clone()))?;
         let image_data = BASE64
             .decode(&image.data)
             .map_err(|e| AppError::BadRequest(format!("Invalid front image base64: {}", e)))?;
@@ -5264,7 +5531,7 @@ pub async fn update_item_images(
     }
 
     if let Some(image) = &req.back_image {
-        validate_item_image(image).map_err(|e| AppError::BadRequest(e.to_string()))?;
+        validate_item_image(image).map_err(|e| AppError::BadRequest(e.clone()))?;
         let image_data = BASE64
             .decode(&image.data)
             .map_err(|e| AppError::BadRequest(format!("Invalid back image base64: {}", e)))?;
@@ -5292,7 +5559,7 @@ pub async fn update_item_images(
     }
 
     if let Some(sound) = &req.sound {
-        validate_item_audio(sound).map_err(|e| AppError::BadRequest(e.to_string()))?;
+        validate_item_audio(sound).map_err(|e| AppError::BadRequest(e.clone()))?;
         let sound_data = BASE64
             .decode(&sound.data)
             .map_err(|e| AppError::BadRequest(format!("Invalid sound base64: {}", e)))?;
@@ -6196,5 +6463,66 @@ mod security_media_tests {
         let (bytes, mime) = super::normalize_collection_image(data.get_ref(), "image/png").unwrap();
         assert_eq!(mime, "image/webp");
         assert!(image::load_from_memory(&bytes).is_ok());
+    }
+}
+
+#[cfg(test)]
+mod import_auto_mix_tests {
+    use super::{auto_mix_directions_for_import, CollectionExportItem, LevelExport};
+
+    fn item(front: &str, direction: Option<&str>) -> CollectionExportItem {
+        serde_json::from_value(serde_json::json!({
+            "free_content_front": front,
+            "free_content_back": "x",
+            "direction": direction,
+        }))
+        .unwrap()
+    }
+
+    fn level(item_positions: Vec<usize>) -> LevelExport {
+        LevelExport {
+            name: "L".into(),
+            description: None,
+            min_cards: 5,
+            min_success_rate: 0.8,
+            position: 0,
+            prerequisite_positions: vec![],
+            item_positions,
+        }
+    }
+
+    #[test]
+    fn level_without_directions_gets_a_mix_not_all_both() {
+        let items: Vec<_> = ["coi do", "coi ro do", "co'o"]
+            .iter()
+            .map(|f| item(f, None))
+            .collect();
+        let dirs = auto_mix_directions_for_import(&items, &[level(vec![0, 1, 2])]);
+        // No audio on these items, so the listen slot is a flip card.
+        assert_eq!(dirs[&0], "quiz_direct");
+        assert_eq!(dirs[&1], "wordbank_reverse");
+        assert_eq!(dirs[&2], "both");
+    }
+
+    #[test]
+    fn imported_audio_enables_the_listen_slot() {
+        let mut items: Vec<_> = ["a", "b", "c"].iter().map(|f| item(f, None)).collect();
+        items[2].sound_url = Some("data:audio/mpeg;base64,SUQz".into());
+        let dirs = auto_mix_directions_for_import(&items, &[level(vec![0, 1, 2])]);
+        assert_eq!(dirs[&2], "listen_wordbank");
+    }
+
+    #[test]
+    fn explicit_directions_are_kept() {
+        let items = vec![
+            item("a", Some("listen_wordbank")),
+            item("b", Some("wordbank")),
+        ];
+        assert!(auto_mix_directions_for_import(&items, &[level(vec![0, 1])]).is_empty());
+        // Mixed level: only the item without a direction is filled in.
+        let items = vec![item("a", Some("wordbank")), item("b", None)];
+        let dirs = auto_mix_directions_for_import(&items, &[level(vec![0, 1, 9])]);
+        assert_eq!(dirs.len(), 1);
+        assert_eq!(dirs[&1], "wordbank");
     }
 }

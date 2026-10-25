@@ -23,14 +23,16 @@ fn default_use_canonical_comparison() -> bool {
 }
 
 impl CreateFlashcardRequest {
-    pub fn validate(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn validate(&self) -> Result<(), super::error::FlashcardError> {
         match (&self.definition_id, &self.free_content_front, &self.free_content_back) {
             (Some(_), None, None) => Ok(()),
             (None, Some(front), Some(back)) if !front.trim().is_empty() && !back.trim().is_empty() => {
                 Ok(())
             }
-            _ => Err("Must provide either definition_id or both free_content_front and free_content_back"
-                .into()),
+            _ => Err(super::error::FlashcardError::BadRequest(
+                "Must provide either definition_id or both free_content_front and free_content_back"
+                    .to_string(),
+            )),
         }
     }
 }

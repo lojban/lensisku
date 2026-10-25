@@ -164,7 +164,22 @@ criterion = "0.8"
 name = "search"
 harness = false
 
+[lints.rust]
+# deny, not forbid: ndarray::s! expands with #[allow(unsafe_code)].
+unsafe_code = "deny"
+
 [lints.clippy]
 panic = "warn"
 unwrap_used = "warn"
 expect_used = "warn"
+await_holding_lock = "deny"
+borrow_interior_mutable_const = "deny"
+cmp_owned = "deny"
+useless_vec = "deny"
+format_in_format_args = "deny"
+clone_on_copy = "deny"
+option_option = "deny"
+zero_sized_map_values = "deny"
+needless_late_init = "deny"
+redundant_static_lifetimes = "deny"
+implicit_clone = "deny"

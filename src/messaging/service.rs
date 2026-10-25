@@ -148,10 +148,8 @@ impl MessagingService {
 
         // Check if user is blocked by any participants (for direct threads)
         if let Some(ref participant_ids) = request.participant_ids {
-            for &participant_id in participant_ids {
-                if self.is_user_blocked(participant_id, user_id).await? {
-                    return Err(AppError::Auth("User is blocked by participant".to_string()));
-                }
+            if self.is_blocked_by_any(participant_ids, user_id).await? {
+                return Err(AppError::Auth("User is blocked by participant".to_string()));
             }
         }
 
@@ -184,16 +182,15 @@ impl MessagingService {
 
         // Add other participants
         if let Some(participant_ids) = request.participant_ids {
-            for participant_id in participant_ids {
-                transaction
-                    .execute(
-                        "INSERT INTO thread_participants (thread_id, user_id, role)
-                         VALUES ($1, $2, 'member')
-                         ON CONFLICT (thread_id, user_id) DO NOTHING",
-                        &[&thread_id, &participant_id],
-                    )
-                    .await?;
-            }
+            // One round trip for all participants instead of one INSERT each.
+            transaction
+                .execute(
+                    "INSERT INTO thread_participants (thread_id, user_id, role)
+                     SELECT $1, p.user_id, 'member' FROM UNNEST($2::int4[]) AS p(user_id)
+                     ON CONFLICT (thread_id, user_id) DO NOTHING",
+                    &[&thread_id, &participant_ids],
+                )
+                .await?;
         }
 
         transaction.commit().await?;
@@ -802,6 +799,22 @@ impl MessagingService {
             )
             .await?;
 
+        Ok(row.get(0))
+    }
+
+    /// Whether any of `blocker_ids` has blocked `blocked_id`, in one query.
+    async fn is_blocked_by_any(&self, blocker_ids: &[i32], blocked_id: i32) -> AppResult<bool> {
+        if blocker_ids.is_empty() {
+            return Ok(false);
+        }
+        let client = self.pool.get().await?;
+        let row = client
+            .query_one(
+                "SELECT COALESCE(bool_or(is_user_blocked(b, $2)), false)
+                 FROM UNNEST($1::int4[]) AS b",
+                &[&blocker_ids, &blocked_id],
+            )
+            .await?;
         Ok(row.get(0))
     }
 

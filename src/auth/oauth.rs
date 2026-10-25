@@ -17,7 +17,7 @@ use std::env;
 use uuid::Uuid;
 
 use crate::auth::models::UserRole;
-use crate::auth::service::{create_token_pair, hash_password, sanitize_html};
+use crate::auth::service::{create_token_pair, hash_password_async, sanitize_html};
 use crate::auth::User;
 use crate::sessions;
 use crate::{AppError, AppResult};
@@ -581,7 +581,7 @@ pub async fn complete_oauth(
         .request_async(&http)
         .await
         .map_err(|e| AppError::Auth(format!("Failed to exchange code for token: {e}")))?;
-    let access_token = token_result.access_token().secret().to_string();
+    let access_token = token_result.access_token().secret().clone();
     let profile = fetch_profile(provider, &access_token, &http).await?;
 
     let mut db = pool
@@ -705,7 +705,8 @@ async fn insert_oauth_user(
     } else {
         (fallback_email(provider, &profile.provider_id), true)
     };
-    let password_hash = hash_password(&Uuid::new_v4().to_string())
+    let password_hash = hash_password_async(&Uuid::new_v4().to_string())
+        .await
         .map_err(|e| AppError::Auth(format!("Password hashing failed: {e}")))?;
     let created_at = Utc::now();
     let role = UserRole::Editor.to_string();

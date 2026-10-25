@@ -1,4 +1,6 @@
+use super::error::FlashcardError;
 use crate::jbovlaste::service::get_valsi_sound_urls_from_db;
+use crate::AppError;
 use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use deadpool_postgres::Transaction;
@@ -8,7 +10,7 @@ use fsrs::{
     DEFAULT_PARAMETERS, FSRS,
 };
 use log::{debug, error, info};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::auth_utils::{
     verify_collection_ownership, verify_collection_read_access, verify_flashcard_ownership,
@@ -30,7 +32,7 @@ use super::{
 async fn get_flashcard(
     transaction: &Transaction<'_>,
     flashcard_id: i32,
-) -> Result<Flashcard, Box<dyn std::error::Error>> {
+) -> Result<Flashcard, FlashcardError> {
     let row = transaction
         .query_one(
             "SELECT f.*, ci.definition_id, ci.free_content_front, ci.free_content_back, ci.notes,
@@ -90,7 +92,7 @@ pub async fn create_flashcard(
     collection_id: i32,
     user_id: i32,
     req: &CreateFlashcardRequest,
-) -> Result<FlashcardResponse, Box<dyn std::error::Error>> {
+) -> Result<FlashcardResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -371,7 +373,7 @@ async fn determine_correct_answer_for_quiz(
     definition_id: Option<i32>,
     free_content_front: Option<&str>,
     free_content_back: Option<&str>,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<String, FlashcardError> {
     match direction {
         FlashcardDirection::QuizDirect | FlashcardDirection::QuizBoth => {
             // For QuizBoth, store direct answer
@@ -402,18 +404,22 @@ async fn determine_correct_answer_for_quiz(
     }
 }
 
+/// Make `side` active for the user: insert a new row, or un-archive the existing one.
+///
+/// `(user_id, flashcard_id, card_side)` is unique over archived rows too, so a plain
+/// `DO NOTHING` left a side that had been archived without any active progress.
 pub async fn initialize_progress(
     transaction: &Transaction<'_>,
     user_id: i32,
     flashcard_id: i32,
     side: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     transaction
         .execute(
             "INSERT INTO user_flashcard_progress
  (user_id, flashcard_id, card_side, status, next_review_at)
  VALUES ($1, $2, $3, 'new', CURRENT_TIMESTAMP)
- ON CONFLICT (user_id, flashcard_id, card_side) WHERE NOT archived DO NOTHING",
+ ON CONFLICT (user_id, flashcard_id, card_side) DO UPDATE SET archived = false",
             &[&user_id, &flashcard_id, &side],
         )
         .await?;
@@ -425,7 +431,7 @@ async fn mark_progress_graduated(
     user_id: i32,
     flashcard_id: i32,
     side: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     transaction
         .execute(
             "UPDATE user_flashcard_progress SET status = 'graduated', next_review_at = NULL
@@ -440,7 +446,7 @@ pub async fn snooze_flashcard(
     pool: &Pool,
     user_id: i32,
     flashcard_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -486,7 +492,7 @@ async fn get_all_progress(
     transaction: &Transaction<'_>,
     user_id: i32,
     flashcard_id: i32,
-) -> Result<Vec<UserFlashcardProgress>, Box<dyn std::error::Error>> {
+) -> Result<Vec<UserFlashcardProgress>, FlashcardError> {
     let rows = transaction
         .query(
             "SELECT * FROM user_flashcard_progress
@@ -520,7 +526,7 @@ pub async fn delete_flashcard(
     pool: &Pool,
     user_id: i32,
     flashcard_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -553,7 +559,7 @@ pub async fn generate_and_set_quiz_options(
     pool: &Pool,
     user_id: i32,
     flashcard_id: i32,
-) -> Result<FlashcardQuizOptions, Box<dyn std::error::Error>> {
+) -> Result<FlashcardQuizOptions, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -721,10 +727,9 @@ fn expected_fillin_like_raw(fc: &Flashcard, card_side: &str) -> Option<String> {
             | FlashcardDirection::WordbankBoth,
             "direct",
         ) => pick_back(),
-        (
-            FlashcardDirection::ListenWordbank | FlashcardDirection::ListenWordbankBoth,
-            "direct",
-        ) => pick_front(),
+        (FlashcardDirection::ListenWordbank | FlashcardDirection::ListenWordbankBoth, "direct") => {
+            pick_front()
+        }
         (
             FlashcardDirection::FillInReverse
             | FlashcardDirection::FillInBoth
@@ -773,22 +778,15 @@ fn flashcard_distractor_texts(fc: &Flashcard, lang: WordbankLang) -> Vec<String>
 /// Lojban front vs translation back for chip / grade normalization.
 fn wordbank_lang_for(direction: &FlashcardDirection, card_side: &str) -> Option<WordbankLang> {
     match (direction, card_side) {
-        (
-            FlashcardDirection::Wordbank | FlashcardDirection::WordbankBoth,
-            "direct",
-        )
+        (FlashcardDirection::Wordbank | FlashcardDirection::WordbankBoth, "direct")
         | (
             FlashcardDirection::ListenWordbankReverse | FlashcardDirection::ListenWordbankBoth,
             "reverse",
         ) => Some(WordbankLang::Translation),
-        (
-            FlashcardDirection::WordbankReverse | FlashcardDirection::WordbankBoth,
-            "reverse",
-        )
-        | (
-            FlashcardDirection::ListenWordbank | FlashcardDirection::ListenWordbankBoth,
-            "direct",
-        ) => Some(WordbankLang::Lojban),
+        (FlashcardDirection::WordbankReverse | FlashcardDirection::WordbankBoth, "reverse")
+        | (FlashcardDirection::ListenWordbank | FlashcardDirection::ListenWordbankBoth, "direct") => {
+            Some(WordbankLang::Lojban)
+        }
         _ => None,
     }
 }
@@ -907,17 +905,16 @@ fn attach_wordbank_chips_to_level_cards(cards: &mut [LevelCardResponse]) {
 pub async fn list_flashcards_public(
     pool: &Pool,
     collection_id: i32,
-) -> Result<FlashcardListResponse, Box<dyn std::error::Error>> {
+) -> Result<FlashcardListResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
     verify_collection_read_access(&transaction, collection_id, None)
         .await
-        .map_err(|e| {
-            Box::new(std::io::Error::new(
-                std::io::ErrorKind::PermissionDenied,
-                e.to_string(),
-            )) as Box<dyn std::error::Error>
+        .map_err(|e| match e {
+            AppError::Auth(_) => FlashcardError::AccessDenied(e.to_string()),
+            AppError::NotFound(_) => FlashcardError::NotFound(e.to_string()),
+            other => FlashcardError::Other(other.to_string()),
         })?;
 
     let rows = transaction
@@ -1033,7 +1030,7 @@ pub async fn list_flashcards(
     pool: &Pool,
     user_id: i32,
     query: FlashcardListQuery,
-) -> Result<FlashcardListResponse, Box<dyn std::error::Error>> {
+) -> Result<FlashcardListResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1233,7 +1230,7 @@ pub async fn list_flashcards(
                         })? as u32,
                     })
                 })
-                .collect::<Result<Vec<_>, Box<dyn std::error::Error>>>()?;
+                .collect::<Result<Vec<_>, FlashcardError>>()?;
 
             let fsrs_item = FSRSItem {
                 reviews: fsrs_reviews,
@@ -1452,7 +1449,7 @@ async fn get_quiz_options_for_listing(
     flashcard_id: i32,
     user_id: i32,
     effective_direction_str: &str, // "direct" or "reverse"
-) -> Result<(String, Vec<String>), Box<dyn std::error::Error>> {
+) -> Result<(String, Vec<String>), FlashcardError> {
     // 1. Fetch the flashcard details to determine question and correct answer source
     let card_details_row = transaction.query_one(
         "SELECT f.direction as actual_direction, f.collection_id, f.item_id, ci.definition_id, ci.free_content_front, ci.free_content_back,
@@ -1586,35 +1583,47 @@ async fn get_quiz_options_for_listing(
     let needed_distractors = 3 - distractors.len();
     if needed_distractors > 0 {
         // Determine what kind of text to fetch for distractors based on what the correct answer is
+        // Free-content items have no definition/valsi row, so fall back to the
+        // item's own text. DISTINCT and ORDER BY RANDOM() cannot share one
+        // SELECT in Postgres, so dedupe in a subquery first.
         let distractor_source_query_part = if effective_direction_str == "direct" {
             // Correct answer is like a definition
-            "d.definition"
+            "COALESCE(d.definition, ci.free_content_back)"
         } else {
             // Correct answer is like a word (for reverse quiz)
-            "v.word"
+            "COALESCE(v.word, ci.free_content_front)"
         };
 
         let mut existing_options_for_filter = distractors.clone();
         existing_options_for_filter.push(correct_answer_text.clone());
 
-        let exploration_distractors_rows = transaction.query(
-            &format!(
-                "SELECT DISTINCT {} AS distractor
-                 FROM flashcards f
-                 JOIN collection_items ci ON f.item_id = ci.item_id
-                 LEFT JOIN definitions d ON ci.definition_id = d.definitionid
-                 LEFT JOIN valsi v ON d.valsiid = v.valsiid
-                 WHERE f.collection_id = (SELECT collection_id FROM flashcards WHERE id = $1)
-                   AND {} IS NOT NULL
-                   AND {} != $2 -- Not the correct answer
-                   AND ({} = '' OR {} <> ALL($3)) -- Not one of the already selected historical distractors, handle empty string case
+        let exploration_distractors_rows = transaction
+            .query(
+                &format!(
+                    "SELECT distractor FROM (
+                    SELECT DISTINCT {src} AS distractor
+                    FROM flashcards f
+                    JOIN collection_items ci ON f.item_id = ci.item_id
+                    LEFT JOIN definitions d ON ci.definition_id = d.definitionid
+                    LEFT JOIN valsi v ON d.valsiid = v.valsiid
+                    WHERE f.collection_id = (SELECT collection_id FROM flashcards WHERE id = $1)
+                 ) c
+                 WHERE distractor IS NOT NULL
+                   AND distractor <> ''
+                   AND distractor != $2
+                   AND distractor <> ALL($3)
                  ORDER BY RANDOM()
                  LIMIT $4",
-                distractor_source_query_part, distractor_source_query_part,
-                distractor_source_query_part, distractor_source_query_part, distractor_source_query_part
-            ),
-            &[&flashcard_id, &correct_answer_text, &existing_options_for_filter, &(needed_distractors as i64)]
-        ).await?;
+                    src = distractor_source_query_part
+                ),
+                &[
+                    &flashcard_id,
+                    &correct_answer_text,
+                    &existing_options_for_filter,
+                    &(needed_distractors as i64),
+                ],
+            )
+            .await?;
 
         for row in exploration_distractors_rows {
             distractors.push(row.get("distractor"));
@@ -1644,7 +1653,7 @@ const OPTIMAL_RETENTION_CACHE_DAYS: i64 = 7;
 pub async fn calculate_optimal_retention(
     transaction: &Transaction<'_>,
     user_id: i32,
-) -> Result<f32, Box<dyn std::error::Error>> {
+) -> Result<f32, FlashcardError> {
     let default_retention = DEFAULT_OPTIMAL_RETENTION;
 
     // Check if user has enough review history to calculate optimal retention
@@ -1739,7 +1748,7 @@ async fn cache_optimal_retention(
     transaction: &Transaction<'_>,
     user_id: i32,
     retention: f32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     transaction
         .execute(
             "INSERT INTO user_settings (user_id, optimal_retention, last_calculated)
@@ -1757,7 +1766,7 @@ async fn cache_optimal_retention(
 pub async fn get_optimal_retention(
     transaction: &Transaction<'_>,
     user_id: i32,
-) -> Result<(f32, bool), Box<dyn std::error::Error>> {
+) -> Result<(f32, bool), FlashcardError> {
     let cached = transaction
         .query_opt(
             "SELECT optimal_retention, last_calculated
@@ -1780,10 +1789,7 @@ pub async fn get_optimal_retention(
 }
 
 /// Recalculate and cache optimal retention off the review request path.
-pub async fn refresh_optimal_retention(
-    pool: &Pool,
-    user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn refresh_optimal_retention(pool: &Pool, user_id: i32) -> Result<(), FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1831,7 +1837,7 @@ pub async fn review_flashcard(
     pool: &Pool,
     user_id: i32,
     req: &ReviewRequest,
-) -> Result<ReviewResponse, Box<dyn std::error::Error>> {
+) -> Result<ReviewResponse, FlashcardError> {
     if !(1..=4).contains(&req.rating) {
         return Err("Rating must be between 1 and 4".into());
     }
@@ -2108,7 +2114,7 @@ async fn get_current_status(
     flashcard_id: i32,
     user_id: i32,
     card_side: &String,
-) -> Result<FlashcardStatus, Box<dyn std::error::Error>> {
+) -> Result<FlashcardStatus, FlashcardError> {
     Ok(transaction
         .query_opt(
             "SELECT status FROM user_flashcard_progress
@@ -2124,7 +2130,7 @@ pub async fn reset_progress(
     pool: &Pool,
     user_id: i32,
     flashcard_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2164,7 +2170,7 @@ async fn verify_study_access(
     transaction: &Transaction<'_>,
     flashcard_id: i32,
     user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     // 1. Check collection ownership/public status
     let row = transaction
         .query_one(
@@ -2231,7 +2237,7 @@ pub async fn update_flashcard_position(
     user_id: i32,
     flashcard_id: i32,
     new_position: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2330,7 +2336,7 @@ pub async fn import_from_collection(
     pool: &Pool,
     user_id: i32,
     collection_id: i32,
-) -> Result<ImportFromCollectionResponse, Box<dyn std::error::Error>> {
+) -> Result<ImportFromCollectionResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2454,7 +2460,7 @@ pub async fn check_answer(
     pool: &Pool,
     user_id: i32,
     req: &DirectAnswerRequest,
-) -> Result<DirectAnswerResponse, Box<dyn std::error::Error>> {
+) -> Result<DirectAnswerResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2633,7 +2639,7 @@ pub async fn review_flashcard_serverside(
     pool: &Pool,
     user_id: i32,
     req: &FillInAnswerRequest,
-) -> Result<ReviewResponse, Box<dyn std::error::Error>> {
+) -> Result<ReviewResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2798,7 +2804,7 @@ async fn auto_progress_related_cards(
     flashcard_id: i32,
     word: &str,
     card_side: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     // Escape special regex characters in the word
     let escaped_word = fancy_regex::escape(word);
     let pattern = format!("(?:^|[^a-zA-Z']){}(?:[^a-zA-Z']|$)", escaped_word);
@@ -2848,7 +2854,7 @@ async fn record_review(
     transaction: &Transaction<'_>,
     user_id: i32,
     req: &ReviewRequest,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     // Get current state
     let current_state = transaction
         .query_opt(
@@ -2977,7 +2983,7 @@ async fn record_review(
 pub async fn get_next_quiz_for_user(
     pool: &Pool,
     user_id: i32,
-) -> Result<Option<dto::QuizFlashcardQuestionDto>, Box<dyn std::error::Error>> {
+) -> Result<Option<dto::QuizFlashcardQuestionDto>, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -3039,7 +3045,7 @@ pub async fn submit_quiz_answer(
     pool: &Pool,
     user_id: i32,
     answer_data: dto::SubmitQuizAnswerDto,
-) -> Result<dto::QuizAnswerResultDto, Box<dyn std::error::Error>> {
+) -> Result<dto::QuizAnswerResultDto, FlashcardError> {
     let flashcard_id = answer_data.flashcard_id;
 
     let mut client = pool.get().await?;
@@ -3115,7 +3121,7 @@ pub async fn get_streak(
     pool: &Pool,
     user_id: i32,
     days: i32,
-) -> Result<StreakResponse, Box<dyn std::error::Error>> {
+) -> Result<StreakResponse, FlashcardError> {
     let client = pool.get().await?;
 
     // Get daily activity data
@@ -3205,7 +3211,7 @@ fn calculate_current_streak(daily_progress: &[DailyProgress]) -> i32 {
 async fn calculate_longest_streak(
     client: &deadpool_postgres::Client,
     user_id: i32,
-) -> Result<i32, Box<dyn std::error::Error>> {
+) -> Result<i32, FlashcardError> {
     let row = client
         .query_opt(
             r#"WITH daily_reviews AS (
@@ -3244,7 +3250,7 @@ pub async fn create_level(
     collection_id: i32,
     user_id: i32,
     req: &CreateLevelRequest,
-) -> Result<LevelResponse, Box<dyn std::error::Error>> {
+) -> Result<LevelResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -3278,15 +3284,12 @@ pub async fn create_level(
     ).await?;
 
     // Add prerequisites
-    for prereq_id in &req.prerequisite_ids {
-        transaction
-            .execute(
-                "INSERT INTO level_prerequisites (level_id, prerequisite_id)
-             VALUES ($1, $2)",
-                &[&level_row.get::<_, i32>("level_id"), prereq_id],
-            )
-            .await?;
-    }
+    insert_level_prerequisites(
+        &transaction,
+        level_row.get::<_, i32>("level_id"),
+        &req.prerequisite_ids,
+    )
+    .await?;
 
     let level = get_level_details(&transaction, level_row.get("level_id"), Some(user_id)).await?;
 
@@ -3299,13 +3302,15 @@ pub async fn update_level(
     level_id: i32,
     user_id: i32,
     req: &UpdateLevelRequest,
-) -> Result<LevelResponse, Box<dyn std::error::Error>> {
+) -> Result<LevelResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
     let collection_id = get_collection_id(&transaction, level_id).await?;
     verify_collection_ownership(&transaction, collection_id, user_id).await?;
 
+    // `min_success_rate` is DOUBLE PRECISION; an `Option<f32>` fails to serialize.
+    let min_success_rate = req.min_success_rate.map(f64::from);
     // Update level
     let update_result = transaction
         .execute(
@@ -3320,7 +3325,7 @@ pub async fn update_level(
                 &req.name,
                 &req.description,
                 &req.min_cards,
-                &req.min_success_rate,
+                &min_success_rate,
                 &req.position,
                 &level_id,
             ],
@@ -3328,7 +3333,7 @@ pub async fn update_level(
         .await?;
 
     if update_result == 0 {
-        return Err("Level not found".into());
+        return Err(FlashcardError::LevelNotFound);
     }
 
     // Update prerequisites if provided
@@ -3340,15 +3345,7 @@ pub async fn update_level(
             )
             .await?;
 
-        for prereq_id in prereq_ids {
-            transaction
-                .execute(
-                    "INSERT INTO level_prerequisites (level_id, prerequisite_id)
-                 VALUES ($1, $2)",
-                    &[&level_id, prereq_id],
-                )
-                .await?;
-        }
+        insert_level_prerequisites(&transaction, level_id, prereq_ids).await?;
     }
 
     let level = get_level_details(&transaction, level_id, Some(user_id)).await?;
@@ -3357,29 +3354,48 @@ pub async fn update_level(
     Ok(level)
 }
 
+/// Insert all prerequisite links for a level in one statement.
+async fn insert_level_prerequisites(
+    transaction: &Transaction<'_>,
+    level_id: i32,
+    prerequisite_ids: &[i32],
+) -> Result<(), tokio_postgres::Error> {
+    if prerequisite_ids.is_empty() {
+        return Ok(());
+    }
+    transaction
+        .execute(
+            "INSERT INTO level_prerequisites (level_id, prerequisite_id)
+             SELECT DISTINCT $1::int4, p FROM UNNEST($2::int4[]) AS p",
+            &[&level_id, &prerequisite_ids],
+        )
+        .await?;
+    Ok(())
+}
+
 pub async fn add_cards_to_level(
     pool: &Pool,
     level_id: i32,
     user_id: i32,
     req: &AddCardsRequest,
-) -> Result<Vec<LevelCardResponse>, Box<dyn std::error::Error>> {
+) -> Result<Vec<LevelCardResponse>, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
     let collection_id = get_collection_id(&transaction, level_id).await?;
     verify_collection_ownership(&transaction, collection_id, user_id).await?;
 
-    for flashcard_id in &req.flashcard_ids {
-        if transaction
-            .query_opt(
-                "SELECT id FROM flashcards WHERE id = $1 AND collection_id = $2 FOR SHARE",
-                &[flashcard_id, &collection_id],
-            )
-            .await?
-            .is_none()
-        {
-            return Err("Flashcard does not belong to the level's collection".into());
-        }
+    // One query locks every requested card that belongs to this collection.
+    let requested: HashSet<i32> = req.flashcard_ids.iter().copied().collect();
+    let found = transaction
+        .query(
+            "SELECT id FROM flashcards WHERE id = ANY($1) AND collection_id = $2 FOR SHARE",
+            &[&req.flashcard_ids, &collection_id],
+        )
+        .await?
+        .len();
+    if found != requested.len() {
+        return Err("Flashcard does not belong to the level's collection".into());
     }
 
     // Get max position first
@@ -3396,17 +3412,22 @@ pub async fn add_cards_to_level(
     let start_position = req.start_position.unwrap_or(max_position);
 
     // Add cards with sequential positions
-    for (idx, flashcard_id) in req.flashcard_ids.iter().enumerate() {
-        transaction
-            .execute(
-                "INSERT INTO flashcard_level_items (level_id, flashcard_id, position)
-             VALUES ($1, $2, $3)
+    // A repeated id keeps its last position, as the old row-by-row upsert did
+    // (one statement may not upsert the same row twice).
+    let mut position_by_id: HashMap<i32, i32> = HashMap::with_capacity(requested.len());
+    for (idx, &flashcard_id) in req.flashcard_ids.iter().enumerate() {
+        position_by_id.insert(flashcard_id, start_position + idx as i32);
+    }
+    let (ids, positions): (Vec<i32>, Vec<i32>) = position_by_id.into_iter().unzip();
+    transaction
+        .execute(
+            "INSERT INTO flashcard_level_items (level_id, flashcard_id, position)
+             SELECT $1, i.id, i.pos FROM UNNEST($2::int4[], $3::int4[]) AS i(id, pos)
              ON CONFLICT (level_id, flashcard_id) DO UPDATE
              SET position = EXCLUDED.position",
-                &[&level_id, flashcard_id, &(start_position + idx as i32)],
-            )
-            .await?;
-    }
+            &[&level_id, &ids, &positions],
+        )
+        .await?;
 
     let cards = get_level_cards(&transaction, level_id, Some(user_id)).await?;
 
@@ -3418,7 +3439,7 @@ pub async fn get_level_details(
     transaction: &Transaction<'_>,
     level_id: i32,
     user_id: Option<i32>,
-) -> Result<LevelResponse, Box<dyn std::error::Error>> {
+) -> Result<LevelResponse, FlashcardError> {
     let level_row = transaction
         .query_one(
             "SELECT l.*, COUNT(fli.flashcard_id) as card_count
@@ -3472,17 +3493,16 @@ pub async fn get_collection_levels(
     pool: &Pool,
     collection_id: i32,
     user_id: Option<i32>,
-) -> Result<LevelListResponse, Box<dyn std::error::Error>> {
+) -> Result<LevelListResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
     verify_collection_read_access(&transaction, collection_id, user_id)
         .await
-        .map_err(|e| {
-            Box::new(std::io::Error::new(
-                std::io::ErrorKind::PermissionDenied,
-                e.to_string(),
-            )) as Box<dyn std::error::Error>
+        .map_err(|e| match e {
+            AppError::Auth(_) => FlashcardError::AccessDenied(e.to_string()),
+            AppError::NotFound(_) => FlashcardError::NotFound(e.to_string()),
+            other => FlashcardError::Other(other.to_string()),
         })?;
 
     let rows = transaction
@@ -3551,7 +3571,7 @@ async fn get_prerequisites(
     transaction: &Transaction<'_>,
     level_id: i32,
     user_id: Option<i32>,
-) -> Result<Vec<PrerequisiteLevel>, Box<dyn std::error::Error>> {
+) -> Result<Vec<PrerequisiteLevel>, FlashcardError> {
     let mut prereqs = Vec::new();
 
     let rows = transaction
@@ -3583,7 +3603,7 @@ async fn get_level_progress(
     transaction: &Transaction<'_>,
     level_id: i32,
     user_id: i32,
-) -> Result<Option<LevelProgress>, Box<dyn std::error::Error>> {
+) -> Result<Option<LevelProgress>, FlashcardError> {
     if let Some(row) = transaction
         .query_opt(
             "SELECT *, check_level_prerequisites($1, $2) AS prereqs_met
@@ -3625,7 +3645,7 @@ async fn get_level_cards(
     transaction: &Transaction<'_>,
     level_id: i32,
     user_id: Option<i32>,
-) -> Result<Vec<LevelCardResponse>, Box<dyn std::error::Error>> {
+) -> Result<Vec<LevelCardResponse>, FlashcardError> {
     let collection_id = get_collection_id(transaction, level_id).await?;
     verify_collection_read_access(transaction, collection_id, user_id).await?;
     let mut cards = Vec::new();
@@ -3716,11 +3736,7 @@ async fn get_level_cards(
     Ok(cards)
 }
 
-pub async fn delete_level(
-    pool: &Pool,
-    level_id: i32,
-    user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn delete_level(pool: &Pool, level_id: i32, user_id: i32) -> Result<(), FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -3737,7 +3753,9 @@ pub async fn delete_level(
         .get(0);
 
     if dependent_count > 0 {
-        return Err("Cannot delete level: it is a prerequisite for other levels.".into());
+        return Err(FlashcardError::BadRequest(
+            "Cannot delete level: it is a prerequisite for other levels.".to_string(),
+        ));
     }
 
     // Delete items associated with the level
@@ -3765,7 +3783,7 @@ pub async fn delete_level(
         .await?;
 
     if result == 0 {
-        return Err("Level not found".into());
+        return Err(FlashcardError::LevelNotFound);
     }
 
     transaction.commit().await?;
@@ -3775,14 +3793,15 @@ pub async fn delete_level(
 async fn get_collection_id(
     transaction: &Transaction<'_>,
     level_id: i32,
-) -> Result<i32, Box<dyn std::error::Error>> {
-    Ok(transaction
-        .query_one(
+) -> Result<i32, FlashcardError> {
+    transaction
+        .query_opt(
             "SELECT collection_id FROM flashcard_levels WHERE level_id = $1",
             &[&level_id],
         )
         .await?
-        .get("collection_id"))
+        .map(|row| row.get("collection_id"))
+        .ok_or(FlashcardError::LevelNotFound)
 }
 
 pub async fn get_level_cards_paginated(
@@ -3791,25 +3810,30 @@ pub async fn get_level_cards_paginated(
     user_id: Option<i32>,
     page: i64,
     per_page: i64,
-) -> Result<LevelCardListResponse, Box<dyn std::error::Error>> {
+) -> Result<LevelCardListResponse, FlashcardError> {
     let client = pool.get().await?;
     let offset = (page - 1) * per_page;
 
     // Enforce collection read access: anonymous only public, logged-in: public or owner
     let collection_row = client
-        .query_one(
+        .query_opt(
             "SELECT c.collection_id, c.user_id as owner_id, c.is_public
              FROM flashcard_levels l
              JOIN collections c ON c.collection_id = l.collection_id
              WHERE l.level_id = $1",
             &[&level_id],
         )
-        .await?;
+        .await?
+        .ok_or(FlashcardError::LevelNotFound)?;
     let owner_id: i32 = collection_row.get("owner_id");
     let is_public: bool = collection_row.get("is_public");
     match user_id {
-        None if !is_public => return Err("Access denied".into()),
-        Some(uid) if !is_public && owner_id != uid => return Err("Access denied".into()),
+        None if !is_public => {
+            return Err(FlashcardError::AccessDenied("Access denied".to_string()))
+        }
+        Some(uid) if !is_public && owner_id != uid => {
+            return Err(FlashcardError::AccessDenied("Access denied".to_string()))
+        }
         _ => {}
     }
 
@@ -3824,7 +3848,9 @@ pub async fn get_level_cards_paginated(
             .get::<_, bool>("unlocked");
 
         if !is_unlocked {
-            return Err("Level is locked. Complete prerequisites first.".into());
+            return Err(FlashcardError::Other(
+                "Level is locked. Complete prerequisites first.".to_string(),
+            ));
         }
     }
 
@@ -3937,7 +3963,7 @@ pub async fn claim_guest_progress(
     pool: &Pool,
     target_user_id: i32,
     guest_access_token: &str,
-) -> Result<crate::flashcards::dto::ClaimGuestProgressResponse, Box<dyn std::error::Error>> {
+) -> Result<crate::flashcards::dto::ClaimGuestProgressResponse, FlashcardError> {
     let guest_claims = crate::auth::models::authenticate_token(pool, guest_access_token)
         .await
         .map_err(|e| format!("Invalid guest session: {e}"))?;
@@ -4102,17 +4128,16 @@ pub async fn merge_anonymous_progress(
     pool: &Pool,
     user_id: i32,
     req: &MergeProgressRequest,
-) -> Result<MergeProgressResponse, Box<dyn std::error::Error>> {
+) -> Result<MergeProgressResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
     verify_collection_read_access(&transaction, req.collection_id, Some(user_id))
         .await
-        .map_err(|e| {
-            Box::new(std::io::Error::new(
-                std::io::ErrorKind::PermissionDenied,
-                e.to_string(),
-            )) as Box<dyn std::error::Error>
+        .map_err(|e| match e {
+            AppError::Auth(_) => FlashcardError::AccessDenied(e.to_string()),
+            AppError::NotFound(_) => FlashcardError::NotFound(e.to_string()),
+            other => FlashcardError::Other(other.to_string()),
         })?;
 
     let mut merged = 0_i64;
@@ -4153,7 +4178,24 @@ pub async fn merge_anonymous_progress(
                   correct_answers = GREATEST(user_level_progress.correct_answers, EXCLUDED.correct_answers),
                   total_answers = GREATEST(user_level_progress.total_answers, EXCLUDED.total_answers),
                   last_activity_at = CURRENT_TIMESTAMP,
-                  completed_at = CASE WHEN check_level_completion(EXCLUDED.user_id, EXCLUDED.level_id) AND user_level_progress.completed_at IS NULL THEN CURRENT_TIMESTAMP ELSE user_level_progress.completed_at END
+                  -- Judge completion on the merged values (same rule as check_level_completion,
+                  -- which would read the pre-update row here).
+                  completed_at = COALESCE(
+                    user_level_progress.completed_at,
+                    CASE
+                      WHEN (SELECT min_cards FROM flashcard_levels WHERE level_id = EXCLUDED.level_id)
+                             <= GREATEST(user_level_progress.cards_completed, EXCLUDED.cards_completed)
+                       AND (SELECT min_success_rate FROM flashcard_levels WHERE level_id = EXCLUDED.level_id)
+                             <= (CASE
+                                   WHEN GREATEST(user_level_progress.total_answers, EXCLUDED.total_answers) > 0
+                                   THEN GREATEST(user_level_progress.correct_answers, EXCLUDED.correct_answers)::float8
+                                        / GREATEST(user_level_progress.total_answers, EXCLUDED.total_answers)::float8
+                                   ELSE 0::float8
+                                 END)
+                      THEN CURRENT_TIMESTAMP
+                      ELSE NULL
+                    END
+                  )
                 "#,
                 &[&user_id, &item.level_id, &item.cards_completed, &item.correct_answers, &item.total_answers],
             )
@@ -4186,7 +4228,7 @@ pub async fn remove_card_from_level(
     level_id: i32,
     flashcard_id: i32,
     user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -4202,7 +4244,9 @@ pub async fn remove_card_from_level(
         .await?;
 
     if result == 0 {
-        return Err("Card not found in level".into());
+        return Err(FlashcardError::NotFound(
+            "Card not found in level".to_string(),
+        ));
     }
 
     // Reorder remaining cards
@@ -4227,10 +4271,7 @@ pub async fn remove_card_from_level(
     Ok(())
 }
 
-fn validate_fill_in_answers(
-    answer: &str,
-    expected: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn validate_fill_in_answers(answer: &str, expected: &str) -> Result<(), FlashcardError> {
     if answer.len() > 2048
         || expected.len() > 8192
         || expected.split(';').count() > 32
@@ -4241,7 +4282,7 @@ fn validate_fill_in_answers(
     Ok(())
 }
 
-fn direction_from_challenge_mix_str(s: &str) -> Result<FlashcardDirection, Box<dyn std::error::Error>> {
+fn direction_from_challenge_mix_str(s: &str) -> Result<FlashcardDirection, FlashcardError> {
     match s {
         "direct" => Ok(FlashcardDirection::Direct),
         "reverse" => Ok(FlashcardDirection::Reverse),
@@ -4271,13 +4312,26 @@ async fn reseed_owner_progress_for_direction(
     user_id: i32,
     flashcard_id: i32,
     direction: &FlashcardDirection,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), FlashcardError> {
+    let wanted: &[&str] = match direction {
+        FlashcardDirection::Reverse
+        | FlashcardDirection::FillInReverse
+        | FlashcardDirection::WordbankReverse
+        | FlashcardDirection::ListenWordbankReverse => &["reverse"],
+        FlashcardDirection::Both
+        | FlashcardDirection::FillInBoth
+        | FlashcardDirection::WordbankBoth
+        | FlashcardDirection::ListenWordbankBoth => &["direct", "reverse"],
+        _ => &["direct"],
+    };
+    // Archive only the sides the new direction no longer uses; a kept side keeps its
+    // FSRS state (for every learner), and an archived side that is wanted again is restored.
     transaction
         .execute(
             "UPDATE user_flashcard_progress
-             SET archived = true
-             WHERE flashcard_id = $1 AND NOT archived",
-            &[&flashcard_id],
+             SET archived = NOT (card_side = ANY($2))
+             WHERE flashcard_id = $1",
+            &[&flashcard_id, &wanted],
         )
         .await?;
 
@@ -4317,7 +4371,7 @@ pub async fn apply_challenge_mix_to_level(
     pool: &Pool,
     user_id: i32,
     level_id: i32,
-) -> Result<dto::ApplyChallengeMixResponse, Box<dyn std::error::Error>> {
+) -> Result<dto::ApplyChallengeMixResponse, FlashcardError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -4441,7 +4495,7 @@ pub async fn apply_challenge_mix_to_collection(
     pool: &Pool,
     user_id: i32,
     collection_id: i32,
-) -> Result<dto::ApplyChallengeMixResponse, Box<dyn std::error::Error>> {
+) -> Result<dto::ApplyChallengeMixResponse, FlashcardError> {
     let client = pool.get().await?;
     // Ownership check without holding a long transaction across levels.
     {

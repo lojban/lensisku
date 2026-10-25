@@ -17,6 +17,8 @@ impl std::fmt::Display for EmailError {
 pub enum PasswordHashError {
     BcryptError(bcrypt::BcryptError),
     InvalidHashFormat,
+    /// The blocking-pool task running bcrypt panicked or was cancelled.
+    TaskJoin(String),
 }
 
 impl std::fmt::Display for PasswordHashError {
@@ -24,6 +26,7 @@ impl std::fmt::Display for PasswordHashError {
         match self {
             PasswordHashError::BcryptError(e) => write!(f, "Bcrypt error: {}", e),
             PasswordHashError::InvalidHashFormat => write!(f, "Invalid hash format"),
+            PasswordHashError::TaskJoin(e) => write!(f, "Password hashing task failed: {}", e),
         }
     }
 }
@@ -32,7 +35,7 @@ impl std::error::Error for PasswordHashError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             PasswordHashError::BcryptError(e) => Some(e),
-            PasswordHashError::InvalidHashFormat => None,
+            PasswordHashError::InvalidHashFormat | PasswordHashError::TaskJoin(_) => None,
         }
     }
 }

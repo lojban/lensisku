@@ -122,7 +122,7 @@ pub async fn revert_to_version(
         &pool,
         version_id,
         user.sub,
-        &user.role.to_string(),
+        &user.role,
         perm_cache.get_ref(),
     )
     .await

@@ -7258,7 +7258,7 @@ mod rafsi_authority_tests {
     #[tokio::test]
     #[ignore = "requires RAFSI_TEST_DATABASE_URL pointing to a fresh disposable database"]
     async fn rafsi_authority_database_regressions() {
-        let url = std::env::var("RAFSI_TEST_DATABASE_URL").expect("disposable test database URL");
+        let url = crate::test_db_guard::disposable_database_url("RAFSI_TEST_DATABASE_URL");
         let config = url.parse::<tokio_postgres::Config>().unwrap();
         let manager = deadpool_postgres::Manager::new(config, tokio_postgres::NoTls);
         let pool = deadpool_postgres::Pool::builder(manager)
@@ -7471,7 +7471,7 @@ mod wiki_redirect_tests {
     #[tokio::test]
     #[ignore = "requires WIKI_TEST_DATABASE_URL pointing to a fresh disposable database"]
     async fn wiki_dictionary_namespace_database_regressions() {
-        let url = std::env::var("WIKI_TEST_DATABASE_URL").expect("disposable test database URL");
+        let url = crate::test_db_guard::disposable_database_url("WIKI_TEST_DATABASE_URL");
         let manager = deadpool_postgres::Manager::new(url.parse().unwrap(), tokio_postgres::NoTls);
         let pool = deadpool_postgres::Pool::builder(manager)
             .max_size(2)
@@ -7667,7 +7667,8 @@ mod activity_feed_tests {
     #[ignore = "requires LENSISKU_FEED_TEST_DATABASE_URL pointing to a disposable PostgreSQL database"]
     async fn activity_feed_fixtures_paginate_and_filter() -> Result<(), Box<dyn std::error::Error>>
     {
-        let database_url = std::env::var("LENSISKU_FEED_TEST_DATABASE_URL")?;
+        let database_url =
+            crate::test_db_guard::disposable_database_url("LENSISKU_FEED_TEST_DATABASE_URL");
         let (mut client, connection) =
             tokio_postgres::connect(&database_url, tokio_postgres::NoTls).await?;
         tokio::spawn(async move {

@@ -1,6 +1,8 @@
 pub mod controller;
 pub mod dto;
 mod images;
+#[cfg(test)]
+mod import_tests;
 pub mod models;
 pub mod service;
 

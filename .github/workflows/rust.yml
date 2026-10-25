@@ -27,7 +27,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        components: clippy
+        components: clippy, rustfmt
       # Automatically detects rust-toolchain.toml or rust-toolchain file if present
       # Otherwise uses the latest stable version
     
@@ -74,14 +74,67 @@ jobs:
     #     cargo install cargo-deny
     #     cargo deny check
 
+    - name: Format
+      run: cargo fmt --check
+
     - name: Check all Rust targets
       run: cargo check --all-targets
 
     - name: Clippy
-      run: cargo clippy --all-targets
+      run: cargo clippy --all-targets -- -D warnings
 
     - name: Build
       run: cargo build --verbose
 
     - name: Run tests
       run: cargo test --verbose
+
+  db-tests:
+    # Ignored tests that need real PostgreSQL + Redis. Disposable service containers only.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18-trixie
+        env:
+          POSTGRES_PASSWORD: security-test-only
+          POSTGRES_DB: security_fixture
+        ports: [ "55432:5432" ]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: [ "56379:6379" ]
+    env:
+      PGPASSWORD: security-test-only
+      SECURITY_TEST_DB_PORT: "55432"
+      SECURITY_TEST_REDIS_URL: redis://127.0.0.1:56379
+      RAFSI_TEST_DATABASE_URL: postgres://postgres:security-test-only@127.0.0.1:55432/rafsi_test
+      WIKI_TEST_DATABASE_URL: postgres://postgres:security-test-only@127.0.0.1:55432/wiki_test
+      LENSISKU_FEED_TEST_DATABASE_URL: postgres://postgres:security-test-only@127.0.0.1:55432/feed_test
+      COLLECTIONS_TEST_DATABASE_URL: postgres://postgres:security-test-only@127.0.0.1:55432/lensisku_test
+      FLASHCARDS_TEST_DATABASE_URL: postgres://postgres:security-test-only@127.0.0.1:55432/lensisku_test
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pkg-config libgraphite2-dev libharfbuzz-dev \
+          libfontconfig1-dev libfreetype6-dev mold postgresql-client
+    - name: Create test databases
+      run: |
+        for db in rafsi_test wiki_test feed_test lensisku_test; do
+          psql -h 127.0.0.1 -p 55432 -U postgres -c "CREATE DATABASE $db"
+        done
+        # Full schema + languages/valsitypes for the collections/flashcards tests.
+        # Regenerate from a migrated dev DB: pg_dump -s --no-owner --no-privileges,
+        # plus pg_dump -a -t languages -t valsitypes.
+        psql -h 127.0.0.1 -p 55432 -U postgres -d lensisku_test -q -v ON_ERROR_STOP=1 \
+          -f tests/fixtures/lensisku_schema.sql
+    - name: Ignored DB tests
+      run: >-
+        cargo test --bin lensisku -- --ignored
+        security_boundaries rafsi_authority_database wiki_dictionary_namespace_database
+        activity_feed_fixtures import_paths_current_behaviour
+        merge_anonymous_progress_current_behaviour apply_mix_keeps_owner_progress_active

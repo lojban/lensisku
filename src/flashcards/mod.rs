@@ -1,8 +1,15 @@
+#[cfg(test)]
+mod challenge_mix_progress_tests;
 pub mod controller;
 pub mod dto;
+pub(crate) mod error;
+#[cfg(test)]
+mod merge_progress_tests;
 pub mod models;
 mod service;
 
+pub(crate) use error::FlashcardError;
+pub(crate) use service::generate_and_set_quiz_options;
 pub use service::list_flashcards_public;
 #[cfg(test)]
 pub(crate) use service::{add_cards_to_level, list_flashcards};

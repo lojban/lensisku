@@ -97,7 +97,7 @@ pub async fn create_role(
     request: web::Json<CreateRoleRequest>,
     claims: Claims,
 ) -> impl Responder {
-    match service::create_role(&pool, &request, &claims.role.to_string()).await {
+    match service::create_role(&pool, &request, &claims.role).await {
         Ok(role) => {
             if let Err(e) = perm_cache.load_permissions().await {
                 return HttpResponse::InternalServerError().json(json!({
@@ -137,7 +137,7 @@ pub async fn update_role(
     request: web::Json<UpdateRoleRequest>,
     claims: Claims,
 ) -> impl Responder {
-    match service::update_role(&pool, &role_name, &request, &claims.role.to_string()).await {
+    match service::update_role(&pool, &role_name, &request, &claims.role).await {
         Ok(role) => {
             if let Err(e) = perm_cache.load_permissions().await {
                 return HttpResponse::InternalServerError().json(json!({
@@ -146,6 +146,9 @@ pub async fn update_role(
             }
             HttpResponse::Ok().json(role)
         }
+        Err(e @ AppError::NotFound(_)) => HttpResponse::NotFound().json(json!({
+            "error": format!("Failed to update role: {}", e)
+        })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to update role: {}", e)
         })),
@@ -789,7 +792,7 @@ pub async fn get_permissions(pool: web::Data<Pool>) -> impl Responder {
 )]
 #[get("/roles")]
 pub async fn get_roles(pool: web::Data<Pool>, claims: Claims) -> impl Responder {
-    match service::get_roles_with_permissions(&pool, &claims.role.to_string()).await {
+    match service::get_roles_with_permissions(&pool, &claims.role).await {
         Ok(roles) => HttpResponse::Ok().json(UserRoleResponse { roles }),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to get roles: {}", e)

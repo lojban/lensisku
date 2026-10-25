@@ -833,9 +833,29 @@ const showStimulusHints = computed(
     !showEncouragement.value
 )
 
+/**
+ * Listen card that cannot be heard (no audio, or "Can't listen now"): the server still grades
+ * the Lojban phrase, so show the translation instead of the Lojban text (else the learner
+ * would just copy the stimulus). Only the direct side of listen_wordbank* is affected.
+ */
+const isListenTextFallback = computed(
+  () =>
+    isListenDirection.value &&
+    !isListenModeActive.value &&
+    currentCard.value?.progress?.[0]?.card_side === 'direct'
+)
+
+/** True when the written stimulus is the front (Lojban) side. */
+const stimulusShowsFront = computed(
+  () => currentCard.value?.progress?.[0]?.card_side === 'direct' && !isListenTextFallback.value
+)
+
 const stimulusText = computed(() => {
   const fc = currentCard.value?.flashcard
   if (!fc) return ''
+  if (isListenTextFallback.value) {
+    return String(fc.definition ?? fc.free_content_back ?? '')
+  }
   if (currentCard.value?.progress?.[0]?.card_side === 'direct') {
     return String(fc.question_text ?? fc.word ?? fc.free_content_front ?? '')
   }
@@ -848,7 +868,7 @@ const stimulusLooksLikeMath = computed(() => /\$|\\[a-zA-Z]/.test(stimulusText.v
 const stimulusPhraseGloss = computed(() => {
   const fc = currentCard.value?.flashcard
   if (!fc) return ''
-  if (currentCard.value?.progress?.[0]?.card_side === 'direct') {
+  if (stimulusShowsFront.value) {
     return String(fc.definition ?? fc.free_content_back ?? '').trim()
   }
   return String(fc.word ?? fc.free_content_front ?? '').trim()
@@ -1379,6 +1399,9 @@ const lessonPrompt = computed(() => {
   }
   if (isListenModeActive.value) {
     return t('flashcardStudy.tapWhatYouHear')
+  }
+  if (isListenTextFallback.value && !fillinResult.value) {
+    return t('flashcardStudy.howDoYouSayThis')
   }
   if (isWordbankMode.value && !fillinResult.value) {
     return reverse ? t('flashcardStudy.howDoYouSayThis') : t('flashcardStudy.assembleAnswer')

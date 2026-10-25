@@ -1,3 +1,4 @@
+use super::error::FlashcardError;
 use crate::flashcards::dto::{QuizAnswerResultDto, QuizFlashcardQuestionDto, SubmitQuizAnswerDto};
 use std::collections::HashMap;
 use std::error::Error;
@@ -535,7 +536,7 @@ pub async fn submit_quiz_answer(
 ) -> impl Responder {
     match service::submit_quiz_answer(&pool, claims.sub, req.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => crate::utils::handle_error(e, "Failed to submit quiz answer"),
+        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to submit quiz answer"),
     }
 }
 #[utoipa::path(
@@ -599,10 +600,8 @@ pub async fn create_level(
 ) -> impl Responder {
     match service::create_level(&pool, collection_id.into_inner(), claims.sub, &req).await {
         Ok(level) => HttpResponse::Ok().json(level),
-        Err(e) => match e.to_string().as_str() {
-            "access denied" => HttpResponse::Forbidden().finish(),
-            _ => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
-        },
+        Err(FlashcardError::AccessDenied(_)) => HttpResponse::Forbidden().finish(),
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
     }
 }
 
@@ -632,19 +631,13 @@ pub async fn delete_level(
 ) -> impl Responder {
     match service::delete_level(&pool, level_id.into_inner(), claims.sub).await {
         Ok(_) => HttpResponse::Ok().json(json!({ "message": "Level deleted successfully" })),
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("Level not found") {
-                HttpResponse::NotFound().finish()
-            } else if msg.contains("Access denied") {
-                HttpResponse::Forbidden().finish()
-            } else if msg.contains("prerequisite for other levels") {
-                HttpResponse::BadRequest().json(json!({ "error": msg }))
-            } else {
-                HttpResponse::InternalServerError()
-                    .json(json!({ "error": format!("Failed to delete level: {}", e) }))
-            }
+        Err(FlashcardError::LevelNotFound) => HttpResponse::NotFound().finish(),
+        Err(FlashcardError::AccessDenied(_)) => HttpResponse::Forbidden().finish(),
+        Err(FlashcardError::BadRequest(msg)) => {
+            HttpResponse::BadRequest().json(json!({ "error": msg }))
         }
+        Err(e) => HttpResponse::InternalServerError()
+            .json(json!({ "error": format!("Failed to delete level: {}", e) })),
     }
 }
 
@@ -672,11 +665,9 @@ pub async fn update_level(
 ) -> impl Responder {
     match service::update_level(&pool, level_id.into_inner(), claims.sub, &req).await {
         Ok(level) => HttpResponse::Ok().json(level),
-        Err(e) => match e.to_string().as_str() {
-            "Level not found" => HttpResponse::NotFound().finish(),
-            "access denied" => HttpResponse::Forbidden().finish(),
-            _ => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
-        },
+        Err(FlashcardError::LevelNotFound) => HttpResponse::NotFound().finish(),
+        Err(FlashcardError::AccessDenied(_)) => HttpResponse::Forbidden().finish(),
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
     }
 }
 
@@ -702,14 +693,10 @@ pub async fn list_levels(
         .await
     {
         Ok(levels) => HttpResponse::Ok().json(levels),
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.to_lowercase().contains("access denied") {
-                HttpResponse::Forbidden().json(json!({ "error": msg }))
-            } else {
-                HttpResponse::InternalServerError().json(json!({ "error": msg }))
-            }
+        Err(FlashcardError::AccessDenied(msg)) => {
+            HttpResponse::Forbidden().json(json!({ "error": msg }))
         }
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
     }
 }
 
@@ -736,7 +723,7 @@ pub async fn merge_progress(
     match service::merge_anonymous_progress(&pool, claims.sub, &req).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            let msg = boxed_err_msg(e.as_ref());
+            let msg = boxed_err_msg(&e);
             log::error!("merge_anonymous_progress failed: {msg}");
             if msg.to_lowercase().contains("access denied") {
                 HttpResponse::Forbidden().json(json!({ "error": msg }))
@@ -776,7 +763,7 @@ pub async fn claim_guest_progress(
     match service::claim_guest_progress(&pool, claims.sub, &req.guest_access_token).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            let msg = boxed_err_msg(e.as_ref());
+            let msg = boxed_err_msg(&e);
             log::error!("claim_guest_progress failed: {msg}");
             if msg.to_lowercase().contains("invalid guest")
                 || msg.to_lowercase().contains("not a guest")
@@ -863,16 +850,11 @@ pub async fn list_level_cards(
     .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.to_lowercase().contains("access denied") {
-                HttpResponse::Forbidden().json(json!({ "error": msg }))
-            } else if msg == "Level not found" {
-                HttpResponse::NotFound().finish()
-            } else {
-                HttpResponse::InternalServerError().json(json!({ "error": msg }))
-            }
+        Err(FlashcardError::AccessDenied(msg)) => {
+            HttpResponse::Forbidden().json(json!({ "error": msg }))
         }
+        Err(FlashcardError::LevelNotFound) => HttpResponse::NotFound().finish(),
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
     }
 }
 
@@ -906,13 +888,12 @@ pub async fn remove_card_from_level(
         Ok(_) => HttpResponse::Ok().json(json!({
             "message": "Card removed successfully"
         })),
-        Err(e) => match e.to_string().as_str() {
-            "Level not found" | "Card not found" => HttpResponse::NotFound().finish(),
-            "Access denied" => HttpResponse::Forbidden().finish(),
-            _ => HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to remove card: {}", e)
-            })),
-        },
+        Err(FlashcardError::LevelNotFound) => HttpResponse::NotFound().finish(),
+        Err(FlashcardError::AccessDenied(_)) => HttpResponse::Forbidden().finish(),
+        Err(FlashcardError::NotFound(_)) => HttpResponse::NotFound().finish(),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to remove card: {}", e)
+        })),
     }
 }
 
@@ -1018,7 +999,7 @@ pub async fn apply_challenge_mix_level(
 ) -> impl Responder {
     match service::apply_challenge_mix_to_level(&pool, claims.sub, level_id.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => crate::utils::handle_error(e, "Failed to apply challenge mix"),
+        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to apply challenge mix"),
     }
 }
 
@@ -1049,6 +1030,6 @@ pub async fn apply_challenge_mix_collection(
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => crate::utils::handle_error(e, "Failed to apply challenge mix"),
+        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to apply challenge mix"),
     }
 }

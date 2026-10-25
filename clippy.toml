@@ -1,0 +1,5 @@
+# unwrap/expect/panic are denied-by-warning in production code
+# (see [lints.clippy] in Cargo.toml) but allowed in #[cfg(test)] code.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true

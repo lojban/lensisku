@@ -238,11 +238,14 @@ pub async fn get_collection_flashcards(
 ) -> impl Responder {
     match crate::flashcards::list_flashcards_public(&pool, id.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
+        Err(crate::flashcards::FlashcardError::AccessDenied(_)) => {
+            HttpResponse::Forbidden().finish()
+        }
+        Err(e @ crate::flashcards::FlashcardError::NotFound(_)) => {
+            HttpResponse::NotFound().json(json!({ "error": e.to_string() }))
+        }
         Err(e) => {
             let msg = e.to_string();
-            if msg.contains("Access denied") || msg.contains("PermissionDenied") {
-                return HttpResponse::Forbidden().finish();
-            }
             HttpResponse::InternalServerError().json(json!({
                 "error": format!("Failed to list flashcards: {}", msg)
             }))
