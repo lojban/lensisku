@@ -433,6 +433,16 @@ const baseRoutes: Array<RouteRecordRaw> = [
     },
   },
   {
+    // Bare course URL (with or without trailing slash) → its levels page.
+    path: '/collections/:collectionId/lingo',
+    name: 'LingoCourseRoot',
+    redirect: (to) => ({
+      path: to.path.replace(/\/lingo\/?$/, '/lingo/levels'),
+      query: to.query,
+      hash: to.hash,
+    }),
+  },
+  {
     path: '/lingo/courses',
     name: 'LingoCourses',
     component: () => import('../pages/LingoCourses.vue'),
