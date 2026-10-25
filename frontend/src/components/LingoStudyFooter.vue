@@ -119,7 +119,10 @@
         </div>
       </div>
 
-      <div class="lingo-study-footer-meta">
+      <div
+        class="lingo-study-footer-meta"
+        :class="{ 'lingo-study-footer-meta--graded': status === 'correct' || status === 'wrong' }"
+      >
         <button
           v-if="showCardActions"
           type="button"
@@ -167,7 +170,11 @@
           {{ ratePrompt || '\u00a0' }}
         </p>
 
-        <span class="inline-flex h-9 w-9 shrink-0" aria-hidden="true" />
+        <span
+          v-if="status !== 'correct' && status !== 'wrong'"
+          class="inline-flex h-9 w-9 shrink-0"
+          aria-hidden="true"
+        />
       </div>
     </div>
   </footer>

@@ -506,7 +506,11 @@ export function buildLingoThemeLayer() {
     },
     /** Three equal action cells; Check shares the third cell with Easy. */
     '.lingo-study-rate-row': {
-      '@apply grid h-9 w-full shrink-0 grid-cols-3 items-center gap-1.5 sm:gap-2': {},
+      '@apply flex h-9 w-full shrink-0 items-center gap-1.5 sm:gap-2': {},
+    },
+    /** Equal-width flex cells (Forgot | Good | Easy/Check, Too difficult | Too easy | Continue). */
+    '.lingo-study-rate-row > *': {
+      '@apply min-w-0 flex-1 basis-0': {},
     },
     /**
      * Correct / wrong status copy in the first rate cell (not a `.lingo-btn`).
@@ -537,11 +541,11 @@ export function buildLingoThemeLayer() {
       '@apply border-slate-200 bg-white': {},
     },
     /**
-     * Graded result copy in the meta row (where the rate prompt sits). Fixed h-9 with a
+     * Graded result copy in the meta row, right after the discuss button. Fixed h-9 with a
      * two-line clamp, so a long "Correct solution" never grows the footer (no CLS).
      */
     '.lingo-study-footer-result': {
-      '@apply flex h-9 min-w-0 items-center justify-center gap-2 overflow-hidden': {},
+      '@apply flex h-9 min-w-0 flex-1 items-center justify-start gap-2 overflow-hidden': {},
     },
     '.lingo-study-footer-result__text': {
       '@apply m-0 line-clamp-2 min-w-0 text-left text-xs font-bold leading-tight sm:text-sm': {},
@@ -557,6 +561,10 @@ export function buildLingoThemeLayer() {
     },
     '.lingo-study-footer-meta': {
       '@apply grid h-9 w-full shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2': {},
+    },
+    /** Graded: flex row — discuss button, then the result message (same h-9, no CLS). */
+    '.lingo-study-footer-meta--graded': {
+      '@apply flex justify-start': {},
     },
     '.lingo-study-footer-meta__prompt': {
       '@apply min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs':
