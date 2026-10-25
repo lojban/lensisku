@@ -53,6 +53,7 @@ async fn course_settings_roundtrip_and_owner_only() {
     );
     let req = UpdateCourseSettingsRequest {
         auto_challenge_mix: Some(true),
+        challenge_mode: None,
     };
     assert!(update_course_settings(&pool, other, cid, &req)
         .await
@@ -68,6 +69,7 @@ async fn course_settings_roundtrip_and_owner_only() {
     );
     let none = UpdateCourseSettingsRequest {
         auto_challenge_mix: None,
+        challenge_mode: None,
     };
     update_course_settings(&pool, owner, cid, &none)
         .await

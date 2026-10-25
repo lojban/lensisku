@@ -1,4 +1,7 @@
 #[cfg(test)]
+mod auto_card_tests;
+pub mod auto_challenge;
+#[cfg(test)]
 mod challenge_mix_progress_tests;
 pub mod controller;
 #[cfg(test)]
@@ -60,6 +63,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::generate_quiz_options)
                     .service(controller::apply_challenge_mix_level)
                     .service(controller::apply_challenge_mix_collection)
+                    .service(controller::convert_level_to_auto)
+                    .service(controller::convert_collection_to_auto)
                     .service(controller::update_course_settings)
                     .service(controller::save_course_order),
             ),

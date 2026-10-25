@@ -86,6 +86,21 @@
           {{ t('flashcardLevels.actions.applyChallengeMix') }}
         </Button>
       </div>
+      <div
+        v-if="level"
+        class="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 p-3"
+      >
+        <p class="min-w-0 flex-1 text-xs text-gray-600">{{ t('flashcardLevels.levelAutoHint') }}</p>
+        <Button
+          variant="toolbar"
+          type="button"
+          class="shrink-0"
+          :disabled="isApplyingMix"
+          @click="convertToAuto"
+        >
+          {{ t('flashcardLevels.convertLevelToAuto') }}
+        </Button>
+      </div>
     </form>
     <template #footer>
       <div class="flex flex-wrap items-center justify-end gap-3">
@@ -132,7 +147,13 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { applyChallengeMixToLevel, createLevel, deleteLevel, updateLevel } from '@/api'
+import {
+  applyChallengeMixToLevel,
+  convertLevelToAuto,
+  createLevel,
+  deleteLevel,
+  updateLevel,
+} from '@/api'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import type { CourseLevel } from '@/composables/useCourseLevels'
@@ -240,6 +261,19 @@ async function applyMix() {
     showSuccess(t('flashcardLevels.levelMixDone'))
   } catch (err) {
     showError(getApiErrorMessage(err) || t('collectionDetail.applyMixError'))
+  } finally {
+    isApplyingMix.value = false
+  }
+}
+
+async function convertToAuto() {
+  if (!props.level || isApplyingMix.value) return
+  isApplyingMix.value = true
+  try {
+    await convertLevelToAuto(props.level.level_id)
+    showSuccess(t('collectionDetail.convertAutoDone'))
+  } catch (err) {
+    showError(getApiErrorMessage(err) || t('collectionDetail.convertAutoError'))
   } finally {
     isApplyingMix.value = false
   }

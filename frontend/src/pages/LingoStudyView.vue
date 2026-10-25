@@ -741,21 +741,26 @@ const questionAudioPlayerRef = ref(null)
 
 const languages = ref([])
 
+/** `auto` cards: the server picks the question type per review (`presented_type`). */
+function cardDir(card) {
+  return card?.flashcard?.presented_type || card?.flashcard?.direction
+}
+
 /** Typed fill-in: direction must include 'fillin' (e.g. fillin, fillin_both, fillin_reverse). */
 const isFillInMode = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir = cardDir(currentCard.value)
   return dir && dir.toLowerCase().includes('fillin')
 })
 
 /** Word-bank assemble: direction must include 'wordbank' (incl. listen_wordbank*). */
 const isWordbankMode = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir = cardDir(currentCard.value)
   return dir && dir.toLowerCase().includes('wordbank')
 })
 
 /** Duo listenTap: listen_wordbank* with audio, until session opts out. */
 const isListenDirection = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir = cardDir(currentCard.value)
   if (!dir) return false
   const n = String(dir).toLowerCase().replace(/_/g, '')
   return n.startsWith('listenwordbank')
@@ -773,7 +778,7 @@ const isListenModeActive = computed(
 )
 
 function isListenCard(card) {
-  const dir = card?.flashcard?.direction
+  const dir = cardDir(card)
   if (!dir) return false
   const n = String(dir).toLowerCase().replace(/_/g, '')
   return n.startsWith('listenwordbank')
@@ -801,13 +806,13 @@ function continueFromNoListening() {
 const isFillInLikeMode = computed(() => isFillInMode.value || isWordbankMode.value)
 
 const isJustInformationMode = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir = cardDir(currentCard.value)
   return dir && dir.toLowerCase() === 'justinformation'
 })
 
 /** Multiple-choice quiz: select one of the options (text or image). */
 const isQuizMode = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir = cardDir(currentCard.value)
   return dir && dir.toLowerCase().startsWith('quiz')
 })
 
@@ -1121,6 +1126,7 @@ async function commitGradedAndAdvance(rating: number) {
         answer: pending.answer,
         rating,
         hint_used: hintUsed.value,
+        presented_type: currentCard.value.flashcard.presented_type,
       })
       await checkForDueChanges()
     } else if (pending?.kind === 'quiz') {
@@ -1131,6 +1137,7 @@ async function commitGradedAndAdvance(rating: number) {
         presented_options: pending.options,
         rating,
         hint_used: hintUsed.value,
+        presented_type: currentCard.value.flashcard.presented_type,
       })
       await checkForDueChanges()
     }
@@ -1348,7 +1355,7 @@ const loadLevelCardsForAnon = async () => {
       const list = res.data.cards || []
       total = res.data.total || 0
       for (const c of list) {
-        const dir = (c.direction || 'direct').toString()
+        const dir = (c.presented_type || c.direction || 'direct').toString()
         const d = dir.toLowerCase().replace(/_/g, '')
         const cardSide = d.includes('reverse') && !d.includes('both') ? 'reverse' : 'direct'
         all.push({
@@ -1364,6 +1371,7 @@ const loadLevelCardsForAnon = async () => {
             collection_id: c.collection_id,
             item_id: c.item_id,
             direction: dir,
+            presented_type: c.presented_type,
             wordbank_chips: c.wordbank_chips,
             wordbank_expected_normalized: c.wordbank_expected_normalized,
           },
@@ -1706,6 +1714,7 @@ const submitAnswer = async (rating?: number) => {
         rating,
         card_side: currentCard.value.progress[0].card_side,
         hint_used: hintUsed.value,
+        presented_type: currentCard.value.flashcard.presented_type,
       })
       if (rating >= 3 && shouldOfferEncouragement()) openEncouragement()
       else loadNextCard()

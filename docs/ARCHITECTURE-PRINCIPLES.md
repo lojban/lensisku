@@ -133,10 +133,19 @@ generically, so none of these needed UI changes.
 - Every stored review rating passes through `flashcards::rating_policy::effective_rating`
   (called from `review_flashcard` and `record_review`, so `/review`, `/fillin`, `/check`,
   `/quiz/submit` and related-card auto-progress all share it).
-- The rule only subtracts points. Quiz (incl. image), word-bank and listen-word-bank cards
-  lose 1 point because the answer is on screen. Unknown directions are treated the same way.
-  An optional `hint_used: true` in the request loses 1 more. At most 2 points are subtracted,
-  and the result is never below 1. Self-assessed, fill-in and info cards keep the full 1–4 range.
+- The rule only subtracts points. Fixed card types (quiz, image quiz, word bank, listen, fill-in,
+  self-assessed, info) keep the submitted rating; only `hint_used: true` loses 1 point. A correct
+  fixed quiz answer (client 3) is stored as 3.
+- `auto` cards lose 1 point when presented as quiz / word bank / listening (`presented_type`,
+  sent by the client and validated against the auto ladder); typing, reverse and flip
+  presentations keep the rating. A hint loses 1 more. At most 2 points are subtracted and the
+  result is never below 1. A missing `presented_type` on an auto card counts as on-screen.
+- Card status: fixed cards move new → learning → review → graduated on stored rating >= 3.
+  Auto cards move on stored rating >= `PASS_RATING` (2), but reach review / graduated only after
+  at least one correct production answer (typing, reverse, reverse word bank). A stored 1 sends
+  any card back to learning. Level stats count stored rating >= 2 as correct.
+- A passing review (stored >= 2) whose FSRS interval rounds to 0 days is scheduled 10 minutes
+  ahead so the card leaves the current session's due queue.
 - `hint_used` defaults to false, so older clients keep working. The flag can never raise a rating.
 
 ## 7. Open items

@@ -767,7 +767,8 @@
       "justinformation": "Just information",
       "quizImageDirect": "Quiz: word → choose image",
       "quizImageReverse": "Quiz: definition → choose image",
-      "quizImageBoth": "Quiz: image options (both sides)"
+      "quizImageBoth": "Quiz: image options (both sides)",
+      "auto": "Auto (mixes question types as you learn)"
     },
     "quizDirectionLabel": "Quiz direction",
     "autoProgressLabel": "Enable auto-progression",
@@ -817,7 +818,14 @@
     "applyingMix": "Applying…",
     "applyMixDone": "Exercise mix applied to all levels.",
     "applyMixError": "Could not apply the exercise mix.",
-    "courseOrder": "Course order"
+    "courseOrder": "Course order",
+    "challengeModeLabel": "Exercise types",
+    "challengeModeOff": "Off — keep each card's type",
+    "challengeModeFixed": "Fixed mix — new cards get a mix of fixed types",
+    "challengeModeAuto": "Auto — each card changes type as you learn",
+    "convertCourseToAuto": "Convert all cards to Auto",
+    "convertAutoDone": "Cards converted to Auto.",
+    "convertAutoError": "Could not convert cards to Auto."
   },
   "dictionaryExport": {
     "title": "Dictionary export",
@@ -1838,7 +1846,9 @@
     "deleteLevelKeepsCards": "Delete level \"{levelName}\"? Its cards are not deleted — they become unassigned.",
     "lockedHint": "The level stays locked for a learner until all prerequisite levels are completed.",
     "saveError": "Could not save the level.",
-    "levelMixDone": "Exercise mix applied to this level."
+    "levelMixDone": "Exercise mix applied to this level.",
+    "convertLevelToAuto": "Convert this level to Auto",
+    "levelAutoHint": "Auto cards start as a quiz or word bank and move on to listening and typing as you learn."
   },
   "anonymousProgress": {
     "bannerMessage": "Sign up to save your progress across devices",

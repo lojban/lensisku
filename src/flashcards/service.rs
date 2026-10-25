@@ -84,6 +84,7 @@ async fn get_flashcard(
         quiz_options: None,  // Will be populated later if it's a quiz
         wordbank_chips: None,
         wordbank_expected_normalized: None,
+        presented_type: None,
     })
 }
 
@@ -233,6 +234,7 @@ pub async fn create_flashcard(
             quiz_options: None,
             wordbank_chips: None,
             wordbank_expected_normalized: None,
+            presented_type: None,
             sound_url: if row.get::<_, bool>("has_custom_sound") {
                 Some(format!(
                     "/api/collections/{}/items/{}/sound",
@@ -286,7 +288,7 @@ pub async fn create_flashcard(
 
     // Initialize progress based on direction
     match req.direction {
-        FlashcardDirection::Direct => {
+        FlashcardDirection::Direct | FlashcardDirection::Auto => {
             initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
         }
         FlashcardDirection::Reverse => {
@@ -585,6 +587,12 @@ pub async fn generate_and_set_quiz_options(
         .await?;
 
     let direction: FlashcardDirection = flashcard_details_row.get("direction");
+    // Auto cards are quizzed on their direct side.
+    let direction = if direction == FlashcardDirection::Auto {
+        FlashcardDirection::QuizDirect
+    } else {
+        direction
+    };
     let item_id: i32 = flashcard_details_row.get("item_id");
     let definition_id: Option<i32> = flashcard_details_row.get("definition_id");
     let free_content_front: Option<String> = flashcard_details_row.get("free_content_front");
@@ -698,6 +706,7 @@ fn build_flashcard_from_row(
         quiz_options,
         wordbank_chips: None,
         wordbank_expected_normalized: None,
+        presented_type: None,
     }
 }
 
@@ -798,7 +807,12 @@ fn attach_wordbank_chips(cards: &mut [FlashcardResponse]) {
     }
 
     for i in 0..cards.len() {
-        if !is_wordbank_like_direction(&cards[i].flashcard.direction) {
+        let dir = cards[i]
+            .flashcard
+            .presented_type
+            .clone()
+            .unwrap_or_else(|| cards[i].flashcard.direction.clone());
+        if !is_wordbank_like_direction(&dir) {
             continue;
         }
         let side = cards[i]
@@ -806,7 +820,7 @@ fn attach_wordbank_chips(cards: &mut [FlashcardResponse]) {
             .first()
             .map(|p| p.card_side.as_str())
             .unwrap_or("direct");
-        let Some(lang) = wordbank_lang_for(&cards[i].flashcard.direction, side) else {
+        let Some(lang) = wordbank_lang_for(&dir, side) else {
             continue;
         };
         let Some(expected) = expected_fillin_like_raw(&cards[i].flashcard, side) else {
@@ -835,18 +849,28 @@ fn attach_wordbank_chips_to_level_cards(cards: &mut [LevelCardResponse]) {
         return;
     }
 
+    // Auto cards in level listings (anonymous study) are shown as a word bank.
+    for c in cards.iter_mut() {
+        if c.direction == FlashcardDirection::Auto {
+            c.presented_type = Some(FlashcardDirection::Wordbank);
+        }
+    }
     for i in 0..cards.len() {
-        if !is_wordbank_like_direction(&cards[i].direction) {
+        let dir = cards[i]
+            .presented_type
+            .clone()
+            .unwrap_or_else(|| cards[i].direction.clone());
+        if !is_wordbank_like_direction(&dir) {
             continue;
         }
         // Guest/level listing studies the primary side for this direction family.
-        let side = match cards[i].direction {
+        let side = match dir {
             FlashcardDirection::WordbankReverse
             | FlashcardDirection::ListenWordbankReverse
             | FlashcardDirection::FillInReverse => "reverse",
             _ => "direct",
         };
-        let Some(lang) = wordbank_lang_for(&cards[i].direction, side) else {
+        let Some(lang) = wordbank_lang_for(&dir, side) else {
             continue;
         };
         let stub = Flashcard {
@@ -862,7 +886,7 @@ fn attach_wordbank_chips_to_level_cards(cards: &mut [LevelCardResponse]) {
             has_back_image: false,
             notes: None,
             position: cards[i].position,
-            direction: cards[i].direction.clone(),
+            direction: dir.clone(),
             definition_language_id: None,
             sound_url: None,
             has_custom_sound: false,
@@ -873,6 +897,7 @@ fn attach_wordbank_chips_to_level_cards(cards: &mut [LevelCardResponse]) {
             quiz_options: None,
             wordbank_chips: None,
             wordbank_expected_normalized: None,
+            presented_type: None,
         };
         let Some(expected) = expected_fillin_like_raw(&stub, side) else {
             continue;
@@ -898,6 +923,11 @@ fn attach_wordbank_chips_to_level_cards(cards: &mut [LevelCardResponse]) {
         }
         cards[i].wordbank_chips = Some(chips);
         cards[i].wordbank_expected_normalized = Some(expected_normalized);
+    }
+    for c in cards.iter_mut() {
+        if c.direction == FlashcardDirection::Auto && c.wordbank_chips.is_none() {
+            c.presented_type = Some(FlashcardDirection::Direct);
+        }
     }
 }
 
@@ -1139,7 +1169,7 @@ pub async fn list_flashcards(
         }
         seeded_any = true;
         match direction {
-            FlashcardDirection::Direct => {
+            FlashcardDirection::Direct | FlashcardDirection::Auto => {
                 initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
             }
             FlashcardDirection::Reverse => {
@@ -1207,6 +1237,31 @@ pub async fn list_flashcards(
 
     let mut all_flashcards_with_retrievability = Vec::new();
     let mut processed_ids = std::collections::HashSet::new();
+
+    // Auto cards: ladder stage and last presented type per flashcard (direct side).
+    let auto_state: HashMap<i32, (i16, Option<String>)> = if rows
+        .iter()
+        .any(|r| r.get::<_, FlashcardDirection>("direction") == FlashcardDirection::Auto)
+    {
+        transaction
+            .query(
+                "SELECT p.flashcard_id, p.auto_stage,
+                        (SELECT h.presented_type FROM flashcard_review_history h
+                          WHERE h.user_id = p.user_id AND h.flashcard_id = p.flashcard_id
+                          ORDER BY h.review_time DESC, h.id DESC LIMIT 1) AS last_type
+                 FROM user_flashcard_progress p
+                 JOIN flashcards f ON f.id = p.flashcard_id
+                 WHERE p.user_id = $1 AND f.collection_id = $2 AND f.direction = 'auto'
+                   AND p.card_side = 'direct' AND NOT p.archived",
+                &[&user_id, &query.collection_id],
+            )
+            .await?
+            .iter()
+            .map(|r| (r.get(0), (r.get(1), r.get(2))))
+            .collect()
+    } else {
+        HashMap::new()
+    };
 
     for row in &rows {
         let flashcard_id: i32 = row.get("id");
@@ -1373,7 +1428,7 @@ pub async fn list_flashcards(
             let sound_key = word.as_ref().or(free_content_front.as_ref());
             let sound_url = sound_key.and_then(|k| sound_urls_map.get(k).cloned().flatten());
 
-            let card_response = FlashcardResponse {
+            let mut card_response = FlashcardResponse {
                 flashcard: build_flashcard_from_row(
                     row,
                     query.collection_id,
@@ -1383,6 +1438,11 @@ pub async fn list_flashcards(
                 ),
                 progress: vec![progress],
             };
+            if direction == FlashcardDirection::Auto {
+                let (stage, last) = auto_state.get(&flashcard_id).cloned().unwrap_or((0, None));
+                present_auto_card(&mut transaction, user_id, &mut card_response, stage, last)
+                    .await?;
+            }
             all_flashcards_with_retrievability.push((card_response, retrievability));
         }
     }
@@ -1402,6 +1462,7 @@ pub async fn list_flashcards(
         .map(|(card, _)| card.clone())
         .collect();
     attach_wordbank_chips(&mut paginated_cards);
+    auto_wordbank_fallback(&mut paginated_cards);
 
     let due_count = if query.due.unwrap_or(false) {
         all_flashcards_with_retrievability.len() as i64
@@ -1861,19 +1922,41 @@ async fn apply_rating_policy(
         )
         .await?
         .map(|row| row.get("direction"));
-    let rating =
-        super::rating_policy::effective_rating(direction.as_deref(), req.rating, req.hint_used);
+    let is_auto = direction
+        .as_deref()
+        .is_some_and(|d| d.eq_ignore_ascii_case("auto"));
+    // Auto cards: accept only ladder types; schedule on the single `direct` side.
+    let presented = if is_auto {
+        req.presented_type
+            .as_deref()
+            .and_then(FlashcardDirection::parse)
+            .filter(super::auto_challenge::is_ladder_type)
+            .map(|t| t.as_str().to_string())
+    } else {
+        None
+    };
+    let rating = super::rating_policy::effective_rating(
+        direction.as_deref(),
+        presented.as_deref(),
+        req.rating,
+        req.hint_used,
+    );
     if rating != req.rating {
         debug!(
-            "rating policy: card {} ({:?}) {} -> {} (hint_used={})",
-            req.flashcard_id, direction, req.rating, rating, req.hint_used
+            "rating policy: card {} ({:?}/{:?}) {} -> {} (hint_used={})",
+            req.flashcard_id, direction, presented, req.rating, rating, req.hint_used
         );
     }
     Ok(ReviewRequest {
         flashcard_id: req.flashcard_id,
         rating,
-        card_side: req.card_side.clone(),
+        card_side: if is_auto {
+            "direct".to_string()
+        } else {
+            req.card_side.clone()
+        },
         hint_used: req.hint_used,
+        presented_type: presented,
     })
 }
 
@@ -2036,14 +2119,32 @@ pub async fn review_flashcard(
         _ => (next_states.again.interval as i32, next_states.again.memory),
     };
 
-    let next_review = Utc::now() + Duration::days(interval as i64);
+    // A passing review whose interval rounds to 0 days would stay due "now"; push it
+    // 10 minutes out so it leaves the current session's queue.
+    let next_review = if interval == 0 && req.rating >= super::rating_policy::PASS_RATING {
+        Utc::now() + Duration::minutes(10)
+    } else {
+        Utc::now() + Duration::days(interval as i64)
+    };
+    let auto_presented: Option<FlashcardDirection> = req
+        .presented_type
+        .as_deref()
+        .and_then(FlashcardDirection::parse);
+    let is_auto_review = auto_presented.is_some()
+        || transaction
+            .query_one(
+                "SELECT direction::text = 'auto' FROM flashcards WHERE id = $1",
+                &[&req.flashcard_id],
+            )
+            .await?
+            .get::<_, bool>(0);
 
     // Record review history
     transaction
         .execute(
             "INSERT INTO flashcard_review_history
-     (user_id, flashcard_id, card_side, rating, elapsed_days, scheduled_days, state)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)",
+     (user_id, flashcard_id, card_side, rating, elapsed_days, scheduled_days, state, presented_type)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
             &[
                 &user_id,
                 &req.flashcard_id,
@@ -2055,21 +2156,44 @@ pub async fn review_flashcard(
                     "stability": new_state.stability,
                     "difficulty": new_state.difficulty
                 }),
+                &req.presented_type,
             ],
         )
         .await?;
 
-    // Update learning state
-    let new_status = match (
-        req.rating,
-        get_current_status(&transaction, req.flashcard_id, user_id, &req.card_side).await?,
-    ) {
-        (1, _) => FlashcardStatus::Learning,
-        (_, FlashcardStatus::New) if req.rating >= 3 => FlashcardStatus::Learning,
-        (_, FlashcardStatus::Learning) if req.rating >= 3 => FlashcardStatus::Review,
-        (_, FlashcardStatus::Review) if req.rating >= 3 => FlashcardStatus::Graduated,
-        (_, current) => current, // Keep current status if none of the above conditions met
+    // Update learning state.
+    // Fixed cards: status moves on stored >= 3 (FIXED_STATUS_RATING).
+    // Auto cards: moves on stored >= PASS_RATING (2), but review / graduated also need one
+    // correct production answer (typing / reverse) — recognition alone does not graduate.
+    let current_status =
+        get_current_status(&transaction, req.flashcard_id, user_id, &req.card_side).await?;
+    let (status_threshold, production_ok) = if is_auto_review {
+        let pass = req.rating >= super::rating_policy::PASS_RATING;
+        let now_production = pass
+            && auto_presented
+                .as_ref()
+                .is_some_and(super::auto_challenge::is_production_type);
+        let earlier_production = transaction
+            .query_one(
+                "SELECT EXISTS (SELECT 1 FROM flashcard_review_history
+                  WHERE user_id = $1 AND flashcard_id = $2 AND rating >= $3
+                    AND presented_type IN ('fillin', 'reverse', 'wordbank_reverse'))",
+                &[
+                    &user_id,
+                    &req.flashcard_id,
+                    &(super::rating_policy::PASS_RATING as i32),
+                ],
+            )
+            .await?
+            .get::<_, bool>(0);
+        (
+            super::rating_policy::PASS_RATING,
+            now_production || earlier_production,
+        )
+    } else {
+        (super::rating_policy::FIXED_STATUS_RATING, true)
     };
+    let new_status = next_status(req.rating, current_status, status_threshold, production_ok);
 
     // Initialize values for new cards
     let (stability, difficulty) = if current_state.is_none() {
@@ -2136,6 +2260,24 @@ pub async fn review_flashcard(
             ],
         )
         .await?;
+    if is_auto_review {
+        transaction
+            .execute(
+                "UPDATE user_flashcard_progress SET auto_stage = $4
+                 WHERE user_id = $1 AND flashcard_id = $2 AND card_side = $3 AND NOT archived",
+                &[
+                    &user_id,
+                    &req.flashcard_id,
+                    &req.card_side,
+                    &super::auto_challenge::next_stage(
+                        current_auto_stage(&transaction, user_id, req.flashcard_id).await?,
+                        req.rating,
+                        req.hint_used,
+                    ),
+                ],
+            )
+            .await?;
+    }
 
     transaction.commit().await?;
 
@@ -2603,6 +2745,7 @@ pub async fn check_answer(
             rating: 4,
             card_side: req.card_side.clone(),
             hint_used: req.hint_used,
+            presented_type: req.presented_type.clone(),
         };
 
         let review_result = review_flashcard(pool, user_id, &review_req).await?;
@@ -2705,7 +2848,20 @@ pub async fn review_flashcard_serverside(
         return Err("Cannot answer 'Just Information' cards.".into());
     }
 
-    let flashcard = get_flashcard(&transaction, req.flashcard_id).await?;
+    let mut flashcard = get_flashcard(&transaction, req.flashcard_id).await?;
+    // Auto cards are graded as the type they were presented as (validated ladder type).
+    let direction = if direction == FlashcardDirection::Auto {
+        let t = req
+            .presented_type
+            .as_deref()
+            .and_then(FlashcardDirection::parse)
+            .filter(|t| is_wordbank_like_direction(t) || *t == FlashcardDirection::FillIn)
+            .unwrap_or(FlashcardDirection::FillIn);
+        flashcard.direction = t.clone();
+        t
+    } else {
+        direction
+    };
 
     // Determine if it's free content
     let is_free_content = flashcard.definition_id.is_none();
@@ -2822,6 +2978,7 @@ pub async fn review_flashcard_serverside(
         rating: commit_rating,
         card_side: req.card_side.clone(),
         hint_used: req.hint_used,
+        presented_type: req.presented_type.clone(),
     };
     let review_result = review_flashcard(pool, user_id, &review_req).await?;
 
@@ -2893,6 +3050,7 @@ async fn auto_progress_related_cards(
             rating: 4,
             card_side: card_side.to_string(),
             hint_used: false,
+            presented_type: None,
         };
         record_review(transaction, user_id, &review_req).await?;
     }
@@ -3157,6 +3315,7 @@ pub async fn submit_quiz_answer(
         rating: commit_rating,
         card_side: answer_data.card_side.clone(),
         hint_used: answer_data.hint_used,
+        presented_type: answer_data.presented_type.clone(),
     };
     transaction.commit().await?;
 
@@ -3785,6 +3944,7 @@ async fn get_level_cards(
             progress,
             wordbank_chips: None,
             wordbank_expected_normalized: None,
+            presented_type: None,
         });
     }
 
@@ -4000,6 +4160,7 @@ pub async fn get_level_cards_paginated(
                 progress,
                 wordbank_chips: None,
                 wordbank_expected_normalized: None,
+                presented_type: None,
             }
         })
         .collect();
@@ -4339,28 +4500,8 @@ fn validate_fill_in_answers(answer: &str, expected: &str) -> Result<(), Flashcar
 }
 
 fn direction_from_challenge_mix_str(s: &str) -> Result<FlashcardDirection, FlashcardError> {
-    match s {
-        "direct" => Ok(FlashcardDirection::Direct),
-        "reverse" => Ok(FlashcardDirection::Reverse),
-        "both" => Ok(FlashcardDirection::Both),
-        "fillin" => Ok(FlashcardDirection::FillIn),
-        "fillin_reverse" => Ok(FlashcardDirection::FillInReverse),
-        "fillin_both" => Ok(FlashcardDirection::FillInBoth),
-        "wordbank" => Ok(FlashcardDirection::Wordbank),
-        "wordbank_reverse" => Ok(FlashcardDirection::WordbankReverse),
-        "wordbank_both" => Ok(FlashcardDirection::WordbankBoth),
-        "listen_wordbank" => Ok(FlashcardDirection::ListenWordbank),
-        "listen_wordbank_reverse" => Ok(FlashcardDirection::ListenWordbankReverse),
-        "listen_wordbank_both" => Ok(FlashcardDirection::ListenWordbankBoth),
-        "just_information" => Ok(FlashcardDirection::JustInformation),
-        "quiz_direct" => Ok(FlashcardDirection::QuizDirect),
-        "quiz_reverse" => Ok(FlashcardDirection::QuizReverse),
-        "quiz_both" => Ok(FlashcardDirection::QuizBoth),
-        "quiz_image_direct" => Ok(FlashcardDirection::QuizImageDirect),
-        "quiz_image_reverse" => Ok(FlashcardDirection::QuizImageReverse),
-        "quiz_image_both" => Ok(FlashcardDirection::QuizImageBoth),
-        _ => Err(format!("Unknown challenge-mix direction: {s}").into()),
-    }
+    FlashcardDirection::parse(s)
+        .ok_or_else(|| format!("Unknown challenge-mix direction: {s}").into())
 }
 
 async fn reseed_owner_progress_for_direction(
@@ -4402,7 +4543,8 @@ async fn reseed_owner_progress_for_direction(
         | FlashcardDirection::QuizBoth
         | FlashcardDirection::QuizImageDirect
         | FlashcardDirection::QuizImageReverse
-        | FlashcardDirection::QuizImageBoth => {
+        | FlashcardDirection::QuizImageBoth
+        | FlashcardDirection::Auto => {
             initialize_progress(transaction, user_id, flashcard_id, "direct").await?;
         }
         FlashcardDirection::Reverse
@@ -4428,6 +4570,10 @@ pub async fn apply_challenge_mix_to_level(
     user_id: i32,
     level_id: i32,
 ) -> Result<dto::ApplyChallengeMixResponse, FlashcardError> {
+    // Auto courses must not have their auto cards overwritten by a fixed mix.
+    if level_challenge_mode(pool, level_id).await? == "auto" {
+        return convert_level_to_auto(pool, user_id, level_id).await;
+    }
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -4658,13 +4804,14 @@ pub async fn get_course_settings(
         .map_err(map_read_access)?;
     let row = transaction
         .query_one(
-            "SELECT auto_challenge_mix FROM collections WHERE collection_id = $1",
+            "SELECT auto_challenge_mix, challenge_mode FROM collections WHERE collection_id = $1",
             &[&collection_id],
         )
         .await?;
     transaction.commit().await?;
     Ok(dto::CourseSettingsResponse {
         auto_challenge_mix: row.get(0),
+        challenge_mode: row.get(1),
     })
 }
 
@@ -4678,33 +4825,140 @@ pub async fn update_course_settings(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     verify_collection_ownership(&transaction, collection_id, user_id).await?;
+    let mode: Option<String> = match req.challenge_mode.as_deref() {
+        Some(m @ ("off" | "fixed" | "auto")) => Some(m.to_string()),
+        Some(other) => return Err(format!("Invalid challenge_mode '{}'", other).into()),
+        None => req
+            .auto_challenge_mix
+            .map(|b| if b { "fixed" } else { "off" }.to_string()),
+    };
     let row = transaction
         .query_one(
             "UPDATE collections
-             SET auto_challenge_mix = COALESCE($1, auto_challenge_mix)
+             SET challenge_mode = COALESCE($1, challenge_mode),
+                 auto_challenge_mix = COALESCE($1, challenge_mode) = 'fixed'
              WHERE collection_id = $2
-             RETURNING auto_challenge_mix",
-            &[&req.auto_challenge_mix, &collection_id],
+             RETURNING auto_challenge_mix, challenge_mode",
+            &[&mode, &collection_id],
         )
         .await?;
     transaction.commit().await?;
     Ok(dto::CourseSettingsResponse {
         auto_challenge_mix: row.get(0),
+        challenge_mode: row.get(1),
     })
 }
 
-/// True when the level's course has `auto_challenge_mix` enabled.
-pub async fn level_auto_challenge_mix(pool: &Pool, level_id: i32) -> Result<bool, FlashcardError> {
+/// The level's course challenge mode: "off", "fixed" or "auto".
+pub async fn level_challenge_mode(pool: &Pool, level_id: i32) -> Result<String, FlashcardError> {
     let client = pool.get().await?;
     let row = client
         .query_opt(
-            "SELECT c.auto_challenge_mix
+            "SELECT c.challenge_mode
              FROM flashcard_levels l JOIN collections c ON c.collection_id = l.collection_id
              WHERE l.level_id = $1",
             &[&level_id],
         )
         .await?;
-    Ok(row.map(|r| r.get::<_, bool>(0)).unwrap_or(false))
+    Ok(row
+        .map(|r| r.get::<_, String>(0))
+        .unwrap_or_else(|| "off".to_string()))
+}
+
+/// Convert every answerable card of a level to `auto` (owner only). Learner progress keeps
+/// the direct side (other sides are archived); quiz options are seeded for the quiz rung.
+pub async fn convert_level_to_auto(
+    pool: &Pool,
+    user_id: i32,
+    level_id: i32,
+) -> Result<dto::ApplyChallengeMixResponse, FlashcardError> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+    let collection_id = get_collection_id(&transaction, level_id).await?;
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+    let rows = transaction
+        .query(
+            "SELECT f.id, f.direction
+             FROM flashcard_level_items fli JOIN flashcards f ON f.id = fli.flashcard_id
+             WHERE fli.level_id = $1 AND f.direction <> 'just_information'
+             ORDER BY fli.position",
+            &[&level_id],
+        )
+        .await?;
+    let mut updated_count = 0i32;
+    let mut ids = Vec::new();
+    for row in &rows {
+        let fid: i32 = row.get(0);
+        let dir: FlashcardDirection = row.get(1);
+        ids.push(fid);
+        if dir == FlashcardDirection::Auto {
+            continue;
+        }
+        transaction
+            .execute(
+                "UPDATE flashcards SET direction = 'auto' WHERE id = $1",
+                &[&fid],
+            )
+            .await?;
+        reseed_owner_progress_for_direction(&transaction, user_id, fid, &FlashcardDirection::Auto)
+            .await?;
+        updated_count += 1;
+    }
+    let have_quiz: std::collections::HashSet<i32> = transaction
+        .query(
+            "SELECT flashcard_id FROM flashcard_quiz_options WHERE flashcard_id = ANY($1)",
+            &[&ids],
+        )
+        .await?
+        .iter()
+        .map(|r| r.get(0))
+        .collect();
+    transaction.commit().await?;
+    let mut quiz_seeded_count = 0i32;
+    for fid in ids.into_iter().filter(|f| !have_quiz.contains(f)) {
+        match generate_and_set_quiz_options(pool, user_id, fid).await {
+            Ok(_) => quiz_seeded_count += 1,
+            Err(e) => log::warn!("auto: no quiz options for flashcard {}: {}", fid, e),
+        }
+    }
+    Ok(dto::ApplyChallengeMixResponse {
+        updated_count,
+        quiz_seeded_count,
+    })
+}
+
+/// Convert every level of a collection to `auto` (owner only).
+pub async fn convert_collection_to_auto(
+    pool: &Pool,
+    user_id: i32,
+    collection_id: i32,
+) -> Result<dto::ApplyChallengeMixResponse, FlashcardError> {
+    let level_ids: Vec<i32> = {
+        let mut c = pool.get().await?;
+        let tx = c.transaction().await?;
+        verify_collection_ownership(&tx, collection_id, user_id).await?;
+        let ids = tx
+            .query(
+                "SELECT level_id FROM flashcard_levels WHERE collection_id = $1 ORDER BY position",
+                &[&collection_id],
+            )
+            .await?
+            .iter()
+            .map(|r| r.get(0))
+            .collect();
+        tx.commit().await?;
+        ids
+    };
+    let mut out = dto::ApplyChallengeMixResponse {
+        updated_count: 0,
+        quiz_seeded_count: 0,
+    };
+    for level_id in level_ids {
+        let r = convert_level_to_auto(pool, user_id, level_id).await?;
+        out.updated_count += r.updated_count;
+        out.quiz_seeded_count += r.quiz_seeded_count;
+    }
+    Ok(out)
 }
 
 /// Level membership for every item of a collection, in one query (no N+1).
@@ -4904,4 +5158,133 @@ pub async fn complete_level_when_nothing_due(
         .await?
         .map(|r| r.get::<_, i32>(0));
     Ok(Some(next))
+}
+
+/// Card status after a review with stored rating `rating`. A stored 1 always means learning;
+/// otherwise status advances one step at `threshold`, and review / graduated additionally
+/// need `production_ok` (auto cards: a correct typing / reverse answer exists).
+pub(crate) fn next_status(
+    rating: u32,
+    current: FlashcardStatus,
+    threshold: u32,
+    production_ok: bool,
+) -> FlashcardStatus {
+    if rating <= 1 {
+        return FlashcardStatus::Learning;
+    }
+    if rating < threshold {
+        return current;
+    }
+    match current {
+        FlashcardStatus::New => FlashcardStatus::Learning,
+        FlashcardStatus::Learning if production_ok => FlashcardStatus::Review,
+        FlashcardStatus::Review if production_ok => FlashcardStatus::Graduated,
+        other => other,
+    }
+}
+
+async fn current_auto_stage(
+    transaction: &Transaction<'_>,
+    user_id: i32,
+    flashcard_id: i32,
+) -> Result<i16, FlashcardError> {
+    // Read before the stage UPDATE (same transaction): the value the review was chosen with.
+    Ok(transaction
+        .query_opt(
+            "SELECT auto_stage FROM user_flashcard_progress
+             WHERE user_id = $1 AND flashcard_id = $2 AND card_side = 'direct' AND NOT archived",
+            &[&user_id, &flashcard_id],
+        )
+        .await?
+        .map(|r| r.get::<_, i16>(0))
+        .unwrap_or(0))
+}
+
+#[cfg(test)]
+mod status_rule_tests {
+    use super::{next_status, FlashcardStatus as S};
+
+    #[test]
+    fn fixed_cards_need_three() {
+        assert_eq!(next_status(3, S::New, 3, true), S::Learning);
+        assert_eq!(next_status(2, S::New, 3, true), S::New);
+        assert_eq!(next_status(3, S::Learning, 3, true), S::Review);
+        assert_eq!(next_status(4, S::Review, 3, true), S::Graduated);
+        assert_eq!(next_status(1, S::Review, 3, true), S::Learning);
+    }
+
+    #[test]
+    fn auto_cards_pass_at_two_but_graduate_only_after_production() {
+        assert_eq!(next_status(2, S::New, 2, false), S::Learning);
+        assert_eq!(next_status(2, S::Learning, 2, false), S::Learning);
+        assert_eq!(next_status(2, S::Learning, 2, true), S::Review);
+        assert_eq!(next_status(3, S::Review, 2, false), S::Review);
+        assert_eq!(next_status(3, S::Review, 2, true), S::Graduated);
+    }
+}
+
+/// Pick and attach the presented type of an `auto` card (quiz options, display side).
+async fn present_auto_card(
+    transaction: &mut Transaction<'_>,
+    user_id: i32,
+    card: &mut FlashcardResponse,
+    stage: i16,
+    last_type: Option<String>,
+) -> Result<(), FlashcardError> {
+    use super::auto_challenge as ac;
+    let f = &card.flashcard;
+    let front = f
+        .word
+        .as_deref()
+        .or(f.free_content_front.as_deref())
+        .unwrap_or("");
+    let review_count = card.progress.first().map(|p| p.review_count).unwrap_or(0);
+    let mut inputs = ac::AutoInputs {
+        stage,
+        last_type: last_type.as_deref().and_then(FlashcardDirection::parse),
+        has_quiz: true,
+        has_sound: f.sound_url.is_some() || f.has_custom_sound,
+        multi_token_front: front.split_whitespace().count() >= 2,
+        seed: ac::seed(user_id, f.id, review_count),
+    };
+    let fid = f.id;
+    let mut chosen = ac::choose(&inputs);
+    if chosen == FlashcardDirection::QuizDirect {
+        let sp = transaction.savepoint("auto_quiz").await?;
+        match get_quiz_options_for_listing(&sp, fid, user_id, "direct").await {
+            Ok((q, o)) if o.len() >= 2 => {
+                sp.commit().await?;
+                card.flashcard.question_text = Some(q);
+                card.flashcard.quiz_options = Some(o);
+            }
+            _ => {
+                sp.rollback().await?;
+                inputs.has_quiz = false;
+                chosen = ac::choose(&inputs);
+            }
+        }
+    }
+    if let Some(p) = card.progress.first_mut() {
+        p.card_side = ac::display_side(&chosen).to_string();
+    }
+    card.flashcard.presented_type = Some(chosen);
+    Ok(())
+}
+
+/// After word-bank chips are attached: an auto card presented as a word bank without chips
+/// (too few words in the batch) falls back to a self-rated flip card.
+fn auto_wordbank_fallback(cards: &mut [FlashcardResponse]) {
+    for c in cards.iter_mut() {
+        let wb = c
+            .flashcard
+            .presented_type
+            .as_ref()
+            .is_some_and(is_wordbank_like_direction);
+        if wb && c.flashcard.wordbank_chips.is_none() {
+            c.flashcard.presented_type = Some(FlashcardDirection::Direct);
+            if let Some(p) = c.progress.first_mut() {
+                p.card_side = "direct".to_string();
+            }
+        }
+    }
 }

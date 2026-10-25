@@ -207,22 +207,20 @@
             {{ t('collectionDetail.courseSettingsLegend') }}
           </legend>
           <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="flex min-w-0 flex-1 items-start">
-              <Checkbox
-                :id="`edit_auto_mix_${collectionId}`"
-                v-model="courseSettings.auto_challenge_mix"
-                class="checkbox-toggle mt-0.5"
-                :disabled="isCourseSettingsLoading"
-              />
-              <label
-                :for="`edit_auto_mix_${collectionId}`"
-                class="ml-2 min-w-0 text-sm text-gray-700"
-              >
-                <span class="block">{{ t('collectionDetail.autoChallengeMixLabel') }}</span>
-                <span class="block text-xs text-gray-500">
-                  {{ t('collectionDetail.autoChallengeMixHint') }}
-                </span>
+            <div class="flex min-w-0 flex-1 flex-col">
+              <label :for="`edit_challenge_mode_${collectionId}`" class="text-sm text-gray-700">
+                {{ t('collectionDetail.challengeModeLabel') }}
               </label>
+              <select
+                :id="`edit_challenge_mode_${collectionId}`"
+                v-model="courseSettings.challenge_mode"
+                class="input-field mt-1 w-full text-sm"
+                :disabled="isCourseSettingsLoading"
+              >
+                <option value="off">{{ t('collectionDetail.challengeModeOff') }}</option>
+                <option value="fixed">{{ t('collectionDetail.challengeModeFixed') }}</option>
+                <option value="auto">{{ t('collectionDetail.challengeModeAuto') }}</option>
+              </select>
             </div>
             <Button
               variant="toolbar"
@@ -234,7 +232,9 @@
               {{
                 isApplyingMix
                   ? t('collectionDetail.applyingMix')
-                  : t('collectionDetail.applyMixNow')
+                  : courseSettings.challenge_mode === 'auto'
+                    ? t('collectionDetail.convertCourseToAuto')
+                    : t('collectionDetail.applyMixNow')
               }}
             </Button>
           </div>
@@ -355,6 +355,7 @@ import {
   getCourseSettings,
   updateCourseSettings,
   applyChallengeMixToCollection,
+  convertCollectionToAuto,
   updateCollectionImage,
 } from '@/api'
 import CollectionMediaBulkZipModal from '@/components/CollectionMediaBulkZipModal.vue'
@@ -420,8 +421,8 @@ const editForm = ref({
 })
 
 const showEditModal = ref(false)
-const courseSettings = ref({ auto_challenge_mix: false })
-const initialAutoMix = ref(false)
+const courseSettings = ref<{ challenge_mode: 'off' | 'fixed' | 'auto' }>({ challenge_mode: 'off' })
+const initialMode = ref<'off' | 'fixed' | 'auto'>('off')
 const isCourseSettingsLoading = ref(false)
 const isApplyingMix = ref(false)
 
@@ -429,8 +430,9 @@ async function loadCourseSettings() {
   isCourseSettingsLoading.value = true
   try {
     const { data } = await getCourseSettings(props.collectionId)
-    courseSettings.value = { auto_challenge_mix: !!data.auto_challenge_mix }
-    initialAutoMix.value = !!data.auto_challenge_mix
+    const mode = data.challenge_mode || (data.auto_challenge_mix ? 'fixed' : 'off')
+    courseSettings.value = { challenge_mode: mode }
+    initialMode.value = mode
   } catch (err) {
     console.error('Error loading course settings:', err)
   } finally {
@@ -442,10 +444,22 @@ async function applyMixNow() {
   if (isApplyingMix.value) return
   isApplyingMix.value = true
   try {
-    await applyChallengeMixToCollection(props.collectionId)
-    showSuccess(t('collectionDetail.applyMixDone'))
+    if (courseSettings.value.challenge_mode === 'auto') {
+      await convertCollectionToAuto(props.collectionId)
+      showSuccess(t('collectionDetail.convertAutoDone'))
+    } else {
+      await applyChallengeMixToCollection(props.collectionId)
+      showSuccess(t('collectionDetail.applyMixDone'))
+    }
   } catch (err) {
-    showError(getApiErrorMessage(err) || t('collectionDetail.applyMixError'))
+    showError(
+      getApiErrorMessage(err) ||
+        t(
+          courseSettings.value.challenge_mode === 'auto'
+            ? 'collectionDetail.convertAutoError'
+            : 'collectionDetail.applyMixError'
+        )
+    )
   } finally {
     isApplyingMix.value = false
   }
@@ -646,11 +660,11 @@ async function performUpdateCollection() {
 
   try {
     const response = await updateCollection(props.collectionId, editForm.value)
-    if (courseSettings.value.auto_challenge_mix !== initialAutoMix.value) {
+    if (courseSettings.value.challenge_mode !== initialMode.value) {
       await updateCourseSettings(props.collectionId, {
-        auto_challenge_mix: courseSettings.value.auto_challenge_mix,
+        challenge_mode: courseSettings.value.challenge_mode,
       })
-      initialAutoMix.value = courseSettings.value.auto_challenge_mix
+      initialMode.value = courseSettings.value.challenge_mode
     }
     emit('updated', response.data)
     showEditModal.value = false

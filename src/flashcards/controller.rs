@@ -823,9 +823,12 @@ pub async fn add_cards(
         Ok(cards) => {
             // Course setting: re-apply the challenge mix to this level after adding.
             if matches!(
-                service::level_auto_challenge_mix(&pool, level_id).await,
-                Ok(true)
+                service::level_challenge_mode(&pool, level_id)
+                    .await
+                    .as_deref(),
+                Ok("fixed" | "auto")
             ) {
+                // apply_challenge_mix_to_level converts to auto in auto courses.
                 if let Err(e) =
                     service::apply_challenge_mix_to_level(&pool, claims.sub, level_id).await
                 {
@@ -1065,6 +1068,55 @@ pub async fn apply_challenge_mix_collection(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => crate::utils::handle_error(Box::new(e), "Failed to apply challenge mix"),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/flashcards/levels/{level_id}/convert-to-auto",
+    tag = "flashcards",
+    params(("level_id" = i32, Path, description = "Level ID")),
+    responses(
+        (status = 200, description = "Level converted", body = ApplyChallengeMixResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Convert a level's cards to Auto",
+    description = "Sets every answerable card of the level to the `auto` direction (question type picked per review). Learners keep direct-side progress."
+)]
+#[post("/levels/{level_id}/convert-to-auto")]
+pub async fn convert_level_to_auto(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    level_id: web::Path<i32>,
+) -> impl Responder {
+    match service::convert_level_to_auto(&pool, claims.sub, level_id.into_inner()).await {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to convert level to auto"),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/flashcards/collections/{collection_id}/convert-to-auto",
+    tag = "flashcards",
+    params(("collection_id" = i32, Path, description = "Collection ID")),
+    responses(
+        (status = 200, description = "Course converted", body = ApplyChallengeMixResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Convert every level of a course to Auto"
+)]
+#[post("/collections/{collection_id}/convert-to-auto")]
+pub async fn convert_collection_to_auto(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    collection_id: web::Path<i32>,
+) -> impl Responder {
+    match service::convert_collection_to_auto(&pool, claims.sub, collection_id.into_inner()).await {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to convert course to auto"),
     }
 }
 

@@ -687,8 +687,20 @@ export const applyChallengeMixToCollection = async (collectionId: number | strin
   return api.post(`/flashcards/collections/${collectionId}/apply-challenge-mix`)
 }
 
+/** Cards of a level become `auto`: the server picks the question type per review. */
+export const convertLevelToAuto = async (levelId: number | string) => {
+  return api.post(`/flashcards/levels/${levelId}/convert-to-auto`)
+}
+
+export const convertCollectionToAuto = async (collectionId: number | string) => {
+  return api.post(`/flashcards/collections/${collectionId}/convert-to-auto`)
+}
+
+export type ChallengeMode = 'off' | 'fixed' | 'auto'
+
 export interface CourseSettings {
   auto_challenge_mix: boolean
+  challenge_mode: ChallengeMode
 }
 
 export const getCourseSettings = async (collectionId: number | string) => {

@@ -690,25 +690,29 @@ const currentFlashcardId = computed(() => {
 })
 
 const isFillInMode = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir =
+    currentCard.value?.flashcard?.presented_type || currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase().includes('fillin')
 })
 
 const isWordbankMode = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir =
+    currentCard.value?.flashcard?.presented_type || currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase().includes('wordbank')
 })
 
 const isFillInLikeMode = computed(() => isFillInMode.value || isWordbankMode.value)
 
 const isJustInformationMode = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir =
+    currentCard.value?.flashcard?.presented_type || currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase() === 'justinformation'
 })
 
 /** Multiple-choice quiz: select one of the options (text or image). */
 const isQuizMode = computed(() => {
-  const dir = currentCard.value?.flashcard?.direction
+  const dir =
+    currentCard.value?.flashcard?.presented_type || currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase().startsWith('quiz')
 })
 
@@ -1044,6 +1048,7 @@ const submitAnswer = async (rating?: number) => {
       const response = await submitFillinAnswer({
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
+        presented_type: currentCard.value.flashcard.presented_type,
         answer,
       })
       fillinResult.value = response.data
@@ -1059,6 +1064,7 @@ const submitAnswer = async (rating?: number) => {
         flashcard_id: currentCard.value.flashcard.id,
         rating,
         card_side: currentCard.value.progress[0].card_side,
+        presented_type: currentCard.value.flashcard.presented_type,
       })
       loadNextCard()
       await checkForDueChanges()
@@ -1101,6 +1107,7 @@ const submitQuizOption = async (selectedOption) => {
       const response = await submitQuizAnswer({
         flashcard_id: fc.id,
         card_side: currentCard.value.progress[0].card_side,
+        presented_type: currentCard.value.flashcard.presented_type,
         selected_answer_text: selectedOption,
         presented_options: options,
       })
@@ -1133,6 +1140,7 @@ async function commitPendingGrade(rating: number) {
     await submitFillinAnswer({
       flashcard_id: currentCard.value.flashcard.id,
       card_side: currentCard.value.progress[0].card_side,
+      presented_type: currentCard.value.flashcard.presented_type,
       answer: pending.answer,
       rating,
     })
@@ -1140,6 +1148,7 @@ async function commitPendingGrade(rating: number) {
     await submitQuizAnswer({
       flashcard_id: currentCard.value.flashcard.id,
       card_side: currentCard.value.progress[0].card_side,
+      presented_type: currentCard.value.flashcard.presented_type,
       selected_answer_text: pending.selectedOption,
       presented_options: pending.options,
       rating,

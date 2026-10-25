@@ -1336,6 +1336,7 @@ const definitionRemoveSound = ref(false)
 const addItemDirection = ref('direct')
 
 const flashcardDirectionOptions = computed(() => [
+  { value: 'auto', label: t('collectionDetail.direction.auto') },
   { value: 'direct', label: t('collectionDetail.direction.direct') },
   { value: 'reverse', label: t('collectionDetail.direction.reverse') },
   { value: 'both', label: t('collectionDetail.direction.both') },

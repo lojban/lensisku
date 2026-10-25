@@ -2932,27 +2932,17 @@ pub async fn upsert_item(
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
-        // Parse requested direction
-        let direction = if let Some(dir_str) = &req.direction {
-            match dir_str.to_lowercase().as_str() {
-                "direct" => FlashcardDirection::Direct,
-                "reverse" => FlashcardDirection::Reverse,
-                "fillin" => FlashcardDirection::FillIn,
-                "fillin_reverse" => FlashcardDirection::FillInReverse,
-                "fillin_both" => FlashcardDirection::FillInBoth,
-                "wordbank" => FlashcardDirection::Wordbank,
-                "wordbank_reverse" => FlashcardDirection::WordbankReverse,
-                "wordbank_both" => FlashcardDirection::WordbankBoth,
-                "listen_wordbank" => FlashcardDirection::ListenWordbank,
-                "listen_wordbank_reverse" => FlashcardDirection::ListenWordbankReverse,
-                "listen_wordbank_both" => FlashcardDirection::ListenWordbankBoth,
-                "just_information" => FlashcardDirection::JustInformation,
-                _ => FlashcardDirection::Both, // Default to Both if unspecified or invalid
-            }
-        } else {
-            // Default direction if not specified in request
-            FlashcardDirection::Both
-        };
+        // Parse requested direction. Every stored direction is accepted (quiz_*, auto, ...);
+        // an unknown value keeps the card's current direction instead of silently becoming
+        // `both` (which used to wipe quiz cards on any item edit).
+        let existing_direction_opt: Option<FlashcardDirection> =
+            existing_flashcard.as_ref().map(|row| row.get("direction"));
+        let direction = req
+            .direction
+            .as_deref()
+            .and_then(FlashcardDirection::parse)
+            .or(existing_direction_opt)
+            .unwrap_or(FlashcardDirection::Both);
 
         match existing_flashcard {
             Some(row) => {
@@ -3018,7 +3008,7 @@ pub async fn upsert_item(
 
                     // Initialize new progress based on new direction
                     match direction {
-                        FlashcardDirection::Direct => {
+                        FlashcardDirection::Direct | FlashcardDirection::Auto => {
                             restore_or_initialize_progress(
                                 &transaction,
                                 user_id,
@@ -3177,7 +3167,7 @@ pub async fn upsert_item(
 
                 // Initialize progress based on direction
                 match direction {
-                    FlashcardDirection::Direct => {
+                    FlashcardDirection::Direct | FlashcardDirection::Auto => {
                         initialize_flashcard_progress(&transaction, user_id, new_id, "direct")
                             .await?;
                     }

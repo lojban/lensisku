@@ -51,6 +51,9 @@ pub struct ReviewRequest {
     /// Only ever lowers the stored rating (see `rating_policy`). Optional; default false.
     #[serde(default)]
     pub hint_used: bool,
+    /// `auto` cards: the presented type the client rendered (validated server-side).
+    #[serde(default)]
+    pub presented_type: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -120,6 +123,9 @@ pub struct DirectAnswerRequest {
     /// Only ever lowers the stored rating (see `rating_policy`). Optional; default false.
     #[serde(default)]
     pub hint_used: bool,
+    /// `auto` cards: the presented type the client rendered (validated server-side).
+    #[serde(default)]
+    pub presented_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -134,6 +140,9 @@ pub struct FillInAnswerRequest {
     /// Only ever lowers the stored rating (see `rating_policy`). Optional; default false.
     #[serde(default)]
     pub hint_used: bool,
+    /// `auto` cards: the presented type the client rendered (validated server-side).
+    #[serde(default)]
+    pub presented_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema, Validate)]
@@ -149,6 +158,9 @@ pub struct SubmitQuizAnswerDto {
     /// Only ever lowers the stored rating (see `rating_policy`). Optional; default false.
     #[serde(default)]
     pub hint_used: bool,
+    /// `auto` cards: the presented type the client rendered (validated server-side).
+    #[serde(default)]
+    pub presented_type: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema, Clone)]
@@ -186,6 +198,10 @@ pub struct Flashcard {
     /// Target phrase for chip assemble (same normalization as chip text).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wordbank_expected_normalized: Option<String>,
+    /// `auto` cards: the concrete challenge type to present for this review. Clients render
+    /// `presented_type ?? direction` and send it back with the answer.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub presented_type: Option<FlashcardDirection>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -335,6 +351,9 @@ pub struct LevelCardResponse {
     pub wordbank_chips: Option<Vec<crate::utils::wordbank::WordbankChip>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wordbank_expected_normalized: Option<String>,
+    /// `auto` cards: presented type for anonymous level study.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub presented_type: Option<FlashcardDirection>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -414,11 +433,15 @@ pub struct ApplyChallengeMixResponse {
 pub struct CourseSettingsResponse {
     /// When true, adding cards to a level re-applies the challenge mix to that level.
     pub auto_challenge_mix: bool,
+    /// "off" | "fixed" (challenge mix of fixed types) | "auto" (cards mix types as you learn).
+    pub challenge_mode: String,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateCourseSettingsRequest {
+    /// Legacy toggle: true = "fixed", false = "off" (ignored when `challenge_mode` is set).
     pub auto_challenge_mix: Option<bool>,
+    pub challenge_mode: Option<String>,
 }
 
 /// Level membership of one collection item (via its flashcard).

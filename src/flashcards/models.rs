@@ -130,47 +130,14 @@ pub enum FlashcardDirection {
     QuizImageDirect,
     QuizImageReverse,
     QuizImageBoth,
+    /// Server picks the presented challenge type per review (see `auto_challenge`).
+    Auto,
 }
 
-impl<'a> FromSql<'a> for FlashcardDirection {
-    fn from_sql(_ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
-        let s = String::from_utf8(raw.to_vec())?;
-        match s.to_lowercase().as_str() {
-            "direct" => Ok(FlashcardDirection::Direct),
-            "reverse" => Ok(FlashcardDirection::Reverse),
-            "both" => Ok(FlashcardDirection::Both),
-            "fillin" => Ok(FlashcardDirection::FillIn),
-            "fillin_reverse" => Ok(FlashcardDirection::FillInReverse),
-            "fillin_both" => Ok(FlashcardDirection::FillInBoth),
-            "wordbank" => Ok(FlashcardDirection::Wordbank),
-            "wordbank_reverse" => Ok(FlashcardDirection::WordbankReverse),
-            "wordbank_both" => Ok(FlashcardDirection::WordbankBoth),
-            "listen_wordbank" => Ok(FlashcardDirection::ListenWordbank),
-            "listen_wordbank_reverse" => Ok(FlashcardDirection::ListenWordbankReverse),
-            "listen_wordbank_both" => Ok(FlashcardDirection::ListenWordbankBoth),
-            "just_information" => Ok(FlashcardDirection::JustInformation),
-            "quiz_direct" => Ok(FlashcardDirection::QuizDirect),
-            "quiz_reverse" => Ok(FlashcardDirection::QuizReverse),
-            "quiz_both" => Ok(FlashcardDirection::QuizBoth),
-            "quiz_image_direct" => Ok(FlashcardDirection::QuizImageDirect),
-            "quiz_image_reverse" => Ok(FlashcardDirection::QuizImageReverse),
-            "quiz_image_both" => Ok(FlashcardDirection::QuizImageBoth),
-            _ => Err("Invalid flashcard direction".into()),
-        }
-    }
-
-    fn accepts(ty: &Type) -> bool {
-        ty.name() == "text" || ty.name() == "varchar" || ty.name() == "flashcard_direction"
-    }
-}
-
-impl ToSql for FlashcardDirection {
-    fn to_sql(
-        &self,
-        _ty: &Type,
-        out: &mut BytesMut,
-    ) -> Result<IsNull, Box<dyn Error + Sync + Send>> {
-        let s = match self {
+impl FlashcardDirection {
+    /// DB / API string (lowercase snake case, as in the `flashcard_direction` enum).
+    pub fn as_str(&self) -> &'static str {
+        match self {
             FlashcardDirection::Direct => "direct",
             FlashcardDirection::Reverse => "reverse",
             FlashcardDirection::Both => "both",
@@ -190,7 +157,58 @@ impl ToSql for FlashcardDirection {
             FlashcardDirection::QuizImageDirect => "quiz_image_direct",
             FlashcardDirection::QuizImageReverse => "quiz_image_reverse",
             FlashcardDirection::QuizImageBoth => "quiz_image_both",
-        };
+            FlashcardDirection::Auto => "auto",
+        }
+    }
+
+    /// Parse a DB / API string (case-insensitive). `None` for unknown values.
+    /// Also accepts the serde (JSON) spelling without underscores, e.g. `wordbankreverse`.
+    pub fn parse(s: &str) -> Option<Self> {
+        let key = s.to_ascii_lowercase().replace('_', "");
+        Some(match key.as_str() {
+            "direct" => FlashcardDirection::Direct,
+            "reverse" => FlashcardDirection::Reverse,
+            "both" => FlashcardDirection::Both,
+            "fillin" => FlashcardDirection::FillIn,
+            "fillinreverse" => FlashcardDirection::FillInReverse,
+            "fillinboth" => FlashcardDirection::FillInBoth,
+            "wordbank" => FlashcardDirection::Wordbank,
+            "wordbankreverse" => FlashcardDirection::WordbankReverse,
+            "wordbankboth" => FlashcardDirection::WordbankBoth,
+            "listenwordbank" => FlashcardDirection::ListenWordbank,
+            "listenwordbankreverse" => FlashcardDirection::ListenWordbankReverse,
+            "listenwordbankboth" => FlashcardDirection::ListenWordbankBoth,
+            "justinformation" => FlashcardDirection::JustInformation,
+            "quizdirect" => FlashcardDirection::QuizDirect,
+            "quizreverse" => FlashcardDirection::QuizReverse,
+            "quizboth" => FlashcardDirection::QuizBoth,
+            "quizimagedirect" => FlashcardDirection::QuizImageDirect,
+            "quizimagereverse" => FlashcardDirection::QuizImageReverse,
+            "quizimageboth" => FlashcardDirection::QuizImageBoth,
+            "auto" => FlashcardDirection::Auto,
+            _ => return None,
+        })
+    }
+}
+
+impl<'a> FromSql<'a> for FlashcardDirection {
+    fn from_sql(_ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
+        let s = String::from_utf8(raw.to_vec())?;
+        FlashcardDirection::parse(&s).ok_or_else(|| "Invalid flashcard direction".into())
+    }
+
+    fn accepts(ty: &Type) -> bool {
+        ty.name() == "text" || ty.name() == "varchar" || ty.name() == "flashcard_direction"
+    }
+}
+
+impl ToSql for FlashcardDirection {
+    fn to_sql(
+        &self,
+        _ty: &Type,
+        out: &mut BytesMut,
+    ) -> Result<IsNull, Box<dyn Error + Sync + Send>> {
+        let s = self.as_str();
         out.extend_from_slice(s.as_bytes());
         Ok(IsNull::No)
     }
