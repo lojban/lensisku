@@ -1114,7 +1114,12 @@
     "retry": "Try again",
     "correctSolution": "Correct solution:",
     "tooEasy": "Too easy",
-    "tooDifficult": "Too difficult"
+    "tooDifficult": "Too difficult",
+    "nothingDueTitle": "Nothing is due in this level",
+    "nothingDueNextUnlocked": "Next level unlocked!",
+    "nothingDueLastLevel": "You've finished every level for now.",
+    "goToNextLevel": "Go to next level",
+    "practiceAgain": "Practice this level again"
   },
   "languageList": {
     "title": "Supported languages",

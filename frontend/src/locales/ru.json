@@ -1030,7 +1030,12 @@
     "continue": "Продолжить",
     "check": "Проверить",
     "next": "Далее",
-    "retry": "Попробовать снова"
+    "retry": "Попробовать снова",
+    "nothingDueTitle": "В этом уровне сейчас нечего повторять",
+    "nothingDueNextUnlocked": "Следующий уровень открыт!",
+    "nothingDueLastLevel": "Вы прошли все уровни.",
+    "goToNextLevel": "К следующему уровню",
+    "practiceAgain": "Повторить этот уровень"
   },
   "languageList": {
     "title": "Поддерживаемые языки",

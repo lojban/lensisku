@@ -1023,6 +1023,8 @@ pub async fn list_flashcards_public(
         page: 1,
         per_page: total.max(1),
         due_count: 0,
+        level_completed_by_schedule: false,
+        next_level_id: None,
     })
 }
 
@@ -1451,6 +1453,8 @@ pub async fn list_flashcards(
         page,
         per_page,
         due_count,
+        level_completed_by_schedule: false,
+        next_level_id: None,
     })
 }
 
@@ -4862,4 +4866,42 @@ pub async fn save_course_order(
         updated_levels: req.levels.len(),
         reordered_levels: req.level_order.is_some(),
     })
+}
+
+/// "Nothing due" in a level: if every card of the (unlocked) level has been reviewed and none
+/// is due now, mark the level complete by schedule (V203) so the next level unlocks.
+/// Returns `Some(next_level_id)` (inner `None` when there is no further level) when the level
+/// is complete, `None` when it is not "nothing due". Idempotent.
+pub async fn complete_level_when_nothing_due(
+    pool: &Pool,
+    user_id: i32,
+    level_id: i32,
+) -> Result<Option<Option<i32>>, FlashcardError> {
+    let client = pool.get().await?;
+    let done: bool = client
+        .query_one(
+            "SELECT complete_level_when_nothing_due($1, $2)",
+            &[&user_id, &level_id],
+        )
+        .await?
+        .get(0);
+    if !done {
+        return Ok(None);
+    }
+    let next = client
+        .query_opt(
+            "SELECT l.level_id
+             FROM flashcard_levels l
+             JOIN flashcard_levels cur ON cur.level_id = $2 AND cur.collection_id = l.collection_id
+             LEFT JOIN user_level_progress p ON p.level_id = l.level_id AND p.user_id = $1
+             WHERE l.level_id <> $2
+               AND p.completed_at IS NULL
+               AND check_level_prerequisites($1, l.level_id)
+             ORDER BY (l.position <= cur.position), l.position
+             LIMIT 1",
+            &[&user_id, &level_id],
+        )
+        .await?
+        .map(|r| r.get::<_, i32>(0));
+    Ok(Some(next))
 }

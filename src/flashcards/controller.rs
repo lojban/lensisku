@@ -288,8 +288,27 @@ pub async fn get_due_cards(
         query_params.due = Some(true);
     }
 
+    let level_id = query_params.level_id;
+    let level_due_query = level_id.is_some()
+        && query_params.flashcard_id.is_none()
+        && query_params.page.unwrap_or(1) <= 1;
     match service::list_flashcards(&pool, claims.sub, query_params).await {
-        Ok(response) => HttpResponse::Ok().json(response),
+        Ok(mut response) => {
+            // Nothing due in this level: unlock the next one instead of a dead end.
+            if let (true, true, Some(lid)) =
+                (level_due_query, response.flashcards.is_empty(), level_id)
+            {
+                match service::complete_level_when_nothing_due(&pool, claims.sub, lid).await {
+                    Ok(Some(next)) => {
+                        response.level_completed_by_schedule = true;
+                        response.next_level_id = next;
+                    }
+                    Ok(None) => {}
+                    Err(e) => log::warn!("complete_level_when_nothing_due({lid}): {e}"),
+                }
+            }
+            HttpResponse::Ok().json(response)
+        }
         Err(e) => {
             let message = e.to_string();
             if message.contains("access denied") || message.contains("locked") {

@@ -86,6 +86,13 @@ pub struct FlashcardListResponse {
     pub page: i64,
     pub per_page: i64,
     pub due_count: i64,
+    /// Level due queue only: nothing in the level was due and every card had been reviewed,
+    /// so the level was marked complete (by schedule) and the next level unlocked.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub level_completed_by_schedule: bool,
+    /// With `level_completed_by_schedule`: the next unlocked, incomplete level, if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_level_id: Option<i32>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

@@ -68,7 +68,15 @@
       >
         <div class="text-5xl sm:text-6xl" aria-hidden="true">🎉</div>
         <h1 class="text-lg font-bold text-neutral-700 sm:text-2xl">
-          <template v-if="levelIdParam != null && cardsAnsweredInSession > 0">
+          <template v-if="levelUnlockedBySchedule && cardsAnsweredInSession === 0">
+            {{ t('flashcardStudy.nothingDueTitle') }} <br />
+            {{
+              nextLevelId != null
+                ? t('flashcardStudy.nothingDueNextUnlocked')
+                : t('flashcardStudy.nothingDueLastLevel')
+            }}
+          </template>
+          <template v-else-if="levelIdParam != null && cardsAnsweredInSession > 0">
             {{ t('flashcardStudy.lessonCompleteTitle') }} <br />
             {{ t('flashcardStudy.lessonCompleteBody') }}
           </template>
@@ -86,6 +94,22 @@
           <LingoResultCard variant="points" :value="sessionXpAwarded" />
           <LingoResultCard variant="hearts" :value="hasUnlimitedHearts ? Infinity : hearts" />
         </div>
+        <button
+          v-if="levelUnlockedBySchedule && nextLevelId != null"
+          type="button"
+          class="lingo-btn lingo-btn--primary lingo-btn--lg !normal-case !tracking-normal min-w-[140px]"
+          @click="goToNextLevel"
+        >
+          {{ t('flashcardStudy.goToNextLevel') }}
+        </button>
+        <button
+          v-if="levelUnlockedBySchedule && cardsAnsweredInSession === 0"
+          type="button"
+          class="lingo-btn lingo-btn--secondary lingo-btn--lg !normal-case !tracking-normal min-w-[140px]"
+          @click="practiceLevelAgain"
+        >
+          {{ t('flashcardStudy.practiceAgain') }}
+        </button>
         <button
           ref="returnToDeckButtonRef"
           type="button"
@@ -1169,6 +1193,10 @@ async function fetchDueQueue() {
       })
       const batch = response.data.flashcards || []
       const total = Number(response.data.total || 0)
+      if (page === 1 && response.data.level_completed_by_schedule) {
+        levelUnlockedBySchedule.value = true
+        nextLevelId.value = response.data.next_level_id ?? null
+      }
       all.push(...batch)
       page += 1
       if (batch.length === 0 || all.length >= total) break
@@ -1201,9 +1229,10 @@ const loadDueCards = async (singleCardId = null) => {
       if (all.length === 0) {
         all = await fetchDueQueue()
       }
-      // Nothing due in this level: don't dead-end. Practice the level's cards early; those
-      // reviews count toward level completion, which unlocks the next level.
-      if (all.length === 0 && levelIdParam.value) {
+      // Nothing due in this level: the server marked it complete by schedule and unlocked the
+      // next level — the finish screen offers "next level" (primary) and "practice again".
+      // Otherwise (e.g. old server) fall back to practicing the level's cards early.
+      if (all.length === 0 && levelIdParam.value && !levelUnlockedBySchedule.value) {
         all = await fetchLevelPracticeQueue()
         if (all.length > 0) {
           practiceEarly.value = true
@@ -1239,6 +1268,32 @@ const loadDueCards = async (singleCardId = null) => {
 let guestRetryDone = false
 /** Set when a level session found nothing due and fell back to practicing its cards. */
 const practiceEarly = ref(false)
+/** Server: nothing due in this level, so it was completed by schedule and the next unlocked. */
+const levelUnlockedBySchedule = ref(false)
+const nextLevelId = ref<number | null>(null)
+
+function goToNextLevel() {
+  if (nextLevelId.value == null) return
+  // Full navigation: this view loads its queue once per levelId.
+  window.location.assign(
+    `/collections/${collectionId.value}/lingo/study?levelId=${nextLevelId.value}`
+  )
+}
+
+/** Secondary option on the "nothing due" screen: practice this level's cards again. */
+async function practiceLevelAgain() {
+  isLoading.value = true
+  try {
+    const all = await fetchLevelPracticeQueue()
+    levelUnlockedBySchedule.value = false
+    practiceEarly.value = true
+    remainingCards.value = all
+    sessionTotal.value = all.length
+    loadNextCard()
+  } finally {
+    isLoading.value = false
+  }
+}
 
 /** All cards of the current level (due or not), for the "nothing due" fallback. */
 async function fetchLevelPracticeQueue() {
