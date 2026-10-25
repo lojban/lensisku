@@ -75,7 +75,6 @@ export function buildLingoThemeLayer() {
         {},
     },
 
-
     '.lingo-sidebar-course__media': {
       '@apply flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50':
         {},
@@ -97,7 +96,6 @@ export function buildLingoThemeLayer() {
     '.lingo-btn--sidebar-course-active .lingo-sidebar-course__desc': {
       '@apply text-sky-700/70': {},
     },
-
 
     /** Icon-only chrome (menu, close, back) — never Aqua/Flat pills. */
     '.lingo-icon-btn': {
@@ -491,7 +489,6 @@ export function buildLingoThemeLayer() {
         {},
     },
 
-
     /**
      * Fixed footer shell (clone `footer.tsx`) — Tailwind spacing scale only (`h-24` /
      * `lg:h-36`). Both action + meta rows stay `h-9` so Check↔Rate does not CLS.
@@ -522,7 +519,7 @@ export function buildLingoThemeLayer() {
       '@apply h-4 w-4 shrink-0 sm:h-5 sm:w-5': {},
     },
     '.lingo-study-footer-feedback__label': {
-      '@apply min-w-0 truncate text-xs font-bold sm:text-sm': {},
+      '@apply min-w-0 text-xs font-bold sm:text-sm': {},
     },
     '.lingo-study-footer-feedback--correct': {
       '@apply text-green-600': {},
@@ -540,44 +537,23 @@ export function buildLingoThemeLayer() {
       '@apply border-slate-200 bg-white': {},
     },
     /**
-     * Duo graded result row: feedback + soft rates on the left, Continue on the right.
-     * Taller than the idle Check row so solution copy fits without CLS on wrong.
+     * Graded result copy in the meta row (where the rate prompt sits). Fixed h-9 with a
+     * two-line clamp, so a long "Correct solution" never grows the footer (no CLS).
      */
-    '.lingo-study-graded-row': {
-      '@apply flex w-full shrink-0 items-end justify-between gap-3': {},
+    '.lingo-study-footer-result': {
+      '@apply flex h-9 min-w-0 items-center justify-center gap-2 overflow-hidden': {},
     },
-    '.lingo-study-graded-feedback': {
-      '@apply flex min-w-0 flex-1 flex-col items-stretch justify-end gap-1': {},
-    },
-    '.lingo-study-footer-solution': {
-      '@apply m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-xs font-bold leading-snug text-rose-600 sm:text-sm':
-        {},
+    '.lingo-study-footer-result__text': {
+      '@apply m-0 line-clamp-2 min-w-0 text-left text-xs font-bold leading-tight sm:text-sm': {},
     },
     '.lingo-study-footer-solution__label': {
-      '@apply shrink-0 font-bold text-rose-500': {},
+      '@apply ms-1.5 font-bold text-rose-500': {},
     },
     '.lingo-study-footer-solution__text': {
-      '@apply min-w-0 break-words font-bold text-rose-700': {},
-    },
-    '.lingo-study-footer-soft-rates': {
-      '@apply flex flex-wrap items-center gap-x-3 gap-y-0.5': {},
-    },
-    '.lingo-study-footer-soft-rate': {
-      '@apply border-0 bg-transparent p-0 text-xs font-bold text-green-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm':
-        {},
-    },
-    '.lingo-study-footer-soft-rate--wrong': {
-      '@apply text-rose-600': {},
+      '@apply ms-1 break-words font-bold text-rose-700': {},
     },
     '.lingo-study-footer-meta__discuss--wrong': {
       '@apply !text-rose-600 hover:!text-rose-700': {},
-    },
-    /** Roomier shell when Duo graded chrome (solution + soft rates) is visible. */
-    '.lingo-study-footer--graded.lingo-study-footer--compact': {
-      '@apply h-auto min-h-24 py-1': {},
-    },
-    '.lingo-study-footer--graded.lingo-study-footer--roomy': {
-      '@apply h-auto min-h-24 py-1 lg:min-h-36': {},
     },
     '.lingo-study-footer-meta': {
       '@apply grid h-9 w-full shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2': {},

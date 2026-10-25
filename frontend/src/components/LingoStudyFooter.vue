@@ -4,54 +4,41 @@
     :class="[
       footerToneClass,
       compact ? 'lingo-study-footer--compact' : 'lingo-study-footer--roomy',
-      status === 'correct' || status === 'wrong' ? 'lingo-study-footer--graded' : undefined,
     ]"
   >
     <div class="lingo-study-footer-chrome">
-      <!-- Graded result (Duo): feedback + Too easy/Too difficult | Continue -->
-      <div v-if="status === 'correct' || status === 'wrong'" class="lingo-study-graded-row">
-        <div class="lingo-study-graded-feedback" :class="feedbackToneClass">
-          <div class="lingo-study-footer-feedback">
-            <CheckCircle
-              v-if="status === 'correct'"
-              class="lingo-study-footer-feedback__icon"
-              aria-hidden="true"
-            />
-            <XCircle v-else class="lingo-study-footer-feedback__icon" aria-hidden="true" />
-            <span class="lingo-study-footer-feedback__label">{{
-              status === 'correct' ? correctLabel : wrongLabel
-            }}</span>
-          </div>
-          <p v-if="status === 'wrong' && solutionText" class="lingo-study-footer-solution">
-            <span class="lingo-study-footer-solution__label">{{
-              labelCorrectSolution || t('flashcardStudy.correctAnswer')
-            }}</span>
-            <span class="lingo-study-footer-solution__text">{{ solutionText }}</span>
-          </p>
-          <div class="lingo-study-footer-soft-rates" role="group">
-            <button
-              type="button"
-              class="lingo-study-footer-soft-rate"
-              :class="status === 'wrong' ? 'lingo-study-footer-soft-rate--wrong' : undefined"
-              :disabled="disabled"
-              @click="$emit('rate', 1)"
-            >
-              {{ labelTooDifficult || labelForgot || t('flashcardStudy.forgot') }}
-            </button>
-            <button
-              type="button"
-              class="lingo-study-footer-soft-rate"
-              :class="status === 'wrong' ? 'lingo-study-footer-soft-rate--wrong' : undefined"
-              :disabled="disabled"
-              @click="$emit('rate', 4)"
-            >
-              {{ labelTooEasy || labelEasy || t('flashcardStudy.easy') }}
-            </button>
-          </div>
-        </div>
+      <!--
+        Graded result: the same h-9 three-cell grid as Forgot/Good/Easy, so the footer keeps
+        the idle Check height (no CLS). The feedback copy moves to the second (meta) row.
+      -->
+      <div
+        v-if="status === 'correct' || status === 'wrong'"
+        class="lingo-study-rate-row"
+        role="group"
+      >
         <button
           type="button"
-          class="lingo-btn lingo-btn--sm !normal-case !tracking-normal min-w-[7.5rem] shrink-0"
+          class="lingo-btn lingo-btn--danger lingo-btn--sm w-full !normal-case !tracking-normal"
+          :disabled="disabled"
+          @click="$emit('rate', 1)"
+        >
+          <XCircle class="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
+          <span class="truncate">{{
+            labelTooDifficult || labelForgot || t('flashcardStudy.forgot')
+          }}</span>
+        </button>
+        <button
+          type="button"
+          class="lingo-btn lingo-btn--primary lingo-btn--sm w-full !normal-case !tracking-normal"
+          :disabled="disabled"
+          @click="$emit('rate', 4)"
+        >
+          <Check class="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
+          <span class="truncate">{{ labelTooEasy || labelEasy || t('flashcardStudy.easy') }}</span>
+        </button>
+        <button
+          type="button"
+          class="lingo-btn lingo-btn--sm w-full !normal-case !tracking-normal"
           :class="buttonVariantClass"
           :disabled="disabled"
           :aria-disabled="disabled"
@@ -146,7 +133,33 @@
         </button>
         <span v-else class="inline-block h-9 w-9 shrink-0" aria-hidden="true" />
 
+        <div
+          v-if="status === 'correct' || status === 'wrong'"
+          class="lingo-study-footer-result"
+          :class="feedbackToneClass"
+          role="status"
+          :title="status === 'wrong' && solutionText ? solutionText : undefined"
+        >
+          <CheckCircle
+            v-if="status === 'correct'"
+            class="lingo-study-footer-feedback__icon"
+            aria-hidden="true"
+          />
+          <XCircle v-else class="lingo-study-footer-feedback__icon" aria-hidden="true" />
+          <p class="lingo-study-footer-result__text">
+            <span class="lingo-study-footer-feedback__label">{{
+              status === 'correct' ? correctLabel : wrongLabel
+            }}</span>
+            <template v-if="status === 'wrong' && solutionText">
+              <span class="lingo-study-footer-solution__label">
+                {{ labelCorrectSolution || t('flashcardStudy.correctAnswer') }}</span
+              >
+              <span class="lingo-study-footer-solution__text"> {{ solutionText }}</span>
+            </template>
+          </p>
+        </div>
         <p
+          v-else
           class="lingo-study-footer-meta__prompt"
           :class="{ invisible: status !== 'rate' || !ratePrompt }"
           :aria-hidden="status !== 'rate' || !ratePrompt"
