@@ -132,7 +132,8 @@ pub async fn start_server(
                 header::CONNECTION,
                 header::SEC_WEBSOCKET_ACCEPT,
             ])
-            .supports_credentials()
+            // Any origin may read the public API, but never with ambient credentials:
+            // the SPA is same-origin (/api) and authenticates with a bearer header.
             .max_age(3600);
 
         App::new()

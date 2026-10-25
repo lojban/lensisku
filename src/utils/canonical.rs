@@ -34,10 +34,12 @@ pub fn get_canonical_form(text: &str) -> Option<String> {
             // eval_text_to_outputs_with_options returns (logical, canonical, graph)
             let (_, canonical, _) = eval_text_to_outputs_with_options(&parsed, true);
 
+            // The evaluator emits a trailing separator ("a "); store the bare form.
+            let canonical = canonical.trim();
             if canonical.is_empty() {
                 None
             } else {
-                Some(canonical)
+                Some(canonical.to_owned())
             }
         }
         Err(_) => None,

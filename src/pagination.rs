@@ -1,3 +1,7 @@
+/// Upper bound for `per_page`/`limit` on list endpoints, so one request cannot ask for
+/// an unbounded result set.
+pub const MAX_PER_PAGE: i64 = 100;
+
 /// Normalize optional page query values into `(page, per_page, offset)`.
 pub fn page_window(
     page: Option<i64>,

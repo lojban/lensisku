@@ -4833,7 +4833,10 @@ pub async fn list_definitions(
     let transaction = client.transaction().await?;
 
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let offset = (page - 1) * per_page;
 
     let mut conditions: Vec<String> = vec!["v.typeid <> 16".to_string()];
@@ -5035,7 +5038,10 @@ pub async fn list_non_lojban_definitions(
     let transaction = client.transaction().await?;
 
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let offset = (page - 1) * per_page;
 
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();

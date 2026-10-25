@@ -53,7 +53,7 @@ pub async fn thread_page(
             let encoded = urlencoding::encode(&title);
             let canonical_path = format!("/{locale}/thread/{encoded}");
             let description = mail_description(&title, content.as_deref(), &locale);
-            seo::html_response(&locale, &title, &description, &canonical_path)
+            seo::html_response(&locale, &title, &description, &canonical_path).await
         }
         Ok(None) => HttpResponse::NotFound().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
@@ -85,7 +85,7 @@ pub async fn message_page(pool: web::Data<Pool>, path: web::Path<(String, i32)>)
                 .filter(|subject| !subject.trim().is_empty())
                 .unwrap_or("Mail message");
             let description = mail_description(subject, content.as_deref(), &locale);
-            seo::html_response(&locale, subject, &description, &canonical_path)
+            seo::html_response(&locale, subject, &description, &canonical_path).await
         }
         Ok(None) => HttpResponse::NotFound().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),

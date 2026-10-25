@@ -38,7 +38,10 @@ pub async fn search_messages(
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {
     let client = pool.get().await?;
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(10);
+    let per_page = query
+        .per_page
+        .unwrap_or(10)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let offset = (page - 1) * per_page;
     let group_by_thread = query.group_by_thread.unwrap_or(false);
     let word_patterns = mail_word_like_patterns(&query.query);
@@ -193,7 +196,10 @@ pub async fn show_thread(
 ) -> Result<ThreadResponse, Box<dyn std::error::Error>> {
     let client = pool.get().await?;
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(10);
+    let per_page = query
+        .per_page
+        .unwrap_or(10)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let offset = (page - 1) * per_page;
     let sort_order = match query.sort_order.as_deref() {
         Some(s) if s.eq_ignore_ascii_case("asc") => "ASC", // Make case-insensitive

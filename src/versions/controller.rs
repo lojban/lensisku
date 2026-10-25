@@ -40,7 +40,10 @@ pub async fn get_definition_history(
     query: web::Query<GetVersionsQuery>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_definition_history(&pool, definition_id.into_inner(), page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),

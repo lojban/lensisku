@@ -196,7 +196,10 @@ pub async fn list_comments(
     claims: Option<Claims>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let sort_order = query.sort_order.as_deref().unwrap_or("desc");
 
     match service::list_comments(&pool, page, per_page, sort_order, claims.map(|c| c.sub)).await {
@@ -348,7 +351,10 @@ pub async fn get_bookmarks(
     query: web::Query<PaginationQuery>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_bookmarked_comments(&pool, claims.sub, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
@@ -384,7 +390,10 @@ pub async fn get_my_reactions(
     query: web::Query<PaginationQuery>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_my_reactions(&pool, claims.sub, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
@@ -423,7 +432,10 @@ pub async fn get_user_comments(
     claims: Option<Claims>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_user_comments(
         &pool,
@@ -611,7 +623,10 @@ pub async fn get_trending(
         Some("all") => TrendingTimespan::AllTime,
         _ => TrendingTimespan::LastWeek,
     };
-    let limit = query.limit.unwrap_or(10);
+    let limit = query
+        .limit
+        .unwrap_or(10)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_trending_comments(&pool, timespan, claims.map(|c| c.sub), limit).await {
         Ok(comments) => HttpResponse::Ok().json(comments),
@@ -708,7 +723,10 @@ pub async fn get_most_bookmarked(
     claims: Option<Claims>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_most_bookmarked_comments(&pool, page, per_page, claims.map(|c| c.sub)).await
     {
@@ -748,7 +766,10 @@ pub async fn trending_hashtags(
         Some("all") => TrendingTimespan::AllTime,
         _ => TrendingTimespan::LastWeek,
     };
-    let limit = query.limit.unwrap_or(10);
+    let limit = query
+        .limit
+        .unwrap_or(10)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_trending_hashtags(&pool, timespan, limit).await {
         Ok(hashtags) => HttpResponse::Ok().json(hashtags),

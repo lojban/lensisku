@@ -1032,7 +1032,7 @@ pub async fn list_flashcards(
     query: FlashcardListQuery,
 ) -> Result<FlashcardListResponse, FlashcardError> {
     let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
+    let mut transaction = client.transaction().await?;
 
     verify_collection_read_access(&transaction, query.collection_id, Some(user_id)).await?;
 
@@ -1284,16 +1284,23 @@ pub async fn list_flashcards(
                 }
                 _ => "direct",
             };
-            match get_quiz_options_for_listing(
-                &transaction,
+            // A failed statement aborts the whole transaction, so each card gets its own
+            // savepoint: one broken quiz card must not empty the options of every later card.
+            let savepoint = transaction.savepoint("quiz_options").await?;
+            let result = get_quiz_options_for_listing(
+                &savepoint,
                 flashcard_id,
                 user_id,
                 effective_quiz_direction,
             )
-            .await
-            {
-                Ok((q, o)) => (Some(q), Some(o)),
+            .await;
+            match result {
+                Ok((q, o)) => {
+                    savepoint.commit().await?;
+                    (Some(q), Some(o))
+                }
                 Err(e) => {
+                    savepoint.rollback().await?;
                     error!(
                         "Failed to get quiz options for flashcard {}: {}",
                         flashcard_id, e
@@ -1380,7 +1387,10 @@ pub async fn list_flashcards(
 
     // Calculate pagination
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let offset = ((page - 1) * per_page) as usize;
 
     let mut paginated_cards: Vec<FlashcardResponse> = all_flashcards_with_retrievability
@@ -3848,7 +3858,7 @@ pub async fn get_level_cards_paginated(
             .get::<_, bool>("unlocked");
 
         if !is_unlocked {
-            return Err(FlashcardError::Other(
+            return Err(FlashcardError::AccessDenied(
                 "Level is locked. Complete prerequisites first.".to_string(),
             ));
         }

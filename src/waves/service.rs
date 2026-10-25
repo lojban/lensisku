@@ -335,7 +335,10 @@ pub async fn list_wave_threads(
     query: WavesThreadsQuery,
 ) -> Result<WavesThreadsResponse, Box<dyn std::error::Error + Send + Sync>> {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let sort_by_raw = query.sort_by.as_deref().unwrap_or("time");
     let sort_order = query.sort_order.as_deref().unwrap_or("desc");
     let source = query.source.as_deref().unwrap_or("all");

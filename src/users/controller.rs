@@ -96,7 +96,10 @@ pub async fn get_user_definitions(
     query: web::Query<ContributionsQuery>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_user_definitions(&pool, &username, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
@@ -131,7 +134,10 @@ pub async fn get_user_comments(
     query: web::Query<ContributionsQuery>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_user_comments(&pool, &username, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
@@ -168,7 +174,10 @@ pub async fn get_user_votes(
     query: web::Query<ContributionsQuery>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_user_votes(&pool, claims.sub, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),

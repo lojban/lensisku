@@ -129,6 +129,44 @@ async fn apply_mix_keeps_owner_progress_active() {
     assert_eq!(active(cards[0]).await, "direct");
     assert_eq!(active(cards[1]).await, "reverse");
 
+    // The due list carries quiz options, and a quiz card that cannot build them (no stored
+    // answer) does not take the options of the other cards with it.
+    client
+        .batch_execute(&format!(
+            "UPDATE flashcards SET direction = 'quiz_direct' WHERE id IN ({c0}, {c2});
+             DELETE FROM flashcard_quiz_options WHERE flashcard_id IN ({c0}, {c2});
+             INSERT INTO flashcard_quiz_options (flashcard_id, correct_answer_text) VALUES ({c2}, 'bye');",
+            c0 = cards[0],
+            c2 = cards[2]
+        ))
+        .await
+        .unwrap();
+    let due = crate::flashcards::service::list_flashcards(
+        &pool,
+        user_id,
+        crate::flashcards::dto::FlashcardListQuery {
+            collection_id,
+            page: None,
+            per_page: Some(50),
+            status: None,
+            due: Some(true),
+            flashcard_id: None,
+            level_id: Some(level_id),
+        },
+    )
+    .await
+    .unwrap();
+    let options = |fid: i32| {
+        due.flashcards
+            .iter()
+            .find(|c| c.flashcard.id == fid)
+            .and_then(|c| c.flashcard.quiz_options.clone())
+    };
+    assert_eq!(options(cards[0]), None);
+    let opts = options(cards[2]).expect("quiz card in the due list has options");
+    assert_eq!(opts.len(), 4);
+    assert!(opts.contains(&"bye".to_string()));
+
     let _ = client
         .execute(
             "DELETE FROM collections WHERE collection_id = $1",

@@ -123,7 +123,7 @@ pub async fn wiki_by_id_page(
             let encoded = urlencoding::encode(&slug);
             // Canonicalize to the title URL; id URLs are stable bookmarks.
             let canonical_path = format!("/{locale}/wiki/{encoded}");
-            seo::html_response(&locale, &title, &description, &canonical_path)
+            seo::html_response(&locale, &title, &description, &canonical_path).await
         }
         Ok(None) => HttpResponse::NotFound().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
@@ -147,7 +147,7 @@ pub async fn wiki_page(pool: web::Data<Pool>, path: web::Path<(String, String)>)
             let slug = title.replace(' ', "_");
             let encoded = urlencoding::encode(&slug);
             let canonical_path = format!("/{locale}/wiki/{encoded}");
-            seo::html_response(&locale, &title, &description, &canonical_path)
+            seo::html_response(&locale, &title, &description, &canonical_path).await
         }
         Ok(None) => HttpResponse::NotFound().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),

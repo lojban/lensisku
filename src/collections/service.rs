@@ -2199,7 +2199,7 @@ pub async fn import_full(
         level_to_items
             .into_iter()
             .enumerate()
-            .map(|(pos_index, (level_index, mut items))| {
+            .map(|(pos_index, (_level_index, mut items))| {
                 items.sort_by_key(|&(idx, pos)| (pos, idx));
                 // Chain prerequisites: level 0 has none, level 1 requires 0, level 2 requires 1, etc.
                 let prerequisite_positions: Vec<usize> = if pos_index == 0 {
@@ -2208,11 +2208,13 @@ pub async fn import_full(
                     vec![pos_index - 1]
                 };
                 LevelExport {
-                    name: format!("Level {}", level_index + 1),
+                    // Use the dense order so sparse source indices (0, 2, 5) still give
+                    // "Level 1..3" at positions 0..2, matching prerequisite_positions.
+                    name: format!("Level {}", pos_index + 1),
                     description: None,
                     min_cards: 5,
                     min_success_rate: 0.8,
-                    position: level_index as i32,
+                    position: pos_index as i32,
                     prerequisite_positions,
                     item_positions: items.into_iter().map(|(idx, _)| idx).collect(),
                 }

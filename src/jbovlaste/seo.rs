@@ -91,7 +91,7 @@ pub async fn valsi_page(
             let slug = word.replace(' ', "_");
             let encoded = urlencoding::encode(&slug);
             let canonical_path = format!("/{locale}/valsi/{encoded}");
-            seo::html_response(&locale, &word, &description, &canonical_path)
+            seo::html_response(&locale, &word, &description, &canonical_path).await
         }
         Ok(None) => HttpResponse::NotFound().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),

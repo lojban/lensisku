@@ -109,9 +109,24 @@ These are the rules the lensisku backend follows, why, and where they are (or ar
 | Missing level (update/delete/list cards/add cards) | 500 | 404 |
 | Remove card not in level | 500 | 404 |
 | Unknown collection id (public flashcards list, ownership/read checks) | 500 | 404 |
+| `GET .../levels/{id}/cards` on a locked level | 500 | 403 (same as the due endpoint) |
 
 The frontend only special-cases 401 (`frontend/src/api.ts`); pages show `response.data.error`
 generically, so none of these needed UI changes.
+
+### Behaviour changes (Oct 2026, audit follow-up)
+
+- `per_page`/`limit` on every list endpoint is clamped to `1..=pagination::MAX_PER_PAGE` (100).
+  The frontend never asks for more than 100.
+- `list_flashcards` loads each card's quiz options inside a savepoint; a failure leaves that
+  card's `quiz_options` empty instead of aborting the whole list.
+- CORS still allows any origin but no longer sends `Access-Control-Allow-Credentials`. The SPA
+  calls `/api` on its own origin with a bearer header, so it does not rely on cross-origin cookies.
+- Canonical forms are stored trimmed (`"a"`, not `"a "`). Answer checking recomputes both sides,
+  so older rows with a trailing space still compare correctly.
+- Inferred import levels are numbered densely: "Level N" at position N-1, whatever the source
+  level indices were.
+- SEO HTML templates are read with `tokio::fs`, so the request thread never blocks on disk.
 
 ## 7. Open items
 

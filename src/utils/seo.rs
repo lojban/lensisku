@@ -136,29 +136,33 @@ static TEMPLATE_CACHE: Mutex<Option<(TemplateKey, Arc<str>)>> = Mutex::new(None)
 /// Read `path`, reusing the previous contents while its mtime and size are unchanged.
 /// A `stat` per request replaces a full read, and a rebuilt frontend is picked up
 /// without restarting the server.
-fn cached_template(path: &str) -> Option<Arc<str>> {
-    let meta = std::fs::metadata(path).ok()?;
+async fn cached_template(path: &str) -> Option<Arc<str>> {
+    let meta = tokio::fs::metadata(path).await.ok()?;
     let key: TemplateKey = (path.to_owned(), meta.modified().ok(), meta.len());
     // A poisoned lock only means another request panicked mid-update; the cache
     // is rebuilt from disk below, so recovering the guard is safe.
-    let mut cache = TEMPLATE_CACHE.lock().unwrap_or_else(|e| e.into_inner());
-    if let Some((cached_key, contents)) = cache.as_ref() {
-        if *cached_key == key {
-            return Some(Arc::clone(contents));
+    {
+        let cache = TEMPLATE_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((cached_key, contents)) = cache.as_ref() {
+            if *cached_key == key {
+                return Some(Arc::clone(contents));
+            }
         }
     }
-    let contents: Arc<str> = std::fs::read_to_string(path).ok()?.into();
+    // Read without holding the (std) lock across the await.
+    let contents: Arc<str> = tokio::fs::read_to_string(path).await.ok()?.into();
+    let mut cache = TEMPLATE_CACHE.lock().unwrap_or_else(|e| e.into_inner());
     *cache = Some((key, Arc::clone(&contents)));
     Some(contents)
 }
 
-pub fn html_response(
+pub async fn html_response(
     locale: &str,
     page_title: &str,
     description: &str,
     path: &str,
 ) -> HttpResponse {
-    let Some(template) = cached_template(&index_html_path()) else {
+    let Some(template) = cached_template(&index_html_path()).await else {
         return HttpResponse::InternalServerError().finish();
     };
     let Some(page) = render_spa_page(&template, locale, page_title, description, path) else {
@@ -198,28 +202,28 @@ pub fn plain_preview(text: &str, limit: usize) -> String {
 mod tests {
     use super::render_spa_page;
 
-    #[test]
-    fn cached_template_reloads_when_file_changes() {
+    #[tokio::test]
+    async fn cached_template_reloads_when_file_changes() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("index.html");
         let path_str = path.to_str().unwrap();
         std::fs::write(&path, "<html>one</html>").unwrap();
         assert_eq!(
-            &*super::cached_template(path_str).unwrap(),
+            &*super::cached_template(path_str).await.unwrap(),
             "<html>one</html>"
         );
         assert_eq!(
-            &*super::cached_template(path_str).unwrap(),
+            &*super::cached_template(path_str).await.unwrap(),
             "<html>one</html>"
         );
         // Different length guarantees a new key even on coarse-mtime filesystems.
         std::fs::write(&path, "<html>two!</html>").unwrap();
         assert_eq!(
-            &*super::cached_template(path_str).unwrap(),
+            &*super::cached_template(path_str).await.unwrap(),
             "<html>two!</html>"
         );
         std::fs::remove_file(&path).unwrap();
-        assert!(super::cached_template(path_str).is_none());
+        assert!(super::cached_template(path_str).await.is_none());
     }
 
     #[test]

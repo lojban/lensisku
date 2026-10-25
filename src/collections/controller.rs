@@ -1255,7 +1255,10 @@ pub async fn search_items_in_collections(
     }
 
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(50);
+    let per_page = query
+        .per_page
+        .unwrap_or(50)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     let languages = query.languages.as_ref().and_then(|langs| {
         let parsed: Result<Vec<i32>, _> = langs
@@ -1350,7 +1353,10 @@ pub async fn list_collection_items(
     query: web::Query<ListCollectionItemsQuery>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     // Parse comma-separated language ids; ignore malformed input rather than 400ing.
     let languages = query.languages.as_ref().and_then(|langs| {

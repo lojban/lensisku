@@ -123,7 +123,10 @@ pub async fn semantic_search(
     parsers: web::Data<Arc<HashMap<i32, Peg>>>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     let languages = parse_search_languages(&query.languages);
 
@@ -513,7 +516,10 @@ pub async fn search_definitions(
     parsers: web::Data<Arc<HashMap<i32, Peg>>>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let search_term = query.search.as_deref().unwrap_or("").trim();
     let include_comments = query.include_comments.unwrap_or(false);
 
@@ -1988,7 +1994,10 @@ pub async fn list_client_definitions_handler(
 ) -> impl Responder {
     let client_id = path.into_inner();
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let user_id = claims.sub; // Get user ID from claims
 
     match service::list_definitions_by_client_id(&pool, &client_id, page, per_page, Some(user_id))

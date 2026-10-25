@@ -17,7 +17,10 @@ pub async fn list_users(
     let transaction = client.transaction().await?;
 
     let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let per_page = query
+        .per_page
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
     let offset = query.offset.unwrap_or((page - 1) * per_page);
 
     // Build the base query — never list disposable guest study accounts.

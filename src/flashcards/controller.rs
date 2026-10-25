@@ -838,7 +838,8 @@ pub async fn list_level_cards(
     let per_page = query
         .get("per_page")
         .and_then(|p| p.parse().ok())
-        .unwrap_or(20);
+        .unwrap_or(20)
+        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
     match service::get_level_cards_paginated(
         &pool,
