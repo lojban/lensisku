@@ -752,7 +752,8 @@
     "applyMixNow": "Применить сейчас",
     "applyingMix": "Применяем…",
     "applyMixDone": "Набор упражнений применён ко всем уровням.",
-    "applyMixError": "Не удалось применить набор упражнений."
+    "applyMixError": "Не удалось применить набор упражнений.",
+    "courseOrder": "Порядок курса"
   },
   "dictionaryExport": {
     "title": "Экспорт словаря",
@@ -1704,8 +1705,8 @@
     "actions": {
       "viewCards": "Просмотреть карточки",
       "edit": "Редактировать",
-      "addCards": "Добавить карточки",
-      "practice": "Практика"
+      "practice": "Практика",
+      "manageCards": "Управлять карточками"
     },
     "status": {
       "completed": "Завершено",
@@ -1727,31 +1728,16 @@
     "savingButton": "Сохранение...",
     "saveChangesButton": "Сохранить изменения",
     "createLevelButton": "Создать уровень",
-    "addCardsTitle": "Добавить карточки на уровень",
-    "mySuccessRate": "Мой процент успеха:",
-    "myAttempts": "Мои попытки:",
-    "selected": "Выбрано",
-    "select": "Выбрать",
-    "addingCards": "Добавление...",
-    "addNCards": "Добавить {count} карточек",
-    "levelCardsTitle": "Карточки уровня {levelName}",
-    "previousPage": "Назад",
-    "pageInfo": "Страница {currentPage} из {totalPages}",
-    "nextPage": "Вперед",
-    "closeButton": "Закрыть",
-    "deleteCardTitle": "Удалить карточку",
-    "deleteCardMessage": "Вы уверены, что хотите удалить эту карточку? Это действие необратимо.",
-    "deleteButton": "Удалить",
     "deleteLevelConfirmTitle": "Удалить уровень",
-    "deleteLevelConfirmMessage": "Вы уверены, что хотите удалить уровень '{levelName}'? Это действие необратимо.",
     "cardsInLevel": "Карточек",
     "levelMixHint": "Применить набор упражнений заново только к карточкам этого уровня.",
-    "inThisLevel": "В этом уровне ({count})",
-    "noCardsInLevel": "В этом уровне пока нет карточек.",
-    "removeFromLevel": "Убрать",
-    "availableCards": "Добавить из коллекции ({count})",
     "levelChip": "У{n} · {name}",
-    "levelChipTitle": "В уровне «{name}»"
+    "levelChipTitle": "В уровне «{name}»",
+    "deleteError": "Не удалось удалить уровень.",
+    "deleteLevelKeepsCards": "Удалить уровень «{levelName}»? Карточки не удаляются — они станут нераспределёнными.",
+    "lockedHint": "Уровень закрыт для ученика, пока не пройдены все предварительные уровни.",
+    "saveError": "Не удалось сохранить уровень.",
+    "levelMixDone": "Набор упражнений применён к этому уровню."
   },
   "anonymousProgress": {
     "bannerMessage": "Зарегистрируйтесь, чтобы сохранять прогресс на всех устройствах",
@@ -1961,5 +1947,34 @@
     "searchFilters": "Фильтры поиска",
     "backToFeed": "Вернуться к ленте",
     "search": "Поиск"
+  },
+  "levelHeading": {
+    "levelN": "Уровень {n}",
+    "unassigned": "Без уровня",
+    "cards": "Карточек: {count}",
+    "requires": "Закрыт до прохождения: {names}",
+    "rename": "Переименовать уровень",
+    "settings": "Настройки уровня",
+    "moveLevelUp": "Поднять уровень",
+    "moveLevelDown": "Опустить уровень",
+    "save": "Сохранить",
+    "loading": "Загрузка…",
+    "addLevel": "Добавить уровень"
+  },
+  "courseOrder": {
+    "ownerHint": "Перетаскивайте карточки (или используйте стрелки / «Перенести в уровень…»), чтобы выстроить курс. Карточка, перенесённая за заголовок, попадает в этот уровень.",
+    "readOnlyHint": "Карточки в порядке изучения, сгруппированные по уровням.",
+    "saving": "Сохранение…",
+    "saved": "Сохранено",
+    "addLevel": "Добавить уровень",
+    "emptyLevel": "В этом уровне пока нет карточек.",
+    "moveUp": "Поднять карточку",
+    "moveDown": "Опустить карточку",
+    "moveToLevel": "Перенести в уровень…",
+    "saveError": "Не удалось сохранить новый порядок."
+  },
+  "levelsPanel": {
+    "title": "Уровни",
+    "empty": "Уровней пока нет."
   }
 }

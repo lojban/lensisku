@@ -217,6 +217,11 @@
             </label>
           </div>
         </div>
+        <LevelsPanel
+          :collection-id="props.collectionId"
+          :is-owner="isOwner"
+          @changed="loadItemLevels"
+        />
         <!-- Flashcard List -->
         <LoadingSpinner v-if="!isAnonView && isLoading" class="py-12" />
         <div
@@ -418,6 +423,7 @@ import {
 } from '@/api'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import ItemLevelBadges from '@/components/ItemLevelBadges.vue'
+import LevelsPanel from '@/components/levels/LevelsPanel.vue'
 import { useItemLevels } from '@/composables/useItemLevels'
 import CollectionActionsMenu from '@/components/CollectionActionsMenu.vue'
 import CollectionPageHeader from '@/components/CollectionPageHeader.vue'

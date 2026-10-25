@@ -143,10 +143,26 @@
                     <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
                     {{ t('collectionDetail.levels') }}
                   </RouterLink>
+                  <RouterLink
+                    :to="{
+                      query: {
+                        ...route.query,
+                        tab: undefined,
+                        page: undefined,
+                        view: isCourseOrder ? undefined : 'course-order',
+                      },
+                    }"
+                    class="ui-btn--group-item inline-flex items-center gap-2"
+                    :class="isCourseOrder ? 'ui-btn--primary' : 'ui-btn--toolbar'"
+                    :aria-pressed="isCourseOrder"
+                  >
+                    <ListOrdered class="w-4 h-4 shrink-0" aria-hidden="true" />
+                    {{ t('collectionDetail.courseOrder') }}
+                  </RouterLink>
                 </div>
               </div>
 
-              <div class="w-full space-y-3">
+              <div v-show="!isCourseOrder" class="w-full space-y-3">
                 <SearchForm
                   :initial-query="itemSearchQuery"
                   :initial-mode="searchMode"
@@ -188,85 +204,95 @@
           role="tabpanel"
           :aria-busy="isLoading || isLoadingItems || undefined"
         >
-          <LoadingSpinner v-if="isLoading || isLoadingItems" variant="inline" class="py-12" />
-          <div v-else class="grid gap-4">
-            <div
-              v-for="(item, index) in paginatedItems.items"
-              :key="item.item_id"
-              class="relative w-full max-w-full overflow-visible"
-            >
-              <DefinitionCard
-                :show-edit-button="isOwner"
-                :show-reorder-controls="isOwner"
-                :is-owner="isOwner"
-                :flashcard="item.flashcard"
-                :is-reordering="isReordering"
-                :show-vote-buttons="false"
-                :is-first-item="index === 0"
-                :is-last-item="index === paginatedItems.items.length - 1"
-                :definition="{
-                  definitionid: item.definition_id || 0,
-                  item_id: item.item_id,
-                  valsiid: item.valsi_id,
-                  valsiword: item.word ?? item.free_content_front,
-                  definition: item.definition ?? item.free_content_back,
-                  langid: item.lang_id,
-                  notes: item.notes,
-                  free_content_front: item.free_content_front,
-                  free_content_back: item.free_content_back,
-                  has_front_image: item.has_front_image,
-                  has_back_image: item.has_back_image,
-                  has_sound: item.has_sound,
-                  sound_url: item.sound_url,
-                  canonical_form: item.canonical_form,
-                }"
-                :collection-id="collection.collection_id"
-                :item-id="item.item_id"
-                :languages="languages"
-                :collections="userCollections"
-                :disable-discussion-button="true"
-                :disable-toolbar="true"
-                :notes="item.ci_notes"
-                :show-notes-edit="isOwner"
-                hide-source-collection
-                @collection-updated="setUserCollections($event)"
-                @move-up="moveItem(item, 'up')"
-                @move-down="moveItem(item, 'down')"
-                @remove="confirmRemoveItem(item)"
-                @edit-item="openEditItemModal(item)"
-              >
-                <template v-if="levelsForItem(item.item_id).length" #footer>
-                  <ItemLevelBadges
-                    :levels="levelsForItem(item.item_id)"
-                    :collection-id="collection.collection_id"
-                  />
-                </template>
-              </DefinitionCard>
-            </div>
-          </div>
-          <!-- Empty State -->
-          <div
-            v-if="!isLoading && !isLoadingItems && paginatedItems.items.length === 0"
-            class="text-center py-12 bg-gray-50 rounded-lg border border-gray-200"
-          >
-            <p class="text-gray-600">{{ t('collectionDetail.noItems') }}</p>
-
-            <div class="flex justify-center">
-              <Button v-if="isOwner" variant="create" class="mt-4" @click="showAddModal = true">
-                {{ t('collectionDetail.addItemButton') }}
-              </Button>
-            </div>
-          </div>
-          <!-- PaginationComponent -->
-          <PaginationComponent
-            v-if="paginatedItems.total > itemsPerPage"
-            :current-page="currentPage"
-            :total-pages="totalPages"
-            :total="paginatedItems.total"
-            :per-page="itemsPerPage"
-            @prev="prevPage"
-            @next="nextPage"
+          <CourseOrderView
+            v-if="isCourseOrder && collection"
+            :key="`course-${props.collectionId}`"
+            :collection-id="props.collectionId"
+            :is-owner="isOwner"
+            :focus-level-id="focusLevelId"
+            @changed="loadItemLevels"
           />
+          <template v-else>
+            <LoadingSpinner v-if="isLoading || isLoadingItems" variant="inline" class="py-12" />
+            <div v-else class="grid gap-4">
+              <div
+                v-for="(item, index) in paginatedItems.items"
+                :key="item.item_id"
+                class="relative w-full max-w-full overflow-visible"
+              >
+                <DefinitionCard
+                  :show-edit-button="isOwner"
+                  :show-reorder-controls="isOwner"
+                  :is-owner="isOwner"
+                  :flashcard="item.flashcard"
+                  :is-reordering="isReordering"
+                  :show-vote-buttons="false"
+                  :is-first-item="index === 0"
+                  :is-last-item="index === paginatedItems.items.length - 1"
+                  :definition="{
+                    definitionid: item.definition_id || 0,
+                    item_id: item.item_id,
+                    valsiid: item.valsi_id,
+                    valsiword: item.word ?? item.free_content_front,
+                    definition: item.definition ?? item.free_content_back,
+                    langid: item.lang_id,
+                    notes: item.notes,
+                    free_content_front: item.free_content_front,
+                    free_content_back: item.free_content_back,
+                    has_front_image: item.has_front_image,
+                    has_back_image: item.has_back_image,
+                    has_sound: item.has_sound,
+                    sound_url: item.sound_url,
+                    canonical_form: item.canonical_form,
+                  }"
+                  :collection-id="collection.collection_id"
+                  :item-id="item.item_id"
+                  :languages="languages"
+                  :collections="userCollections"
+                  :disable-discussion-button="true"
+                  :disable-toolbar="true"
+                  :notes="item.ci_notes"
+                  :show-notes-edit="isOwner"
+                  hide-source-collection
+                  @collection-updated="setUserCollections($event)"
+                  @move-up="moveItem(item, 'up')"
+                  @move-down="moveItem(item, 'down')"
+                  @remove="confirmRemoveItem(item)"
+                  @edit-item="openEditItemModal(item)"
+                >
+                  <template v-if="levelsForItem(item.item_id).length" #footer>
+                    <ItemLevelBadges
+                      :levels="levelsForItem(item.item_id)"
+                      :collection-id="collection.collection_id"
+                    />
+                  </template>
+                </DefinitionCard>
+              </div>
+            </div>
+            <!-- Empty State -->
+            <div
+              v-if="!isLoading && !isLoadingItems && paginatedItems.items.length === 0"
+              class="text-center py-12 bg-gray-50 rounded-lg border border-gray-200"
+            >
+              <p class="text-gray-600">{{ t('collectionDetail.noItems') }}</p>
+
+              <div class="flex justify-center">
+                <Button v-if="isOwner" variant="create" class="mt-4" @click="showAddModal = true">
+                  {{ t('collectionDetail.addItemButton') }}
+                </Button>
+              </div>
+            </div>
+            <!-- PaginationComponent -->
+            <PaginationComponent
+              v-if="paginatedItems.total > itemsPerPage"
+              :current-page="currentPage"
+              :total-pages="totalPages"
+              :total="paginatedItems.total"
+              :per-page="itemsPerPage"
+              @prev="prevPage"
+              @next="nextPage"
+            />
+          </template>
         </div>
 
         <div
@@ -1105,6 +1131,7 @@ import {
   GalleryHorizontalEnd,
   GalleryVerticalIcon,
   LayoutPanelTop,
+  ListOrdered,
   List,
   Edit3,
   HelpCircle,
@@ -1140,6 +1167,7 @@ import CommentList from '@/pages/CommentList.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import ItemLevelBadges from '@/components/ItemLevelBadges.vue'
 import { useItemLevels } from '@/composables/useItemLevels'
+import CourseOrderView from '@/components/levels/CourseOrderView.vue'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
@@ -1233,6 +1261,13 @@ const activeTab = computed<CollectionTab>(() =>
 const setActiveTab = (tab: CollectionTab) => {
   router.replace({ query: { ...route.query, tab: tab === 'items' ? undefined : tab } })
 }
+
+// "Course order" view (?view=course-order, optional #level-<id> to focus a heading)
+const isCourseOrder = computed(() => queryStr(route.query.view) === 'course-order')
+const focusLevelId = computed(() => {
+  const m = /^#level-(\d+)$/.exec(route.hash || '')
+  return m ? Number(m[1]) : null
+})
 
 // Check for flashcard mode
 const isAddFlashcardMode = computed(() => route.query.mode === 'add_flashcard')

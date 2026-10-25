@@ -423,3 +423,28 @@ pub struct ItemLevelEntry {
     pub level_name: String,
     pub level_position: i32,
 }
+
+/// One level's full, ordered card list in a course-order save.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct LevelOrderEntry {
+    pub level_id: i32,
+    /// Flashcard ids in their new order (position = index). Replaces the level's list.
+    pub flashcard_ids: Vec<i32>,
+}
+
+/// Batched course-order save: replace the card lists of the touched levels and,
+/// optionally, reorder all levels. Applied in one transaction.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct SaveCourseOrderRequest {
+    /// Only the levels whose card list changed (source and target of a move).
+    #[serde(default)]
+    pub levels: Vec<LevelOrderEntry>,
+    /// Every level id of the collection in the new order, when headings were reordered.
+    pub level_order: Option<Vec<i32>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct SaveCourseOrderResponse {
+    pub updated_levels: usize,
+    pub reordered_levels: bool,
+}

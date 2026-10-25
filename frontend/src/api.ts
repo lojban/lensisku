@@ -715,6 +715,26 @@ export const getCollectionItemLevels = async (collectionId: number | string) => 
   return api.get<ItemLevelEntry[]>(`/flashcards/collections/${collectionId}/item-levels`)
 }
 
+export interface LevelOrderEntry {
+  level_id: number
+  /** Full new ordered list of flashcard ids for this level. */
+  flashcard_ids: number[]
+}
+
+/**
+ * Owner-only batched course-order save (single transaction). Only the levels listed in
+ * `levels` have their card lists replaced; `level_order`, when given, must list every level.
+ */
+export const saveCourseOrder = async (
+  collectionId: number | string,
+  payload: { levels: LevelOrderEntry[]; level_order?: number[] }
+) => {
+  return api.put<{ updated_levels: number; reordered_levels: boolean }>(
+    `/flashcards/collections/${collectionId}/course-order`,
+    payload
+  )
+}
+
 export const getCollectionFlashcardsPublic = async (collectionId: number | string) => {
   return api.get(`/collections/${collectionId}/flashcards`)
 }

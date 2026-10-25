@@ -2,6 +2,8 @@
 mod challenge_mix_progress_tests;
 pub mod controller;
 #[cfg(test)]
+mod course_order_tests;
+#[cfg(test)]
 mod course_settings_tests;
 pub mod dto;
 pub(crate) mod error;
@@ -56,7 +58,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::generate_quiz_options)
                     .service(controller::apply_challenge_mix_level)
                     .service(controller::apply_challenge_mix_collection)
-                    .service(controller::update_course_settings),
+                    .service(controller::update_course_settings)
+                    .service(controller::save_course_order),
             ),
     );
 }

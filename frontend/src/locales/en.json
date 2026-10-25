@@ -816,7 +816,8 @@
     "applyMixNow": "Apply now",
     "applyingMix": "Applying…",
     "applyMixDone": "Exercise mix applied to all levels.",
-    "applyMixError": "Could not apply the exercise mix."
+    "applyMixError": "Could not apply the exercise mix.",
+    "courseOrder": "Course order"
   },
   "dictionaryExport": {
     "title": "Dictionary export",
@@ -1796,13 +1797,10 @@
     "actions": {
       "viewCards": "View cards",
       "edit": "Edit",
-      "addCards": "Add Cards",
       "practice": "Practice",
-      "applyChallengeMix": "Apply challenge mix"
+      "applyChallengeMix": "Apply challenge mix",
+      "manageCards": "Manage cards"
     },
-    "applyChallengeMix": "Apply challenge mix",
-    "applyChallengeMixConfirmCollection": "Overwrite directions on every level with the quiz / wordbank / listen mix? Manual direction overrides will be replaced.",
-    "applyChallengeMixConfirmLevel": "Overwrite directions on this level with the quiz / wordbank / listen mix? Manual direction overrides will be replaced.",
     "status": {
       "completed": "Completed",
       "unlocked": "Unlocked",
@@ -1823,31 +1821,16 @@
     "savingButton": "Saving...",
     "saveChangesButton": "Save changes",
     "createLevelButton": "Create level",
-    "addCardsTitle": "Add cards to level",
-    "mySuccessRate": "My success rate:",
-    "myAttempts": "My attempts:",
-    "selected": "Selected",
-    "select": "Select",
-    "addingCards": "Adding...",
-    "addNCards": "Add {count} Cards",
-    "levelCardsTitle": "{levelName} Cards",
-    "previousPage": "Previous",
-    "pageInfo": "Page {currentPage} of {totalPages}",
-    "nextPage": "Next",
-    "closeButton": "Close",
-    "deleteCardTitle": "Delete card",
-    "deleteCardMessage": "Are you sure you want to delete this card? This action cannot be undone.",
-    "deleteButton": "Delete",
     "deleteLevelConfirmTitle": "Delete level",
-    "deleteLevelConfirmMessage": "Are you sure you want to delete the level '{levelName}'? This action cannot be undone.",
     "cardsInLevel": "Cards",
     "levelMixHint": "Re-apply the exercise mix to the cards of this level only.",
-    "inThisLevel": "In this level ({count})",
-    "noCardsInLevel": "No cards in this level yet.",
-    "removeFromLevel": "Remove",
-    "availableCards": "Add from collection ({count})",
     "levelChip": "L{n} · {name}",
-    "levelChipTitle": "In level “{name}”"
+    "levelChipTitle": "In level “{name}”",
+    "deleteError": "Could not delete the level.",
+    "deleteLevelKeepsCards": "Delete level \"{levelName}\"? Its cards are not deleted — they become unassigned.",
+    "lockedHint": "The level stays locked for a learner until all prerequisite levels are completed.",
+    "saveError": "Could not save the level.",
+    "levelMixDone": "Exercise mix applied to this level."
   },
   "anonymousProgress": {
     "bannerMessage": "Sign up to save your progress across devices",
@@ -2057,5 +2040,34 @@
     "searchFilters": "Search filters",
     "backToFeed": "Back to feed",
     "search": "Search"
+  },
+  "levelHeading": {
+    "levelN": "Level {n}",
+    "unassigned": "Unassigned",
+    "cards": "{count} cards",
+    "requires": "Locked until completed: {names}",
+    "rename": "Rename level",
+    "settings": "Level settings",
+    "moveLevelUp": "Move level up",
+    "moveLevelDown": "Move level down",
+    "save": "Save",
+    "loading": "Loading…",
+    "addLevel": "Add level"
+  },
+  "courseOrder": {
+    "ownerHint": "Drag cards (or use the arrows / \"Move to level…\") to arrange the course. Moving a card past a heading puts it in that level.",
+    "readOnlyHint": "Cards in the order they are taught, grouped by level.",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "addLevel": "Add level",
+    "emptyLevel": "No cards in this level yet.",
+    "moveUp": "Move card up",
+    "moveDown": "Move card down",
+    "moveToLevel": "Move to level…",
+    "saveError": "Could not save the new order."
+  },
+  "levelsPanel": {
+    "title": "Levels",
+    "empty": "No levels yet."
   }
 }

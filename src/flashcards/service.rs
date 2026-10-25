@@ -4734,3 +4734,129 @@ pub async fn get_collection_item_levels(
         })
         .collect())
 }
+
+/// Course order: rewrite the card lists of the given levels and optionally the level order,
+/// atomically. Only `flashcard_level_items` rows and `flashcard_levels.position` change:
+/// flashcards, review progress, prerequisites and unlock fields are untouched.
+pub async fn save_course_order(
+    pool: &Pool,
+    user_id: i32,
+    collection_id: i32,
+    req: &dto::SaveCourseOrderRequest,
+) -> Result<dto::SaveCourseOrderResponse, FlashcardError> {
+    use std::collections::HashSet;
+
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    let collection_levels: HashSet<i32> = transaction
+        .query(
+            "SELECT level_id FROM flashcard_levels WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await?
+        .iter()
+        .map(|r| r.get(0))
+        .collect();
+
+    let mut seen_levels = HashSet::new();
+    let mut all_cards: Vec<i32> = Vec::new();
+    for entry in &req.levels {
+        if !collection_levels.contains(&entry.level_id) {
+            return Err(FlashcardError::BadRequest(format!(
+                "Level {} does not belong to this collection",
+                entry.level_id
+            )));
+        }
+        if !seen_levels.insert(entry.level_id) {
+            return Err(FlashcardError::BadRequest(format!(
+                "Level {} listed twice",
+                entry.level_id
+            )));
+        }
+        let mut seen_cards = HashSet::new();
+        for id in &entry.flashcard_ids {
+            if !seen_cards.insert(*id) {
+                return Err(FlashcardError::BadRequest(format!(
+                    "Flashcard {id} listed twice in level {}",
+                    entry.level_id
+                )));
+            }
+        }
+        all_cards.extend(entry.flashcard_ids.iter().copied());
+    }
+
+    if !all_cards.is_empty() {
+        let distinct: Vec<i32> = all_cards
+            .iter()
+            .copied()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+        let owned: i64 = transaction
+            .query_one(
+                "SELECT COUNT(*) FROM flashcards WHERE collection_id = $1 AND id = ANY($2)",
+                &[&collection_id, &distinct],
+            )
+            .await?
+            .get(0);
+        if owned as usize != distinct.len() {
+            return Err(FlashcardError::BadRequest(
+                "Some flashcards do not belong to this collection".into(),
+            ));
+        }
+    }
+
+    if let Some(order) = &req.level_order {
+        let set: HashSet<i32> = order.iter().copied().collect();
+        if set.len() != order.len() || set != collection_levels {
+            return Err(FlashcardError::BadRequest(
+                "level_order must list every level of the collection exactly once".into(),
+            ));
+        }
+    }
+
+    for entry in &req.levels {
+        transaction
+            .execute(
+                "DELETE FROM flashcard_level_items WHERE level_id = $1",
+                &[&entry.level_id],
+            )
+            .await?;
+        if !entry.flashcard_ids.is_empty() {
+            transaction
+                .execute(
+                    "INSERT INTO flashcard_level_items (level_id, flashcard_id, position)
+                     SELECT $1, f.id, (f.ord - 1)::int
+                     FROM unnest($2::int[]) WITH ORDINALITY AS f(id, ord)",
+                    &[&entry.level_id, &entry.flashcard_ids],
+                )
+                .await?;
+        }
+    }
+
+    if let Some(order) = &req.level_order {
+        // Two phases: (collection_id, position) is unique.
+        transaction
+            .execute(
+                "UPDATE flashcard_levels SET position = -1 - position WHERE collection_id = $1",
+                &[&collection_id],
+            )
+            .await?;
+        transaction
+            .execute(
+                "UPDATE flashcard_levels l SET position = (o.ord - 1)::int
+                 FROM unnest($2::int[]) WITH ORDINALITY AS o(id, ord)
+                 WHERE l.level_id = o.id AND l.collection_id = $1",
+                &[&collection_id, order],
+            )
+            .await?;
+    }
+
+    transaction.commit().await?;
+    Ok(dto::SaveCourseOrderResponse {
+        updated_levels: req.levels.len(),
+        reordered_levels: req.level_order.is_some(),
+    })
+}

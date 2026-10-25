@@ -1141,3 +1141,39 @@ pub async fn list_item_levels(
         Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
     }
 }
+
+#[utoipa::path(
+    put,
+    path = "/flashcards/collections/{collection_id}/course-order",
+    tag = "flashcards",
+    params(("collection_id" = i32, Path, description = "Collection ID")),
+    request_body = dto::SaveCourseOrderRequest,
+    responses(
+        (status = 200, description = "Order saved", body = dto::SaveCourseOrderResponse),
+        (status = 400, description = "Level or card not in this collection, or duplicates"),
+        (status = 403, description = "Not the owner")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Save course order (cards per level and level order) in one transaction"
+)]
+#[put("/collections/{collection_id}/course-order")]
+pub async fn save_course_order(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    collection_id: web::Path<i32>,
+    req: web::Json<dto::SaveCourseOrderRequest>,
+) -> impl Responder {
+    match service::save_course_order(&pool, claims.sub, collection_id.into_inner(), &req).await {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(FlashcardError::AccessDenied(msg)) => {
+            HttpResponse::Forbidden().json(json!({ "error": msg }))
+        }
+        Err(FlashcardError::NotFound(msg)) => {
+            HttpResponse::NotFound().json(json!({ "error": msg }))
+        }
+        Err(FlashcardError::BadRequest(msg)) => {
+            HttpResponse::BadRequest().json(json!({ "error": msg }))
+        }
+        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to save course order"),
+    }
+}
