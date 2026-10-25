@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod challenge_mix_progress_tests;
 pub mod controller;
+#[cfg(test)]
+mod course_settings_tests;
 pub mod dto;
 pub(crate) mod error;
 #[cfg(test)]
