@@ -3690,6 +3690,9 @@ async fn get_level_progress(
     }
 }
 
+// Level card stats below count `rating >= 2` as correct; keep in sync with the policy.
+const _: () = assert!(super::rating_policy::PASS_RATING == 2);
+
 async fn get_level_cards(
     transaction: &Transaction<'_>,
     level_id: i32,
@@ -3707,7 +3710,7 @@ async fn get_level_cards(
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'front') as has_front_image,
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'back') as has_back_image,
                 EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_sound,
-                COUNT(CASE WHEN frh.rating >= 3 THEN 1 END) as correct_answers,
+                COUNT(CASE WHEN frh.rating >= 2 THEN 1 END) as correct_answers,
                 COUNT(frh.rating) as total_attempts,
                 MAX(frh.review_time) as last_reviewed_at
          FROM flashcard_level_items fli
@@ -3919,7 +3922,7 @@ pub async fn get_level_cards_paginated(
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'front') as has_front_image,
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'back') as has_back_image,
                 EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_sound,
-                COUNT(CASE WHEN frh.rating >= 3 THEN 1 END) as correct_answers,
+                COUNT(CASE WHEN frh.rating >= 2 THEN 1 END) as correct_answers,
                 COUNT(frh.rating) as total_attempts,
                 MAX(frh.review_time) as last_reviewed_at
             FROM flashcard_level_items fli

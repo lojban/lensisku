@@ -7,6 +7,10 @@
 //! lower a rating. Self-assessed (direct/reverse/both), typed fill-in and
 //! info cards keep the full 1–4 range. Unknown directions count as hinted (−1).
 
+/// Lowest stored rating that counts as a correct answer for level progress (FSRS: only
+/// 1 "Again" is a lapse). A correct quiz/word-bank answer submitted as 3 is stored as 2,
+/// so level stats (`user_level_progress`, V201) use this, not 3.
+pub const PASS_RATING: u32 = 2;
 pub const MIN_RATING: u32 = 1;
 pub const MAX_RATING: u32 = 4;
 const MAX_PENALTY: u32 = 2;
@@ -33,6 +37,15 @@ pub fn effective_rating(direction: Option<&str>, submitted: u32, hint_used: bool
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn correct_hinted_answer_still_passes() {
+        // Lingo submits 3 for a correct answer; quiz/word-bank types lose 1 point.
+        for d in ["quiz_direct", "wordbank_reverse", "listen_wordbank"] {
+            assert!(effective_rating(Some(d), 3, false) >= PASS_RATING, "{d}");
+            assert!(effective_rating(Some(d), 1, false) < PASS_RATING, "{d}");
+        }
+    }
 
     const SELF: &[&str] = &[
         "direct",

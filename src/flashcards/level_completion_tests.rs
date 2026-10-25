@@ -2,6 +2,9 @@
 //! threshold (V201). Previously the trigger read the pre-update row, so the last needed
 //! review never completed the level and, with nothing left due, the next level stayed locked.
 //!
+//! Reviews are stored with rating 2: a correct quiz/word-bank answer after the rating
+//! policy penalty, which must still count as correct (pass = rating >= 2).
+//!
 //! Needs `FLASHCARDS_TEST_DATABASE_URL` (disposable DB with the lensisku schema + V201).
 #![allow(clippy::unwrap_used)]
 
@@ -97,7 +100,7 @@ async fn crossing_review_completes_level_and_unlocks_next() {
             .unwrap();
             c.execute(
                 "INSERT INTO flashcard_review_history (user_id, flashcard_id, rating, elapsed_days, scheduled_days, state)
-                 VALUES ($1, $2, 3, 0, 0, '{}'::jsonb)",
+                 VALUES ($1, $2, 2, 0, 0, '{}'::jsonb)",
                 &[&uid, &fid],
             )
             .await
