@@ -101,15 +101,6 @@ defineProps({
   overflow: visible;
 }
 
-/*
- * A feed pin (striped header band) directly below the mobile top bar: drop the
- * bar's 1px grey divider so the two bands sit flush with no hairline seam.
- * The band keeps its own inset bottom shadow. Mobile-only (bar is lg:hidden).
- */
-.lingo-layout:has(.lingo-feed-layout__pin) > .lingo-mobile-header {
-  border-bottom-width: 0;
-}
-
 .lingo-feed-layout__pin {
   position: sticky;
   top: 0;
