@@ -518,7 +518,7 @@ import {
   answeredAttemptKeys,
   attemptKey,
 } from '@/composables/useAnonymousProgress'
-import { ensureGuestSession } from '@/composables/useGuestSession'
+import { clearGuestSession, ensureGuestSession } from '@/composables/useGuestSession'
 import { queryStr, paramStr } from '@/utils/routeQuery'
 import { holdRouteReveal } from '@/composables/useRouteOverlay'
 import { STUDY_SESSION_MAX_CARDS, studySessionRoom } from '@/config/studyConstants'
@@ -1201,6 +1201,16 @@ const loadDueCards = async (singleCardId = null) => {
       if (all.length === 0) {
         all = await fetchDueQueue()
       }
+      // Nothing due in this level: don't dead-end. Practice the level's cards early; those
+      // reviews count toward level completion, which unlocks the next level.
+      if (all.length === 0 && levelIdParam.value) {
+        all = await fetchLevelPracticeQueue()
+        if (all.length > 0) {
+          practiceEarly.value = true
+          showNewCardsMessage.value = true
+          newCardsMessage.value = t('flashcardStudy.practiceEarlyMessage')
+        }
+      }
       if (isCappedSession.value) all = all.slice(0, studySessionRoom(cardsShown.value))
       remainingCards.value = all
       sessionTotal.value = all.length
@@ -1208,9 +1218,46 @@ const loadDueCards = async (singleCardId = null) => {
     loadNextCard()
   } catch (error) {
     console.error(t('flashcardStudy.loadError'), error)
+    // A guest session left over from an earlier deploy can be revoked: the token refresh
+    // fails and every due fetch 401s, which used to look like "no due cards". Start a fresh
+    // guest session once and reload instead of showing an empty lesson.
+    const status = (error as { response?: { status?: number } })?.response?.status
+    if (status === 401 && !auth.state.isLoggedIn && !guestRetryDone) {
+      guestRetryDone = true
+      clearGuestSession()
+      guestSessionActive.value = !!(await ensureGuestSession())
+      if (guestSessionActive.value) {
+        isLoading.value = false
+        await loadDueCards(singleCardId)
+        return
+      }
+    }
   } finally {
     isLoading.value = false
   }
+}
+let guestRetryDone = false
+/** Set when a level session found nothing due and fell back to practicing its cards. */
+const practiceEarly = ref(false)
+
+/** All cards of the current level (due or not), for the "nothing due" fallback. */
+async function fetchLevelPracticeQueue() {
+  const all = []
+  let page = 1
+  for (;;) {
+    const response = await getFlashcards({
+      collection_id: collectionId.value,
+      level_id: levelIdParam.value,
+      page,
+      per_page: 100,
+    })
+    const batch = response.data.flashcards || []
+    const total = Number(response.data.total || 0)
+    all.push(...batch)
+    page += 1
+    if (batch.length === 0 || all.length >= total) break
+  }
+  return all
 }
 
 /** Anonymous level mode: load all cards for the level (no auth), shape as study cards. */

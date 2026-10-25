@@ -56,6 +56,18 @@ export function hasGuestSession(): boolean {
   return !!getGuestAccessToken()
 }
 
+/** True when the JWT's `exp` is in the past (or within 30 s). Unparseable → false. */
+function isJwtExpired(token: string): boolean {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return false
+    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    return typeof json.exp === 'number' && json.exp * 1000 < Date.now() + 30_000
+  } catch {
+    return false
+  }
+}
+
 let ensurePromise: Promise<GuestSessionTokens | null> | null = null
 
 /**
@@ -66,7 +78,15 @@ export async function ensureGuestSession(): Promise<GuestSessionTokens | null> {
   if (localStorage.getItem('accessToken')) return null
 
   const existing = readSession()
-  if (existing) return existing
+  if (existing && !isJwtExpired(existing.access_token)) return existing
+  // Expired guest access token (e.g. a session left over from an earlier visit): refresh it,
+  // or start a new guest session if the refresh token is no longer accepted. Otherwise the
+  // optional-auth levels API silently answers as anonymous (only level 1 unlocked) while
+  // study calls 401.
+  if (existing) {
+    const refreshed = await refreshGuestAccessToken()
+    if (refreshed) return readSession()
+  }
 
   if (ensurePromise) return ensurePromise
 

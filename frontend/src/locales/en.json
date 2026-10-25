@@ -1041,6 +1041,7 @@
   },
   "flashcardStudy": {
     "title": "Study session",
+    "practiceEarlyMessage": "Nothing is due in this lesson right now — practice it again to unlock the next one.",
     "newCardsMessage": "More cards are now available for review!",
     "remainingCards": "Remaining: {count} cards",
     "endSession": "End session",
