@@ -642,7 +642,7 @@ async function fetchCollectionMeta() {
 
 const returnToUrl = computed(() => {
   const cid = collectionIdParam.value
-  if (levelIdParam.value != null) return `/collections/${cid}/levels`
+  if (levelIdParam.value != null) return `/collections/${cid}/lingo/levels`
   return `/collections/${cid}/flashcards`
 })
 
@@ -834,8 +834,8 @@ const loadLevelCardsForAnon = async () => {
       const activeId = resolveAndRememberActiveLevelId(cid, list)
       router.replace(
         activeId != null
-          ? `/collections/${cid}/levels?focusLevelId=${activeId}`
-          : `/collections/${cid}/levels`
+          ? `/collections/${cid}/lingo/levels?focusLevelId=${activeId}`
+          : `/collections/${cid}/lingo/levels`
       )
       return
     }
@@ -1350,7 +1350,7 @@ onMounted(async () => {
       const cid = collectionIdParam.value
       const loaded = await loadCollectionCardsForAnon()
       if (!loaded) {
-        router.replace(`/collections/${cid}/levels`)
+        router.replace(`/collections/${cid}/lingo/levels`)
       }
       return
     }

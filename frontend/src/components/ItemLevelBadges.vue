@@ -3,7 +3,7 @@
     <RouterLink
       v-for="lv in levels"
       :key="lv.level_id"
-      :to="{ path: `/collections/${collectionId}/levels`, query: { level: String(lv.level_id) } }"
+      :to="{ path: `/collections/${collectionId}/flashcards`, hash: `#level-${lv.level_id}` }"
       class="item-level-badge"
       :title="t('flashcardLevels.levelChipTitle', { name: lv.level_name })"
       @click.stop

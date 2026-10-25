@@ -117,3 +117,27 @@ export function scheduleRouteOverlaySettle() {
 export function useRouteOverlay() {
   return { freezeHtml, freezeScrollTops }
 }
+
+/** Resolve once in-flight API requests have been quiet for QUIET_MS (or after `maxMs`). */
+export function waitForApiQuiet(maxMs = 1500): Promise<void> {
+  return new Promise((resolve) => {
+    let done = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const finish = () => {
+      if (done) return
+      done = true
+      if (timer) clearTimeout(timer)
+      unsub()
+      clearTimeout(hard)
+      resolve()
+    }
+    const check = () => {
+      if (timer) clearTimeout(timer)
+      timer = null
+      if (getApiPendingCount() === 0) timer = setTimeout(finish, QUIET_MS)
+    }
+    const unsub = onApiPendingChange(check)
+    const hard = setTimeout(finish, maxMs)
+    check()
+  })
+}

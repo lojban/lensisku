@@ -2052,7 +2052,9 @@
     "moveLevelDown": "Move level down",
     "save": "Save",
     "loading": "Loading…",
-    "addLevel": "Add level"
+    "addLevel": "Add level",
+    "continued": "(continued)",
+    "requiresShort": "Requires: {names}"
   },
   "courseOrder": {
     "ownerHint": "Drag cards (or use the arrows / \"Move to level…\") to arrange the course. Moving a card past a heading puts it in that level.",
@@ -2064,7 +2066,8 @@
     "moveUp": "Move card up",
     "moveDown": "Move card down",
     "moveToLevel": "Move to level…",
-    "saveError": "Could not save the new order."
+    "saveError": "Could not save the new order.",
+    "filteredNote": "Search or filters are active — showing a flat list without levels; clear them to see and edit the course order."
   },
   "levelsPanel": {
     "title": "Levels",

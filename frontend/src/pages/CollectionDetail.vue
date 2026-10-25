@@ -136,33 +136,10 @@
                     <GalleryVerticalIcon class="w-4 h-4 shrink-0" />
                     {{ t('collectionDetail.viewAsTiktoknu') }}
                   </span>
-                  <RouterLink
-                    :to="`/collections/${props.collectionId}/levels`"
-                    class="ui-btn--neutral ui-btn--group-item inline-flex items-center gap-2"
-                  >
-                    <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
-                    {{ t('collectionDetail.levels') }}
-                  </RouterLink>
-                  <RouterLink
-                    :to="{
-                      query: {
-                        ...route.query,
-                        tab: undefined,
-                        page: undefined,
-                        view: isCourseOrder ? undefined : 'course-order',
-                      },
-                    }"
-                    class="ui-btn--group-item inline-flex items-center gap-2"
-                    :class="isCourseOrder ? 'ui-btn--primary' : 'ui-btn--toolbar'"
-                    :aria-pressed="isCourseOrder"
-                  >
-                    <ListOrdered class="w-4 h-4 shrink-0" aria-hidden="true" />
-                    {{ t('collectionDetail.courseOrder') }}
-                  </RouterLink>
                 </div>
               </div>
 
-              <div v-show="!isCourseOrder" class="w-full space-y-3">
+              <div class="w-full space-y-3">
                 <SearchForm
                   :initial-query="itemSearchQuery"
                   :initial-mode="searchMode"
@@ -204,71 +181,77 @@
           role="tabpanel"
           :aria-busy="isLoading || isLoadingItems || undefined"
         >
-          <CourseOrderView
-            v-if="isCourseOrder && collection"
-            :key="`course-${props.collectionId}`"
-            :collection-id="props.collectionId"
-            :is-owner="isOwner"
-            :focus-level-id="focusLevelId"
-            @changed="loadItemLevels"
-          />
-          <template v-else>
+          <div class="flex flex-col gap-4">
             <LoadingSpinner v-if="isLoading || isLoadingItems" variant="inline" class="py-12" />
-            <div v-else class="grid gap-4">
-              <div
-                v-for="(item, index) in paginatedItems.items"
-                :key="item.item_id"
-                class="relative w-full max-w-full overflow-visible"
-              >
-                <DefinitionCard
-                  :show-edit-button="isOwner"
-                  :show-reorder-controls="isOwner"
-                  :is-owner="isOwner"
-                  :flashcard="item.flashcard"
-                  :is-reordering="isReordering"
-                  :show-vote-buttons="false"
-                  :is-first-item="index === 0"
-                  :is-last-item="index === paginatedItems.items.length - 1"
-                  :definition="{
-                    definitionid: item.definition_id || 0,
-                    item_id: item.item_id,
-                    valsiid: item.valsi_id,
-                    valsiword: item.word ?? item.free_content_front,
-                    definition: item.definition ?? item.free_content_back,
-                    langid: item.lang_id,
-                    notes: item.notes,
-                    free_content_front: item.free_content_front,
-                    free_content_back: item.free_content_back,
-                    has_front_image: item.has_front_image,
-                    has_back_image: item.has_back_image,
-                    has_sound: item.has_sound,
-                    sound_url: item.sound_url,
-                    canonical_form: item.canonical_form,
-                  }"
-                  :collection-id="collection.collection_id"
-                  :item-id="item.item_id"
-                  :languages="languages"
-                  :collections="userCollections"
-                  :disable-discussion-button="true"
-                  :disable-toolbar="true"
-                  :notes="item.ci_notes"
-                  :show-notes-edit="isOwner"
-                  hide-source-collection
-                  @collection-updated="setUserCollections($event)"
-                  @move-up="moveItem(item, 'up')"
-                  @move-down="moveItem(item, 'down')"
-                  @remove="confirmRemoveItem(item)"
-                  @edit-item="openEditItemModal(item)"
-                >
-                  <template v-if="levelsForItem(item.item_id).length" #footer>
-                    <ItemLevelBadges
-                      :levels="levelsForItem(item.item_id)"
-                      :collection-id="collection.collection_id"
-                    />
-                  </template>
-                </DefinitionCard>
-              </div>
-            </div>
+            <p
+              v-else-if="!isCourseMode && paginatedItems.items.length"
+              class="text-xs text-gray-500"
+            >
+              {{ t('courseOrder.filteredNote') }}
+            </p>
+            <CourseOrderedList
+              v-if="!isLoading && !isLoadingItems && paginatedItems.items.length"
+              :focus-level-id="focusLevelId"
+              :collection-id="props.collectionId"
+              :is-owner="isOwner"
+              :items="paginatedItems.items"
+              :item-key="(item) => item.item_id"
+              :flashcard-id-of="(item) => Number(item.flashcard?.id) || null"
+              :flat="!isCourseMode"
+              @changed="loadItemLevels"
+            >
+              <template #item="{ item }">
+                <div class="relative w-full max-w-full overflow-visible">
+                  <DefinitionCard
+                    :show-edit-button="isOwner"
+                    :show-reorder-controls="false"
+                    :is-owner="isOwner"
+                    :flashcard="item.flashcard"
+                    :is-reordering="isReordering"
+                    :show-vote-buttons="false"
+                    :is-first-item="false"
+                    :is-last-item="false"
+                    :definition="{
+                      definitionid: item.definition_id || 0,
+                      item_id: item.item_id,
+                      valsiid: item.valsi_id,
+                      valsiword: item.word ?? item.free_content_front,
+                      definition: item.definition ?? item.free_content_back,
+                      langid: item.lang_id,
+                      notes: item.notes,
+                      free_content_front: item.free_content_front,
+                      free_content_back: item.free_content_back,
+                      has_front_image: item.has_front_image,
+                      has_back_image: item.has_back_image,
+                      has_sound: item.has_sound,
+                      sound_url: item.sound_url,
+                      canonical_form: item.canonical_form,
+                    }"
+                    :collection-id="collection.collection_id"
+                    :item-id="item.item_id"
+                    :languages="languages"
+                    :collections="userCollections"
+                    :disable-discussion-button="true"
+                    :disable-toolbar="true"
+                    :notes="item.ci_notes"
+                    :show-notes-edit="isOwner"
+                    hide-source-collection
+                    @collection-updated="setUserCollections($event)"
+                    @move-up="moveItem(item, 'up')"
+                    @move-down="moveItem(item, 'down')"
+                    @remove="confirmRemoveItem(item)"
+                    @edit-item="openEditItemModal(item)"
+                  >
+                    <template v-if="levelsForItem(item.item_id).length" #footer>
+                      <ItemLevelBadges
+                        :levels="levelsForItem(item.item_id)"
+                        :collection-id="collection.collection_id"
+                      />
+                    </template>
+                  </DefinitionCard>
+                </div>
+              </template>
+            </CourseOrderedList>
             <!-- Empty State -->
             <div
               v-if="!isLoading && !isLoadingItems && paginatedItems.items.length === 0"
@@ -284,7 +267,7 @@
             </div>
             <!-- PaginationComponent -->
             <PaginationComponent
-              v-if="paginatedItems.total > itemsPerPage"
+              v-if="!isCourseMode && paginatedItems.total > itemsPerPage"
               :current-page="currentPage"
               :total-pages="totalPages"
               :total="paginatedItems.total"
@@ -292,7 +275,7 @@
               @prev="prevPage"
               @next="nextPage"
             />
-          </template>
+          </div>
         </div>
 
         <div
@@ -1130,8 +1113,6 @@
 import {
   GalleryHorizontalEnd,
   GalleryVerticalIcon,
-  LayoutPanelTop,
-  ListOrdered,
   List,
   Edit3,
   HelpCircle,
@@ -1167,7 +1148,7 @@ import CommentList from '@/pages/CommentList.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import ItemLevelBadges from '@/components/ItemLevelBadges.vue'
 import { useItemLevels } from '@/composables/useItemLevels'
-import CourseOrderView from '@/components/levels/CourseOrderView.vue'
+import CourseOrderedList from '@/components/levels/CourseOrderedList.vue'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
@@ -1263,7 +1244,9 @@ const setActiveTab = (tab: CollectionTab) => {
 }
 
 // "Course order" view (?view=course-order, optional #level-<id> to focus a heading)
-const isCourseOrder = computed(() => queryStr(route.query.view) === 'course-order')
+// Items are listed in course order (levels as headings) unless search/filters reorder them.
+// Old `?view=course-order#level-<id>` links still work: the hash focuses that heading.
+
 const focusLevelId = computed(() => {
   const m = /^#level-(\d+)$/.exec(route.hash || '')
   return m ? Number(m[1]) : null
@@ -2093,6 +2076,39 @@ const validateAccess = (collection) => {
   return true
 }
 
+const isCourseMode = computed(() => {
+  const f = itemFilters.value
+  return (
+    !normalizeSearchQuery(itemSearchQuery.value).trim() &&
+    !isAddFlashcardMode.value &&
+    !editItemId.value &&
+    !f.usernames?.length &&
+    !f.excludeUsernames?.length &&
+    !f.selectedLanguages?.length &&
+    !f.selmaho &&
+    !wordTypesToQueryParam(f.word_type) &&
+    !(f.source_langid && f.source_langid !== 1)
+  )
+})
+
+/** Course mode needs every item (ordered client-side); fetched 100 per request in parallel. */
+async function fetchAllItems(params: Record<string, unknown>, signal: AbortSignal) {
+  const per = 100
+  const first = await listCollectionItems(
+    props.collectionId,
+    { ...params, page: 1, per_page: per },
+    signal
+  )
+  const total = Number(first.data.total) || 0
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(0, Math.ceil(total / per) - 1) }, (_, i) =>
+      listCollectionItems(props.collectionId, { ...params, page: i + 2, per_page: per }, signal)
+    )
+  )
+  const items = [first, ...rest].flatMap((r) => r.data.items ?? [])
+  return { ...first.data, items, total: items.length, page: 1, per_page: items.length || 1 }
+}
+
 const totalPages = computed(() => {
   return Math.ceil(paginatedItems.value.total / itemsPerPage)
 })
@@ -2180,14 +2196,16 @@ const fetchItems = async () => {
       params.search_in_phrases = itemFilters.value.searchInPhrases
     }
 
-    const response = await listCollectionItems(props.collectionId, params, signal)
+    const data = isCourseMode.value
+      ? await fetchAllItems(params, signal)
+      : (await listCollectionItems(props.collectionId, params, signal)).data
 
     // Discard stale responses (e.g. user kept typing).
     if (!itemsSearchQueue.shouldProcess(requestId)) {
       return
     }
 
-    paginatedItems.value = response.data
+    paginatedItems.value = data
 
     // Check if we need to open edit modal from query param
     if (editItemId.value) {

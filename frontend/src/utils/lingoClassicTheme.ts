@@ -7,7 +7,7 @@ import type { RouteLocationNormalizedLoaded } from 'vue-router'
  * | Lingo                                      | Classic                         |
  * |--------------------------------------------|---------------------------------|
  * | `/lingo/courses` (and other `/lingo/*`)    | `/collections`                  |
- * | `/collections/:id/lingo/levels`            | `/collections/:id/levels`       |
+ * | `/collections/:id/lingo/levels`            | `/collections/:id/flashcards`   |
  * | `/collections/:id/lingo/study`             | `/collections/:id/flashcards/study` (+ query) |
  */
 export function classicThemePathForRoute(
@@ -27,7 +27,7 @@ export function classicThemePathForRoute(
   }
 
   if (collectionId && /\/lingo\/levels\/?$/.test(path)) {
-    return `/collections/${collectionId}/levels`
+    return `/collections/${collectionId}/flashcards`
   }
 
   // Catalog, learn redirect, leaderboard, quests, shop, auth, …

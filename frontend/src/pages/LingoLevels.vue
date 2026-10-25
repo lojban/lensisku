@@ -131,13 +131,8 @@ const collection = ref(null)
 const levels = ref([])
 const isLoading = ref(true)
 
-/** Owner edit: level ladder when the course has levels, otherwise the card list. */
-const editPath = computed(() => {
-  const id = props.collectionId
-  const path =
-    levels.value.length > 0 ? `/collections/${id}/levels` : `/collections/${id}/flashcards`
-  return localePath(path)
-})
+/** Owner edit: the card list (levels are managed there as headings). */
+const editPath = computed(() => localePath(`/collections/${props.collectionId}/flashcards`))
 
 /** Collection reels (tiktoknu) — browse cards; `from=lingo` sends back here. */
 const reelsPath = computed(() => ({

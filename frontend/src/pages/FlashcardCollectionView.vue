@@ -96,17 +96,7 @@
                 <div class="mt-2 gap-4 flex flex-wrap">
                   <IconButton
                     tag="router-link"
-                    :to="`/collections/${props.collectionId}/levels`"
-                    :label="t('anonymousProgress.viewLevels')"
-                    button-classes="ui-btn--warning-orange ui-btn--group-item md:flex-none"
-                  >
-                    <template #icon>
-                      <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
-                    </template>
-                  </IconButton>
-                  <IconButton
-                    tag="router-link"
-                    :to="`/collections/${props.collectionId}/levels`"
+                    :to="`/collections/${props.collectionId}/lingo/levels`"
                     :label="t('anonymousProgress.studyLevels')"
                     button-classes="ui-btn--create ui-btn--group-item md:flex-none"
                   >
@@ -131,16 +121,6 @@
               button-classes="ui-btn--warning-orange"
             >
               <template #icon> <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
-            </IconButton>
-            <IconButton
-              tag="router-link"
-              :to="`/collections/${props.collectionId}/levels`"
-              :label="t('collectionDetail.levels')"
-              button-classes="ui-btn--neutral"
-            >
-              <template #icon>
-                <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
-              </template>
             </IconButton>
           </div>
         </template>
@@ -223,14 +203,13 @@
           @changed="loadItemLevels"
         />
         <!-- Flashcard List -->
-        <LoadingSpinner v-if="!isAnonView && isLoading" class="py-12" />
         <div
-          v-else-if="isAnonView"
-          class="text-center py-8 bg-gray-50 rounded-lg border border-blue-100"
+          v-if="isAnonView"
+          class="text-center py-4 bg-gray-50 rounded-lg border border-blue-100"
         >
-          <p class="text-gray-600 mb-4">{{ t('anonymousProgress.useLevelsToStudy') }}</p>
+          <p class="text-gray-600">{{ t('anonymousProgress.useLevelsToStudy') }}</p>
         </div>
-
+        <LoadingSpinner v-if="isLoading" class="py-12" />
         <div
           v-else-if="flashcards.length === 0"
           class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100"
@@ -238,151 +217,178 @@
           <p class="text-gray-600">{{ t('components.flashcardCollectionView.noFlashcards') }}</p>
         </div>
 
-        <div v-else class="flex flex-col gap-4">
-          <div
-            v-for="(card, index) in flashcards"
-            :key="card.flashcard.id"
-            :data-item-id="card.flashcard.item_id"
-            :class="{
-              'cursor-pointer': isOwner,
-              'flashcard-item--highlight': highlightItemId === card.flashcard.item_id,
-            }"
-            class="surface-flashcard-summary"
-            @click="isOwner && openFlashcard(card)"
+        <template v-else>
+          <p v-if="!isCourseMode" class="text-xs text-gray-500">
+            {{ t('courseOrder.filteredNote') }}
+          </p>
+          <CourseOrderedList
+            :collection-id="props.collectionId"
+            :is-owner="isOwner"
+            :items="flashcards"
+            :item-key="(c) => c.flashcard.item_id"
+            :flashcard-id-of="(c) => c.flashcard.id"
+            :flat="!isCourseMode"
+            :focus-item-key="requestedItemId"
+            :focus-level-id="focusLevelId"
+            @changed="loadItemLevels"
           >
-            <!-- Card Content -->
-            <div class="flex justify-between items-start gap-4">
-              <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2 min-w-0">
-                  <h3 class="text-lg font-medium text-gray-800">
-                    {{ card.flashcard.word ?? card.flashcard.free_content_front }}
-                  </h3>
-                  <ItemLevelBadges
-                    :levels="levelsForItem(card.flashcard.item_id)"
-                    :collection-id="props.collectionId"
-                  />
-                  <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop>
-                    <AudioPlayer
-                      :url="card.flashcard.sound_url"
-                      :collection-id="
-                        card.flashcard.sound_url?.startsWith?.('/api/')
-                          ? card.flashcard.collection_id
-                          : undefined
-                      "
-                      :item-id="
-                        card.flashcard.sound_url?.startsWith?.('/api/')
-                          ? card.flashcard.item_id
-                          : undefined
-                      "
-                      class="shrink-0"
-                    />
-                  </span>
-                </div>
+            <template #item="{ item: card }">
+              <div
+                :data-item-id="card.flashcard.item_id"
+                :class="{
+                  'cursor-pointer': isOwner,
+                  'flashcard-item--highlight': highlightItemId === card.flashcard.item_id,
+                }"
+                class="surface-flashcard-summary"
+                @click="isOwner && openFlashcard(card)"
+              >
+                <!-- Card Content -->
+                <div class="flex justify-between items-start gap-4">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2 min-w-0">
+                      <h3 class="text-lg font-medium text-gray-800">
+                        {{ card.flashcard.word ?? card.flashcard.free_content_front }}
+                      </h3>
+                      <ItemLevelBadges
+                        :levels="levelsForItem(card.flashcard.item_id)"
+                        :collection-id="props.collectionId"
+                      />
+                      <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop>
+                        <AudioPlayer
+                          :url="card.flashcard.sound_url"
+                          :collection-id="
+                            card.flashcard.sound_url?.startsWith?.('/api/')
+                              ? card.flashcard.collection_id
+                              : undefined
+                          "
+                          :item-id="
+                            card.flashcard.sound_url?.startsWith?.('/api/')
+                              ? card.flashcard.item_id
+                              : undefined
+                          "
+                          class="shrink-0"
+                        />
+                      </span>
+                    </div>
 
-                <div
-                  v-if="card.flashcard.has_front_image || card.flashcard.has_back_image"
-                  class="mt-2"
-                >
-                  <div v-if="card.flashcard.has_front_image" class="mb-2">
-                    <img
-                      :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/front`"
-                      class="max-h-40 rounded-lg object-contain bg-gray-100"
-                      alt="Front image"
-                    />
-                  </div>
-
-                  <div v-if="card.flashcard.has_back_image">
-                    <img
-                      :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/back`"
-                      class="max-h-40 rounded-lg object-contain bg-gray-100"
-                      alt="Back image"
-                    />
-                  </div>
-                </div>
-
-                <div v-if="card.flashcard.notes" class="text-sm text-gray-500 mt-1">
-                  Notes: <LazyMathJax :content="card.flashcard.notes" :enable-markdown="true" />
-                </div>
-              </div>
-              <!-- Progress section -->
-              <div class="flex flex-col items-end gap-3">
-                <div
-                  v-for="progress in getOrderedProgress(card.progress)"
-                  :key="progress.card_side"
-                  class="w-32"
-                >
-                  <div class="flex items-center justify-between mb-1">
-                    <span class="text-xs font-medium text-gray-600">{{ progress.card_side }}</span>
-                    <span class="text-xs font-medium" :class="getStatusTextClass(progress.status)">
-                      {{ progress.status }}
-                    </span>
-                  </div>
-
-                  <div class="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      class="h-2 rounded-full transition-all duration-300"
-                      :class="getProgressBarClass(progress.status)"
-                      :style="{ width: getProgressWidth(progress) }"
-                    />
-                  </div>
+                      v-if="card.flashcard.has_front_image || card.flashcard.has_back_image"
+                      class="mt-2"
+                    >
+                      <div v-if="card.flashcard.has_front_image" class="mb-2">
+                        <img
+                          :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/front`"
+                          class="max-h-40 rounded-lg object-contain bg-gray-100"
+                          alt="Front image"
+                        />
+                      </div>
 
-                  <div v-if="progress.next_review_at" class="text-xs text-gray-500 mt-1 text-right">
-                    Next: {{ formatDate(progress.next_review_at) }}
+                      <div v-if="card.flashcard.has_back_image">
+                        <img
+                          :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/back`"
+                          class="max-h-40 rounded-lg object-contain bg-gray-100"
+                          alt="Back image"
+                        />
+                      </div>
+                    </div>
+
+                    <div v-if="card.flashcard.notes" class="text-sm text-gray-500 mt-1">
+                      Notes: <LazyMathJax :content="card.flashcard.notes" :enable-markdown="true" />
+                    </div>
+                  </div>
+                  <!-- Progress section -->
+                  <div class="flex flex-col items-end gap-3">
+                    <div
+                      v-for="progress in getOrderedProgress(card.progress)"
+                      :key="progress.card_side"
+                      class="w-32"
+                    >
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-gray-600">{{
+                          progress.card_side
+                        }}</span>
+                        <span
+                          class="text-xs font-medium"
+                          :class="getStatusTextClass(progress.status)"
+                        >
+                          {{ progress.status }}
+                        </span>
+                      </div>
+
+                      <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          class="h-2 rounded-full transition-all duration-300"
+                          :class="getProgressBarClass(progress.status)"
+                          :style="{ width: getProgressWidth(progress) }"
+                        />
+                      </div>
+
+                      <div
+                        v-if="progress.next_review_at"
+                        class="text-xs text-gray-500 mt-1 text-right"
+                      >
+                        Next: {{ formatDate(progress.next_review_at) }}
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <IconButton
+                        :aria-label="t('components.flashcardCollectionView.reviewNowAction')"
+                        :button-classes="'ui-btn--empty text-orange-600 hover:bg-orange-50'"
+                        @click.stop="reviewSingleCard(card.flashcard.id)"
+                      >
+                        <template #icon> <Repeat1 class="h-4 w-4" /> </template>
+                      </IconButton>
+                      <IconButton
+                        v-if="!isCourseMode"
+                        :disabled="flashcards.indexOf(card) === 0 || isReordering"
+                        :aria-label="t('components.flashcardCollectionView.moveUpAction')"
+                        :button-classes="`ui-btn--empty ${flashcards.indexOf(card) === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
+                        @click.stop="moveCard(card, 'up')"
+                      >
+                        <template #icon> <ArrowUp class="h-4 w-4" /> </template>
+                      </IconButton>
+                      <IconButton
+                        v-if="!isCourseMode"
+                        :disabled="
+                          flashcards.indexOf(card) === flashcards.length - 1 || isReordering
+                        "
+                        :aria-label="t('components.flashcardCollectionView.moveDownAction')"
+                        :button-classes="`ui-btn--empty ${flashcards.indexOf(card) === flashcards.length - 1 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
+                        @click.stop="moveCard(card, 'down')"
+                      >
+                        <template #icon> <ArrowDown class="h-4 w-4" /> </template>
+                      </IconButton>
+                    </div>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2 flex-wrap">
-                  <IconButton
-                    :aria-label="t('components.flashcardCollectionView.reviewNowAction')"
-                    :button-classes="'ui-btn--empty text-orange-600 hover:bg-orange-50'"
-                    @click.stop="reviewSingleCard(card.flashcard.id)"
+                <div v-if="showCanonicalForCard(card)" class="mt-2 flex w-full flex-col gap-1">
+                  <div
+                    class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
                   >
-                    <template #icon> <Repeat1 class="h-4 w-4" /> </template>
-                  </IconButton>
-                  <IconButton
-                    :disabled="index === 0 || isReordering"
-                    :aria-label="t('components.flashcardCollectionView.moveUpAction')"
-                    :button-classes="`ui-btn--empty ${index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
-                    @click.stop="moveCard(card, 'up')"
+                    <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                    <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+                  </div>
+
+                  <div
+                    class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30"
                   >
-                    <template #icon> <ArrowUp class="h-4 w-4" /> </template>
-                  </IconButton>
-                  <IconButton
-                    :disabled="index === flashcards.length - 1 || isReordering"
-                    :aria-label="t('components.flashcardCollectionView.moveDownAction')"
-                    :button-classes="`ui-btn--empty ${index === flashcards.length - 1 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
-                    @click.stop="moveCard(card, 'down')"
-                  >
-                    <template #icon> <ArrowDown class="h-4 w-4" /> </template>
-                  </IconButton>
+                    {{ card.flashcard.canonical_form }}
+                  </div>
+                </div>
+
+                <div class="mt-2 w-full text-sm text-gray-600">
+                  <LazyMathJax
+                    :content="card.flashcard.definition ?? card.flashcard.free_content_back"
+                  />
                 </div>
               </div>
-            </div>
+            </template>
+          </CourseOrderedList>
+        </template>
 
-            <div v-if="showCanonicalForCard(card)" class="mt-2 flex w-full flex-col gap-1">
-              <div
-                class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
-              >
-                <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
-              </div>
-
-              <div
-                class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30"
-              >
-                {{ card.flashcard.canonical_form }}
-              </div>
-            </div>
-
-            <div class="mt-2 w-full text-sm text-gray-600">
-              <LazyMathJax
-                :content="card.flashcard.definition ?? card.flashcard.free_content_back"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div v-if="totalPages > 1">
+        <div v-if="!isCourseMode && totalPages > 1">
           <PaginationComponent
             :current-page="currentPage"
             :total-pages="totalPages"
@@ -407,7 +413,6 @@ import {
   GalleryHorizontalEnd,
   GalleryVerticalIcon,
   List,
-  LayoutPanelTop,
   PlusCircle,
 } from '@lucide/vue'
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
@@ -415,6 +420,7 @@ import { useRouter, useRoute } from 'vue-router'
 
 import {
   getFlashcards,
+  getCollectionFlashcardsPublic,
   getLanguages,
   updateCardPosition,
   importFromCollection,
@@ -424,6 +430,7 @@ import {
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import ItemLevelBadges from '@/components/ItemLevelBadges.vue'
 import LevelsPanel from '@/components/levels/LevelsPanel.vue'
+import CourseOrderedList from '@/components/levels/CourseOrderedList.vue'
 import { useItemLevels } from '@/composables/useItemLevels'
 import CollectionActionsMenu from '@/components/CollectionActionsMenu.vue'
 import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
@@ -521,20 +528,47 @@ const handlePageChange = async (page) => {
   document.querySelector('.feed-page__body')?.scrollTo({ top: 0, behavior: 'instant' })
 }
 
+/** Course order (levels as headings) unless a status/due filter reorders the list. */
+const isCourseMode = computed(() => !filters.value.status && !filters.value.onlyDue)
+const focusLevelId = computed(() => {
+  const m = /^#level-(\d+)$/.exec(route.hash || '')
+  return m ? Number(m[1]) : null
+})
+const requestedItemId = computed(() => parseInt(queryStr(route.query.item), 10) || null)
+
+/** Course mode lists every card: 100 per request in parallel (public endpoint for guests). */
+async function fetchAllFlashcards() {
+  if (!auth.state.isLoggedIn) {
+    const { data } = await getCollectionFlashcardsPublic(props.collectionId)
+    return { flashcards: data.flashcards ?? [], total: data.flashcards?.length ?? 0, due_count: 0 }
+  }
+  const per = 100
+  const first = await getFlashcards({ collection_id: props.collectionId, page: 1, per_page: per })
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(0, Math.ceil(first.data.total / per) - 1) }, (_, i) =>
+      getFlashcards({ collection_id: props.collectionId, page: i + 2, per_page: per })
+    )
+  )
+  const all = [first, ...rest].flatMap((r) => r.data.flashcards)
+  return { ...first.data, flashcards: all, total: all.length }
+}
+
 const loadFlashcards = async () => {
   isLoading.value = true
   try {
-    const response = await getFlashcards({
-      collection_id: props.collectionId,
-      status: filters.value.status || undefined,
-      due: filters.value.onlyDue || undefined,
-      page: currentPage.value,
-      per_page: perPage.value,
-    })
+    const response = isCourseMode.value
+      ? { data: await fetchAllFlashcards() }
+      : await getFlashcards({
+          collection_id: props.collectionId,
+          status: filters.value.status || undefined,
+          due: filters.value.onlyDue || undefined,
+          page: currentPage.value,
+          per_page: perPage.value,
+        })
 
     flashcards.value = response.data.flashcards
     dueCount.value = response.data.due_count
-    totalPages.value = Math.ceil(response.data.total / perPage.value)
+    totalPages.value = isCourseMode.value ? 1 : Math.ceil(response.data.total / perPage.value)
     existingFlashcardIds.value = new Set(
       response.data.flashcards.map((f) => f.flashcard.definition_id)
     )
@@ -739,12 +773,9 @@ onMounted(async () => {
     console.error('Error fetching collection:', error)
   }
 
-  if (auth.state.isLoggedIn) {
-    await Promise.all([loadFlashcards(), loadLanguages()])
-    await focusRequestedItem()
-  } else {
-    await loadLanguages()
-  }
+  await Promise.all([loadFlashcards(), loadLanguages()])
+  // Course mode focuses `?item=` itself (CourseOrderedList); flat mode pages to it.
+  if (!isCourseMode.value) await focusRequestedItem()
 })
 
 const router = useRouter()

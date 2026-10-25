@@ -21,6 +21,7 @@
         v-for="(level, i) in levels"
         :key="level.level_id"
         :level="level"
+        :anchor="false"
         :index="i"
         :count="level.card_count"
         :is-owner="isOwner"
@@ -33,8 +34,7 @@
       >
         <RouterLink
           :to="{
-            path: `/collections/${collectionId}`,
-            query: { view: 'course-order' },
+            path: `/collections/${collectionId}/flashcards`,
             hash: `#level-${level.level_id}`,
           }"
           class="ui-btn--toolbar inline-flex shrink-0 items-center gap-1 text-xs"

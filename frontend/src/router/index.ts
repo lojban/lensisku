@@ -405,10 +405,19 @@ const baseRoutes: Array<RouteRecordRaw> = [
     },
   },
   {
+    // The classic levels page is deprecated: levels are managed in the flashcard list
+    // (course order with level headings). `?level=` / `?focusLevelId=` become `#level-<id>`.
     path: '/collections/:collectionId/levels',
     name: 'FlashcardLevels',
-    component: () => import('../pages/FlashcardLevels.vue'),
-    props: true,
+    redirect: (to) => {
+      const { level, focusLevelId, ...query } = to.query
+      const id = [level, focusLevelId].flat().find((v) => v != null && /^\d+$/.test(String(v)))
+      return {
+        path: to.path.replace(/\/levels\/?$/, '/flashcards'),
+        query,
+        hash: id ? `#level-${id}` : to.hash,
+      }
+    },
   },
   {
     path: '/collections/:collectionId/custom-text-bulk',

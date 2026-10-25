@@ -13,7 +13,19 @@
   </div>
 
   <div v-if="isWinterSeason && showPyro" class="pyro" />
-  <div class="app-layout-column">
+  <!-- Layout switch (e.g. app layout ↔ Lingo shell): hide the page and show a full-viewport
+       spinner until the next route has loaded, so header/sidebars swap without layout shift. -->
+  <Teleport to="body">
+    <div
+      v-if="layoutSwitching"
+      class="route-layout-overlay"
+      role="progressbar"
+      :aria-label="$t('components.loadingSpinner.loadingDefault')"
+    >
+      <LoadingSpinner variant="inline" />
+    </div>
+  </Teleport>
+  <div class="app-layout-column" :class="{ 'app-layout-column--switching': layoutSwitching }">
     <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
 
     <header v-if="!route.meta.hideTopBar" class="app-header-bar">
@@ -379,6 +391,7 @@ import {
   restoreRouteOverlayScroll,
   scheduleRouteOverlaySettle,
   useRouteOverlay,
+  waitForApiQuiet,
 } from './composables/useRouteOverlay'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
 import {
@@ -650,7 +663,23 @@ watch(
   { immediate: true }
 )
 
+/** Route meta that changes the app chrome (header, Lingo shell, full-height host). */
+const layoutKey = (meta: Record<string, unknown>) =>
+  ['lingoShell', 'hideTopBar', 'fullHeight', 'hideFooter', 'authFullBleed']
+    .map((k) => (meta[k] ? 1 : 0))
+    .join('')
+const layoutSwitching = ref(false)
+let layoutSwitchGen = 0
+
 const removeRouteOverlayBefore = router.beforeEach((to, from) => {
+  if (
+    to.path !== from.path &&
+    from.matched.length > 0 &&
+    layoutKey(to.meta) !== layoutKey(from.meta)
+  ) {
+    layoutSwitchGen += 1
+    layoutSwitching.value = true
+  }
   // Query/hash-only updates (filters, feed tabs, expand) are in-page — no freeze.
   if (to.path === from.path) return
   if (!from.name && from.matched.length === 0) return
@@ -658,6 +687,15 @@ const removeRouteOverlayBefore = router.beforeEach((to, from) => {
   beginRouteOverlay(live)
 })
 const removeRouteOverlayAfter = router.afterEach(async (to, from) => {
+  if (layoutSwitching.value) {
+    const gen = layoutSwitchGen
+    // New page mounted under the hidden layout: wait for its data, then two frames for layout.
+    await nextTick()
+    await nextTick()
+    await waitForApiQuiet(2500)
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    if (gen === layoutSwitchGen) layoutSwitching.value = false
+  }
   if (routeOverlayHtml.value == null) return
   if (to.path === from.path) return
   // Let the new page mount and kick off its fetches before we start the quiet timer.
@@ -666,6 +704,7 @@ const removeRouteOverlayAfter = router.afterEach(async (to, from) => {
   scheduleRouteOverlaySettle()
 })
 const removeRouteOverlayError = router.onError(() => {
+  layoutSwitching.value = false
   clearRouteOverlay()
 })
 
@@ -774,6 +813,21 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="postcss">
+.route-layout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+
+/* Hidden (not just covered) so nothing underneath counts as a layout shift. */
+.app-layout-column--switching {
+  visibility: hidden;
+}
+
 /*
  * Prefer 100svh over 100vh / 100dvh for layout chrome:
  * - vh often matches the large viewport (toolbar hidden) → content jumps when chrome toggles

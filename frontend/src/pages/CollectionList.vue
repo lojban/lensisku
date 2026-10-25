@@ -332,7 +332,7 @@ const startStudy = async (collection) => {
     const response = await getLevels(collection.collection_id)
     const hasLevels = response.data?.levels?.length > 0
     if (hasLevels) {
-      router.push(`/collections/${collection.collection_id}/levels`)
+      router.push(`/collections/${collection.collection_id}/lingo/levels`)
     } else {
       router.push(`/collections/${collection.collection_id}/flashcards/study`)
     }

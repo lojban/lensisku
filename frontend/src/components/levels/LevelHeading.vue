@@ -1,6 +1,6 @@
 <template>
   <div
-    :id="level ? `level-${level.level_id}` : 'level-unassigned'"
+    :id="anchor ? (level ? `level-${level.level_id}` : 'level-unassigned') : undefined"
     class="level-heading flex flex-wrap items-center gap-2 rounded-md border px-3 py-2"
     :class="[
       highlighted ? 'level-heading--highlight' : '',
@@ -30,9 +30,17 @@
           {{ t('flashcardLevels.cancelButton') }}
         </Button>
       </form>
-      <h3 v-else class="min-w-0 truncate text-sm font-semibold text-gray-800">
-        {{ level ? level.name : t('levelHeading.unassigned') }}
-      </h3>
+      <div v-else class="flex min-w-0 flex-col">
+        <h3 class="min-w-0 truncate text-sm font-semibold text-gray-800">
+          {{ level ? level.name : t('levelHeading.unassigned') }}
+          <span v-if="continued" class="font-normal text-gray-500">{{
+            t('levelHeading.continued')
+          }}</span>
+        </h3>
+        <p v-if="prereqNames && !continued" class="min-w-0 truncate text-xs text-gray-500">
+          {{ t('levelHeading.requiresShort', { names: prereqNames }) }}
+        </p>
+      </div>
       <span
         v-if="level && level.prerequisites?.length && !isRenaming"
         class="inline-flex shrink-0 text-gray-500"
@@ -105,8 +113,20 @@ const props = withDefaults(
     highlighted?: boolean
     isLast?: boolean
     showReorder?: boolean
+    /** Repeated heading at the top of a page that continues this level. */
+    continued?: boolean
+    /** Render the `level-<id>` anchor id (only on the first heading of a level). */
+    anchor?: boolean
   }>(),
-  { index: 0, isOwner: false, highlighted: false, isLast: false, showReorder: false }
+  {
+    index: 0,
+    isOwner: false,
+    highlighted: false,
+    isLast: false,
+    showReorder: false,
+    continued: false,
+    anchor: true,
+  }
 )
 
 const emit = defineEmits<{
