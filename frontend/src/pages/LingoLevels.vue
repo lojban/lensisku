@@ -25,7 +25,7 @@
               type="button"
               class="lingo-btn lingo-btn--secondary lingo-btn--sm"
               :disabled="pendingStudyLevelId != null"
-              @click="startStudy()"
+              @click="startCourseStudy()"
             >
               <Dumbbell class="h-4 w-4 shrink-0" />
               <span>{{ t('flashcardLevels.studyButton') }}</span>
@@ -157,6 +157,16 @@ function startStudy(level = activeLevel.value ?? displayLevels.value[0]) {
   if (!level || pendingStudyLevelId.value != null) return
   pendingStudyLevelId.value = level.level_id
   void router.push(studyUrlFor(level))
+}
+
+/**
+ * Top-bar Study: same as the classic "Study now" button — a course-wide due session across
+ * unlocked levels plus cards in no level, capped at STUDY_SESSION_MAX_CARDS (LingoStudyView).
+ */
+function startCourseStudy() {
+  if (pendingStudyLevelId.value != null) return
+  pendingStudyLevelId.value = IMPLICIT_COURSE_LEVEL_ID
+  void router.push(`/collections/${props.collectionId}/lingo/study`)
 }
 
 function studyUrlFor(level) {

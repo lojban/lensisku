@@ -117,7 +117,11 @@
               tag="router-link"
               size="lg"
               :to="`/collections/${props.collectionId}/flashcards/study`"
-              :label="t('flashcardCollection.studyNow', { count: dueCount })"
+              :label="
+                t('flashcardCollection.studyNow', {
+                  count: Math.min(dueCount, STUDY_SESSION_MAX_CARDS),
+                })
+              "
               button-classes="ui-btn--warning-orange"
             >
               <template #icon> <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
@@ -430,6 +434,7 @@ import {
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import ItemLevelBadges from '@/components/ItemLevelBadges.vue'
 import LevelsPanel from '@/components/levels/LevelsPanel.vue'
+import { STUDY_SESSION_MAX_CARDS } from '@/config/studyConstants'
 import CourseOrderedList from '@/components/levels/CourseOrderedList.vue'
 import { useItemLevels } from '@/composables/useItemLevels'
 import CollectionActionsMenu from '@/components/CollectionActionsMenu.vue'

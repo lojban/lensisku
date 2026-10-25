@@ -72,6 +72,10 @@
             {{ t('flashcardStudy.lessonCompleteTitle') }} <br />
             {{ t('flashcardStudy.lessonCompleteBody') }}
           </template>
+          <template v-else-if="sessionCapReached">
+            {{ t('flashcardStudy.sessionDone') }} <br />
+            {{ t('flashcardStudy.sessionDoneHint', { count: cardsShown }) }}
+          </template>
           <template v-else>
             {{ t('flashcardStudy.allCaughtUp') }} <br />
             {{ t('flashcardStudy.allReviewed') }}
@@ -517,6 +521,7 @@ import {
 import { ensureGuestSession } from '@/composables/useGuestSession'
 import { queryStr, paramStr } from '@/utils/routeQuery'
 import { holdRouteReveal } from '@/composables/useRouteOverlay'
+import { STUDY_SESSION_MAX_CARDS, studySessionRoom } from '@/config/studyConstants'
 
 const ANON_BANNER_ANSWERED_KEY = 'lensisku_study_cards_answered'
 /** Show login-to-save after this many answers in the current study visit (guests only). */
@@ -698,6 +703,11 @@ const currentFlashcardId = computed(() => {
 })
 /** Cards in this study session (level queue / loaded batch) — not collection-wide due total. */
 const sessionTotal = ref(0)
+/** Course-wide sessions (no levelId, no single card) stop after STUDY_SESSION_MAX_CARDS. */
+const singleCardSession = ref(false)
+const isCappedSession = computed(() => levelIdParam.value == null && !singleCardSession.value)
+const cardsShown = ref(0)
+const sessionCapReached = ref(false)
 const showAnswerButtonRef = ref(null)
 const nextCardButtonRef = ref(null)
 const fillInTextareaRef = ref(null)
@@ -934,6 +944,12 @@ const getLanguageName = (langId) => {
  */
 const progressPercentage = computed(() => {
   if (sessionTotal.value <= 0) return 0
+  if (isCappedSession.value) {
+    const target = Math.min(sessionTotal.value, STUDY_SESSION_MAX_CARDS)
+    if (!currentCard.value && remainingCards.value.length === 0) return 100
+    const doneCapped = Math.max(0, cardsShown.value - (currentCard.value ? 1 : 0))
+    return Math.min(100, Math.round((doneCapped / target) * 100))
+  }
   const stillInSession = remainingCards.value.length + (currentCard.value ? 1 : 0)
   if (stillInSession <= 0) return 100
   const done = Math.max(0, sessionTotal.value - stillInSession)
@@ -1161,7 +1177,7 @@ async function fetchDueQueue() {
   }
   const response = await getDueCards({
     collection_id: collectionId.value,
-    per_page: 50,
+    per_page: STUDY_SESSION_MAX_CARDS,
   })
   return response.data.flashcards || []
 }
@@ -1177,6 +1193,7 @@ const loadDueCards = async (singleCardId = null) => {
         per_page: 1,
       })
       remainingCards.value = response.data.flashcards || []
+      singleCardSession.value = true
       sessionTotal.value = remainingCards.value.length
     } else {
       let all = await fetchDueQueue()
@@ -1184,6 +1201,7 @@ const loadDueCards = async (singleCardId = null) => {
       if (all.length === 0) {
         all = await fetchDueQueue()
       }
+      if (isCappedSession.value) all = all.slice(0, studySessionRoom(cardsShown.value))
       remainingCards.value = all
       sessionTotal.value = all.length
     }
@@ -1356,8 +1374,16 @@ const applyAnonLevelProgress = (correct: boolean) => {
 
 const loadNextCard = () => {
   showEncouragement.value = false
+  if (isCappedSession.value && cardsShown.value >= STUDY_SESSION_MAX_CARDS) {
+    // Session cap reached: show the normal finish screen even if more cards are due.
+    remainingCards.value = []
+    currentCard.value = null
+    sessionCapReached.value = true
+    return
+  }
   if (remainingCards.value.length > 0) {
     currentCard.value = remainingCards.value.shift()
+    if (isCappedSession.value) cardsShown.value += 1
     showAnswer.value = false
     userAnswer.value = ''
     fillinResult.value = null
@@ -1706,13 +1732,16 @@ async function checkForDueChanges() {
   // Level sessions load the full queue up front — empty means the lesson is done.
   if (levelIdParam.value) return
   if (remainingCards.value.length > 0 || currentCard.value) return
+  if (sessionCapReached.value) return
+  const room = studySessionRoom(cardsShown.value)
+  if (room <= 0) return
 
   try {
     const response = await getDueCards({
       collection_id: collectionId.value,
-      per_page: 50,
+      per_page: Math.min(room, STUDY_SESSION_MAX_CARDS),
     })
-    const batch = response.data.flashcards || []
+    const batch = (response.data.flashcards || []).slice(0, room)
     if (batch.length === 0) return
     const completedSoFar = sessionTotal.value
     remainingCards.value = batch

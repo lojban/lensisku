@@ -76,10 +76,16 @@
       class="text-center py-12 bg-white rounded-lg border"
     >
       <h3 class="text-lg font-medium text-gray-800 mb-2">
-        {{ t('flashcardStudy.allCaughtUp') }}
+        {{ sessionCapReached ? t('flashcardStudy.sessionDone') : t('flashcardStudy.allCaughtUp') }}
       </h3>
 
-      <p class="text-gray-600 mb-4">{{ t('flashcardStudy.allReviewed') }}</p>
+      <p class="text-gray-600 mb-4">
+        {{
+          sessionCapReached
+            ? t('flashcardStudy.sessionDoneHint', { count: cardsShown })
+            : t('flashcardStudy.allReviewed')
+        }}
+      </p>
 
       <div class="flex justify-center">
         <Button
@@ -109,8 +115,8 @@
           >
             <span>{{
               t('flashcardStudy.cardOfTotal', {
-                current: totalCards - remainingCards.length,
-                total: totalCards,
+                current: isCappedSession ? cardsShown : totalCards - remainingCards.length,
+                total: isCappedSession ? Math.min(totalCards, STUDY_SESSION_MAX_CARDS) : totalCards,
               })
             }}</span>
             <span :class="getStatusClass(progress.status)">
@@ -578,6 +584,7 @@ import {
   getCollection,
   getCollectionImage,
 } from '@/api'
+import { STUDY_SESSION_MAX_CARDS, studySessionRoom } from '@/config/studyConstants'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import LingoWordbankPanel from '@/components/LingoWordbankPanel.vue'
@@ -656,6 +663,11 @@ const remainingCards = ref([])
 const currentCard = ref(null)
 const showAnswer = ref(false)
 const totalCards = ref(0)
+/** Open "Study now" sessions (no level, no single card) stop after STUDY_SESSION_MAX_CARDS. */
+const singleCardSession = ref(false)
+const isCappedSession = computed(() => levelIdParam.value == null && !singleCardSession.value)
+const cardsShown = ref(0)
+const sessionCapReached = ref(false)
 const showAnswerButtonRef = ref(null)
 const nextCardButtonRef = ref(null)
 const fillInTextareaRef = ref(null)
@@ -802,15 +814,27 @@ const loadDueCards = async (singleCardId: number | null = null) => {
       })
       // Adapt the response structure if necessary, assuming it returns a list
       remainingCards.value = response.data.flashcards
+      singleCardSession.value = true
       totalCards.value = 1 // Only one card in this session
     } else {
       // Fetch all due cards
       response = await getDueCards({
         collection_id: collectionIdParam.value,
         level_id: levelIdParam.value || undefined,
+        ...(isCappedSession.value ? { per_page: STUDY_SESSION_MAX_CARDS } : {}),
       })
-      remainingCards.value = response.data.flashcards
-      totalCards.value = response.data.total
+      if (isCappedSession.value) {
+        // Never queue more than the session has room for; the total is capped too.
+        const room = studySessionRoom(cardsShown.value)
+        remainingCards.value = (response.data.flashcards || []).slice(0, room)
+        totalCards.value = Math.min(
+          STUDY_SESSION_MAX_CARDS,
+          cardsShown.value + Number(response.data.total || 0)
+        )
+      } else {
+        remainingCards.value = response.data.flashcards
+        totalCards.value = response.data.total
+      }
     }
     loadNextCard()
   } catch (error) {
@@ -941,8 +965,16 @@ const applyAnonLevelProgress = (correct: boolean) => {
 }
 
 const loadNextCard = () => {
+  if (isCappedSession.value && cardsShown.value >= STUDY_SESSION_MAX_CARDS) {
+    // Session cap reached: end normally (summary screen), even if more cards are due.
+    remainingCards.value = []
+    currentCard.value = null
+    sessionCapReached.value = true
+    return
+  }
   if (remainingCards.value.length > 0) {
     currentCard.value = remainingCards.value.shift()
+    if (isCappedSession.value) cardsShown.value += 1
     showAnswer.value = false
     userAnswer.value = ''
     fillinResult.value = null
@@ -1197,6 +1229,7 @@ const showNewCardsMessage = ref(false)
 
 async function checkForDueChanges() {
   // Check if we need to refresh due cards if the current queue is empty
+  if (sessionCapReached.value) return
   if (remainingCards.value.length === 0) {
     await loadDueCards() // This might repopulate remainingCards
     if (remainingCards.value.length > 0) {

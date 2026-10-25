@@ -1045,6 +1045,8 @@
     "remainingCards": "Remaining: {count} cards",
     "endSession": "End session",
     "snooze": "Snooze card (6h)",
+    "sessionDone": "Session complete!",
+    "sessionDoneHint": "You studied {count} cards. Start another session to continue.",
     "allCaughtUp": "All caught up!",
     "allReviewed": "You've reviewed all due cards.",
     "lessonCompleteTitle": "Great job!",
