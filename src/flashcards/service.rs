@@ -823,7 +823,12 @@ fn attach_wordbank_chips(cards: &mut [FlashcardResponse]) {
         let Some(lang) = wordbank_lang_for(&dir, side) else {
             continue;
         };
-        let Some(expected) = expected_fillin_like_raw(&cards[i].flashcard, side) else {
+        // Auto cards: grade against the presented type, not `auto`.
+        let as_presented = Flashcard {
+            direction: dir.clone(),
+            ..cards[i].flashcard.clone()
+        };
+        let Some(expected) = expected_fillin_like_raw(&as_presented, side) else {
             continue;
         };
         let id = cards[i].flashcard.id;
