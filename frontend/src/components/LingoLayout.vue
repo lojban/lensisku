@@ -101,21 +101,6 @@ defineProps({
   overflow: visible;
 }
 
-/*
- * Mobile: tuck the scrollport 1px under the top bar's bottom border so the
- * sticky feed pin starts behind that border (no sub-pixel gap can show between
- * them). The pin's 1px top padding keeps its content exactly where it was.
- * Desktop has no mobile top bar, so this stays below lg only.
- */
-@media (max-width: 1023.98px) {
-  .lingo-shell-scroll {
-    margin-top: -1px;
-  }
-  .lingo-shell-scroll .lingo-feed-layout__pin {
-    padding-top: 1px;
-  }
-}
-
 .lingo-feed-layout__pin {
   position: sticky;
   top: 0;
