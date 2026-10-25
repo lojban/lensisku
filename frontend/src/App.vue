@@ -140,15 +140,15 @@
           </nav>
           <!-- Auth Buttons - Optimized for mobile -->
           <div class="flex items-center space-x-1 sm:space-x-2">
-            <NavLink
-              :to="{ path: '/activity', query: { feed: 'news' } }"
-              class="navbar-item sm:hidden"
-              :aria-label="$t('recentChanges.news')"
-            >
-              <Bell class="h-5 w-5" />
-            </NavLink>
             <template v-if="!auth.state.isLoading">
               <template v-if="auth.state.isLoggedIn">
+                <NavLink
+                  :to="{ path: '/activity', query: { feed: 'news' } }"
+                  class="navbar-item sm:hidden"
+                  :aria-label="$t('recentChanges.news')"
+                >
+                  <Bell class="h-5 w-5" />
+                </NavLink>
                 <NavLink
                   to="/library"
                   class="navbar-item sm:hidden"
@@ -166,6 +166,11 @@
                 </Button>
               </template>
               <template v-else>
+                <!-- Mobile guests: labelled Learn entry instead of the news bell. -->
+                <NavLink to="/lingo/courses" class="navbar-item sm:hidden">
+                  <GraduationCap class="h-5 w-5" />
+                  <span>{{ $t('nav.learn') }}</span>
+                </NavLink>
                 <NavLink to="/signup" class="btn-signup" :aria-label="$t('nav.signUp')">
                   <UserPlus class="h-5 w-5" />
                   <span class="hidden sm:inline">{{ $t('nav.signUp') }}</span>
