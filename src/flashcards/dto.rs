@@ -401,3 +401,25 @@ pub struct ApplyChallengeMixResponse {
     pub updated_count: i32,
     pub quiz_seeded_count: i32,
 }
+
+/// Per-course (collection) study settings.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CourseSettingsResponse {
+    /// When true, adding cards to a level re-applies the challenge mix to that level.
+    pub auto_challenge_mix: bool,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateCourseSettingsRequest {
+    pub auto_challenge_mix: Option<bool>,
+}
+
+/// Level membership of one collection item (via its flashcard).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ItemLevelEntry {
+    pub item_id: i32,
+    pub flashcard_id: i32,
+    pub level_id: i32,
+    pub level_name: String,
+    pub level_position: i32,
+}

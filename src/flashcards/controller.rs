@@ -799,8 +799,22 @@ pub async fn add_cards(
     level_id: web::Path<i32>,
     req: web::Json<AddCardsRequest>,
 ) -> impl Responder {
-    match service::add_cards_to_level(&pool, level_id.into_inner(), claims.sub, &req).await {
-        Ok(cards) => HttpResponse::Ok().json(cards),
+    let level_id = level_id.into_inner();
+    match service::add_cards_to_level(&pool, level_id, claims.sub, &req).await {
+        Ok(cards) => {
+            // Course setting: re-apply the challenge mix to this level after adding.
+            if matches!(
+                service::level_auto_challenge_mix(&pool, level_id).await,
+                Ok(true)
+            ) {
+                if let Err(e) =
+                    service::apply_challenge_mix_to_level(&pool, claims.sub, level_id).await
+                {
+                    log::error!("auto challenge mix failed for level {}: {}", level_id, e);
+                }
+            }
+            HttpResponse::Ok().json(cards)
+        }
         Err(e) => match e.to_string().as_str() {
             "Level not found" => HttpResponse::NotFound().finish(),
             "access denied" => HttpResponse::Forbidden().finish(),
@@ -1032,5 +1046,98 @@ pub async fn apply_challenge_mix_collection(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => crate::utils::handle_error(Box::new(e), "Failed to apply challenge mix"),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/flashcards/collections/{collection_id}/settings",
+    tag = "flashcards",
+    params(("collection_id" = i32, Path, description = "Collection ID")),
+    responses(
+        (status = 200, description = "Course settings", body = dto::CourseSettingsResponse),
+        (status = 403, description = "Access denied")
+    ),
+    summary = "Get course settings"
+)]
+#[get("/collections/{collection_id}/settings")]
+pub async fn get_course_settings(
+    pool: web::Data<Pool>,
+    claims: Option<Claims>,
+    collection_id: web::Path<i32>,
+) -> impl Responder {
+    match service::get_course_settings(&pool, collection_id.into_inner(), claims.map(|c| c.sub))
+        .await
+    {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(FlashcardError::AccessDenied(msg)) => {
+            HttpResponse::Forbidden().json(json!({ "error": msg }))
+        }
+        Err(FlashcardError::NotFound(msg)) => {
+            HttpResponse::NotFound().json(json!({ "error": msg }))
+        }
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
+    }
+}
+
+#[utoipa::path(
+    put,
+    path = "/flashcards/collections/{collection_id}/settings",
+    tag = "flashcards",
+    params(("collection_id" = i32, Path, description = "Collection ID")),
+    request_body = dto::UpdateCourseSettingsRequest,
+    responses(
+        (status = 200, description = "Updated course settings", body = dto::CourseSettingsResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Update course settings"
+)]
+#[put("/collections/{collection_id}/settings")]
+pub async fn update_course_settings(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    collection_id: web::Path<i32>,
+    req: web::Json<dto::UpdateCourseSettingsRequest>,
+) -> impl Responder {
+    match service::update_course_settings(&pool, claims.sub, collection_id.into_inner(), &req).await
+    {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to update course settings"),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/flashcards/collections/{collection_id}/item-levels",
+    tag = "flashcards",
+    params(("collection_id" = i32, Path, description = "Collection ID")),
+    responses(
+        (status = 200, description = "Level membership per item", body = Vec<dto::ItemLevelEntry>),
+        (status = 403, description = "Access denied")
+    ),
+    summary = "List level membership of collection items"
+)]
+#[get("/collections/{collection_id}/item-levels")]
+pub async fn list_item_levels(
+    pool: web::Data<Pool>,
+    claims: Option<Claims>,
+    collection_id: web::Path<i32>,
+) -> impl Responder {
+    match service::get_collection_item_levels(
+        &pool,
+        collection_id.into_inner(),
+        claims.map(|c| c.sub),
+    )
+    .await
+    {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(FlashcardError::AccessDenied(msg)) => {
+            HttpResponse::Forbidden().json(json!({ "error": msg }))
+        }
+        Err(FlashcardError::NotFound(msg)) => {
+            HttpResponse::NotFound().json(json!({ "error": msg }))
+        }
+        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
     }
 }

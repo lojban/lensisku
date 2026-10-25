@@ -25,6 +25,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             // bearer middleware or anonymous course study cannot load levels/cards.
             .service(controller::list_levels)
             .service(controller::list_level_cards)
+            .service(controller::get_course_settings)
+            .service(controller::list_item_levels)
             .service(
                 web::scope("")
                     .wrap(HttpAuthentication::bearer(crate::auth::validator))
@@ -51,7 +53,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::submit_quiz_answer)
                     .service(controller::generate_quiz_options)
                     .service(controller::apply_challenge_mix_level)
-                    .service(controller::apply_challenge_mix_collection),
+                    .service(controller::apply_challenge_mix_collection)
+                    .service(controller::update_course_settings),
             ),
     );
 }

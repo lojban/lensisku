@@ -2314,7 +2314,8 @@ CREATE TABLE public.collections (
     is_public boolean DEFAULT true,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    cover_collection_image_id integer
+    cover_collection_image_id integer,
+    auto_challenge_mix boolean DEFAULT false NOT NULL
 );
 
 

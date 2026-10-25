@@ -977,7 +977,8 @@ async fn query_collections(
                 ) AS has_collection_image,
                 (SELECT COUNT(*) FROM comments cm
                     JOIN threads t ON cm.threadid = t.threadid
-                    WHERE t.collection_id = c.collection_id) AS comment_count,
+                    WHERE t.collection_id = c.collection_id
+                      AND COALESCE(t.definition_link_id, 0) = 0) AS comment_count,
                 {MONTHLY_DRILL_USERS_SQL},
                 {search_rank_select}
                 c.updated_at AS _rank_tiebreak
@@ -1165,7 +1166,8 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
                 ) AS has_collection_image,
                 (SELECT COUNT(*) FROM comments cm
                     JOIN threads t ON cm.threadid = t.threadid
-                    WHERE t.collection_id = c.collection_id) AS comment_count,
+                    WHERE t.collection_id = c.collection_id
+                      AND COALESCE(t.definition_link_id, 0) = 0) AS comment_count,
                 {MONTHLY_DRILL_USERS_SQL}
          FROM collections c
          JOIN users u ON c.user_id = u.userid
@@ -1208,7 +1210,8 @@ pub async fn get_collection(
         ) as has_collection_image,
         (SELECT COUNT(*) FROM comments cm
             JOIN threads t ON cm.threadid = t.threadid
-            WHERE t.collection_id = c.collection_id) as comment_count
+            WHERE t.collection_id = c.collection_id
+                      AND COALESCE(t.definition_link_id, 0) = 0) as comment_count
         FROM collections c
         JOIN users u ON c.user_id = u.userid
              WHERE c.collection_id = $1",

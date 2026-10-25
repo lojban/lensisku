@@ -4629,3 +4629,108 @@ mod security_grading_tests {
         );
     }
 }
+
+fn map_read_access(e: AppError) -> FlashcardError {
+    match e {
+        AppError::Auth(_) => FlashcardError::AccessDenied(e.to_string()),
+        AppError::NotFound(_) => FlashcardError::NotFound(e.to_string()),
+        other => FlashcardError::Other(other.to_string()),
+    }
+}
+
+/// Course settings (readable by anyone who can read the collection).
+pub async fn get_course_settings(
+    pool: &Pool,
+    collection_id: i32,
+    user_id: Option<i32>,
+) -> Result<dto::CourseSettingsResponse, FlashcardError> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+    verify_collection_read_access(&transaction, collection_id, user_id)
+        .await
+        .map_err(map_read_access)?;
+    let row = transaction
+        .query_one(
+            "SELECT auto_challenge_mix FROM collections WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await?;
+    transaction.commit().await?;
+    Ok(dto::CourseSettingsResponse {
+        auto_challenge_mix: row.get(0),
+    })
+}
+
+/// Update course settings (owner only). Missing fields stay unchanged.
+pub async fn update_course_settings(
+    pool: &Pool,
+    user_id: i32,
+    collection_id: i32,
+    req: &dto::UpdateCourseSettingsRequest,
+) -> Result<dto::CourseSettingsResponse, FlashcardError> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+    let row = transaction
+        .query_one(
+            "UPDATE collections
+             SET auto_challenge_mix = COALESCE($1, auto_challenge_mix)
+             WHERE collection_id = $2
+             RETURNING auto_challenge_mix",
+            &[&req.auto_challenge_mix, &collection_id],
+        )
+        .await?;
+    transaction.commit().await?;
+    Ok(dto::CourseSettingsResponse {
+        auto_challenge_mix: row.get(0),
+    })
+}
+
+/// True when the level's course has `auto_challenge_mix` enabled.
+pub async fn level_auto_challenge_mix(pool: &Pool, level_id: i32) -> Result<bool, FlashcardError> {
+    let client = pool.get().await?;
+    let row = client
+        .query_opt(
+            "SELECT c.auto_challenge_mix
+             FROM flashcard_levels l JOIN collections c ON c.collection_id = l.collection_id
+             WHERE l.level_id = $1",
+            &[&level_id],
+        )
+        .await?;
+    Ok(row.map(|r| r.get::<_, bool>(0)).unwrap_or(false))
+}
+
+/// Level membership for every item of a collection, in one query (no N+1).
+pub async fn get_collection_item_levels(
+    pool: &Pool,
+    collection_id: i32,
+    user_id: Option<i32>,
+) -> Result<Vec<dto::ItemLevelEntry>, FlashcardError> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+    verify_collection_read_access(&transaction, collection_id, user_id)
+        .await
+        .map_err(map_read_access)?;
+    let rows = transaction
+        .query(
+            "SELECT f.item_id, f.id AS flashcard_id, l.level_id, l.name, l.position
+             FROM flashcard_level_items fli
+             JOIN flashcard_levels l ON l.level_id = fli.level_id
+             JOIN flashcards f ON f.id = fli.flashcard_id
+             WHERE l.collection_id = $1
+             ORDER BY l.position, l.level_id, fli.position",
+            &[&collection_id],
+        )
+        .await?;
+    transaction.commit().await?;
+    Ok(rows
+        .iter()
+        .map(|r| dto::ItemLevelEntry {
+            item_id: r.get("item_id"),
+            flashcard_id: r.get("flashcard_id"),
+            level_id: r.get("level_id"),
+            level_name: r.get("name"),
+            level_position: r.get("position"),
+        })
+        .collect())
+}
