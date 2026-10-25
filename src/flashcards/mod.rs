@@ -6,6 +6,7 @@ pub(crate) mod error;
 #[cfg(test)]
 mod merge_progress_tests;
 pub mod models;
+pub(crate) mod rating_policy;
 mod service;
 
 pub(crate) use error::FlashcardError;

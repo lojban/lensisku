@@ -47,6 +47,10 @@ pub struct ReviewRequest {
     pub flashcard_id: i32,
     pub rating: u32,
     pub card_side: String,
+    /// Client used a hint (gloss popover, audio replay, answer reveal) on this card.
+    /// Only ever lowers the stored rating (see `rating_policy`). Optional; default false.
+    #[serde(default)]
+    pub hint_used: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -105,6 +109,10 @@ pub struct DirectAnswerRequest {
     pub flashcard_id: i32,
     pub card_side: String,
     pub answer: String,
+    /// Client used a hint (gloss popover, audio replay, answer reveal) on this card.
+    /// Only ever lowers the stored rating (see `rating_policy`). Optional; default false.
+    #[serde(default)]
+    pub hint_used: bool,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -115,6 +123,10 @@ pub struct FillInAnswerRequest {
     /// When set, commit FSRS with this rating (1–4). When omitted, grade only (Duo Check).
     #[serde(default)]
     pub rating: Option<u32>,
+    /// Client used a hint (gloss popover, audio replay, answer reveal) on this card.
+    /// Only ever lowers the stored rating (see `rating_policy`). Optional; default false.
+    #[serde(default)]
+    pub hint_used: bool,
 }
 
 #[derive(Debug, Deserialize, ToSchema, Validate)]
@@ -126,6 +138,10 @@ pub struct SubmitQuizAnswerDto {
     /// When set, commit FSRS with this rating (1–4). When omitted, grade only (Duo Check).
     #[serde(default)]
     pub rating: Option<u32>,
+    /// Client used a hint (gloss popover, audio replay, answer reveal) on this card.
+    /// Only ever lowers the stored rating (see `rating_policy`). Optional; default false.
+    #[serde(default)]
+    pub hint_used: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema, Clone)]

@@ -128,6 +128,17 @@ generically, so none of these needed UI changes.
   level indices were.
 - SEO HTML templates are read with `tokio::fs`, so the request thread never blocks on disk.
 
+### Review rating policy (Oct 2026)
+
+- Every stored review rating passes through `flashcards::rating_policy::effective_rating`
+  (called from `review_flashcard` and `record_review`, so `/review`, `/fillin`, `/check`,
+  `/quiz/submit` and related-card auto-progress all share it).
+- The rule only subtracts points. Quiz (incl. image), word-bank and listen-word-bank cards
+  lose 1 point because the answer is on screen. Unknown directions are treated the same way.
+  An optional `hint_used: true` in the request loses 1 more. At most 2 points are subtracted,
+  and the result is never below 1. Self-assessed, fill-in and info cards keep the full 1–4 range.
+- `hint_used` defaults to false, so older clients keep working. The flag can never raise a rating.
+
 ## 7. Open items
 
 1. `import_full` now warns on failed level inserts, but a failed statement still aborts the

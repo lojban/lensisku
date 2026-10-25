@@ -177,6 +177,7 @@
                       :token-glosses="stimulusTokenGlosses"
                       :auto-open-first="stimulusAutoHint"
                       @auto-opened="markStimulusHintSeen"
+                      @hint-opened="hintUsed = true"
                     />
                     <template v-else>{{ stimulusText }}</template>
                   </p>
@@ -208,6 +209,7 @@
                     :token-glosses="stimulusTokenGlosses"
                     :auto-open-first="stimulusAutoHint"
                     @auto-opened="markStimulusHintSeen"
+                    @hint-opened="hintUsed = true"
                   />
                   <LazyMathJax v-else :content="stimulusText" />
                 </div>
@@ -599,6 +601,7 @@ function openEncouragement() {
   quizResult.value = null
   selectedQuizOption.value = null
   showAnswer.value = false
+  hintUsed.value = false
   userAnswer.value = ''
   wordbankSelectedIds.value = []
   showEncouragement.value = true
@@ -673,6 +676,8 @@ const remainingCards = ref([])
 const currentCard = ref(null)
 const showWavesModal = ref(false)
 const showAnswer = ref(false)
+/** Learner opened a gloss on this card: sent as `hint_used` (server lowers the rating). */
+const hintUsed = ref(false)
 
 const currentFlashcardTag = computed(() => {
   const id = currentCard.value?.flashcard?.id
@@ -741,6 +746,7 @@ function skipListeningExercises() {
   fillinResult.value = null
   quizResult.value = null
   showAnswer.value = false
+  hintUsed.value = false
   userAnswer.value = ''
   wordbankSelectedIds.value = []
 }
@@ -1067,6 +1073,7 @@ async function commitGradedAndAdvance(rating: number) {
         card_side: currentCard.value.progress[0].card_side,
         answer: pending.answer,
         rating,
+        hint_used: hintUsed.value,
       })
       await checkForDueChanges()
     } else if (pending?.kind === 'quiz') {
@@ -1076,6 +1083,7 @@ async function commitGradedAndAdvance(rating: number) {
         selected_answer_text: pending.selectedOption,
         presented_options: pending.options,
         rating,
+        hint_used: hintUsed.value,
       })
       await checkForDueChanges()
     }
@@ -1562,6 +1570,7 @@ const submitAnswer = async (rating?: number) => {
         flashcard_id: currentCard.value.flashcard.id,
         rating,
         card_side: currentCard.value.progress[0].card_side,
+        hint_used: hintUsed.value,
       })
       if (rating >= 3 && shouldOfferEncouragement()) openEncouragement()
       else loadNextCard()

@@ -1843,6 +1843,36 @@ fn spawn_optimal_retention_refresh(pool: Pool, user_id: i32) {
     });
 }
 
+/// Apply `rating_policy` (card type + `hint_used`) to a submitted review.
+/// Every path that stores a rating goes through here (via `review_flashcard`
+/// or `record_review`), so the client can never store more than the policy allows.
+async fn apply_rating_policy(
+    transaction: &Transaction<'_>,
+    req: &ReviewRequest,
+) -> Result<ReviewRequest, FlashcardError> {
+    let direction: Option<String> = transaction
+        .query_opt(
+            "SELECT direction::text AS direction FROM flashcards WHERE id = $1",
+            &[&req.flashcard_id],
+        )
+        .await?
+        .map(|row| row.get("direction"));
+    let rating =
+        super::rating_policy::effective_rating(direction.as_deref(), req.rating, req.hint_used);
+    if rating != req.rating {
+        debug!(
+            "rating policy: card {} ({:?}) {} -> {} (hint_used={})",
+            req.flashcard_id, direction, req.rating, rating, req.hint_used
+        );
+    }
+    Ok(ReviewRequest {
+        flashcard_id: req.flashcard_id,
+        rating,
+        card_side: req.card_side.clone(),
+        hint_used: req.hint_used,
+    })
+}
+
 pub async fn review_flashcard(
     pool: &Pool,
     user_id: i32,
@@ -1856,6 +1886,9 @@ pub async fn review_flashcard(
     let transaction = client.transaction().await?;
 
     verify_study_access(&transaction, req.flashcard_id, user_id).await?;
+
+    let adjusted = apply_rating_policy(&transaction, req).await?;
+    let req = &adjusted;
 
     // If the review is "good" or better (rating >= 3), check for related cards
     if req.rating >= 3 {
@@ -2565,6 +2598,7 @@ pub async fn check_answer(
             flashcard_id: req.flashcard_id,
             rating: 4,
             card_side: req.card_side.clone(),
+            hint_used: req.hint_used,
         };
 
         let review_result = review_flashcard(pool, user_id, &review_req).await?;
@@ -2783,6 +2817,7 @@ pub async fn review_flashcard_serverside(
         flashcard_id: req.flashcard_id,
         rating: commit_rating,
         card_side: req.card_side.clone(),
+        hint_used: req.hint_used,
     };
     let review_result = review_flashcard(pool, user_id, &review_req).await?;
 
@@ -2853,6 +2888,7 @@ async fn auto_progress_related_cards(
             flashcard_id: card_id,
             rating: 4,
             card_side: card_side.to_string(),
+            hint_used: false,
         };
         record_review(transaction, user_id, &review_req).await?;
     }
@@ -2865,6 +2901,8 @@ async fn record_review(
     user_id: i32,
     req: &ReviewRequest,
 ) -> Result<(), FlashcardError> {
+    let adjusted = apply_rating_policy(transaction, req).await?;
+    let req = &adjusted;
     // Get current state
     let current_state = transaction
         .query_opt(
@@ -3114,6 +3152,7 @@ pub async fn submit_quiz_answer(
         flashcard_id,
         rating: commit_rating,
         card_side: answer_data.card_side.clone(),
+        hint_used: answer_data.hint_used,
     };
     transaction.commit().await?;
 

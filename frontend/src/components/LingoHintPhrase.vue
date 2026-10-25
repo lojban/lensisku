@@ -44,7 +44,8 @@ const props = defineProps({
   glossDir: { type: String, default: '' },
 })
 
-const emit = defineEmits(['auto-opened'])
+/** `hint-opened`: the learner opened a gloss themselves (auto-open does not count). */
+const emit = defineEmits(['auto-opened', 'hint-opened'])
 
 const openIndex = ref<number | null>(null)
 const popoverEl = ref<HTMLElement[] | HTMLElement | null>(null)
@@ -107,6 +108,7 @@ function glossFor(tokenText: string): string {
 
 function toggle(i: number) {
   openIndex.value = openIndex.value === i ? null : i
+  if (openIndex.value !== null) emit('hint-opened')
 }
 
 function close() {
