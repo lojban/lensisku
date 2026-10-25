@@ -13,6 +13,7 @@
         {{ tok.text }}
         <span
           v-if="openIndex === i && glossFor(tok.text)"
+          ref="popoverEl"
           class="lingo-hint-popover"
           role="tooltip"
           :lang="glossLang || undefined"
@@ -27,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
   text: { type: String, default: '' },
@@ -46,6 +47,26 @@ const props = defineProps({
 const emit = defineEmits(['auto-opened'])
 
 const openIndex = ref<number | null>(null)
+const popoverEl = ref<HTMLElement[] | HTMLElement | null>(null)
+
+/** Keep the open popover inside the viewport (8px margin); arrow stays on the word. */
+const EDGE = 8
+async function clampPopover() {
+  await nextTick()
+  const el = Array.isArray(popoverEl.value) ? popoverEl.value[0] : popoverEl.value
+  if (!el || typeof window === 'undefined') return
+  el.style.setProperty('--lingo-hint-shift', '0px')
+  const r = el.getBoundingClientRect()
+  const vw = document.documentElement.clientWidth
+  let shift = 0
+  if (r.left < EDGE) shift = EDGE - r.left
+  else if (r.right > vw - EDGE) shift = vw - EDGE - r.right
+  el.style.setProperty('--lingo-hint-shift', `${Math.round(shift)}px`)
+}
+
+watch(openIndex, (i) => {
+  if (i !== null) void clampPopover()
+})
 
 function normalizeTokenKey(s: string): string {
   return s

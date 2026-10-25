@@ -42,6 +42,8 @@ defineProps({
   width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
+  /* Reserve the scrollbar lane so content arriving later does not shift the layout. */
+  scrollbar-gutter: stable;
   overscroll-behavior-y: contain;
   background: #fff;
 }

@@ -1,10 +1,8 @@
 <template>
   <LingoLayout fill>
-    <!-- Wait for the first catalog payload before painting the feed (avoids header/grid CLS). -->
-    <div
-      v-if="isLoading && !hasLoadedOnce"
-      class="flex min-h-0 flex-1 items-center justify-center py-12"
-    >
+    <!-- Paint nothing until the first catalog payload and the auth state are both known:
+         the aside (streak) depends on auth, so painting earlier shifts the grid (CLS). -->
+    <div v-if="!isReady" class="flex min-h-0 flex-1 items-center justify-center py-12">
       <div
         class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
         role="status"
@@ -15,7 +13,7 @@
     <LingoFeedLayout
       v-else
       class="min-h-0 flex-1"
-      :show-aside="displayedSegment === 'courses'"
+      :show-aside="displayedSegment === 'courses' && auth.state.isLoggedIn"
       :show-header-aside="false"
       :aria-busy="isLoading || undefined"
     >
@@ -85,7 +83,8 @@
       </template>
 
       <!-- Keep the previous grid until the next payload lands (brandbook §8.2). -->
-      <div class="grid grid-cols-2 gap-4 lg:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]">
+      <!-- Adaptive: as many 240px+ columns as the main column fits (wider without the aside). -->
+      <div class="lingo-course-grid">
         <LingoCourseCard
           v-for="collection in collections"
           :key="collection.collection_id"
@@ -125,10 +124,12 @@ import PaginationComponent from '@/components/PaginationComponent.vue'
 import { getPublicCollections } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useLingoProgress } from '@/composables/useLingoProgress'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const { t } = useI18n()
 const { activeCourseId, setActiveCourse } = useLingoProgress()
+const auth = useAuth()
 
 const SEGMENT_STORAGE_KEY = 'lingo-catalog-segment'
 
@@ -140,6 +141,7 @@ const segment = ref(
 const collections = ref([])
 const isLoading = ref(true)
 const hasLoadedOnce = ref(false)
+const isReady = computed(() => hasLoadedOnce.value && !auth.state.isLoading)
 /** Aside/chrome that must swap with the grid, not ahead of it (§8.2). */
 const displayedSegment = ref(segment.value)
 const isSelecting = ref(false)
@@ -259,6 +261,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
+.lingo-course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 1rem;
+}
+
 /* Same rules as tailwind.lingo.mjs. The running dev server may not rebuild that file. */
 .lingo-catalog-tabs {
   display: inline-flex;

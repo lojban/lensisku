@@ -545,10 +545,10 @@ export function buildLingoThemeLayer() {
      * two-line clamp, so a long "Correct solution" never grows the footer (no CLS).
      */
     '.lingo-study-footer-result': {
-      '@apply flex h-9 min-w-0 flex-1 items-center justify-start gap-2 overflow-hidden': {},
+      '@apply flex h-9 min-w-0 flex-[1_1_0%] items-center justify-center gap-2 overflow-hidden': {},
     },
     '.lingo-study-footer-result__text': {
-      '@apply m-0 line-clamp-2 min-w-0 text-left text-xs font-bold leading-tight sm:text-sm': {},
+      '@apply m-0 line-clamp-2 min-w-0 text-center text-xs font-bold leading-tight sm:text-sm': {},
     },
     '.lingo-study-footer-solution__label': {
       '@apply ms-1.5 font-bold text-rose-500': {},
@@ -580,13 +580,22 @@ export function buildLingoThemeLayer() {
       '@apply relative inline cursor-pointer rounded-sm border-0 border-b border-dashed border-slate-400 bg-transparent px-0 py-0 text-inherit [font:inherit] leading-[inherit] hover:border-sky-500 hover:text-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500':
         {},
     },
+    /** Sized by its text, not the word: max-content up to 20rem / viewport.
+     *  `--lingo-hint-shift` (set in LingoHintPhrase) nudges it inside the viewport;
+     *  the arrow counter-shifts so it stays over the word. Overlay only: no CLS. */
     '.lingo-hint-popover': {
-      '@apply absolute bottom-full left-1/2 z-40 mb-1.5 max-w-[min(18rem,70vw)] -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-800 shadow-md shadow-slate-200/80':
+      '@apply absolute bottom-full left-1/2 z-40 mb-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-start text-sm font-semibold leading-snug text-slate-800 shadow-md shadow-slate-200/80':
         {},
+      width: 'max-content',
+      maxWidth: 'min(20rem, calc(100vw - 1rem))',
+      whiteSpace: 'normal',
+      overflowWrap: 'break-word',
+      transform: 'translateX(calc(-50% + var(--lingo-hint-shift, 0px)))',
     },
     '.lingo-hint-popover__arrow': {
-      '@apply absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-white drop-shadow-[0_1px_0_rgba(148,163,184,0.5)]':
+      '@apply absolute left-1/2 top-full h-0 w-0 border-x-[6px] border-t-[6px] border-x-transparent border-t-white drop-shadow-[0_1px_0_rgba(148,163,184,0.5)]':
         {},
+      transform: 'translateX(calc(-50% - var(--lingo-hint-shift, 0px)))',
     },
 
     /** Clone lesson title (`quiz.tsx` h1). */
