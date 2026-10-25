@@ -571,8 +571,11 @@
         </div>
       </div>
     </div>
+    <div v-if="$slots.footer" class="definition-card-footer-slot">
+      <slot name="footer" />
+    </div>
     <button
-      v-if="expandOnClick && collectionFooterLabel"
+      v-if="expandOnClick && collectionFooterLabel && !hideSourceCollection"
       type="button"
       class="definition-card-collection-footer text-left"
       @click.stop="onCardActivate($event, true)"
@@ -581,7 +584,7 @@
       <span class="definition-card-collection-footer-name">{{ collectionFooterLabel }}</span>
     </button>
     <RouterLink
-      v-else-if="sourceCollectionLink"
+      v-else-if="sourceCollectionLink && !hideSourceCollection"
       :to="sourceCollectionLink"
       class="definition-card-collection-footer"
       @click.stop
@@ -879,6 +882,8 @@ const props = defineProps({
   },
   collectionId: { type: Number, default: undefined },
   itemId: { type: Number, default: undefined },
+  /** Single-collection context: the "from collection" footer link is redundant. */
+  hideSourceCollection: { type: Boolean, default: false },
   showScore: {
     type: Boolean,
     default: false,
@@ -1341,5 +1346,17 @@ const cancelDelete = () => {
 .definition-card-content :deep(ul),
 .definition-card-content :deep(ol) {
   padding-left: 1.5rem;
+}
+</style>
+
+<style scoped>
+.definition-card-footer-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid #e5e7eb;
 }
 </style>

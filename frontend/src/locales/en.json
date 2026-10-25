@@ -809,7 +809,14 @@
     "addDefinitionItemFailed": "The definition was created but could not be added to this collection.",
     "mergeSuccess": "Collections merged successfully.",
     "payloadTooLarge": "This item is too large to send (for example images or very long text exceed the server limit). Remove or shrink images, shorten content, or split the item.",
-    "itemSaveFailed": "Could not save this collection item."
+    "itemSaveFailed": "Could not save this collection item.",
+    "courseSettingsLegend": "Course settings",
+    "autoChallengeMixLabel": "Automatic exercise mix",
+    "autoChallengeMixHint": "Cards added to a level get a mix of exercise types (directions, typing, quiz) automatically.",
+    "applyMixNow": "Apply now",
+    "applyingMix": "Applying…",
+    "applyMixDone": "Exercise mix applied to all levels.",
+    "applyMixError": "Could not apply the exercise mix."
   },
   "dictionaryExport": {
     "title": "Dictionary export",
@@ -1832,7 +1839,15 @@
     "deleteCardMessage": "Are you sure you want to delete this card? This action cannot be undone.",
     "deleteButton": "Delete",
     "deleteLevelConfirmTitle": "Delete level",
-    "deleteLevelConfirmMessage": "Are you sure you want to delete the level '{levelName}'? This action cannot be undone."
+    "deleteLevelConfirmMessage": "Are you sure you want to delete the level '{levelName}'? This action cannot be undone.",
+    "cardsInLevel": "Cards",
+    "levelMixHint": "Re-apply the exercise mix to the cards of this level only.",
+    "inThisLevel": "In this level ({count})",
+    "noCardsInLevel": "No cards in this level yet.",
+    "removeFromLevel": "Remove",
+    "availableCards": "Add from collection ({count})",
+    "levelChip": "L{n} · {name}",
+    "levelChipTitle": "In level “{name}”"
   },
   "anonymousProgress": {
     "bannerMessage": "Sign up to save your progress across devices",
@@ -1951,7 +1966,6 @@
     "allCourses": "All courses",
     "classicCollections": "Classic theme",
     "newTheme": "New theme",
-
     "heroTitle": "Learn, practice and master with Lingo.",
     "continueLearning": "Continue Learning",
     "getStarted": "Get Started",

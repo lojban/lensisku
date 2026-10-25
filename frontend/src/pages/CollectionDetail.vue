@@ -184,7 +184,7 @@
 
         <div
           v-show="activeTab === 'items'"
-          class="relative flex min-h-[12rem] flex-col gap-4"
+          class="collection-tabpanel relative flex flex-col gap-4"
           role="tabpanel"
           :aria-busy="isLoading || isLoadingItems || undefined"
         >
@@ -228,12 +228,20 @@
                 :disable-toolbar="true"
                 :notes="item.ci_notes"
                 :show-notes-edit="isOwner"
+                hide-source-collection
                 @collection-updated="setUserCollections($event)"
                 @move-up="moveItem(item, 'up')"
                 @move-down="moveItem(item, 'down')"
                 @remove="confirmRemoveItem(item)"
                 @edit-item="openEditItemModal(item)"
-              />
+              >
+                <template v-if="levelsForItem(item.item_id).length" #footer>
+                  <ItemLevelBadges
+                    :levels="levelsForItem(item.item_id)"
+                    :collection-id="collection.collection_id"
+                  />
+                </template>
+              </DefinitionCard>
             </div>
           </div>
           <!-- Empty State -->
@@ -263,7 +271,7 @@
 
         <div
           v-show="activeTab === 'discussion'"
-          class="relative min-h-[8rem] pt-2"
+          class="collection-tabpanel relative pt-2"
           role="tabpanel"
           :aria-busy="isLoadingWaves || undefined"
         >
@@ -1130,6 +1138,8 @@ import AlertComponent from '@/components/AlertComponent.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import CommentList from '@/pages/CommentList.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
+import ItemLevelBadges from '@/components/ItemLevelBadges.vue'
+import { useItemLevels } from '@/composables/useItemLevels'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
@@ -1238,6 +1248,9 @@ const currentItem = ref(null)
 const editingItem = ref(null)
 
 const numericCollectionId = computed(() => Number(props.collectionId))
+// Level badges per item: one batched request per collection (no N+1).
+const { load: loadItemLevels, levelsForItem } = useItemLevels(() => props.collectionId)
+watch(numericCollectionId, () => loadItemLevels())
 
 const showValidation = ref(false)
 const addItemModalError = ref('')
@@ -1909,8 +1922,21 @@ const itemFilters = ref<ItemFiltersValue>({
  * SearchForm emits `{query, mode}` after debouncing. We treat this as the canonical input for the
  * collection's search state: update the local query/mode, jump back to page 1, and refresh.
  */
+// Key of the last items request (mode + query). Tab switches make SearchForm re-emit the same
+// search; refetching then re-renders every card and shifts the layout (CLS) for no new data.
+let lastItemsKey = ''
+
 const handleItemSearch = ({ query, mode }: { query: string; mode: string }) => {
-  itemSearchQuery.value = normalizeSearchQuery(query || '')
+  const nextQuery = normalizeSearchQuery(query || '')
+  // Echo from the discussion tab's mode switch: not a new item search.
+  if (
+    mode !== 'comments' &&
+    activeTab.value === 'discussion' &&
+    nextQuery === itemSearchQuery.value
+  ) {
+    return
+  }
+  itemSearchQuery.value = nextQuery
   if (mode === 'comments') {
     searchMode.value = 'comments'
     if (activeTab.value !== 'discussion') {
@@ -1924,7 +1950,9 @@ const handleItemSearch = ({ query, mode }: { query: string; mode: string }) => {
   if (currentPage.value !== 1) {
     // Bounce to page 1 via the router so the URL stays consistent with the watcher.
     router.push({ query: { ...route.query, page: 1 } })
+    return
   }
+  if (`${searchMode.value}|${itemSearchQuery.value.trim()}` === lastItemsKey) return
   fetchItems()
 }
 
@@ -2071,6 +2099,7 @@ const fetchCollection = async () => {
 
 // Fetch paginated items
 const fetchItems = async () => {
+  lastItemsKey = `${searchMode.value}|${itemSearchQuery.value.trim()}`
   isLoadingItems.value = true
   if (itemSearchQuery.value.trim()) {
     isSearching.value = true
@@ -2221,17 +2250,21 @@ const syncFromRoute = () => {
   currentPage.value = parseInt(queryStr(route.query.page), 10) || 1
 }
 
+let modeBeforeDiscussion: 'dictionary' | 'semantic' = 'dictionary'
+
 watch(
   activeTab,
   (tab) => {
     if (tab === 'discussion') {
+      if (searchMode.value !== 'comments') modeBeforeDiscussion = searchMode.value
       searchMode.value = 'comments'
       waveCurrentPage.value = 1
       if (itemSearchQuery.value.trim()) {
         fetchWaves(1)
       }
     } else if (searchMode.value === 'comments') {
-      searchMode.value = itemFilters.value.isSemantic ? 'semantic' : 'dictionary'
+      // Restore the mode the items tab was using (not the semantic default) so nothing refetches.
+      searchMode.value = modeBeforeDiscussion
     }
   },
   { immediate: true }
@@ -2249,16 +2282,19 @@ watch(
 )
 
 watch(
-  () => [
-    route.query.langs,
-    route.query.selmaho,
-    route.query.username,
-    route.query.exclude_usernames,
-    route.query.word_type,
-    route.query.source_langid,
-    route.query.searchInPhrases,
-    route.query.popular_collections,
-  ],
+  // Serialised so unrelated query changes (e.g. ?tab=) do not refetch items: a fresh array
+  // literal is a new reference on every route change.
+  () =>
+    JSON.stringify([
+      route.query.langs,
+      route.query.selmaho,
+      route.query.username,
+      route.query.exclude_usernames,
+      route.query.word_type,
+      route.query.source_langid,
+      route.query.searchInPhrases,
+      route.query.popular_collections,
+    ]),
   () => {
     const fromQuery = combinedFiltersFromQuery(route.query)
     if (route.query.langs !== undefined) {
@@ -2553,6 +2589,7 @@ const confirmDeleteItem = () => {
 }
 
 onMounted(() => {
+  loadItemLevels()
   fetchCollection()
   if (auth.state.isLoggedIn) {
     fetchUserCollections()
@@ -2596,6 +2633,12 @@ watch(
 </script>
 
 <style scoped>
+/* Both tab panels reserve a full viewport of height so switching tabs (or content still
+   loading) never collapses the scroll area and drops the scrollbar (CLS). */
+.collection-tabpanel {
+  min-height: 100dvh;
+}
+
 .prose :deep(p) {
   margin: 0;
 }

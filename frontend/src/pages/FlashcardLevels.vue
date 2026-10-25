@@ -23,15 +23,6 @@
           <Button variant="warning-orange" size="lg" @click="startStudy">
             {{ t('flashcardLevels.studyButton') }}
           </Button>
-          <Button
-            v-if="isOwner && levels.length > 0"
-            variant="neutral"
-            size="lg"
-            :disabled="isApplyingChallengeMix"
-            @click="applyChallengeMixAll"
-          >
-            {{ t('flashcardLevels.applyChallengeMix') }}
-          </Button>
           <IconButton
             v-if="isOwner"
             :label="t('flashcardLevels.createLevel')"
@@ -73,152 +64,115 @@
           class="vue-flow-wrapper flex-1 min-h-0"
         >
           <template #node-custom="nodeProps">
-            <div
+            <article
               class="level-card node-content"
               :class="getLevelCardClass(nodeProps.data)"
               :style="getLevelCardStyle(nodeProps.data)"
             >
-              <!-- Top accent + glow -->
-              <div class="level-card-glow" />
-              <!-- Level number pill (game-style) -->
-              <div class="level-card-number">
-                <span>{{ nodeProps.data.levelIndex ?? '?' }}</span>
-              </div>
-              <!-- Status badge (top-right) -->
-              <div class="level-card-badge">
-                <Lock
-                  v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
-                  class="level-card-badge-icon"
-                />
-                <Dumbbell
-                  v-else-if="isLevelUnlocked(nodeProps.data) && isLevelFinished90(nodeProps.data)"
-                  class="level-card-badge-icon"
-                />
-                <Sprout v-else class="level-card-badge-icon" />
-              </div>
-              <!-- Title & description -->
-              <div class="level-card-header">
-                <h3 class="level-card-title">{{ nodeProps.data.name }}</h3>
+              <div class="level-card-glow" aria-hidden="true" />
+              <header class="level-card-head">
+                <span class="level-card-number">{{ nodeProps.data.levelIndex ?? '?' }}</span>
+                <div class="level-card-heading">
+                  <h3 class="level-card-title">{{ nodeProps.data.name }}</h3>
+                  <p v-if="nodeProps.data.description" class="level-card-desc">
+                    {{ nodeProps.data.description }}
+                  </p>
+                </div>
+                <span class="level-card-badge">
+                  <Lock
+                    v-if="
+                      !isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed
+                    "
+                    class="level-card-badge-icon"
+                  />
+                  <Dumbbell
+                    v-else-if="isLevelUnlocked(nodeProps.data) && isLevelFinished90(nodeProps.data)"
+                    class="level-card-badge-icon"
+                  />
+                  <Sprout v-else class="level-card-badge-icon" />
+                </span>
+              </header>
 
-                <p v-if="nodeProps.data.description" class="level-card-desc">
-                  {{ nodeProps.data.description }}
-                </p>
-              </div>
-              <!-- Locked: hint + owner actions -->
               <div
                 v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
-                class="level-card-body"
+                class="level-card-meta"
               >
                 <p v-if="nodeProps.data.prerequisites?.length" class="level-card-hint">
-                  <Lock class="h-4 w-4 shrink-0 opacity-80" /> {{ t('flashcardLevels.unlockHint') }}
+                  <Lock class="h-4 w-4 shrink-0 opacity-80" />
+                  <span>{{ t('flashcardLevels.unlockHint') }}</span>
                 </p>
-
-                <div v-if="isOwner" class="level-card-actions">
-                  <Button
-                    variant="neutral"
-                    type="button"
-                    class="level-card-btn level-card-btn-ghost"
-                    @click="editLevel(nodeProps.data)"
-                  >
-                    <Settings class="h-4 w-4" /> {{ t('flashcardLevels.actions.edit') }}
-                  </Button>
-                  <Button
-                    variant="neutral"
-                    type="button"
-                    class="level-card-btn level-card-btn-ghost"
-                    @click="showAddCardsModal(nodeProps.data)"
-                  >
-                    <PlusCircle class="h-4 w-4" /> {{ t('flashcardLevels.actions.addCards') }}
-                  </Button>
-                  <Button
-                    variant="neutral"
-                    type="button"
-                    class="level-card-btn level-card-btn-ghost"
-                    :disabled="isApplyingChallengeMix"
-                    @click="applyChallengeMixLevel(nodeProps.data)"
-                  >
-                    {{ t('flashcardLevels.actions.applyChallengeMix') }}
-                  </Button>
-                </div>
+                <p class="level-card-stats">
+                  <span>{{ t('flashcardLevels.cardsInLevel') }}</span>
+                  <span class="font-semibold">{{ nodeProps.data.card_count || 0 }}</span>
+                </p>
               </div>
-              <!-- Unlocked / Completed: progress + actions -->
-              <div v-else class="level-card-body">
-                <div class="level-card-progress">
-                  <div class="level-card-progress-head">
-                    <Target class="h-3.5 w-3.5 opacity-80" />
-                    <span>{{ t('flashcardLevels.progress') }}</span>
-                    <span class="level-card-progress-count">
-                      {{ nodeProps.data.progress?.cards_completed || 0 }}/{{
-                        nodeProps.data.card_count
-                      }}
-                    </span>
-                  </div>
-
-                  <div class="level-card-progress-track">
-                    <div
-                      class="level-card-progress-fill"
-                      :style="{ width: getProgressWidth(nodeProps.data) }"
-                    />
-                  </div>
-
-                  <div class="level-card-stats">
-                    <span>{{ t('flashcardLevels.successRate') }}</span>
-                    <span class="font-semibold">{{
-                      formatSuccessRate(nodeProps.data.progress?.success_rate)
-                    }}</span>
-                  </div>
+              <div v-else class="level-card-meta">
+                <div class="level-card-progress-head">
+                  <Target class="h-3.5 w-3.5 shrink-0 opacity-80" />
+                  <span>{{ t('flashcardLevels.progress') }}</span>
+                  <span class="level-card-progress-count">
+                    {{ nodeProps.data.progress?.cards_completed || 0 }}/{{
+                      nodeProps.data.card_count
+                    }}
+                  </span>
                 </div>
-
-                <div class="level-card-actions level-card-actions-main">
-                  <Button
-                    variant="neutral"
-                    type="button"
-                    class="level-card-btn level-card-btn-primary"
-                    @click="showLevelCards(nodeProps.data)"
-                  >
-                    <BookOpen class="h-4 w-4" /> {{ t('flashcardLevels.actions.viewCards') }}
-                  </Button>
-                  <RouterLink
-                    v-if="nodeProps.data.card_count > 0"
-                    :to="`/collections/${props.collectionId}/flashcards/study?levelId=${nodeProps.data.level_id}`"
-                    class="level-card-btn level-card-btn-secondary"
-                  >
-                    <Play class="h-4 w-4" /> {{ t('flashcardLevels.actions.practice') }}
-                  </RouterLink>
-                  <template v-if="isOwner">
-                    <Button
-                      variant="neutral"
-                      type="button"
-                      class="level-card-btn level-card-btn-ghost"
-                      @click="editLevel(nodeProps.data)"
-                    >
-                      <Settings class="h-4 w-4" /> {{ t('flashcardLevels.actions.edit') }}
-                    </Button>
-                    <Button
-                      variant="neutral"
-                      type="button"
-                      class="level-card-btn level-card-btn-ghost"
-                      @click="showAddCardsModal(nodeProps.data)"
-                    >
-                      <PlusCircle class="h-4 w-4" /> {{ t('flashcardLevels.actions.addCards') }}
-                    </Button>
-                    <Button
-                      variant="neutral"
-                      type="button"
-                      class="level-card-btn level-card-btn-ghost"
-                      :disabled="isApplyingChallengeMix"
-                      @click="applyChallengeMixLevel(nodeProps.data)"
-                    >
-                      {{ t('flashcardLevels.actions.applyChallengeMix') }}
-                    </Button>
-                  </template>
+                <div class="level-card-progress-track">
+                  <div
+                    class="level-card-progress-fill"
+                    :style="{ width: getProgressWidth(nodeProps.data) }"
+                  />
                 </div>
-
+                <p class="level-card-stats">
+                  <span>{{ t('flashcardLevels.successRate') }}</span>
+                  <span class="font-semibold">{{
+                    formatSuccessRate(nodeProps.data.progress?.success_rate)
+                  }}</span>
+                </p>
                 <p v-if="nodeProps.data.progress?.is_completed" class="level-card-completed">
                   <Sparkles class="h-3.5 w-3.5" /> {{ t('flashcardLevels.status.completed') }}
                 </p>
               </div>
-            </div>
+
+              <div
+                v-if="isLevelUnlocked(nodeProps.data) || nodeProps.data.progress?.is_completed"
+                class="level-card-actions"
+              >
+                <Button
+                  variant="neutral"
+                  type="button"
+                  class="level-card-btn level-card-btn-primary"
+                  @click="showLevelCards(nodeProps.data)"
+                >
+                  <BookOpen class="h-4 w-4 shrink-0" /> {{ t('flashcardLevels.actions.viewCards') }}
+                </Button>
+                <RouterLink
+                  v-if="nodeProps.data.card_count > 0"
+                  :to="`/collections/${props.collectionId}/flashcards/study?levelId=${nodeProps.data.level_id}`"
+                  class="level-card-btn level-card-btn-secondary"
+                >
+                  <Play class="h-4 w-4 shrink-0" /> {{ t('flashcardLevels.actions.practice') }}
+                </RouterLink>
+              </div>
+              <div v-if="isOwner" class="level-card-actions level-card-actions--owner">
+                <Button
+                  variant="neutral"
+                  type="button"
+                  class="level-card-btn level-card-btn-ghost"
+                  @click="editLevel(nodeProps.data)"
+                >
+                  <Settings class="h-4 w-4 shrink-0" /> {{ t('flashcardLevels.actions.edit') }}
+                </Button>
+                <Button
+                  variant="neutral"
+                  type="button"
+                  class="level-card-btn level-card-btn-ghost"
+                  @click="showAddCardsModal(nodeProps.data)"
+                >
+                  <PlusCircle class="h-4 w-4 shrink-0" />
+                  {{ t('flashcardLevels.actions.addCards') }}
+                </Button>
+              </div>
+            </article>
           </template>
           <Background :pattern-color="'#aaa'" :gap="8" /> <Controls />
         </VueFlow>
@@ -275,31 +229,50 @@
             />
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <div class="level-form-rows">
+            <div class="level-form-row">
+              <label for="level-min-cards" class="level-form-label">{{
                 t('flashcardLevels.minCardsLabel')
               }}</label>
               <Input
+                id="level-min-cards"
                 v-model.number="levelForm.min_cards"
                 type="number"
                 min="1"
-                class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                class="input-field level-form-input"
               />
             </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            <div class="level-form-row">
+              <label for="level-min-rate" class="level-form-label">{{
                 t('flashcardLevels.minSuccessRateLabel')
               }}</label>
               <Input
+                id="level-min-rate"
                 v-model.number="levelForm.min_success_rate"
                 type="number"
                 min="0"
                 max="100"
-                class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                class="input-field level-form-input"
               />
             </div>
+          </div>
+
+          <div
+            v-if="showEditModal && currentLevel"
+            class="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 p-3"
+          >
+            <p class="min-w-0 flex-1 text-xs text-gray-600">
+              {{ t('flashcardLevels.levelMixHint') }}
+            </p>
+            <Button
+              variant="toolbar"
+              type="button"
+              class="shrink-0"
+              :disabled="isApplyingChallengeMix"
+              @click="applyChallengeMixLevel(currentLevel)"
+            >
+              {{ t('flashcardLevels.actions.applyChallengeMix') }}
+            </Button>
           </div>
 
           <div class="flex justify-end gap-3 pt-4">
@@ -343,71 +316,99 @@
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         </div>
 
-        <div v-else>
-          <div class="space-y-4">
-            <div
-              v-for="card in availableCards"
-              :key="card.flashcard_id"
-              class="border rounded-lg p-4 hover:border-blue-300"
-            >
-              <div class="flex flex-col justify-between items-start w-full">
-                <div
-                  v-if="card.progress"
-                  class="flex flex-row w-full justify-between gap-2 mb-4 text-sm text-gray-500"
-                >
-                  <div class="flex flex-row text-sm text-gray-500">
-                    <span
-                      >{{ t('flashcardLevels.mySuccessRate') }}
-                      {{ formatSuccessRate(card.progress.success_rate) }}</span
-                    >
-                    <span class="mx-2">|</span>
-                    <span
-                      >{{ t('flashcardLevels.myAttempts') }}
-                      {{ card.progress.total_attempts }}</span
-                    >
-                  </div>
-                  <Button
-                    variant="cancel"
-                    :class="[
-                      selectedCards.includes(card.flashcard_id)
-                        ? 'ui-btn--cancel'
-                        : 'ui-btn--insert',
-                    ]"
-                    @click="toggleCardSelection(card)"
+        <div v-else class="flex flex-col gap-6">
+          <section>
+            <h4 class="add-cards-heading">
+              {{ t('flashcardLevels.inThisLevel', { count: currentLevelMembers.length }) }}
+            </h4>
+            <p v-if="currentLevelMembers.length === 0" class="text-sm text-gray-500">
+              {{ t('flashcardLevels.noCardsInLevel') }}
+            </p>
+            <ul v-else class="add-cards-list">
+              <li
+                v-for="card in currentLevelMembers"
+                :key="`m-${card.flashcard_id}`"
+                class="add-cards-row"
+              >
+                <div class="add-cards-main">
+                  <a
+                    :href="itemHref(card.item_id)"
+                    target="_blank"
+                    rel="noopener"
+                    class="add-cards-word"
+                    >{{ cardLabel(card) }}</a
                   >
-                    {{
-                      selectedCards.includes(card.flashcard_id)
-                        ? t('flashcardLevels.selected')
-                        : t('flashcardLevels.select')
-                    }}
-                  </Button>
+                  <span class="add-cards-def">{{ cardGloss(card) }}</span>
                 </div>
-                <DefinitionCard
-                  :definition="{
-                    definitionid: card.definition_id,
-                    item_id: card.item_id, // Still missing, omit or handle in DefinitionCard
-                    valsiid: card.valsi_id, // Still missing, omit or handle in DefinitionCard
-                    valsiword: card.word ?? card.free_content_front,
-                    definition: card.definition ?? card.free_content_back ?? '', // Default to empty string
-                    langid: card.lang_id,
-                    notes: card.notes ?? '', // Default to empty string (Definition's notes if available)
-                    free_content_front: card.free_content_front,
-                    free_content_back: card.free_content_back,
-                    has_front_image: card.has_front_image,
-                    has_back_image: card.has_back_image,
-                  }"
-                  :disable-discussion-button="true"
-                  :disable-toolbar="true"
-                  :show-vote-buttons="false"
-                  :notes="card.notes ?? ''"
-                  :disable-border="true"
-                  :languages="languages"
-                  :collection-id="card.collection_id"
-                  :item-id="card.item_id"
-                />
-              </div>
-            </div>
-          </div>
+                <Button
+                  variant="delete"
+                  size="sm"
+                  type="button"
+                  class="shrink-0"
+                  :disabled="removingFlashcardId === card.flashcard_id"
+                  @click="removeFromCurrentLevel(card)"
+                >
+                  {{ t('flashcardLevels.removeFromLevel') }}
+                </Button>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 class="add-cards-heading">
+              {{ t('flashcardLevels.availableCards', { count: candidateCards.length }) }}
+            </h4>
+            <ul class="add-cards-list">
+              <li
+                v-for="card in candidateCards"
+                :key="card.flashcard_id"
+                class="add-cards-row"
+                :class="{ 'add-cards-row--selected': selectedCards.includes(card.flashcard_id) }"
+              >
+                <div class="add-cards-main">
+                  <a
+                    :href="itemHref(card.item_id)"
+                    target="_blank"
+                    rel="noopener"
+                    class="add-cards-word"
+                    >{{ cardLabel(card) }}</a
+                  >
+                  <span class="add-cards-def">{{ cardGloss(card) }}</span>
+                  <span class="add-cards-meta">
+                    <span
+                      v-for="lv in levelsOfFlashcard(card.flashcard_id)"
+                      :key="lv.level_id"
+                      class="level-chip"
+                      >{{
+                        t('flashcardLevels.levelChip', {
+                          n: lv.level_position + 1,
+                          name: lv.level_name,
+                        })
+                      }}</span
+                    >
+                    <span v-if="card.progress" class="text-gray-500">
+                      {{ formatSuccessRate(card.progress.success_rate) }} ·
+                      {{ card.progress.total_attempts }}×
+                    </span>
+                  </span>
+                </div>
+                <Button
+                  :variant="selectedCards.includes(card.flashcard_id) ? 'cancel' : 'toolbar'"
+                  size="sm"
+                  type="button"
+                  class="shrink-0"
+                  :aria-pressed="selectedCards.includes(card.flashcard_id)"
+                  @click="toggleCardSelection(card)"
+                >
+                  {{
+                    selectedCards.includes(card.flashcard_id)
+                      ? t('flashcardLevels.selected')
+                      : t('flashcardLevels.select')
+                  }}
+                </Button>
+              </li>
+            </ul>
+          </section>
         </div>
       </div>
       <template #footer>
@@ -485,6 +486,7 @@
                   :collection-id="parseInt(String(props.collectionId), 10)"
                   :item-id="card.item_id"
                   :show-external-delete-button="true"
+                  hide-source-collection
                   :is-owner="isOwner"
                   @delete-item="confirmDeleteCard(card)"
                 />
@@ -595,7 +597,8 @@ import {
   removeCardFromLevel,
   deleteLevel,
   applyChallengeMixToLevel,
-  applyChallengeMixToCollection,
+  getCollectionItemLevels,
+  type ItemLevelEntry,
 } from '@/api'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import { Button, IconButton, Input, MultiSelectDropdown, Textarea } from '@packages/ui'
@@ -804,18 +807,83 @@ const editLevel = (level) => {
 
 const isApplyingChallengeMix = ref(false)
 
-async function applyChallengeMixAll() {
-  if (!confirm(t('flashcardLevels.applyChallengeMixConfirmCollection'))) {
-    return
-  }
-  isApplyingChallengeMix.value = true
+interface LevelCandidateCard {
+  flashcard_id: number
+  item_id: number
+  word?: string | null
+  definition?: string | null
+  free_content_front?: string | null
+  free_content_back?: string | null
+}
+
+/** Level memberships for every item of this collection (one batched request). */
+const itemLevels = ref<ItemLevelEntry[]>([])
+const removingFlashcardId = ref<number | null>(null)
+
+async function fetchItemLevels() {
   try {
-    await applyChallengeMixToCollection(props.collectionId)
-    await fetchLevels()
+    const { data } = await getCollectionItemLevels(props.collectionId)
+    itemLevels.value = data
   } catch (error) {
-    console.error('Error applying challenge mix:', error)
+    console.error('Error loading item levels:', error)
+  }
+}
+
+function levelsOfFlashcard(flashcardId: number) {
+  const currentId = currentLevel.value?.level_id
+  return itemLevels.value.filter((e) => e.flashcard_id === flashcardId && e.level_id !== currentId)
+}
+
+const currentLevelFlashcardIds = computed(() => {
+  const id = currentLevel.value?.level_id
+  return new Set(itemLevels.value.filter((e) => e.level_id === id).map((e) => e.flashcard_id))
+})
+
+const currentLevelMembers = computed(() =>
+  availableCards.value.filter((c: LevelCandidateCard) =>
+    currentLevelFlashcardIds.value.has(c.flashcard_id)
+  )
+)
+
+const candidateCards = computed(() =>
+  availableCards.value.filter(
+    (c: LevelCandidateCard) => !currentLevelFlashcardIds.value.has(c.flashcard_id)
+  )
+)
+
+function stripMarkup(text: string | null | undefined) {
+  return (text ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function cardLabel(card: LevelCandidateCard) {
+  return stripMarkup(card.word ?? card.free_content_front) || `#${card.item_id}`
+}
+
+function cardGloss(card: LevelCandidateCard) {
+  return stripMarkup(card.definition ?? card.free_content_back)
+}
+
+function itemHref(itemId: number) {
+  const resolved = router.resolve({
+    path: `/collections/${props.collectionId}/flashcards`,
+    query: { item: String(itemId) },
+  })
+  return resolved.href
+}
+
+async function removeFromCurrentLevel(card: LevelCandidateCard) {
+  if (!currentLevel.value) return
+  removingFlashcardId.value = card.flashcard_id
+  try {
+    await removeCardFromLevel(currentLevel.value.level_id, card.flashcard_id)
+    await Promise.all([fetchItemLevels(), fetchLevels()])
+  } catch (error) {
+    console.error('Error removing card from level:', error)
   } finally {
-    isApplyingChallengeMix.value = false
+    removingFlashcardId.value = null
   }
 }
 
@@ -853,9 +921,10 @@ const showAddCardsModal = async (level) => {
   selectedCards.value = []
 
   try {
-    const response = await getFlashcards({
-      collection_id: props.collectionId,
-    })
+    const [response] = await Promise.all([
+      getFlashcards({ collection_id: props.collectionId }),
+      fetchItemLevels(),
+    ])
     availableCards.value = response.data.flashcards.map((f) => ({
       flashcard_id: f.flashcard.id,
       word: f.flashcard.word,
@@ -935,6 +1004,7 @@ const deleteCard = async () => {
   try {
     await removeCardFromLevel(currentLevel.value.level_id, cardToDelete.value.flashcard_id)
     await loadLevelCards(currentLevelCardsPage.value)
+    fetchItemLevels()
     showDeleteConfirmation.value = false
     cardToDelete.value = null
   } catch (error) {
@@ -950,7 +1020,7 @@ const addSelectedCards = async () => {
     await addCardsToLevel(currentLevel.value.level_id, {
       flashcard_ids: selectedCards.value,
     })
-    await fetchLevels()
+    await Promise.all([fetchLevels(), fetchItemLevels()])
     closeCardsModal()
   } catch (error) {
     console.error('Error adding cards:', error)
@@ -1149,8 +1219,13 @@ onMounted(async () => {
   --level-accent: hsl(220, 55%, 50%);
   --level-glow: hsla(220, 60%, 50%, 0.2);
 
-  min-width: 280px;
-  max-width: 320px;
+  width: 300px;
+  max-width: calc(100vw - 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  box-sizing: border-box;
   position: relative;
   overflow: hidden;
   border-radius: 1rem;
@@ -1194,12 +1269,10 @@ onMounted(async () => {
 }
 
 .level-card-number {
-  position: absolute;
-  top: 0.75rem;
-  left: 1rem;
+  flex: none;
   width: 2rem;
   height: 2rem;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
@@ -1212,12 +1285,10 @@ onMounted(async () => {
 }
 
 .level-card-badge {
-  position: absolute;
-  top: 0.75rem;
-  right: 1rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 0.75rem;
@@ -1227,13 +1298,20 @@ onMounted(async () => {
 }
 
 .level-card-badge-icon {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
-.level-card-header {
-  padding: 3rem 1rem 0.5rem 1rem;
-  padding-right: 3.5rem;
+.level-card-head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.level-card-heading {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .level-card-title {
@@ -1242,6 +1320,7 @@ onMounted(async () => {
   letter-spacing: -0.02em;
   line-height: 1.3;
   color: #1e293b;
+  overflow-wrap: anywhere;
 }
 
 .level-card--locked .level-card-title {
@@ -1264,8 +1343,11 @@ onMounted(async () => {
   color: #94a3b8;
 }
 
-.level-card-body {
-  padding: 0.5rem 1rem 1rem;
+.level-card-meta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .level-card-hint {
@@ -1274,11 +1356,6 @@ onMounted(async () => {
   gap: 0.5rem;
   font-size: 0.8125rem;
   color: #64748b;
-  margin-bottom: 0.75rem;
-}
-
-.level-card-progress {
-  margin-bottom: 0.75rem;
 }
 
 .level-card-progress-head {
@@ -1288,7 +1365,6 @@ onMounted(async () => {
   font-size: 0.75rem;
   font-weight: 600;
   color: #475569;
-  margin-bottom: 0.35rem;
 }
 
 .level-card-progress-count {
@@ -1316,18 +1392,20 @@ onMounted(async () => {
   justify-content: space-between;
   font-size: 0.6875rem;
   color: #64748b;
-  margin-top: 0.25rem;
 }
 
 .level-card-actions {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
 
-.level-card-actions-main {
-  margin-top: 0.5rem;
+.level-card-actions--owner {
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  gap: 0.25rem;
 }
 
 .level-card-btn {
@@ -1384,9 +1462,127 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  margin-top: 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--level-accent);
+}
+
+/* ---- Edit level: label grows, fixed-width numeric input; stacked on mobile ---- */
+.level-form-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.level-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.level-form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.level-form-input {
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .level-form-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .level-form-label {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .level-form-input {
+    flex: none;
+    width: 7rem;
+  }
+}
+
+/* ---- Add cards to level ---- */
+.add-cards-heading {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.add-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.add-cards-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.add-cards-row--selected {
+  border-color: #60a5fa;
+  background: #eff6ff;
+}
+
+.add-cards-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.add-cards-word {
+  font-weight: 600;
+  color: #1d4ed8;
+  overflow-wrap: anywhere;
+}
+
+.add-cards-word:hover {
+  text-decoration: underline;
+}
+
+.add-cards-def {
+  font-size: 0.8125rem;
+  color: #4b5563;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.add-cards-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.level-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0 0.5rem;
+  border-radius: 9999px;
+  background: #ede9fe;
+  color: #5b21b6;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

@@ -201,6 +201,44 @@
             {{ t('collectionDetail.makePublicLabel') }}
           </label>
         </div>
+
+        <fieldset class="course-settings rounded-md border border-gray-200 p-3">
+          <legend class="px-1 text-sm font-medium text-gray-700">
+            {{ t('collectionDetail.courseSettingsLegend') }}
+          </legend>
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex min-w-0 flex-1 items-start">
+              <Checkbox
+                :id="`edit_auto_mix_${collectionId}`"
+                v-model="courseSettings.auto_challenge_mix"
+                class="checkbox-toggle mt-0.5"
+                :disabled="isCourseSettingsLoading"
+              />
+              <label
+                :for="`edit_auto_mix_${collectionId}`"
+                class="ml-2 min-w-0 text-sm text-gray-700"
+              >
+                <span class="block">{{ t('collectionDetail.autoChallengeMixLabel') }}</span>
+                <span class="block text-xs text-gray-500">
+                  {{ t('collectionDetail.autoChallengeMixHint') }}
+                </span>
+              </label>
+            </div>
+            <Button
+              variant="toolbar"
+              type="button"
+              class="shrink-0"
+              :disabled="isApplyingMix"
+              @click="applyMixNow"
+            >
+              {{
+                isApplyingMix
+                  ? t('collectionDetail.applyingMix')
+                  : t('collectionDetail.applyMixNow')
+              }}
+            </Button>
+          </div>
+        </fieldset>
       </div>
 
       <div class="mt-6 flex justify-end gap-3">
@@ -314,6 +352,9 @@ import {
   mergeCollection,
   removeCollectionImage,
   updateCollection,
+  getCourseSettings,
+  updateCourseSettings,
+  applyChallengeMixToCollection,
   updateCollectionImage,
 } from '@/api'
 import CollectionMediaBulkZipModal from '@/components/CollectionMediaBulkZipModal.vue'
@@ -379,6 +420,36 @@ const editForm = ref({
 })
 
 const showEditModal = ref(false)
+const courseSettings = ref({ auto_challenge_mix: false })
+const initialAutoMix = ref(false)
+const isCourseSettingsLoading = ref(false)
+const isApplyingMix = ref(false)
+
+async function loadCourseSettings() {
+  isCourseSettingsLoading.value = true
+  try {
+    const { data } = await getCourseSettings(props.collectionId)
+    courseSettings.value = { auto_challenge_mix: !!data.auto_challenge_mix }
+    initialAutoMix.value = !!data.auto_challenge_mix
+  } catch (err) {
+    console.error('Error loading course settings:', err)
+  } finally {
+    isCourseSettingsLoading.value = false
+  }
+}
+
+async function applyMixNow() {
+  if (isApplyingMix.value) return
+  isApplyingMix.value = true
+  try {
+    await applyChallengeMixToCollection(props.collectionId)
+    showSuccess(t('collectionDetail.applyMixDone'))
+  } catch (err) {
+    showError(getApiErrorMessage(err) || t('collectionDetail.applyMixError'))
+  } finally {
+    isApplyingMix.value = false
+  }
+}
 const showMediaBulkZipModal = ref(false)
 const showMergeModal = ref(false)
 const showDeleteCollectionConfirm = ref(false)
@@ -436,6 +507,7 @@ function cancelEditCollectionModal() {
 function openEditCollectionModal() {
   if (props.collection) syncEditForm(props.collection)
   showEditModal.value = true
+  loadCourseSettings()
   collectionImageUploadError.value = ''
   refreshEditCollectionCoverUrl()
 }
@@ -574,6 +646,12 @@ async function performUpdateCollection() {
 
   try {
     const response = await updateCollection(props.collectionId, editForm.value)
+    if (courseSettings.value.auto_challenge_mix !== initialAutoMix.value) {
+      await updateCourseSettings(props.collectionId, {
+        auto_challenge_mix: courseSettings.value.auto_challenge_mix,
+      })
+      initialAutoMix.value = courseSettings.value.auto_challenge_mix
+    }
     emit('updated', response.data)
     showEditModal.value = false
   } catch (error) {

@@ -1332,6 +1332,8 @@ export default {
           /* Keep block flow (not flex-col): flex shrink lets tall children overflow over later siblings. */
           '@apply min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain pb-0':
             {},
+          /* Reserve the scrollbar lane: tab/content swaps that drop the scrollbar must not shift (CLS). */
+          scrollbarGutter: 'stable',
         },
         /** Content measure. Matches #main-child max-w-4xl on non-feed pages. */
         '.feed-page__column': {

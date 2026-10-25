@@ -237,7 +237,11 @@
           <div
             v-for="(card, index) in flashcards"
             :key="card.flashcard.id"
-            :class="{ 'cursor-pointer': isOwner }"
+            :data-item-id="card.flashcard.item_id"
+            :class="{
+              'cursor-pointer': isOwner,
+              'flashcard-item--highlight': highlightItemId === card.flashcard.item_id,
+            }"
             class="surface-flashcard-summary"
             @click="isOwner && openFlashcard(card)"
           >
@@ -248,6 +252,10 @@
                   <h3 class="text-lg font-medium text-gray-800">
                     {{ card.flashcard.word ?? card.flashcard.free_content_front }}
                   </h3>
+                  <ItemLevelBadges
+                    :levels="levelsForItem(card.flashcard.item_id)"
+                    :collection-id="props.collectionId"
+                  />
                   <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop>
                     <AudioPlayer
                       :url="card.flashcard.sound_url"
@@ -397,7 +405,7 @@ import {
   LayoutPanelTop,
   PlusCircle,
 } from '@lucide/vue'
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import {
@@ -409,6 +417,8 @@ import {
   getCollectionImage,
 } from '@/api'
 import AudioPlayer from '@/components/AudioPlayer.vue'
+import ItemLevelBadges from '@/components/ItemLevelBadges.vue'
+import { useItemLevels } from '@/composables/useItemLevels'
 import CollectionActionsMenu from '@/components/CollectionActionsMenu.vue'
 import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
@@ -668,8 +678,53 @@ const collectionCoverDisplayUrl = computed(() => {
   return getCollectionImage(props.collectionId, { cached: true })
 })
 
+const { load: loadItemLevels, levelsForItem } = useItemLevels(() => props.collectionId)
+
+/** `?item=<itemId>`: jump to the page holding that item, scroll to it and highlight it. */
+const highlightItemId = ref<number | null>(null)
+
+async function findItemPage(itemId: number): Promise<number | null> {
+  const scanSize = 100
+  for (let p = 1; p <= 50; p++) {
+    const { data } = await getFlashcards({
+      collection_id: props.collectionId,
+      status: filters.value.status || undefined,
+      due: filters.value.onlyDue || undefined,
+      page: p,
+      per_page: scanSize,
+    })
+    const idx = data.flashcards.findIndex((f) => f.flashcard.item_id === itemId)
+    if (idx >= 0) return Math.floor(((p - 1) * scanSize + idx) / perPage.value) + 1
+    if (p * scanSize >= data.total) return null
+  }
+  return null
+}
+
+async function focusRequestedItem() {
+  const itemId = parseInt(queryStr(route.query.item), 10)
+  if (!itemId) return
+  highlightItemId.value = itemId
+  if (!flashcards.value.some((f) => f.flashcard.item_id === itemId)) {
+    try {
+      const page = await findItemPage(itemId)
+      if (page && page !== currentPage.value) {
+        currentPage.value = page
+        await router.replace({ query: { ...route.query, page: page > 1 ? page : undefined } })
+        await loadFlashcards()
+      }
+    } catch (error) {
+      console.error('Error locating item:', error)
+    }
+  }
+  await nextTick()
+  document
+    .querySelector(`[data-item-id="${itemId}"]`)
+    ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
 onMounted(async () => {
   syncFromRoute()
+  loadItemLevels()
   try {
     const response = await getCollection(String(props.collectionId))
     collection.value = response.data
@@ -680,6 +735,7 @@ onMounted(async () => {
 
   if (auth.state.isLoggedIn) {
     await Promise.all([loadFlashcards(), loadLanguages()])
+    await focusRequestedItem()
   } else {
     await loadLanguages()
   }
@@ -726,6 +782,22 @@ const reviewSingleCard = (flashcardId) => {
 </script>
 
 <style scoped>
+.flashcard-item--highlight {
+  box-shadow:
+    0 0 0 2px #3b82f6,
+    0 0 0 6px rgba(59, 130, 246, 0.2);
+  animation: flashcard-item-pulse 1.6s ease-out 2;
+}
+
+@keyframes flashcard-item-pulse {
+  0% {
+    background-color: #dbeafe;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
 .ui-btn--back,
 .ui-btn--forward {
   @apply px-4 py-2 text-sm border rounded-md;

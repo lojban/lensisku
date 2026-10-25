@@ -687,6 +687,34 @@ export const applyChallengeMixToCollection = async (collectionId: number | strin
   return api.post(`/flashcards/collections/${collectionId}/apply-challenge-mix`)
 }
 
+export interface CourseSettings {
+  auto_challenge_mix: boolean
+}
+
+export const getCourseSettings = async (collectionId: number | string) => {
+  return api.get<CourseSettings>(`/flashcards/collections/${collectionId}/settings`)
+}
+
+export const updateCourseSettings = async (
+  collectionId: number | string,
+  data: Partial<CourseSettings>
+) => {
+  return api.put<CourseSettings>(`/flashcards/collections/${collectionId}/settings`, data)
+}
+
+export interface ItemLevelEntry {
+  item_id: number
+  flashcard_id: number
+  level_id: number
+  level_name: string
+  level_position: number
+}
+
+/** All level memberships of a collection's items in one request (no N+1). */
+export const getCollectionItemLevels = async (collectionId: number | string) => {
+  return api.get<ItemLevelEntry[]>(`/flashcards/collections/${collectionId}/item-levels`)
+}
+
 export const getCollectionFlashcardsPublic = async (collectionId: number | string) => {
   return api.get(`/collections/${collectionId}/flashcards`)
 }
