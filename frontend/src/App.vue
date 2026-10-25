@@ -13,19 +13,21 @@
   </div>
 
   <div v-if="isWinterSeason && showPyro" class="pyro" />
-  <!-- Layout switch (e.g. app layout ↔ Lingo shell): hide the page and show a full-viewport
-       spinner until the next route has loaded, so header/sidebars swap without layout shift. -->
-  <Teleport to="body">
-    <div
-      v-if="layoutSwitching"
-      class="route-layout-overlay"
-      role="progressbar"
-      :aria-label="$t('components.loadingSpinner.loadingDefault')"
-    >
-      <LoadingSpinner variant="inline" />
-    </div>
-  </Teleport>
-  <div class="app-layout-column" :class="{ 'app-layout-column--switching': layoutSwitching }">
+  <!-- Full-viewport spinner while the first route boots (incl. the prerendered shell) and while
+       a navigation switches layout (app ↔ Lingo shell). The page underneath is visibility:hidden
+       so header/sidebars/notice can settle without layout shift. -->
+  <div
+    v-if="layoutSwitching || booting"
+    class="route-layout-overlay"
+    role="progressbar"
+    :aria-label="$t('components.loadingSpinner.loadingDefault')"
+  >
+    <LoadingSpinner variant="inline" />
+  </div>
+  <div
+    class="app-layout-column"
+    :class="{ 'app-layout-column--switching': layoutSwitching || booting }"
+  >
     <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
 
     <header v-if="!route.meta.hideTopBar" class="app-header-bar">
@@ -392,6 +394,8 @@ import {
   scheduleRouteOverlaySettle,
   useRouteOverlay,
   waitForApiQuiet,
+  waitForImages,
+  waitForRevealHolds,
 } from './composables/useRouteOverlay'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
 import {
@@ -670,6 +674,43 @@ const layoutKey = (meta: Record<string, unknown>) =>
     .join('')
 const layoutSwitching = ref(false)
 let layoutSwitchGen = 0
+/** True in the prerendered HTML and until the first client route has settled. */
+const booting = ref(true)
+
+const twoFrames = () =>
+  new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+
+/** Wait until the freshly rendered route has its data, holds released, images and layout. */
+/** Never keep the full-viewport spinner longer than this (slow or failing API). */
+const SETTLE_MAX_MS = 8000
+
+function settleRoute() {
+  return Promise.race([settleRouteInner(), new Promise<void>((r) => setTimeout(r, SETTLE_MAX_MS))])
+}
+
+async function settleRouteInner() {
+  await nextTick()
+  await nextTick()
+  await waitForApiQuiet(2500)
+  await waitForRevealHolds(8000)
+  await nextTick()
+  await waitForImages(document, 1500)
+  await twoFrames()
+}
+
+onMounted(async () => {
+  await router.isReady()
+  // Auth bootstrap gates the router-view; wait for it before measuring the route.
+  await Promise.race([
+    (async () => {
+      for (let i = 0; i < 100 && auth.state.isLoading; i++)
+        await new Promise((r) => setTimeout(r, 50))
+      await settleRouteInner()
+    })(),
+    new Promise<void>((r) => setTimeout(r, SETTLE_MAX_MS)),
+  ])
+  booting.value = false
+})
 
 const removeRouteOverlayBefore = router.beforeEach((to, from) => {
   if (
@@ -689,11 +730,8 @@ const removeRouteOverlayBefore = router.beforeEach((to, from) => {
 const removeRouteOverlayAfter = router.afterEach(async (to, from) => {
   if (layoutSwitching.value) {
     const gen = layoutSwitchGen
-    // New page mounted under the hidden layout: wait for its data, then two frames for layout.
-    await nextTick()
-    await nextTick()
-    await waitForApiQuiet(2500)
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    // New page mounted under the hidden layout: wait for its data/holds/images, then layout.
+    await settleRoute()
     if (gen === layoutSwitchGen) layoutSwitching.value = false
   }
   if (routeOverlayHtml.value == null) return

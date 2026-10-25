@@ -141,3 +141,52 @@ export function waitForApiQuiet(maxMs = 1500): Promise<void> {
     check()
   })
 }
+
+/**
+ * Page-level reveal holds: a page whose first paint depends on more than the first API burst
+ * (e.g. Lingo study builds a session in several steps) holds the full-viewport layout/boot
+ * overlay until its content is ready. Always call the returned release (idempotent).
+ */
+const revealHolds = ref(0)
+
+export function holdRouteReveal(): () => void {
+  revealHolds.value += 1
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    revealHolds.value -= 1
+  }
+}
+
+export function waitForRevealHolds(maxMs = 8000): Promise<void> {
+  if (revealHolds.value <= 0) return Promise.resolve()
+  return new Promise((resolve) => {
+    const started = Date.now()
+    const tick = () => {
+      if (revealHolds.value <= 0 || Date.now() - started > maxMs) resolve()
+      else setTimeout(tick, 50)
+    }
+    tick()
+  })
+}
+
+/** Resolve when images currently in `root` have loaded (or failed), capped at `maxMs`. */
+export function waitForImages(root: ParentNode = document, maxMs = 1500): Promise<void> {
+  const imgs = Array.from(root.querySelectorAll('img')).filter(
+    (img) => !img.complete && img.loading !== 'lazy'
+  )
+  if (!imgs.length) return Promise.resolve()
+  return Promise.race([
+    Promise.all(
+      imgs.map(
+        (img) =>
+          new Promise<void>((r) => {
+            img.addEventListener('load', () => r(), { once: true })
+            img.addEventListener('error', () => r(), { once: true })
+          })
+      )
+    ).then(() => undefined),
+    new Promise<void>((r) => setTimeout(r, maxMs)),
+  ])
+}
