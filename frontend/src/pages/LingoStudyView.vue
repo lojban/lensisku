@@ -18,9 +18,7 @@
     >
       <!-- Loading State -->
       <div v-if="isLoading" class="flex flex-1 items-center justify-center min-h-0 py-4">
-        <div
-          class="animate-spin rounded-full h-6 w-6 border-2 border-green-500 border-t-transparent"
-        />
+        <LoadingSpinner variant="inline" size="sm" />
       </div>
       <!-- Out of hearts -->
       <div
@@ -518,6 +516,7 @@
 </template>
 
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { Textarea } from '@packages/ui'
 import { EqualApproximately, Heart } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'

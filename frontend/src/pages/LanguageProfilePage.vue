@@ -29,7 +29,7 @@
 
     <!-- Loading -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <LoadingSpinner variant="inline" />
       <p class="mt-2 text-gray-600">{{ t('languageList.loading') }}</p>
     </div>
 
@@ -37,9 +37,7 @@
     <div v-else-if="language" class="bg-white p-4 rounded-lg border space-y-4">
       <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
         <div>
-          <p class="text-sm font-medium text-gray-500">
-            {{ t('languageList.tableHeader.tag') }}:
-          </p>
+          <p class="text-sm font-medium text-gray-500">{{ t('languageList.tableHeader.tag') }}:</p>
           <p class="text-gray-900 mt-1">{{ language.tag }}</p>
 
           <p class="text-gray-600 mt-3">
@@ -51,31 +49,45 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="space-y-4">
           <div>
-            <span class="text-sm font-medium text-gray-500">{{ t('languageList.tableHeader.englishName') }}</span>
+            <span class="text-sm font-medium text-gray-500">{{
+              t('languageList.tableHeader.englishName')
+            }}</span>
             <p class="mt-1 text-gray-900">{{ language.english_name }}</p>
           </div>
 
           <div>
-            <span class="text-sm font-medium text-gray-500">{{ t('languageList.tableHeader.lojbanName') }}</span>
+            <span class="text-sm font-medium text-gray-500">{{
+              t('languageList.tableHeader.lojbanName')
+            }}</span>
             <p class="mt-1 text-gray-900">{{ language.lojban_name }}</p>
           </div>
 
           <div>
-            <span class="text-sm font-medium text-gray-500">{{ t('languageList.tableHeader.realName') }}</span>
+            <span class="text-sm font-medium text-gray-500">{{
+              t('languageList.tableHeader.realName')
+            }}</span>
             <p class="mt-1 text-gray-900">{{ language.real_name }}</p>
           </div>
         </div>
 
         <div class="space-y-4">
           <div>
-            <span class="text-sm font-medium text-gray-500">{{ t('languageList.tableHeader.forLojban') }}</span>
+            <span class="text-sm font-medium text-gray-500">{{
+              t('languageList.tableHeader.forLojban')
+            }}</span>
             <p class="mt-1 text-gray-900">
-              {{ language.for_lojban ? t('languageList.filters.forLojban.yes') : t('languageList.filters.forLojban.no') }}
+              {{
+                language.for_lojban
+                  ? t('languageList.filters.forLojban.yes')
+                  : t('languageList.filters.forLojban.no')
+              }}
             </p>
           </div>
 
           <div>
-            <span class="text-sm font-medium text-gray-500">{{ t('languageList.tableHeader.url') }}</span>
+            <span class="text-sm font-medium text-gray-500">{{
+              t('languageList.tableHeader.url')
+            }}</span>
             <p class="mt-1">
               <a
                 v-if="language.url"
@@ -101,6 +113,7 @@
 </template>
 
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, RouterLink } from 'vue-router'
@@ -161,4 +174,3 @@ useSeoHead({
 
 watch(languageId, () => fetchLanguage(), { immediate: true })
 </script>
-

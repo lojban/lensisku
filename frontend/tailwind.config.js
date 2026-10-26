@@ -133,9 +133,12 @@ export default {
          * In-region veil (LoadingSpinner `content` variant) — parent must be `relative`.
          * For query/filter refreshes; path changes use App’s route progress bar instead.
          */
-        '.content-loading-overlay': {
-          '@apply absolute inset-0 z-10 flex min-h-[8rem] flex-col items-center justify-center bg-white/60':
-            {},
+        /** Skeleton primitives (PageSkeleton and page-specific skeletons). */
+        '.skeleton-block': {
+          '@apply block animate-pulse rounded bg-gray-200': {},
+        },
+        '.page-skeleton__card': {
+          '@apply rounded-lg border border-gray-200 bg-white p-3 sm:p-4': {},
         },
         /** LoadingSpinner root: layout via `data-variant` (no JS class map). */
         '.loading-spinner[data-variant="page"]': {
@@ -151,30 +154,30 @@ export default {
         },
         /** Track plus a leading edge. Generic “Loading…” stays off screen (sr-only). */
         '.loading-spinner__mark': {
-          '@apply h-8 w-8 shrink-0 animate-spin rounded-full border-2 border-cornflower-600/20 border-t-cornflower-600':
+          '@apply h-10 w-10 shrink-0 animate-spin rounded-full border-2 border-green-500 border-t-transparent':
             {},
           /* Own compositor layer: keeps turning while the main thread is busy mounting a page. */
           'will-change': 'transform',
           /* Always full speed, even with prefers-reduced-motion (owner's call: a slowed/static
              indicator reads as "stuck"). No reduced-motion override on purpose. */
         },
+        /* Lingo ring at three sizes (default md = 40px). */
+        '.loading-spinner[data-size="sm"] .loading-spinner__mark': {
+          '@apply h-5 w-5': {},
+        },
+        '.loading-spinner[data-size="lg"] .loading-spinner__mark': {
+          '@apply h-14 w-14': {},
+        },
         '.loading-spinner__label': {
           '@apply mt-3 text-sm font-medium text-slate-600': {},
         },
-        /**
-         * Static snapshot of the previous route while the next page loads.
-         * Sharp, not blurred — the progress bar is the only loading chrome.
-         */
-        '.route-view-freeze': {
-          '@apply pointer-events-none absolute inset-0 z-30 overflow-auto': {},
-        },
         /** Indeterminate bar on the viewport top edge, above the sticky header. */
         '.route-progress': {
-          '@apply pointer-events-none fixed inset-x-0 top-0 z-[60] h-[3px] overflow-hidden bg-cornflower-600/15':
+          '@apply pointer-events-none fixed inset-x-0 top-0 z-[60] h-[3px] overflow-hidden bg-green-500/15':
             {},
         },
         '.route-progress__bar': {
-          '@apply block h-full w-2/5 bg-cornflower-600 animate-route-progress': {},
+          '@apply block h-full w-2/5 bg-green-500 animate-route-progress': {},
           'will-change': 'transform',
         },
         /** Sticky app chrome (logo, nav, auth). */

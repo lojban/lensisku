@@ -62,10 +62,7 @@
         v-if="isLoading && userList.length === 0"
         class="flex flex-col items-center justify-center py-16"
       >
-        <div
-          class="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent"
-          aria-hidden="true"
-        />
+        <LoadingSpinner variant="inline" />
 
         <p class="mt-3 text-sm text-gray-600">{{ t('userList.loadingUsers') }}</p>
       </div>
@@ -141,6 +138,7 @@
 </template>
 
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { Calendar, User } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { computed, type PropType } from 'vue'

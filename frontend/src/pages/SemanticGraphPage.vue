@@ -176,14 +176,13 @@
       aria-busy="true"
       :aria-label="t('semanticGraph.loading')"
     >
-      <div
-        class="h-10 w-10 animate-spin rounded-full border-2 border-cornflower-500 border-t-transparent"
-      />
+      <LoadingSpinner variant="inline" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { Button, FileInput, Input, ExportIcon, ImportIcon } from '@packages/ui'
 import { RotateCcw } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'

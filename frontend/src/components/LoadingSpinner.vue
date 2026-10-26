@@ -4,6 +4,7 @@
     aria-live="polite"
     aria-busy="true"
     :data-variant="variant"
+    :data-size="size"
     class="loading-spinner"
   >
     <div class="loading-spinner__mark" aria-hidden="true" />
@@ -27,9 +28,12 @@ withDefaults(
      * `inline`: centered ring for modals and small regions (no veil).
      */
     variant?: 'page' | 'content' | 'inline'
+    /** Lingo ring size: `sm` 20px (buttons, rows), `md` 40px (default), `lg` 56px. */
+    size?: 'sm' | 'md' | 'lg'
   }>(),
   {
     variant: 'page',
+    size: 'md',
   }
 )
 

@@ -154,7 +154,7 @@
           <!-- Comments list -->
           <div class="p-6 min-h-[400px]">
             <div v-if="isLoadingComments" class="flex justify-center items-center py-20">
-              <Loader2 class="animate-spin h-10 w-10 text-blue-600" />
+              <LoadingSpinner variant="inline" />
             </div>
             <template v-else-if="comments.length > 0">
               <div class="space-y-6">
@@ -240,8 +240,9 @@
 </template>
 
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { Button, Checkbox, WaveCreateIcon } from '@packages/ui'
-import { ArrowUpRight, MessageCircle, MessageSquare, Loader2, Link as LinkIcon } from '@lucide/vue'
+import { ArrowUpRight, MessageCircle, MessageSquare, Link as LinkIcon } from '@lucide/vue'
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

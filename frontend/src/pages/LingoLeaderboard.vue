@@ -14,9 +14,7 @@
         </p>
 
         <div v-if="isLoading" class="flex justify-center py-10">
-          <div
-            class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
-          />
+          <LoadingSpinner variant="inline" />
         </div>
 
         <p v-else-if="error" class="lingo-panel max-w-lg text-rose-600" role="alert">
@@ -82,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { computed, onMounted, ref } from 'vue'
 import { Trophy } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'

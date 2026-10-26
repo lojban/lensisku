@@ -90,7 +90,7 @@
         <div v-if="isOwner" class="flex flex-col items-center mb-2">
           <div class="relative group w-28 h-28">
             <div v-show="isEditCollectionImageLoading" class="collection-edit-logo-placeholder">
-              <Loader class="h-8 w-8 animate-spin text-blue-600" />
+              <LoadingSpinner variant="inline" />
             </div>
             <CollectionCoverLightbox
               v-if="editCollectionImageUrl"
@@ -264,7 +264,7 @@
     @close="showMergeModal = false"
   >
     <div v-if="isLoadingCollections" class="flex justify-center py-4">
-      <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" />
+      <LoadingSpinner variant="inline" size="sm" />
     </div>
 
     <form v-else class="space-y-4" @submit.prevent="performMerge">
@@ -327,17 +327,8 @@
 </template>
 
 <script setup lang="ts">
-import {
-  Camera,
-  Copy,
-  Edit3,
-  FileText,
-  GitMerge,
-  Images,
-  Loader,
-  PlusCircle,
-  Trash2,
-} from '@lucide/vue'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import { Camera, Copy, Edit3, FileText, GitMerge, Images, PlusCircle, Trash2 } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

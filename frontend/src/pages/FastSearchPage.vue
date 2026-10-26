@@ -35,7 +35,7 @@
           </div>
 
           <div v-if="isLoading" class="flex justify-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+            <LoadingSpinner variant="inline" />
           </div>
           <template v-else>
             <div v-if="!isLoading && !error" class="grid gap-4 mb-6">
@@ -151,6 +151,7 @@
 </template>
 
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { nextTick } from 'vue'
