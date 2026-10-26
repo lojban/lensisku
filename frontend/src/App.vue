@@ -638,13 +638,23 @@ const syncLocaleFromPath = (path: string) => {
 }
 
 // Route path: locale, chrome cleanup, optional main scroll (DOM only on client).
+function stripModeParam(fullPath: string) {
+  const [pathQuery, hash = ''] = fullPath.split('#')
+  const [path, qs = ''] = pathQuery.split('?')
+  const params = new URLSearchParams(qs)
+  params.delete('mode')
+  return `${path}?${params.toString()}#${hash}`
+}
+
 watch(
   () => route.fullPath,
-  async () => {
+  async (next, prev) => {
     syncLocaleFromPath(route.path)
     closeNavMenus()
     clearError()
     if (!route.meta.scrollMainToTopOnNavigate || typeof document === 'undefined') return
+    // A Learn/Edit toggle (`?mode=`) morphs the page in place: keep the scroll position.
+    if (prev && stripModeParam(next) === stripModeParam(prev)) return
     await nextTick()
     document.querySelector('.main-content')?.scrollTo({ top: 0, behavior: 'auto' })
   },

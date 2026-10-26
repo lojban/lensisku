@@ -132,7 +132,9 @@ const levels = ref([])
 const isLoading = ref(true)
 
 /** Owner edit: the card list (levels are managed there as headings). */
-const editPath = computed(() => localePath(`/collections/${props.collectionId}/flashcards`))
+const editPath = computed(() =>
+  localePath(`/collections/${props.collectionId}/flashcards?mode=edit`)
+)
 
 /** Collection reels (tiktoknu) — browse cards; `from=lingo` sends back here. */
 const reelsPath = computed(() => ({

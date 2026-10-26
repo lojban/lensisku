@@ -11,15 +11,40 @@
     </div>
     <template v-else>
       <div v-if="isOwner" class="flex min-h-[2.5rem] flex-wrap items-center gap-2">
-        <p class="min-w-0 flex-1 text-xs text-gray-500">{{ t('courseOrder.ownerHint') }}</p>
-        <span class="min-w-[4.5rem] text-right text-xs text-gray-500" aria-live="polite">{{
-          saveState === 'saving'
-            ? t('courseOrder.saving')
-            : saveState === 'saved'
-              ? t('courseOrder.saved')
-              : ''
-        }}</span>
-        <Button variant="create" @click="openCreate">
+        <div
+          class="inline-flex shrink-0 rounded-md border border-gray-200 bg-white p-0.5"
+          role="group"
+          :aria-label="t('courseOrder.modeLabel')"
+        >
+          <button
+            v-for="m in ['learn', 'edit'] as const"
+            :key="m"
+            type="button"
+            class="rounded px-3 py-1 text-xs font-medium transition-colors"
+            :class="mode === m ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+            :aria-pressed="mode === m"
+            :data-mode="m"
+            @click="setMode(m)"
+          >
+            {{ t(m === 'edit' ? 'courseOrder.modeEdit' : 'courseOrder.modeLearn') }}
+          </button>
+        </div>
+        <p class="min-w-0 flex-1 text-xs text-gray-500">
+          {{ t(editMode ? 'courseOrder.ownerHint' : 'courseOrder.readOnlyHint') }}
+        </p>
+        <span
+          v-show="editMode"
+          class="min-w-[4.5rem] text-right text-xs text-gray-500"
+          aria-live="polite"
+          >{{
+            saveState === 'saving'
+              ? t('courseOrder.saving')
+              : saveState === 'saved'
+                ? t('courseOrder.saved')
+                : ''
+          }}</span
+        >
+        <Button v-show="editMode" variant="create" @click="openCreate">
           <template #icon><PlusCircle class="h-4 w-4" /></template>
           {{ t('levelHeading.addLevel') }}
         </Button>
@@ -30,9 +55,9 @@
           :level="entry.level"
           :index="entry.levelIndex"
           :count="entry.count"
-          :is-owner="isOwner"
+          :is-owner="editMode"
           :is-last="entry.levelIndex === levels.length - 1"
-          :show-reorder="isOwner && levels.length > 1"
+          :show-reorder="editMode && levels.length > 1"
           :continued="entry.continued"
           :anchor="!entry.continued"
           :highlighted="entry.level != null && highlightedLevelId === entry.level.level_id"
@@ -50,15 +75,18 @@
             'opacity-50': dragging?.key === entry.rowKey && dragging.from === entry.sectionId,
           }"
           :data-row-key="entry.rowKey"
-          :draggable="isOwner && entry.flashcardId != null"
+          :draggable="editMode && entry.flashcardId != null"
           @dragstart="onDragStart($event, entry.rowKey, entry.sectionId)"
           @dragend="dragging = null"
           @dragover.prevent
           @drop.prevent="onDrop(entry.sectionId, entry.index)"
         >
+          <!-- Reserved for owners in both modes; arrows only shown in edit mode (no CLS). -->
           <div
             v-if="isOwner"
             class="flex w-9 shrink-0 flex-col items-center justify-start gap-1 pt-2"
+            :class="{ invisible: !editMode }"
+            :aria-hidden="!editMode"
           >
             <template v-if="entry.flashcardId != null">
               <GripVertical
@@ -68,7 +96,7 @@
               <IconButton
                 button-classes="ui-btn--toolbar"
                 :aria-label="t('courseOrder.moveUp')"
-                :disabled="!canMove(entry, -1)"
+                :disabled="!editMode || !canMove(entry, -1)"
                 @click="nudge(entry, -1)"
               >
                 <template #icon><ArrowUp class="h-4 w-4" /></template>
@@ -76,7 +104,7 @@
               <IconButton
                 button-classes="ui-btn--toolbar"
                 :aria-label="t('courseOrder.moveDown')"
-                :disabled="!canMove(entry, 1)"
+                :disabled="!editMode || !canMove(entry, 1)"
                 @click="nudge(entry, 1)"
               >
                 <template #icon><ArrowDown class="h-4 w-4" /></template>
@@ -127,6 +155,7 @@ import LevelEditModal from '@/components/levels/LevelEditModal.vue'
 import LevelHeading from '@/components/levels/LevelHeading.vue'
 import { useCourseLevels, type CourseLevel } from '@/composables/useCourseLevels'
 import { useError } from '@/composables/useError'
+import { useListMode } from '@/composables/useListMode'
 import { getApiErrorMessage } from '@/utils/apiError'
 import { Button, IconButton } from '@packages/ui'
 
@@ -158,6 +187,7 @@ const props = withDefaults(
 const emit = defineEmits<{ changed: [] }>()
 
 const { t } = useI18n()
+const { mode, isEditMode: editMode, setMode } = useListMode(() => props.isOwner)
 const { showError } = useError()
 
 const UNASSIGNED = 0
@@ -386,7 +416,7 @@ async function moveCard(fid: number, from: number, to: number, toIndex: number) 
 }
 
 function onDragStart(e: DragEvent, key: string, from: number) {
-  if (!props.isOwner || !key.startsWith('f')) return
+  if (!editMode.value || !key.startsWith('f')) return
   dragging.value = { key, from }
   e.dataTransfer?.setData('text/plain', key)
   if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
@@ -395,7 +425,7 @@ function onDragStart(e: DragEvent, key: string, from: number) {
 function onDrop(to: number, index: number) {
   const d = dragging.value
   dragging.value = null
-  if (!d || !props.isOwner) return
+  if (!d || !editMode.value) return
   void moveCard(Number(d.key.slice(1)), d.from, to, index)
 }
 

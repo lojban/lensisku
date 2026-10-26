@@ -2085,7 +2085,10 @@
     "moveDown": "Move card down",
     "moveToLevel": "Move to level…",
     "saveError": "Could not save the new order.",
-    "filteredNote": "Search or filters are active — showing a flat list without levels; clear them to see and edit the course order."
+    "filteredNote": "Search or filters are active — showing a flat list without levels; clear them to see and edit the course order.",
+    "modeLabel": "Mode",
+    "modeLearn": "Learn",
+    "modeEdit": "Edit"
   },
   "levelsPanel": {
     "title": "Levels",

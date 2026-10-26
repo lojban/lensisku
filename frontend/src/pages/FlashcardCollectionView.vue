@@ -300,12 +300,14 @@
                       Notes: <LazyMathJax :content="card.flashcard.notes" :enable-markdown="true" />
                     </div>
                   </div>
-                  <!-- Progress section -->
+                  <!-- Progress section (hidden but space-reserving in edit mode: no CLS) -->
                   <div class="flex flex-col items-end gap-3">
                     <div
                       v-for="progress in getOrderedProgress(card.progress)"
                       :key="progress.card_side"
                       class="w-32"
+                      :class="{ invisible: isEditMode }"
+                      :aria-hidden="isEditMode"
                     >
                       <div class="flex items-center justify-between mb-1">
                         <span class="text-xs font-medium text-gray-600">{{
@@ -409,6 +411,7 @@
 </template>
 
 <script setup lang="ts">
+import { useListMode } from '@/composables/useListMode'
 import {
   ArrowUp,
   ArrowDown,
@@ -535,6 +538,9 @@ const handlePageChange = async (page) => {
 
 /** Course order (levels as headings) unless a status/due filter reorders the list. */
 const isCourseMode = computed(() => !filters.value.status && !filters.value.onlyDue)
+// Learn (progress, read-only order) vs Edit (owner: arrows/drag, progress hidden) — `?mode=edit`.
+const { isEditMode: isEditModeRaw } = useListMode(() => isOwner.value)
+const isEditMode = computed(() => isCourseMode.value && isEditModeRaw.value)
 const focusLevelId = computed(() => {
   const m = /^#level-(\d+)$/.exec(route.hash || '')
   return m ? Number(m[1]) : null
