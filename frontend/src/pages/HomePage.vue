@@ -1530,7 +1530,11 @@ onMounted(async () => {
   // same component instance; the route-query watcher syncs state and fetches.
   const restored = restorableHomeQuery(route.query)
   const isHomeRoute = typeof route.name === 'string' && route.name.startsWith('Home')
-  if (restored && isHomeRoute) void router.replace({ query: restored })
+  if (isHomeRoute) {
+    // Persist the merged state so the next bare/partial URL starts from it.
+    if (restored) void router.replace({ query: commitHomeQuery(restored) })
+    else commitHomeQuery(route.query)
+  }
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('lensisku:clear-search', handleLogoClear)
   try {
