@@ -2,12 +2,13 @@
 -- valsitypes reference rows. Used by the collections/flashcards DB tests in CI.
 -- Regenerate after adding migrations: see the db-tests job in .github/workflows/rust.yml.
 --
+--
 -- PostgreSQL database dump
 --
 
 
--- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
--- Dumped by pg_dump version 18.6 (Debian 18.6-1.pgdg13+2)
+-- Dumped from database version 17.11 (Debian 17.11-0+deb13u1)
+-- Dumped by pg_dump version 17.11 (Debian 17.11-0+deb13u1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -86,7 +87,8 @@ CREATE TYPE public.flashcard_direction AS ENUM (
     'wordbank_both',
     'listen_wordbank',
     'listen_wordbank_reverse',
-    'listen_wordbank_both'
+    'listen_wordbank_both',
+    'auto'
 );
 
 
@@ -447,6 +449,75 @@ CREATE FUNCTION public.combined_rafsi(official text, experimental text) RETURNS 
     SELECT string_agg(token, ' ' ORDER BY token)
     FROM (SELECT DISTINCT token FROM regexp_split_to_table(concat_ws(' ', official, experimental), '\s+') token
           WHERE token <> '') tokens;
+$$;
+
+
+--
+-- Name: complete_level_when_nothing_due(integer, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.complete_level_when_nothing_due(p_user_id integer, p_level_id integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_cards INTEGER;
+    v_seen INTEGER;
+    v_due INTEGER;
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM user_level_progress
+        WHERE user_id = p_user_id AND level_id = p_level_id AND completed_at IS NOT NULL
+    ) THEN
+        RETURN true;
+    END IF;
+    -- A locked level cannot be completed this way.
+    IF NOT check_level_prerequisites(p_user_id, p_level_id) THEN
+        RETURN false;
+    END IF;
+
+    SELECT COUNT(*) INTO v_cards FROM flashcard_level_items WHERE level_id = p_level_id;
+    IF v_cards = 0 THEN
+        RETURN false;
+    END IF;
+
+    SELECT COUNT(DISTINCT fli.flashcard_id) INTO v_seen
+    FROM flashcard_level_items fli
+    WHERE fli.level_id = p_level_id
+      AND EXISTS (
+          SELECT 1 FROM flashcard_review_history fr
+          WHERE fr.user_id = p_user_id AND fr.flashcard_id = fli.flashcard_id
+      );
+    IF v_seen < v_cards THEN
+        RETURN false;
+    END IF;
+
+    SELECT COUNT(*) INTO v_due
+    FROM flashcard_level_items fli
+    JOIN user_flashcard_progress p
+      ON p.flashcard_id = fli.flashcard_id AND p.user_id = p_user_id
+    WHERE fli.level_id = p_level_id
+      AND NOT p.archived
+      AND p.next_review_at <= CURRENT_TIMESTAMP;
+    IF v_due > 0 THEN
+        RETURN false;
+    END IF;
+
+    INSERT INTO user_level_progress AS ulp
+        (user_id, level_id, cards_completed, correct_answers, total_answers,
+         last_activity_at, completed_at, completed_by_schedule)
+    VALUES (p_user_id, p_level_id, 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
+    ON CONFLICT (user_id, level_id) DO UPDATE
+    SET completed_at = COALESCE(ulp.completed_at, CURRENT_TIMESTAMP),
+        completed_by_schedule = ulp.completed_at IS NULL OR ulp.completed_by_schedule;
+
+    UPDATE user_level_progress
+    SET unlocked_at = CURRENT_TIMESTAMP
+    WHERE user_id = p_user_id
+      AND unlocked_at IS NULL
+      AND check_level_prerequisites(user_id, level_id);
+
+    RETURN true;
+END;
 $$;
 
 
@@ -1641,48 +1712,52 @@ CREATE FUNCTION public.update_level_progress() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    -- Update user level progress when a review is recorded
     INSERT INTO user_level_progress AS ulp (
-        user_id, level_id, 
+        user_id, level_id,
         cards_completed, correct_answers, total_answers,
         last_activity_at
     )
-    SELECT 
+    SELECT
         NEW.user_id,
         fli.level_id,
         COUNT(DISTINCT fr.flashcard_id),
-        SUM(CASE WHEN fr.rating >= 3 THEN 1 ELSE 0 END),
+        -- Pass = rating >= 2 (FSRS: only 1 "Again" is a lapse). Since the subtractive rating
+        -- policy (V-383e3b79) stores a correct quiz/word-bank answer as 2, counting >= 3 made
+        -- the success rate 0 on those courses, so no level could ever be completed.
+        SUM(CASE WHEN fr.rating >= 2 THEN 1 ELSE 0 END),
         COUNT(*),
         CURRENT_TIMESTAMP
     FROM flashcard_review_history fr
     JOIN flashcard_level_items fli ON fr.flashcard_id = fli.flashcard_id
     WHERE fr.user_id = NEW.user_id
-    AND fli.level_id = (
-        SELECT level_id 
-        FROM flashcard_level_items 
+    AND fli.level_id IN (
+        SELECT level_id
+        FROM flashcard_level_items
         WHERE flashcard_id = NEW.flashcard_id
     )
     GROUP BY fli.level_id
     ON CONFLICT (user_id, level_id) DO UPDATE
-    SET 
+    SET
         cards_completed = EXCLUDED.cards_completed,
         correct_answers = EXCLUDED.correct_answers,
         total_answers = EXCLUDED.total_answers,
-        last_activity_at = EXCLUDED.last_activity_at,
-        completed_at = CASE 
-            WHEN check_level_completion(EXCLUDED.user_id, EXCLUDED.level_id) 
-                AND ulp.completed_at IS NULL 
-            THEN CURRENT_TIMESTAMP 
-            ELSE ulp.completed_at 
-        END;
+        last_activity_at = EXCLUDED.last_activity_at;
 
-    -- Set unlocked_at for levels where prerequisites are met
+    -- Judge completion after the upsert so check_level_completion sees the new counts
+    -- (covers both the first insert and the update branch).
     UPDATE user_level_progress
-    SET unlocked_at = CASE 
-        WHEN check_level_prerequisites(user_id, level_id) 
-            AND unlocked_at IS NULL 
-        THEN CURRENT_TIMESTAMP 
-        ELSE unlocked_at 
+    SET completed_at = CURRENT_TIMESTAMP
+    WHERE user_id = NEW.user_id
+      AND completed_at IS NULL
+      AND level_id IN (SELECT level_id FROM flashcard_level_items WHERE flashcard_id = NEW.flashcard_id)
+      AND check_level_completion(user_id, level_id);
+
+    UPDATE user_level_progress
+    SET unlocked_at = CASE
+        WHEN check_level_prerequisites(user_id, level_id)
+            AND unlocked_at IS NULL
+        THEN CURRENT_TIMESTAMP
+        ELSE unlocked_at
     END
     WHERE user_id = NEW.user_id;
 
@@ -2122,8 +2197,8 @@ ALTER SEQUENCE public.cached_dictionary_exports_id_seq OWNED BY public.cached_di
 CREATE TABLE public.collection_images (
     collection_image_id integer NOT NULL,
     content_sha256 bytea NOT NULL,
-    image_data bytea CONSTRAINT collection_images_image_data_not_null1 NOT NULL,
-    mime_type text CONSTRAINT collection_images_mime_type_not_null1 NOT NULL,
+    image_data bytea NOT NULL,
+    mime_type text NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -2315,7 +2390,9 @@ CREATE TABLE public.collections (
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     cover_collection_image_id integer,
-    auto_challenge_mix boolean DEFAULT false NOT NULL
+    auto_challenge_mix boolean DEFAULT false NOT NULL,
+    challenge_mode text DEFAULT 'off'::text NOT NULL,
+    CONSTRAINT collections_challenge_mode_check CHECK ((challenge_mode = ANY (ARRAY['off'::text, 'fixed'::text, 'auto'::text])))
 );
 
 
@@ -2370,7 +2447,7 @@ CREATE TABLE public.comment_bookmarks (
 
 CREATE TABLE public.comment_counters (
     comment_id integer NOT NULL,
-    total_reactions bigint DEFAULT 0 CONSTRAINT comment_counters_total_likes_not_null NOT NULL,
+    total_reactions bigint DEFAULT 0 NOT NULL,
     total_replies bigint DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -2551,8 +2628,7 @@ CREATE TABLE public.threads (
     definition_link_id integer,
     import_source text,
     import_ref jsonb,
-    collection_id integer,
-    is_free_wave boolean DEFAULT false NOT NULL
+    collection_id integer
 );
 
 
@@ -3051,7 +3127,7 @@ CREATE TABLE public.etymology_backup (
 -- Name: TABLE etymology_backup; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.etymology_backup IS 'Backup of etymology table created during migration on 2026-08-06 21:01:58.542693+00';
+COMMENT ON TABLE public.etymology_backup IS 'Backup of etymology table created during migration on 2026-10-26 17:32:24.03294+03';
 
 
 --
@@ -3222,7 +3298,8 @@ CREATE TABLE public.flashcard_review_history (
     scheduled_days integer NOT NULL,
     state jsonb NOT NULL,
     review_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    card_side text DEFAULT 'direct'::text NOT NULL
+    card_side text DEFAULT 'direct'::text NOT NULL,
+    presented_type text
 );
 
 
@@ -3963,18 +4040,6 @@ ALTER SEQUENCE public.private_messages_message_id_seq OWNED BY public.private_me
 
 
 --
--- Name: refinery_schema_history; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.refinery_schema_history (
-    version integer NOT NULL,
-    name character varying(255),
-    applied_on character varying(255),
-    checksum character varying(255)
-);
-
-
---
 -- Name: role_permissions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4108,7 +4173,8 @@ CREATE TABLE public.user_flashcard_progress (
     stability double precision DEFAULT 0.0 NOT NULL,
     difficulty double precision DEFAULT 0.0 NOT NULL,
     card_side text DEFAULT 'direct'::text NOT NULL,
-    archived boolean DEFAULT false NOT NULL
+    archived boolean DEFAULT false NOT NULL,
+    auto_stage smallint DEFAULT 0 NOT NULL
 );
 
 
@@ -4144,7 +4210,8 @@ CREATE TABLE public.user_level_progress (
     total_answers integer DEFAULT 0 NOT NULL,
     unlocked_at timestamp with time zone,
     completed_at timestamp with time zone,
-    last_activity_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    last_activity_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    completed_by_schedule boolean DEFAULT false NOT NULL
 );
 
 
@@ -4660,22 +4727,6 @@ CREATE TABLE public.xrefs (
     srcid integer NOT NULL,
     desttype smallint NOT NULL,
     destid integer NOT NULL
-);
-
-
---
--- Name: zz_bak_ulp; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.zz_bak_ulp (
-    user_id integer,
-    level_id integer,
-    cards_completed integer,
-    correct_answers integer,
-    total_answers integer,
-    unlocked_at timestamp with time zone,
-    completed_at timestamp with time zone,
-    last_activity_at timestamp with time zone
 );
 
 
@@ -5693,14 +5744,6 @@ ALTER TABLE ONLY public.post_hashtags
 
 ALTER TABLE ONLY public.private_messages
     ADD CONSTRAINT private_messages_pkey PRIMARY KEY (message_id);
-
-
---
--- Name: refinery_schema_history refinery_schema_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.refinery_schema_history
-    ADD CONSTRAINT refinery_schema_history_pkey PRIMARY KEY (version);
 
 
 --
@@ -8833,20 +8876,9 @@ ALTER TABLE ONLY public.webrtc_signaling
 --
 
 
--- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
--- Dumped by pg_dump version 18.6 (Debian 18.6-1.pgdg13+2)
+-- Dumped from database version 17.11 (Debian 17.11-0+deb13u1)
+-- Dumped by pg_dump version 17.11 (Debian 17.11-0+deb13u1)
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
 
 --
 -- Data for Name: languages; Type: TABLE DATA; Schema: public; Owner: -
@@ -8964,6 +8996,7 @@ SELECT pg_catalog.setval('public.languages_langid_seq', 324, true);
 --
 -- PostgreSQL database dump complete
 --
+
 
 
 REFRESH MATERIALIZED VIEW public.user_reaction_counts;
