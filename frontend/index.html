@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
   <head>
+    <meta charset="UTF-8" />
     <script>
       ;(function () {
         try {
@@ -11,7 +12,48 @@
         }
       })()
     </script>
-    <meta charset="UTF-8" />
+    <script>
+      // Homepage: merge saved filter prefs into the URL before the app boots (per key, URL wins),
+      // so the first client render and the first fetch already use the final state.
+      // Mirrors restorableHomeQuery() in src/utils/routeQuery.ts (which remains the fallback).
+      ;(function () {
+        try {
+          if (!/^\/(?:(?:en|ja|jbo|ru|zh)\/?)?$/.test(location.pathname)) return
+          var saved = JSON.parse(localStorage.getItem('lensisku:lastHomeQuery') || 'null')
+          if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return
+          var ids = /^\d+(,\d+)*$/
+          var ok = {
+            mode: /^(dictionary|semantic|comments|messages|muplis)$/,
+            langs: ids,
+            collections: ids,
+            word_type: ids,
+            source_langid: /^\d+$/,
+            selmaho: /^.{1,64}$/,
+            username: /^.{1,512}$/,
+            exclude_usernames: /^.{1,512}$/,
+            popular_collections: /^0$/,
+            isExpanded: /^true$/,
+            group_by_thread: /^true$/,
+            wave_source: /^(all|jbotcan|freeforums|comments|mail|wiki)$/,
+            sort_by: /^[a-z_]{1,32}$/,
+            sort_order: /^(asc|desc)$/,
+          }
+          var params = new URLSearchParams(location.search)
+          var added = false
+          for (var k in ok) {
+            var v = saved[k]
+            if (typeof v !== 'string' || !ok[k].test(v) || params.has(k)) continue
+            params.set(k, v)
+            added = true
+          }
+          if (!added) return
+          var qs = params.toString().replace(/%2C/gi, ',')
+          history.replaceState(history.state, '', location.pathname + '?' + qs + location.hash)
+        } catch (e) {
+          /* blocked storage / bad JSON: keep the URL as is */
+        }
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
