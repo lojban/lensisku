@@ -16,7 +16,9 @@
         class="lingo-study-rate-row"
         role="group"
       >
+        <!-- Wrong answers are server-graded (stored as 1): no Too difficult / Too easy. -->
         <button
+          v-if="status === 'correct'"
           type="button"
           class="lingo-btn lingo-btn--danger lingo-btn--sm w-full !normal-case !tracking-normal"
           :disabled="disabled"
@@ -28,6 +30,7 @@
           }}</span>
         </button>
         <button
+          v-if="status === 'correct'"
           type="button"
           class="lingo-btn lingo-btn--primary lingo-btn--sm w-full !normal-case !tracking-normal"
           :disabled="disabled"

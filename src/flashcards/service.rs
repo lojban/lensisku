@@ -2977,6 +2977,8 @@ pub async fn review_flashcard_serverside(
     if !(1..=4).contains(&commit_rating) {
         return Err("rating must be 1–4".into());
     }
+    // Server-graded: a wrong answer is always recorded as 1, whatever the client sent.
+    let commit_rating = if answer_correct { commit_rating } else { 1 };
 
     let review_req = ReviewRequest {
         flashcard_id: req.flashcard_id,
@@ -3308,6 +3310,8 @@ pub async fn submit_quiz_answer(
     if !(1..=4).contains(&commit_rating) {
         return Err("rating must be 1–4".into());
     }
+    // Server-graded: a wrong pick is always recorded as 1.
+    let commit_rating = if is_correct { commit_rating } else { 1 };
 
     transaction.execute(
         "INSERT INTO user_quiz_answer_history (user_id, flashcard_id, selected_option_text, is_correct_selection, presented_options, answered_at)
