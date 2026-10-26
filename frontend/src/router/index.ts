@@ -683,9 +683,10 @@ export const setupRouterGuards = (router: Router, isClient: boolean) => {
       const isNotFoundRoute = baseToName === 'NotFound'
       const routeRequiresAuth = to.matched.some((record: RouteRecord) => record.meta.requiresAuth)
 
-      const isAuthenticated = await checkAuthStateForGuard()
+      // Session check (may refresh the token) only blocks navigation to auth-only routes.
       if (
-        !isAuthenticated &&
+        routeRequiresAuth &&
+        !(await checkAuthStateForGuard()) &&
         baseToName &&
         !authRoutes.includes(baseToName) &&
         !isNotFoundRoute && // Do not redirect from NotFound page
