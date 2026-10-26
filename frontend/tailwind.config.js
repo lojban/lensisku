@@ -959,7 +959,7 @@ export default {
         },
         /** Flashcard collection summary row. */
         '.surface-flashcard-summary': {
-          '@apply bg-white p-4 rounded-lg border hover:border-blue-300 shadow hover:shadow-none transition-all duration-200 max-w-full overflow-hidden':
+          '@apply bg-white px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg border hover:border-blue-300 shadow hover:shadow-none transition-all duration-200 max-w-full overflow-hidden':
             {},
         },
         /** Mail thread attachment row chip. */

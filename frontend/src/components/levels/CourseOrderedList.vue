@@ -85,7 +85,7 @@
         />
         <div
           v-else
-          class="course-row flex min-w-0 items-stretch gap-2 sm:gap-3"
+          class="course-row flex min-w-0 items-stretch gap-1.5 sm:gap-2"
           :class="{
             'opacity-50': dragging?.key === entry.rowKey && dragging.from === entry.sectionId,
           }"
@@ -96,12 +96,10 @@
           @dragover.prevent
           @drop.prevent="onDrop(entry.sectionId, entry.index)"
         >
-          <!-- Reserved for owners in both modes; arrows only shown in edit mode (no CLS). -->
+          <!-- Edit mode only: reorder column (Learn mode gives the card the full width). -->
           <div
-            v-if="isOwner"
-            class="course-row__handle flex w-8 shrink-0 flex-col items-center justify-start gap-1.5 pt-3"
-            :class="{ invisible: !editMode }"
-            :aria-hidden="!editMode"
+            v-if="isOwner && editMode"
+            class="course-row__handle flex shrink-0 flex-col items-center justify-start gap-1 pt-1"
           >
             <template v-if="entry.flashcardId != null">
               <GripVertical
@@ -111,7 +109,7 @@
               <IconButton
                 button-classes="ui-btn--toolbar course-row__arrow"
                 :aria-label="t('courseOrder.moveUp')"
-                :disabled="!editMode || !canMove(entry, -1)"
+                :disabled="!canMove(entry, -1)"
                 @click="nudge(entry, -1)"
               >
                 <template #icon><ArrowUp class="h-4 w-4" /></template>
@@ -119,7 +117,7 @@
               <IconButton
                 button-classes="ui-btn--toolbar course-row__arrow"
                 :aria-label="t('courseOrder.moveDown')"
-                :disabled="!editMode || !canMove(entry, 1)"
+                :disabled="!canMove(entry, 1)"
                 @click="nudge(entry, 1)"
               >
                 <template #icon><ArrowDown class="h-4 w-4" /></template>
@@ -635,12 +633,26 @@ defineExpose({ load, focusLevel, focusItem, isLoaded: course.isLoaded })
   transition: box-shadow 0.3s;
 }
 
-/* Square, fixed-size reorder arrows that fit their 2rem column (never overlap the card). */
+/* Square, fixed-size reorder arrows sized to their column (never overlap the card):
+   40px touch targets on phones, 32px with a pointer-sized layout. */
+.course-row__handle {
+  width: 2.5rem;
+}
 .course-row__handle :deep(.course-row__arrow) {
-  width: 2rem;
-  min-width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
   justify-content: center;
+}
+@media (min-width: 640px) {
+  .course-row__handle {
+    width: 2rem;
+  }
+  .course-row__handle :deep(.course-row__arrow) {
+    width: 2rem;
+    min-width: 2rem;
+    height: 2rem;
+  }
 }
 </style>
