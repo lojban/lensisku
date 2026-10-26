@@ -6,9 +6,7 @@
         <slot name="item" :item="item" />
       </div>
     </template>
-    <div v-else-if="!levelsReady" class="flex justify-center py-12">
-      <LoadingSpinner variant="inline" />
-    </div>
+    <PageSkeleton v-else-if="!levelsReady" :rows="5" />
     <template v-else>
       <div v-if="isOwner" class="course-toolbar flex flex-col gap-1.5">
         <!-- Row 1: mode toggle (left) · save status + Add level (right). Same height in both modes. -->
@@ -157,12 +155,12 @@
 </template>
 
 <script setup lang="ts" generic="T">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { ArrowDown, ArrowUp, GripVertical, PlusCircle } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { saveCourseOrder, updateLevel } from '@/api'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import LevelEditModal from '@/components/levels/LevelEditModal.vue'
 import LevelHeading from '@/components/levels/LevelHeading.vue'

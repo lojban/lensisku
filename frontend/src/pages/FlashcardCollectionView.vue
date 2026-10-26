@@ -213,7 +213,7 @@
         >
           <p class="text-gray-600">{{ t('anonymousProgress.useLevelsToStudy') }}</p>
         </div>
-        <LoadingSpinner v-if="isLoading" class="py-12" />
+        <PageSkeleton v-if="isLoading" :rows="5" />
         <div
           v-else-if="flashcards.length === 0"
           class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100"
@@ -407,6 +407,7 @@
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { useListMode } from '@/composables/useListMode'
 import {
   ArrowUp,
@@ -440,7 +441,6 @@ import { useItemLevels } from '@/composables/useItemLevels'
 import CollectionActionsMenu from '@/components/CollectionActionsMenu.vue'
 import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'

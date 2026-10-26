@@ -95,7 +95,7 @@
           </div>
         </div>
         <div class="collections-section" :aria-busy="isLoading || undefined">
-          <LoadingSpinner v-if="isLoading" variant="inline" class="py-16" />
+          <PageSkeleton v-if="isLoading" layout="grid" :rows="6" />
           <template v-else>
             <div class="collections-grid">
               <CollectionCard
@@ -188,6 +188,7 @@
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { CirclePlus, CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -214,7 +215,6 @@ import {
 } from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import StudyStreak from '@/components/StudyStreak.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'

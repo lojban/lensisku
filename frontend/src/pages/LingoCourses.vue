@@ -2,13 +2,7 @@
   <LingoLayout fill>
     <!-- Paint nothing until the first catalog payload and the auth state are both known:
          the aside (streak) depends on auth, so painting earlier shifts the grid (CLS). -->
-    <div v-if="!isReady" class="flex min-h-0 flex-1 items-center justify-center py-12">
-      <div
-        class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
-        role="status"
-        :aria-label="t('components.loadingSpinner.loadingDefault')"
-      />
-    </div>
+    <PageSkeleton v-if="!isReady" layout="grid" :rows="6" class="p-4" />
 
     <LingoFeedLayout
       v-else
@@ -112,6 +106,7 @@
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { Input, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 import { ArrowUpDown } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'

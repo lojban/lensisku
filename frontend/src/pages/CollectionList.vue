@@ -121,7 +121,7 @@
           </div>
         </div>
         <div class="collections-section" :aria-busy="isLoading || undefined">
-          <LoadingSpinner v-if="isLoading" variant="inline" class="py-16" />
+          <PageSkeleton v-if="isLoading" layout="grid" :rows="6" />
           <template v-else>
             <div class="collections-grid">
               <CollectionCard
@@ -170,6 +170,7 @@
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { CalendarDays, Calendar, Trophy, ArrowDown, Dumbbell, History } from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -178,7 +179,6 @@ import { useI18n } from 'vue-i18n'
 import { getPublicCollections, getLevels, getCollectionImage } from '@/api'
 import { Button, CollectionCard, EmptyStatePanel, Input, StarsIcon } from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'

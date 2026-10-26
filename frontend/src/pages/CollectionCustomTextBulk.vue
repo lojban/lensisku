@@ -113,7 +113,7 @@
         {{ t('collectionCustomTextBulk.disclaimer') }}
       </p>
     </div>
-    <LoadingSpinner v-if="isLoading" class="py-12" />
+    <PageSkeleton v-if="isLoading" :rows="5" />
     <div v-else-if="!isOwner" class="text-center py-12 text-gray-600">
       {{ t('collectionCustomTextBulk.ownerOnly') }}
     </div>
@@ -528,6 +528,7 @@
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { ArrowLeft, List, Loader2, Package, Undo2 } from '@lucide/vue'
 import { computed, nextTick, onMounted, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
@@ -546,7 +547,6 @@ import CollectionCustomTextBulkRow, {
   type BulkVirtualRow,
 } from '@/components/CollectionCustomTextBulkRow.vue'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import SuccessToastImportReloadHint from '@/components/SuccessToastImportReloadHint.vue'

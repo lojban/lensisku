@@ -197,10 +197,12 @@
         </div>
       </div>
     </article>
+    <PageSkeleton v-else-if="isLoading" layout="entry" :rows="2" />
   </div>
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { MessagesSquare, Trash2 } from '@lucide/vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'

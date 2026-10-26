@@ -1,13 +1,7 @@
 <template>
   <LingoLayout fill>
     <!-- Wait for collection + levels before painting the feed (avoids header/body CLS). -->
-    <div v-if="isLoading" class="flex min-h-0 flex-1 items-center justify-center py-12">
-      <div
-        class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
-        role="status"
-        :aria-label="t('components.loadingSpinner.loadingDefault')"
-      />
-    </div>
+    <PageSkeleton v-if="isLoading" :rows="6" class="p-4" />
 
     <LingoFeedLayout v-else :show-aside="false" class="min-h-0 flex-1">
       <template #header>
@@ -87,6 +81,7 @@
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { ArrowLeft, Dumbbell, GalleryVerticalIcon, Pencil } from '@lucide/vue'
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

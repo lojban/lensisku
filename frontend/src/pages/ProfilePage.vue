@@ -1,6 +1,6 @@
 <template>
   <!-- Loading State -->
-  <LoadingSpinner v-if="isLoading" class="py-8" />
+  <PageSkeleton v-if="isLoading" layout="profile" />
   <!-- Profile Content -->
   <div v-else>
     <!-- Header -->
@@ -307,6 +307,7 @@
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import { jwtDecode } from 'jwt-decode'
 import { KeyRound, Activity, Pencil, User, Camera, Trash2, LogOut } from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
@@ -325,7 +326,6 @@ import {
 } from '@/api'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ButtonThemeSelect from '@/components/layout/ButtonThemeSelect.vue'
 import LocaleSelect from '@/components/layout/LocaleSelect.vue'
 import MessageButton from '@/components/messaging/navigation/MessageButton.vue'

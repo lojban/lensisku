@@ -182,7 +182,7 @@
           :aria-busy="isLoading || isLoadingItems || undefined"
         >
           <div class="flex flex-col gap-4">
-            <LoadingSpinner v-if="isLoading || isLoadingItems" variant="inline" class="py-12" />
+            <PageSkeleton v-if="isLoading || isLoadingItems" :rows="5" />
             <p
               v-else-if="!isCourseMode && paginatedItems.items.length"
               class="text-xs text-gray-500"
@@ -1110,6 +1110,7 @@
 </template>
 
 <script setup lang="ts">
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import {
   GalleryHorizontalEnd,
   GalleryVerticalIcon,
