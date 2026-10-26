@@ -155,11 +155,8 @@ export default {
             {},
           /* Own compositor layer: keeps turning while the main thread is busy mounting a page. */
           'will-change': 'transform',
-          /* A loading indicator is essential feedback: slow it down, never freeze it (a static
-             ring reads as "stuck"). */
-          '@media (prefers-reduced-motion: reduce)': {
-            'animation-duration': '2.4s',
-          },
+          /* Always full speed, even with prefers-reduced-motion (owner's call: a slowed/static
+             indicator reads as "stuck"). No reduced-motion override on purpose. */
         },
         '.loading-spinner__label': {
           '@apply mt-3 text-sm font-medium text-slate-600': {},
@@ -179,9 +176,6 @@ export default {
         '.route-progress__bar': {
           '@apply block h-full w-2/5 bg-cornflower-600 animate-route-progress': {},
           'will-change': 'transform',
-          '@media (prefers-reduced-motion: reduce)': {
-            'animation-duration': '2.4s',
-          },
         },
         /** Sticky app chrome (logo, nav, auth). */
         '.app-header-bar': {
