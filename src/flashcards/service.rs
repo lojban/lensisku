@@ -840,6 +840,8 @@ fn attach_wordbank_chips(cards: &mut [FlashcardResponse]) {
             .enumerate()
             .filter(|(j, _)| *j != i)
             .filter(|(_, c)| c.flashcard.id != id)
+            // Information cards are prose, never answer material.
+            .filter(|(_, c)| c.flashcard.direction != FlashcardDirection::JustInformation)
             .flat_map(|(_, c)| flashcard_distractor_texts(&c.flashcard, lang))
             .collect();
         let (chips, expected_normalized) =
@@ -914,6 +916,8 @@ fn attach_wordbank_chips_to_level_cards(cards: &mut [LevelCardResponse]) {
         let distractors: Vec<String> = cards
             .iter()
             .filter(|c| c.flashcard_id != id)
+            // Information cards are prose, never answer material.
+            .filter(|c| c.direction != FlashcardDirection::JustInformation)
             .flat_map(|c| {
                 distractor_texts_for_lang(
                     c.word.as_ref(),
@@ -1533,7 +1537,7 @@ pub async fn list_flashcards(
     })
 }
 
-async fn get_quiz_options_for_listing(
+pub(crate) async fn get_quiz_options_for_listing(
     transaction: &Transaction<'_>,
     flashcard_id: i32,
     user_id: i32,
@@ -1629,6 +1633,7 @@ async fn get_quiz_options_for_listing(
                  FROM flashcards f
                  JOIN collection_item_images cii ON cii.item_id = f.item_id AND cii.side = $2
                  WHERE f.collection_id = $1 AND f.item_id != $3
+                   AND f.direction <> 'just_information'
                  ORDER BY RANDOM()
                  LIMIT 3",
                 &[&collection_id, &side, &current_item_id],
@@ -1659,6 +1664,13 @@ async fn get_quiz_options_for_listing(
         "SELECT selected_option_text
          FROM user_quiz_answer_history
          WHERE user_id = $1 AND flashcard_id = $2 AND is_correct_selection = false AND selected_option_text != $3
+           AND NOT EXISTS (
+               SELECT 1 FROM flashcards fi
+               JOIN collection_items cii ON cii.item_id = fi.item_id
+               WHERE fi.collection_id = (SELECT collection_id FROM flashcards WHERE id = $2)
+                 AND fi.direction = 'just_information'
+                 AND selected_option_text IN (cii.free_content_front, cii.free_content_back)
+           )
          GROUP BY selected_option_text
          ORDER BY COUNT(*) DESC, MAX(answered_at) DESC
          LIMIT 2",
@@ -1696,6 +1708,7 @@ async fn get_quiz_options_for_listing(
                     LEFT JOIN definitions d ON ci.definition_id = d.definitionid
                     LEFT JOIN valsi v ON d.valsiid = v.valsiid
                     WHERE f.collection_id = (SELECT collection_id FROM flashcards WHERE id = $1)
+                      AND f.direction <> 'just_information'
                  ) c
                  WHERE distractor IS NOT NULL
                    AND distractor <> ''
@@ -5329,6 +5342,74 @@ fn auto_wordbank_fallback(cards: &mut [FlashcardResponse]) {
             c.flashcard.presented_type = Some(FlashcardDirection::Direct);
             if let Some(p) = c.progress.first_mut() {
                 p.card_side = "direct".to_string();
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod info_card_wordbank_tests {
+    use super::*;
+
+    fn card(id: i32, front: &str, back: &str, direction: FlashcardDirection) -> LevelCardResponse {
+        LevelCardResponse {
+            flashcard_id: id,
+            position: id,
+            direction,
+            word: None,
+            definition: None,
+            free_content_front: Some(front.to_string()),
+            free_content_back: Some(back.to_string()),
+            has_front_image: false,
+            has_back_image: false,
+            has_sound: false,
+            sound_url: None,
+            collection_id: 1,
+            item_id: id,
+            definition_id: None,
+            valsi_id: None,
+            ci_notes: None,
+            canonical_form: None,
+            progress: None,
+            wordbank_chips: None,
+            wordbank_expected_normalized: None,
+            presented_type: None,
+        }
+    }
+
+    /// Word-bank chips (level listing / guest study) never draw words from information cards.
+    #[test]
+    fn level_wordbank_chips_skip_info_cards() {
+        for _ in 0..50 {
+            let mut cards = vec![
+                card(
+                    1,
+                    "zzinfofront grammar",
+                    "zzinfoback explains prose",
+                    FlashcardDirection::JustInformation,
+                ),
+                card(
+                    2,
+                    "mi tavla do",
+                    "I talk to you",
+                    FlashcardDirection::Wordbank,
+                ),
+                card(3, "coi do", "hello you", FlashcardDirection::Auto),
+                card(4, "mi nelci", "I like", FlashcardDirection::Wordbank),
+            ];
+            attach_wordbank_chips_to_level_cards(&mut cards);
+            assert!(cards[0].wordbank_chips.is_none(), "info card got chips");
+            for c in &cards[1..] {
+                let chips = c.wordbank_chips.as_ref().expect("chips");
+                for chip in chips {
+                    let t = chip.text.to_lowercase();
+                    assert!(
+                        !["zzinfofront", "grammar", "zzinfoback", "explains", "prose"]
+                            .contains(&t.trim_matches(|ch: char| !ch.is_alphanumeric())),
+                        "info word {t:?} in chips of card {}",
+                        c.flashcard_id
+                    );
+                }
             }
         }
     }

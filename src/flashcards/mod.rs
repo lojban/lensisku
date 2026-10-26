@@ -11,6 +11,8 @@ mod course_settings_tests;
 pub mod dto;
 pub(crate) mod error;
 #[cfg(test)]
+mod info_card_distractor_tests;
+#[cfg(test)]
 mod info_card_tests;
 #[cfg(test)]
 mod level_completion_tests;
