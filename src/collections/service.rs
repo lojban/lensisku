@@ -1461,7 +1461,6 @@ pub async fn delete_collection(
     Ok(())
 }
 
-
 pub async fn import_json(
     pool: &Pool,
     redis: &RedisCache,

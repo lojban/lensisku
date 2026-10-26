@@ -1148,10 +1148,16 @@ pub async fn list_flashcards(
             )
         )
         ORDER BY
+        -- Due queues: unread information cards first (a level opens with its intro card).
+        CASE WHEN $4::boolean = true AND f.direction = 'just_information' THEN 0 ELSE 1 END,
         CASE
             WHEN $4::boolean = true THEN EXTRACT(EPOCH FROM p.next_review_at)
             ELSE f.position::bigint
-        END";
+        END,
+        -- Ties (cards seeded together): follow the course order within the level.
+        (SELECT MIN(fli_o.position) FROM flashcard_level_items fli_o
+          WHERE fli_o.flashcard_id = f.id AND ($6::int IS NULL OR fli_o.level_id = $6)),
+        f.id";
 
     let list_params: [&(dyn tokio_postgres::types::ToSql + Sync); 6] = [
         &user_id,
@@ -2303,14 +2309,29 @@ pub async fn review_flashcard(
         spawn_optimal_retention_refresh(pool.clone(), user_id);
     }
 
+    // Info cards are retired after one acknowledgement; report that, not the FSRS step.
+    let (message, next_review) = if is_info_card {
+        (
+            format!(
+                "Information card acknowledged ({} side); it will not be shown again",
+                req.card_side
+            ),
+            None,
+        )
+    } else {
+        (
+            format!(
+                "Review recorded successfully for {} side. New interval: {} days",
+                req.card_side, interval
+            ),
+            Some(next_review),
+        )
+    };
     Ok(ReviewResponse {
         success: true,
         card_side: req.card_side.clone(),
-        message: format!(
-            "Review recorded successfully for {} side. New interval: {} days",
-            req.card_side, interval
-        ),
-        next_review: Some(next_review),
+        message,
+        next_review,
         answer_correct: None,
         suggested_rating: None,
     })
