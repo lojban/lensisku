@@ -431,6 +431,7 @@ import {
   compactQuery,
   hasActiveSearchFilters,
   queryStr,
+  restorableHomeQuery,
   wordTypesToQueryParam,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -1524,6 +1525,12 @@ const handleKeyDown = (event: KeyboardEvent) => {
 }
 
 onMounted(async () => {
+  // A bare/partial home URL is rendered (SSG + hydration) from the URL alone, then the saved
+  // preferences are merged in here: stored keys fill gaps, URL keys win. router.replace keeps the
+  // same component instance; the route-query watcher syncs state and fetches.
+  const restored = restorableHomeQuery(route.query)
+  const isHomeRoute = typeof route.name === 'string' && route.name.startsWith('Home')
+  if (restored && isHomeRoute) void router.replace({ query: restored })
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('lensisku:clear-search', handleLogoClear)
   try {

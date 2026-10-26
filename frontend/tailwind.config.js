@@ -153,8 +153,12 @@ export default {
         '.loading-spinner__mark': {
           '@apply h-8 w-8 shrink-0 animate-spin rounded-full border-2 border-cornflower-600/20 border-t-cornflower-600':
             {},
+          /* Own compositor layer: keeps turning while the main thread is busy mounting a page. */
+          'will-change': 'transform',
+          /* A loading indicator is essential feedback: slow it down, never freeze it (a static
+             ring reads as "stuck"). */
           '@media (prefers-reduced-motion: reduce)': {
-            animation: 'none',
+            'animation-duration': '2.4s',
           },
         },
         '.loading-spinner__label': {
@@ -174,9 +178,9 @@ export default {
         },
         '.route-progress__bar': {
           '@apply block h-full w-2/5 bg-cornflower-600 animate-route-progress': {},
+          'will-change': 'transform',
           '@media (prefers-reduced-motion: reduce)': {
-            animation: 'none',
-            width: '100%',
+            'animation-duration': '2.4s',
           },
         },
         /** Sticky app chrome (logo, nav, auth). */

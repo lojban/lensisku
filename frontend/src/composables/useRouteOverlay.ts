@@ -7,9 +7,13 @@ import { onApiPendingChange, getApiPendingCount } from '@/api'
  * In-page loads (filters, tabs) use a scoped spinner on the changing region instead.
  */
 
-const QUIET_MS = 120
-/** Never keep the freeze up waiting on a slow remote API (chat is not axios). */
-const MAX_HOLD_MS = 900
+/** API must stay idle this long; bridges gaps between chained page fetches (await A; then B). */
+const QUIET_MS = 200
+/**
+ * Hard cap on the freeze (slow or failing API). Was 900 ms, which revealed the next page
+ * mid-load on anything slower than a warm cache.
+ */
+const MAX_HOLD_MS = 8000
 
 /** Scroll hosts whose `scrollTop` must survive the HTML freeze snapshot. */
 const SCROLL_RESTORE_SELECTOR = '.lingo-shell-scroll, .feed-page__body, .main-content'
@@ -44,32 +48,30 @@ export function clearRouteOverlay() {
   freezeScrollTops.value = null
 }
 
-function trySettle(gen: number) {
-  if (gen !== generation || !armed) return
-  if (getApiPendingCount() > 0) return
-  quietTimer = setTimeout(() => {
-    if (gen !== generation || !armed) return
-    if (getApiPendingCount() > 0) return
-    clearRouteOverlay()
-  }, QUIET_MS)
-}
+const nextFrames = () =>
+  new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
 
+/**
+ * Reveal the next route once it is actually ready: its first fetch burst went quiet, page-level
+ * reveal holds (holdRouteReveal) are released, and any fetches those triggered went quiet too.
+ * Capped by MAX_HOLD_MS.
+ */
 function armSettle(gen: number) {
   clearTimers()
   pendingUnsub?.()
-  pendingUnsub = onApiPendingChange(() => {
-    if (gen !== generation) return
-    if (quietTimer) {
-      clearTimeout(quietTimer)
-      quietTimer = null
-    }
-    trySettle(gen)
-  })
-  // Prefer quiet API, but never block navigation on languages/collections/chat.
+  pendingUnsub = null
   fallbackTimer = setTimeout(() => {
     if (gen === generation) clearRouteOverlay()
   }, MAX_HOLD_MS)
-  trySettle(gen)
+  void (async () => {
+    // Let onMounted handlers start their requests before measuring "quiet".
+    await nextFrames()
+    await waitForApiQuiet(MAX_HOLD_MS)
+    await waitForRevealHolds(MAX_HOLD_MS)
+    await waitForApiQuiet(MAX_HOLD_MS)
+    await nextFrames()
+    if (gen === generation && armed) clearRouteOverlay()
+  })()
 }
 
 /** Snapshot outgoing route HTML (no-op if a freeze is already showing). */

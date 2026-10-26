@@ -325,3 +325,42 @@ export function applyCombinedFiltersFromQuery(
   if (query.isExpanded !== undefined) next.isExpanded = fromQuery.isExpanded
   return next
 }
+
+/** Per-key validators for stored home prefs (a corrupt/old snapshot must never break the page). */
+const POSITIVE_INT_CSV = /^\d+(,\d+)*$/
+const STORED_PREF_VALIDATORS: Record<string, (v: string) => boolean> = {
+  mode: (v) => HOME_SEARCH_MODES.has(v),
+  langs: (v) => POSITIVE_INT_CSV.test(v),
+  collections: (v) => POSITIVE_INT_CSV.test(v),
+  word_type: (v) => POSITIVE_INT_CSV.test(v),
+  source_langid: (v) => /^\d+$/.test(v),
+  selmaho: (v) => v.length <= 64,
+  username: (v) => v.length <= 512,
+  exclude_usernames: (v) => v.length <= 512,
+  popular_collections: (v) => v === '0',
+  isExpanded: (v) => v === 'true',
+  group_by_thread: (v) => v === 'true',
+  wave_source: (v) => ['all', 'jbotcan', 'freeforums', 'comments', 'mail', 'wiki'].includes(v),
+  sort_by: (v) => /^[a-z_]{1,32}$/.test(v),
+  sort_order: (v) => v === 'asc' || v === 'desc',
+}
+
+/**
+ * Saved home preferences to merge into a bare/partial home URL (client only).
+ * Transient keys (`q`, `page`, `definition_id`) are never restored. URL keys win per-key.
+ * Returns the merged query when it adds anything, otherwise `null` (no navigation needed).
+ */
+export function restorableHomeQuery(current: LocationQuery): Record<string, string> | null {
+  if (typeof window === 'undefined') return null
+  const stored = backfillLegacyHomeQuery(loadLastHomeQuery())
+  const currentCompact = compactQuery(current as Record<string, unknown>)
+  const added: Record<string, string> = {}
+  for (const [key, value] of Object.entries(stored)) {
+    const validate = STORED_PREF_VALIDATORS[key]
+    if (!validate || !validate(value)) continue
+    if (current[key] !== undefined) continue
+    added[key] = value
+  }
+  if (!Object.keys(added).length) return null
+  return { ...added, ...currentCompact }
+}
