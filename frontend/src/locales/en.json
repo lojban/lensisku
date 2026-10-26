@@ -2072,7 +2072,8 @@
     "loading": "Loading…",
     "addLevel": "Add level",
     "continued": "(continued)",
-    "requiresShort": "Requires: {names}"
+    "requiresShort": "Requires: {names}",
+    "requiresLabel": "Requires"
   },
   "courseOrder": {
     "ownerHint": "Drag cards (or use the arrows / \"Move to level…\") to arrange the course. Moving a card past a heading puts it in that level.",
