@@ -1783,7 +1783,10 @@
     "deleteCardMessage": "このカードを削除しますか？この操作は取り消せません。",
     "deleteButton": "削除",
     "deleteLevelConfirmTitle": "レベルを削除",
-    "deleteLevelConfirmMessage": "レベル「{levelName}」を削除しますか？この操作は取り消せません。"
+    "deleteLevelConfirmMessage": "レベル「{levelName}」を削除しますか？この操作は取り消せません。",
+    "strength": "定着度 {value}%",
+    "cardsDue": "{count} 枚の復習",
+    "needsWatering": "復習が必要"
   },
   "anonymousProgress": {
     "bannerMessage": "登録すると端末をまたいで進捗を保存できます",
@@ -1869,7 +1872,6 @@
     "allCourses": "すべてのコース",
     "classicCollections": "クラシックテーマ",
     "newTheme": "新テーマ",
-
     "heroTitle": "Lingo で学び、練習し、身につけよう。",
     "continueLearning": "学習を続ける",
     "getStarted": "はじめる",

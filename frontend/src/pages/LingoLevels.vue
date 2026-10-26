@@ -72,6 +72,9 @@
             :label="level.name || ''"
             :show-owner-menu="false"
             :pending="pendingStudyLevelId === level.level_id"
+            :strength="level.strength ?? null"
+            :needs-watering="!!level.needs_watering"
+            :strength-text="strengthTextFor(level)"
             @start="startStudy(level)"
           />
         </div>
@@ -178,6 +181,20 @@ const sortedEffectiveLevels = computed(() => {
 })
 
 /** Ladder rows: real levels, or a single implicit course lesson. */
+/** Tooltip / aria text for the strength meter, e.g. "Strength 70% · 5 cards due". */
+function strengthTextFor(level: {
+  strength?: number | null
+  due_count?: number
+  needs_watering?: boolean
+}): string {
+  if (level.strength == null) return ''
+  const parts = [t('flashcardLevels.strength', { value: level.strength })]
+  if (level.due_count)
+    parts.push(t('flashcardLevels.cardsDue', { count: level.due_count }, level.due_count))
+  else if (level.needs_watering) parts.push(t('flashcardLevels.needsWatering'))
+  return parts.join(' · ')
+}
+
 const displayLevels = computed(() => {
   if (sortedEffectiveLevels.value.length > 0) return sortedEffectiveLevels.value
   return [

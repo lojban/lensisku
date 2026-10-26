@@ -54,6 +54,22 @@
         <Loader v-if="showSpinner" class="h-10 w-10 animate-spin text-white" aria-hidden="true" />
         <component :is="iconComponent" v-else class="h-10 w-10" :class="iconClass" />
       </div>
+      <span
+        v-if="strength != null"
+        class="lingo-strength"
+        :class="{ 'lingo-strength--water': needsWatering }"
+        :title="strengthText"
+        aria-hidden="true"
+      >
+        <Droplet v-if="needsWatering" class="h-3.5 w-3.5 shrink-0 fill-sky-400 text-sky-500" />
+        <span class="lingo-strength__track">
+          <span
+            class="lingo-strength__fill"
+            :class="strengthTone"
+            :style="{ width: `${strength}%` }"
+          />
+        </span>
+      </span>
       <span v-if="label" class="lingo-lesson-label" :title="label">{{ label }}</span>
     </a>
     <div v-if="showOwnerMenu" class="relative z-20 flex shrink-0 items-center" @click.stop>
@@ -139,8 +155,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Check, Crown, Star, Settings, Loader } from '@lucide/vue'
+import { ref, computed, type PropType } from 'vue'
+import { Check, Crown, Droplet, Star, Settings, Loader } from '@lucide/vue'
 
 const props = defineProps({
   index: { type: Number, required: true },
@@ -158,6 +174,12 @@ const props = defineProps({
   showOwnerMenu: { type: Boolean, default: false },
   /** Parent is navigating into this lesson (header Continue / sibling click). */
   pending: { type: Boolean, default: false },
+  /** Memory strength 0–100 from the levels API (`null`: not reviewed yet / guest). */
+  strength: { type: Number as PropType<number | null>, default: null },
+  /** Level asks for practice (cards due or strength below threshold). */
+  needsWatering: { type: Boolean, default: false },
+  /** Localized "Strength 70% · 5 cards due" for tooltip and screen readers. */
+  strengthText: { type: String, default: '' },
 })
 
 const emit = defineEmits<{ start: [] }>()
@@ -177,8 +199,16 @@ function onStudyClick(event: MouseEvent) {
   emit('start')
 }
 
+const strengthTone = computed(() => {
+  const v = props.strength ?? 0
+  if (v >= 70) return 'bg-green-500'
+  if (v >= 40) return 'bg-amber-400'
+  return 'bg-rose-500'
+})
+
 const accessibleName = computed(() => {
-  if (props.label) return props.label
+  if (props.label)
+    return props.strengthText ? `${props.label} · ${props.strengthText}` : props.label
   if (props.current) return props.startLabel
   return props.locked ? 'Locked lesson' : 'Lesson'
 })
@@ -248,6 +278,29 @@ const iconClass = computed(() => {
 
 .lingo-lesson-button:not(.pointer-events-none):hover .lingo-lesson-node--open {
   background-color: hsl(var(--lingo-node-h, 142) 71% 40%);
+}
+
+/* Strength meter under the node: droplet when the level needs watering, then a 0–100 bar. */
+.lingo-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
+}
+
+.lingo-strength__track {
+  display: block;
+  overflow: hidden;
+  width: 3.5rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background-color: rgb(226 232 240);
+}
+
+.lingo-strength__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
 }
 
 .lingo-lesson-progress {

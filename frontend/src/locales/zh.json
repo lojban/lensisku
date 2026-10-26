@@ -1788,7 +1788,10 @@
     "deleteCardMessage": "确定要删除此卡片吗？此操作无法撤销。",
     "deleteButton": "删除",
     "deleteLevelConfirmTitle": "删除等级",
-    "deleteLevelConfirmMessage": "确定要删除等级「{levelName}」吗？此操作无法撤销。"
+    "deleteLevelConfirmMessage": "确定要删除等级「{levelName}」吗？此操作无法撤销。",
+    "strength": "掌握度 {value}%",
+    "cardsDue": "{count} 张卡片待复习",
+    "needsWatering": "需要复习"
   },
   "anonymousProgress": {
     "bannerMessage": "注册以在设备间同步学习进度",
@@ -1874,7 +1877,6 @@
     "allCourses": "全部课程",
     "classicCollections": "经典主题",
     "newTheme": "新主题",
-
     "heroTitle": "用 Lingo 学习、练习与精通。",
     "continueLearning": "继续学习",
     "getStarted": "开始使用",

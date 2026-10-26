@@ -1809,7 +1809,10 @@
     "deleteCardMessage": "xu do birti lo nu vimcu lo karda be ti? .i lo nu zukte ti na ku ka'e di'a zasti",
     "deleteButton": "daspo",
     "deleteLevelConfirmTitle": "vimcu lo klesi",
-    "deleteLevelConfirmMessage": "xu do birti lo nu vimcu lo klesi la'ei '{levelName}'? .i lo nu zukte ti na ku ka'e di'a zasti"
+    "deleteLevelConfirmMessage": "xu do birti lo nu vimcu lo klesi la'ei '{levelName}'? .i lo nu zukte ti na ku ka'e di'a zasti",
+    "strength": "Strength {value}%",
+    "cardsDue": "no cards due | {count} card due | {count} cards due",
+    "needsWatering": "Needs practice"
   },
   "anonymousProgress": {
     "bannerMessage": "ko co'a se jaspu mu'i lo nu vreji lo do zenba ne'i lo drata skami",
@@ -1895,7 +1898,6 @@
     "allCourses": "ro nunctu",
     "classicCollections": "lo purci tarmi",
     "newTheme": "lo cnino tarmi",
-
     "heroTitle": "ko cilre .e ko tadni .e ko cimni fi la .lingo",
     "continueLearning": "di'a tadni",
     "getStarted": "cfari",

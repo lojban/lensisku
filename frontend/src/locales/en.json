@@ -1849,7 +1849,10 @@
     "saveError": "Could not save the level.",
     "levelMixDone": "Exercise mix applied to this level.",
     "convertLevelToAuto": "Convert this level to Auto",
-    "levelAutoHint": "Auto cards start as a quiz or word bank and move on to listening and typing as you learn."
+    "levelAutoHint": "Auto cards start as a quiz or word bank and move on to listening and typing as you learn.",
+    "strength": "Strength {value}%",
+    "cardsDue": "no cards due | {count} card due | {count} cards due",
+    "needsWatering": "Needs practice"
   },
   "anonymousProgress": {
     "bannerMessage": "Sign up to save your progress across devices",
