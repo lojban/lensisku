@@ -113,11 +113,13 @@ async fn info_card_text_is_never_a_quiz_option() {
         );
     }
     tx.rollback().await.unwrap();
-    client
-        .execute(
-            "DELETE FROM collections WHERE collection_id = $1",
-            &[&collection_id],
-        )
-        .await
-        .unwrap();
+    for sql in [
+        "DELETE FROM user_quiz_answer_history WHERE flashcard_id IN (SELECT id FROM flashcards WHERE collection_id = $1)",
+        "DELETE FROM flashcard_quiz_options WHERE flashcard_id IN (SELECT id FROM flashcards WHERE collection_id = $1)",
+        "DELETE FROM flashcards WHERE collection_id = $1",
+        "DELETE FROM collection_items WHERE collection_id = $1",
+        "DELETE FROM collections WHERE collection_id = $1",
+    ] {
+        client.execute(sql, &[&collection_id]).await.unwrap();
+    }
 }
