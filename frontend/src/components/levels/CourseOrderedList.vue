@@ -10,44 +10,59 @@
       <LoadingSpinner variant="inline" />
     </div>
     <template v-else>
-      <div v-if="isOwner" class="flex min-h-[2.5rem] flex-wrap items-center gap-2">
-        <div
-          class="inline-flex shrink-0 rounded-md border border-gray-200 bg-white p-0.5"
-          role="group"
-          :aria-label="t('courseOrder.modeLabel')"
-        >
-          <button
-            v-for="m in ['learn', 'edit'] as const"
-            :key="m"
-            type="button"
-            class="rounded px-3 py-1 text-xs font-medium transition-colors"
-            :class="mode === m ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
-            :aria-pressed="mode === m"
-            :data-mode="m"
-            @click="setMode(m)"
+      <div v-if="isOwner" class="course-toolbar flex flex-col gap-1.5">
+        <!-- Row 1: mode toggle (left) · save status + Add level (right). Same height in both modes. -->
+        <div class="flex min-h-[2.5rem] items-center justify-between gap-2">
+          <div
+            class="inline-flex shrink-0 rounded-md border border-gray-200 bg-white p-0.5"
+            role="group"
+            :aria-label="t('courseOrder.modeLabel')"
           >
-            {{ t(m === 'edit' ? 'courseOrder.modeEdit' : 'courseOrder.modeLearn') }}
-          </button>
+            <button
+              v-for="m in ['learn', 'edit'] as const"
+              :key="m"
+              type="button"
+              class="rounded px-3 py-1 text-xs font-medium transition-colors"
+              :class="mode === m ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+              :aria-pressed="mode === m"
+              :data-mode="m"
+              @click="setMode(m)"
+            >
+              {{ t(m === 'edit' ? 'courseOrder.modeEdit' : 'courseOrder.modeLearn') }}
+            </button>
+          </div>
+          <div class="flex shrink-0 items-center gap-2" :class="{ invisible: !editMode }">
+            <span class="text-right text-xs text-gray-500" aria-live="polite">{{
+              saveState === 'saving'
+                ? t('courseOrder.saving')
+                : saveState === 'saved'
+                  ? t('courseOrder.saved')
+                  : ''
+            }}</span>
+            <Button variant="create" :tabindex="editMode ? undefined : -1" @click="openCreate">
+              <template #icon><PlusCircle class="h-4 w-4" /></template>
+              {{ t('levelHeading.addLevel') }}
+            </Button>
+          </div>
         </div>
-        <p class="min-w-0 flex-1 text-xs text-gray-500">
-          {{ t(editMode ? 'courseOrder.ownerHint' : 'courseOrder.readOnlyHint') }}
-        </p>
-        <span
-          v-show="editMode"
-          class="min-w-[4.5rem] text-right text-xs text-gray-500"
-          aria-live="polite"
-          >{{
-            saveState === 'saving'
-              ? t('courseOrder.saving')
-              : saveState === 'saved'
-                ? t('courseOrder.saved')
-                : ''
-          }}</span
-        >
-        <Button v-show="editMode" variant="create" @click="openCreate">
-          <template #icon><PlusCircle class="h-4 w-4" /></template>
-          {{ t('levelHeading.addLevel') }}
-        </Button>
+        <!-- Row 2: full-width hint. Both texts share one grid cell so the row is always as tall
+             as the longer one: switching modes never shifts the list (CLS 0). -->
+        <div class="grid text-left text-xs leading-snug text-gray-500">
+          <p
+            class="col-start-1 row-start-1"
+            :class="{ invisible: !editMode }"
+            :aria-hidden="!editMode"
+          >
+            {{ t('courseOrder.ownerHint') }}
+          </p>
+          <p
+            class="col-start-1 row-start-1"
+            :class="{ invisible: editMode }"
+            :aria-hidden="editMode"
+          >
+            {{ t('courseOrder.readOnlyHint') }}
+          </p>
+        </div>
       </div>
       <template v-for="entry in pageEntries" :key="entry.key">
         <LevelHeading

@@ -30,14 +30,14 @@
           {{ t('flashcardLevels.cancelButton') }}
         </Button>
       </form>
-      <div v-else class="flex min-w-0 flex-col">
-        <h3 class="min-w-0 truncate text-sm font-semibold text-gray-800">
+      <div v-else class="flex min-w-0 flex-1 flex-col">
+        <h3 class="min-w-0 break-words text-sm font-semibold text-gray-800">
           {{ level ? level.name : t('levelHeading.unassigned') }}
           <span v-if="continued" class="font-normal text-gray-500">{{
             t('levelHeading.continued')
           }}</span>
         </h3>
-        <p v-if="prereqNames && !continued" class="min-w-0 truncate text-xs text-gray-500">
+        <p v-if="prereqNames && !continued" class="min-w-0 break-words text-xs text-gray-500">
           {{ t('levelHeading.requiresShort', { names: prereqNames }) }}
         </p>
       </div>
@@ -49,12 +49,6 @@
         :aria-label="t('levelHeading.requires', { names: prereqNames })"
       >
         <Lock class="h-3.5 w-3.5" />
-      </span>
-      <span
-        v-if="!isRenaming"
-        class="shrink-0 rounded-full bg-white px-2 text-xs text-gray-600 ring-1 ring-gray-200"
-      >
-        {{ t('levelHeading.cards', { count }) }}
       </span>
     </div>
     <div v-if="level && isOwner && !isRenaming" class="flex shrink-0 items-center gap-1">

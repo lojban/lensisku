@@ -242,7 +242,7 @@
                     @remove="confirmRemoveItem(item)"
                     @edit-item="openEditItemModal(item)"
                   >
-                    <template v-if="levelsForItem(item.item_id).length" #footer>
+                    <template v-if="!isCourseMode && levelsForItem(item.item_id).length" #footer>
                       <ItemLevelBadges
                         :levels="levelsForItem(item.item_id)"
                         :collection-id="collection.collection_id"

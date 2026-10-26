@@ -254,6 +254,7 @@
                         {{ card.flashcard.word ?? card.flashcard.free_content_front }}
                       </h3>
                       <ItemLevelBadges
+                        v-if="!isCourseMode"
                         :levels="levelsForItem(card.flashcard.item_id)"
                         :collection-id="props.collectionId"
                       />
