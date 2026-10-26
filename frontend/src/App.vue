@@ -13,21 +13,17 @@
   </div>
 
   <div v-if="isWinterSeason && showPyro" class="pyro" />
-  <!-- Full-viewport spinner while the first route boots (incl. the prerendered shell) and while
-       a navigation switches layout (app ↔ Lingo shell). The page underneath is visibility:hidden
-       so header/sidebars/notice can settle without layout shift. -->
+  <!-- Full-viewport spinner only while the first client route boots (prerendered shell + auth).
+       Later navigations keep the current page live and show the top progress bar instead. -->
   <div
-    v-if="layoutSwitching || booting"
+    v-if="booting"
     class="route-layout-overlay"
     role="progressbar"
     :aria-label="$t('components.loadingSpinner.loadingDefault')"
   >
     <LoadingSpinner variant="inline" />
   </div>
-  <div
-    class="app-layout-column"
-    :class="{ 'app-layout-column--switching': layoutSwitching || booting }"
-  >
+  <div class="app-layout-column" :class="{ 'app-layout-column--switching': booting }">
     <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
 
     <header v-if="!route.meta.hideTopBar" class="app-header-bar">
@@ -270,17 +266,10 @@
               : '',
           ]"
         >
-          <!-- Previous route frozen until API traffic after navigation goes quiet. -->
-          <div
-            v-if="routeOverlayHtml != null"
-            ref="routeFreezeRef"
-            class="route-view-freeze"
-            aria-hidden="true"
-            v-html="routeOverlayHtml"
-          />
+          <!-- Router navigation in flight (guards + lazy chunk); the current page stays live. -->
           <Teleport to="body">
             <div
-              v-if="routeOverlayHtml != null"
+              v-if="showNavProgress"
               class="route-progress"
               role="progressbar"
               aria-valuemin="0"
@@ -290,14 +279,10 @@
               <span class="route-progress__bar" />
             </div>
           </Teleport>
-          <LoadingSpinner v-if="routeOverlayHtml == null && auth.state.isLoading" variant="page" />
+          <LoadingSpinner v-if="auth.state.isLoading" variant="page" />
           <div
-            data-route-live
             class="relative min-h-0 min-w-0"
-            :class="[
-              route.meta.fullHeight ? 'full-height-route-host h-full' : '',
-              routeOverlayHtml != null ? 'invisible pointer-events-none' : '',
-            ]"
+            :class="route.meta.fullHeight ? 'full-height-route-host h-full' : ''"
           >
             <router-view v-if="!auth.state.isLoading" v-slot="{ Component, route: childRoute }">
               <component
@@ -387,16 +372,6 @@ import CreateMenu from './components/CreateMenu.vue'
 import LoadingSpinner from './components/LoadingSpinner.vue'
 import PublicDomainNotice from './components/PublicDomainNotice.vue'
 import UnsavedChangesDialog from './components/UnsavedChangesDialog.vue'
-import {
-  beginRouteOverlay,
-  clearRouteOverlay,
-  restoreRouteOverlayScroll,
-  scheduleRouteOverlaySettle,
-  useRouteOverlay,
-  waitForApiQuiet,
-  waitForImages,
-  waitForRevealHolds,
-} from './composables/useRouteOverlay'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
 import {
   noindexRoutes,
@@ -415,15 +390,6 @@ const $locale = i18n.locale
 const router = useRouter()
 const route = useRoute()
 const routeStageRef = ref<HTMLElement | null>(null)
-const routeFreezeRef = ref<HTMLElement | null>(null)
-const { freezeHtml: routeOverlayHtml } = useRouteOverlay()
-
-// Frozen HTML loses scrollTop; re-apply so Lingo lesson trees do not jump to the top.
-watch(routeOverlayHtml, async (html) => {
-  if (html == null) return
-  await nextTick()
-  restoreRouteOverlayScroll(routeFreezeRef.value)
-})
 
 const seoRouteName = computed(() => String(route.name || '').replace(/-(en|jbo|ru|ja|zh)$/, ''))
 const seoNoindex = computed(() => noindexRoutes.has(seoRouteName.value))
@@ -677,83 +643,48 @@ watch(
   { immediate: true }
 )
 
-/** Route meta that changes the app chrome (header, Lingo shell, full-height host). */
-const layoutKey = (meta: Record<string, unknown>) =>
-  ['lingoShell', 'hideTopBar', 'fullHeight', 'hideFooter', 'authFullBleed']
-    .map((k) => (meta[k] ? 1 : 0))
-    .join('')
-const layoutSwitching = ref(false)
-let layoutSwitchGen = 0
-/** True in the prerendered HTML and until the first client route has settled. */
+/** True in the prerendered HTML and until the first client route has rendered with auth known. */
 const booting = ref(true)
 
-const twoFrames = () =>
-  new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
-
-/** Wait until the freshly rendered route has its data, holds released, images and layout. */
-/** Never keep the full-viewport spinner longer than this (slow or failing API). */
-const SETTLE_MAX_MS = 8000
-
-function settleRoute() {
-  return Promise.race([settleRouteInner(), new Promise<void>((r) => setTimeout(r, SETTLE_MAX_MS))])
+/**
+ * Single navigation state: true from beforeEach until the router resolves (guards + lazy route
+ * chunk) or fails. The outgoing page stays mounted and interactive meanwhile; the new page owns
+ * its own loading UI. The bar appears only if the navigation takes longer than NAV_BAR_DELAY_MS.
+ */
+const NAV_BAR_DELAY_MS = 120
+const showNavProgress = ref(false)
+let navBarTimer: ReturnType<typeof setTimeout> | null = null
+const endNavigation = () => {
+  if (navBarTimer) clearTimeout(navBarTimer)
+  navBarTimer = null
+  showNavProgress.value = false
 }
-
-async function settleRouteInner() {
-  await nextTick()
-  await nextTick()
-  await waitForApiQuiet(2500)
-  await waitForRevealHolds(8000)
-  await nextTick()
-  await waitForImages(document, 1500)
-  await twoFrames()
-}
+const removeNavBefore = router.beforeEach((to, from) => {
+  if (to.path === from.path || navBarTimer || showNavProgress.value) return
+  navBarTimer = setTimeout(() => {
+    navBarTimer = null
+    showNavProgress.value = true
+  }, NAV_BAR_DELAY_MS)
+})
+const removeNavAfter = router.afterEach(endNavigation)
+const removeNavError = router.onError(endNavigation)
 
 onMounted(async () => {
   await router.isReady()
-  // Auth bootstrap gates the router-view; wait for it before measuring the route.
-  await Promise.race([
-    (async () => {
-      for (let i = 0; i < 100 && auth.state.isLoading; i++)
-        await new Promise((r) => setTimeout(r, 50))
-      await settleRouteInner()
-    })(),
-    new Promise<void>((r) => setTimeout(r, SETTLE_MAX_MS)),
-  ])
+  if (auth.state.isLoading) {
+    await new Promise<void>((resolve) => {
+      const stop = watch(
+        () => auth.state.isLoading,
+        (loading) => {
+          if (loading) return
+          stop()
+          resolve()
+        }
+      )
+    })
+  }
+  await nextTick()
   booting.value = false
-})
-
-const removeRouteOverlayBefore = router.beforeEach((to, from) => {
-  if (
-    to.path !== from.path &&
-    from.matched.length > 0 &&
-    layoutKey(to.meta) !== layoutKey(from.meta)
-  ) {
-    layoutSwitchGen += 1
-    layoutSwitching.value = true
-  }
-  // Query/hash-only updates (filters, feed tabs, expand) are in-page — no freeze.
-  if (to.path === from.path) return
-  if (!from.name && from.matched.length === 0) return
-  const live = routeStageRef.value?.querySelector('[data-route-live]') as HTMLElement | null
-  beginRouteOverlay(live)
-})
-const removeRouteOverlayAfter = router.afterEach(async (to, from) => {
-  if (layoutSwitching.value) {
-    const gen = layoutSwitchGen
-    // New page mounted under the hidden layout: wait for its data/holds/images, then layout.
-    await settleRoute()
-    if (gen === layoutSwitchGen) layoutSwitching.value = false
-  }
-  if (routeOverlayHtml.value == null) return
-  if (to.path === from.path) return
-  // Let the new page mount and kick off its fetches before we start the quiet timer.
-  await nextTick()
-  await nextTick()
-  scheduleRouteOverlaySettle()
-})
-const removeRouteOverlayError = router.onError(() => {
-  layoutSwitching.value = false
-  clearRouteOverlay()
 })
 
 // Handle click outside mobile menu to close it
@@ -850,10 +781,10 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  removeRouteOverlayBefore()
-  removeRouteOverlayAfter()
-  removeRouteOverlayError()
-  clearRouteOverlay()
+  removeNavBefore()
+  removeNavAfter()
+  removeNavError()
+  endNavigation()
   window.removeEventListener('resize', handleResize)
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('keydown', handleGlobalKeyDown)

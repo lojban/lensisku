@@ -23,7 +23,7 @@ withDefaults(
     /**
      * `page`: fixed full-viewport wash (auth bootstrap, etc.).
      * `content`: absolute wash over a `relative` parent (in-page filter/search refresh).
-     * Path changes use App’s freeze + `.route-progress` bar instead.
+     * Path changes show App’s `.route-progress` bar while the router resolves.
      * `inline`: centered ring for modals and small regions (no veil).
      */
     variant?: 'page' | 'content' | 'inline'

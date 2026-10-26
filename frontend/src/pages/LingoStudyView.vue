@@ -567,7 +567,6 @@ import {
 } from '@/composables/useAnonymousProgress'
 import { clearGuestSession, ensureGuestSession } from '@/composables/useGuestSession'
 import { queryStr, paramStr } from '@/utils/routeQuery'
-import { holdRouteReveal } from '@/composables/useRouteOverlay'
 import { STUDY_SESSION_MAX_CARDS, studySessionRoom } from '@/config/studyConstants'
 
 const ANON_BANNER_ANSWERED_KEY = 'lensisku_study_cards_answered'
@@ -725,12 +724,6 @@ async function resolveReturnFocusLevel() {
 }
 
 const isLoading = ref(true)
-// Keep the route overlay up until the first session load finishes (header + card appear together).
-const releaseReveal = holdRouteReveal()
-watch(isLoading, (v) => {
-  if (!v) void nextTick(releaseReveal)
-})
-onBeforeUnmount(releaseReveal)
 const remainingCards = ref([])
 const currentCard = ref(null)
 const showWavesModal = ref(false)
