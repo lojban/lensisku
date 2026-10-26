@@ -193,8 +193,31 @@
                 :style="{ backgroundImage: `url(${studyQuestionCharacterSrc})` }"
               />
               <div class="lingo-study-question-bubble">
+                <!-- Information card: title + Markdown body, no hints and no reply bubble. -->
                 <div
-                  v-if="currentCard.progress[0].card_side === 'direct'"
+                  v-if="isJustInformationMode"
+                  class="lingo-study-info prose prose-sm max-w-none [overflow-wrap:anywhere]"
+                >
+                  <div class="lingo-study-info__title">
+                    <LazyMathJax
+                      :content="
+                        currentCard.flashcard.word ?? currentCard.flashcard.free_content_front ?? ''
+                      "
+                      :enable-markdown="true"
+                    />
+                  </div>
+                  <LazyMathJax
+                    v-if="
+                      currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
+                    "
+                    :content="
+                      currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
+                    "
+                    :enable-markdown="true"
+                  />
+                </div>
+                <div
+                  v-else-if="currentCard.progress[0].card_side === 'direct'"
                   class="flex items-start justify-between gap-2"
                 >
                   <p class="lingo-study-stimulus min-w-0 flex-1 [overflow-wrap:anywhere]">
@@ -274,7 +297,7 @@
 
             <!-- Reply: empty/fill-in bubble + speaker on the right (mirrored). Hidden for quiz assist. -->
             <div
-              v-if="!isQuizMode"
+              v-if="!isQuizMode && !isJustInformationMode"
               class="lingo-study-question-row lingo-study-question-row--reply"
             >
               <div
@@ -2072,5 +2095,14 @@ onMounted(async () => {
   .lingo-study-root :deep(.lingo-study-question-row--reply) {
     padding-left: 5rem;
   }
+}
+.lingo-study-info__title {
+  font-weight: 700;
+  font-size: 1.05em;
+  margin-bottom: 0.4rem;
+}
+.lingo-study-info :deep(ul) {
+  margin: 0.25rem 0;
+  padding-left: 1.1rem;
 }
 </style>
