@@ -130,17 +130,18 @@ jobs:
       run: |
         sudo apt-get $APT_OPTS update
         sudo apt-get $APT_OPTS install -y pkg-config libgraphite2-dev libharfbuzz-dev \
-          libfontconfig1-dev libfreetype6-dev mold postgresql-client
+          libfontconfig1-dev libfreetype6-dev mold
     - name: Create test databases
+      # psql from the service container itself (installing postgresql-client cost ~4.5 min of apt).
       run: |
+        PSQL="docker exec -i ${{ job.services.postgres.id }} psql -U postgres -q -v ON_ERROR_STOP=1"
         for db in rafsi_test wiki_test feed_test lensisku_test; do
-          psql -h 127.0.0.1 -p 55432 -U postgres -c "CREATE DATABASE $db"
+          $PSQL -c "CREATE DATABASE $db"
         done
         # Full schema + languages/valsitypes for the collections/flashcards tests.
         # Regenerate from a migrated dev DB: pg_dump -s --no-owner --no-privileges,
         # plus pg_dump -a -t languages -t valsitypes.
-        psql -h 127.0.0.1 -p 55432 -U postgres -d lensisku_test -q -v ON_ERROR_STOP=1 \
-          -f tests/fixtures/lensisku_schema.sql
+        $PSQL -d lensisku_test < tests/fixtures/lensisku_schema.sql
     - name: Ignored DB tests
       run: >-
         cargo test --locked --bin lensisku -- --ignored
