@@ -1340,6 +1340,17 @@ const originalItemDirection = ref<string | null>(null)
 const isInfoDirection = (d: string | null | undefined) =>
   (d ?? '').toLowerCase().replace(/_/g, '') === 'justinformation'
 
+/** API sends `just_information` (serde snake_case); the option value is `justinformation`.
+ * Without this the native select matches nothing and shows its first option ("Word → Definition"). */
+const directionKey = (d: string | null | undefined) => (d ?? '').toLowerCase().replace(/_/g, '')
+const toDirectionOption = (d: string | null | undefined) => {
+  if (!d) return 'direct'
+  const match = flashcardDirectionOptions.value.find(
+    (o) => directionKey(o.value) === directionKey(d)
+  )
+  return match ? match.value : d
+}
+
 const flashcardDirectionOptions = computed(() => [
   ...(isInfoDirection(originalItemDirection.value)
     ? []
@@ -1692,7 +1703,7 @@ const openEditItemModal = async (item) => {
   // Initialize common fields
   addItemNotes.value = item.ci_notes
   enableFlashcard.value = !!item.flashcard
-  addItemDirection.value = item.flashcard?.direction || 'direct'
+  addItemDirection.value = toDirectionOption(item.flashcard?.direction)
   originalItemDirection.value = item.flashcard?.direction ?? null
   customContent.value.auto_progress = item.auto_progress
   currentItem.value = item
@@ -1762,7 +1773,7 @@ const openEditItemModal = async (item) => {
       itemType.value = 'custom'
       // For custom non-quiz, set enableFlashcard and addItemDirection based on existing flashcard
       enableFlashcard.value = !!item.flashcard
-      addItemDirection.value = item.flashcard?.direction || 'direct'
+      addItemDirection.value = toDirectionOption(item.flashcard?.direction)
       originalItemDirection.value = item.flashcard?.direction ?? null
     }
 
@@ -2382,12 +2393,11 @@ watch(
   }
 )
 
-watch(
-  () => route.query.mode,
-  () => {
-    fetchItems()
-  }
-)
+// Only `?mode=add_flashcard` changes what is fetched. Learn/Edit (`?mode=edit`) is a pure view
+// state of the course list: refetching would flip isLoadingItems and remount the whole list.
+watch(isAddFlashcardMode, () => {
+  fetchItems()
+})
 
 // Search debouncing
 let searchTimeout = null

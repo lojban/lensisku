@@ -85,7 +85,7 @@
         />
         <div
           v-else
-          class="course-row flex min-w-0 items-stretch gap-1"
+          class="course-row flex min-w-0 items-stretch gap-2 sm:gap-3"
           :class="{
             'opacity-50': dragging?.key === entry.rowKey && dragging.from === entry.sectionId,
           }"
@@ -99,7 +99,7 @@
           <!-- Reserved for owners in both modes; arrows only shown in edit mode (no CLS). -->
           <div
             v-if="isOwner"
-            class="flex w-9 shrink-0 flex-col items-center justify-start gap-1 pt-2"
+            class="course-row__handle flex w-8 shrink-0 flex-col items-center justify-start gap-1.5 pt-3"
             :class="{ invisible: !editMode }"
             :aria-hidden="!editMode"
           >
@@ -109,7 +109,7 @@
                 aria-hidden="true"
               />
               <IconButton
-                button-classes="ui-btn--toolbar"
+                button-classes="ui-btn--toolbar course-row__arrow"
                 :aria-label="t('courseOrder.moveUp')"
                 :disabled="!editMode || !canMove(entry, -1)"
                 @click="nudge(entry, -1)"
@@ -117,7 +117,7 @@
                 <template #icon><ArrowUp class="h-4 w-4" /></template>
               </IconButton>
               <IconButton
-                button-classes="ui-btn--toolbar"
+                button-classes="ui-btn--toolbar course-row__arrow"
                 :aria-label="t('courseOrder.moveDown')"
                 :disabled="!editMode || !canMove(entry, 1)"
                 @click="nudge(entry, 1)"
@@ -633,5 +633,14 @@ defineExpose({ load, focusLevel, focusItem, isLoaded: course.isLoaded })
   border-radius: 0.5rem;
   box-shadow: 0 0 0 3px rgb(99 102 241 / 0.5);
   transition: box-shadow 0.3s;
+}
+
+/* Square, fixed-size reorder arrows that fit their 2rem column (never overlap the card). */
+.course-row__handle :deep(.course-row__arrow) {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0;
+  justify-content: center;
 }
 </style>
