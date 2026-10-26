@@ -296,6 +296,13 @@ pub struct LevelResponse {
     pub card_count: i32,
     pub is_locked: bool,
     pub is_started: bool,
+    /// Memory strength 0–100 of the learner's reviewed (non-information) cards in this level;
+    /// `None` for guests or before the first review. See `service::level_strengths`.
+    pub strength: Option<i32>,
+    /// Reviewed non-information cards whose `next_review_at` has passed.
+    pub due_count: i32,
+    /// Level should be practised again ("watering"): cards are due or strength fell below 70.
+    pub needs_watering: bool,
     #[schema(value_type = String, format = DateTime)]
     pub created_at: ChronoDateTime,
 }

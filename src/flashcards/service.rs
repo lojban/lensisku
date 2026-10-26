@@ -3753,6 +3753,10 @@ pub async fn get_level_details(
         progress,
         is_locked,
         is_started,
+        // Strength is a collection-tree concern (`get_collection_levels`); single-level reads skip it.
+        strength: None,
+        due_count: 0,
+        needs_watering: false,
         created_at: level_row.get("created_at"),
     })
 }
@@ -3785,9 +3789,15 @@ pub async fn get_collection_levels(
         )
         .await?;
 
+    let strengths = match user_id {
+        Some(uid) => level_strengths(&transaction, collection_id, uid).await?,
+        None => HashMap::new(),
+    };
+
     let mut levels = Vec::new();
     for row in rows {
         let level_id = row.get("level_id");
+        let strength = strengths.get(&level_id).copied().unwrap_or_default();
         let prerequisites = get_prerequisites(&transaction, level_id, user_id).await?;
         let progress = if let Some(uid) = user_id {
             get_level_progress(&transaction, level_id, uid).await?
@@ -3823,6 +3833,9 @@ pub async fn get_collection_levels(
             progress,
             is_locked,
             is_started,
+            strength: if is_locked { None } else { strength.strength },
+            due_count: if is_locked { 0 } else { strength.due_count },
+            needs_watering: !is_locked && strength.needs_watering,
             created_at: ChronoDateTime(row.get("created_at")),
         });
     }
@@ -3833,6 +3846,71 @@ pub async fn get_collection_levels(
         total: levels.len() as i64,
         levels,
     })
+}
+
+/// Per-level "watering" state for one learner.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub(crate) struct LevelStrength {
+    pub strength: Option<i32>,
+    pub due_count: i32,
+    pub needs_watering: bool,
+}
+
+/// Below this strength a level asks for practice even with nothing formally due.
+pub(crate) const WATERING_STRENGTH_THRESHOLD: i32 = 70;
+
+/// Strength of every level in `collection_id` for `user_id`, in one query.
+///
+/// Formula (per progress row = card side the learner has reviewed at least once; information
+/// cards and archived rows excluded):
+/// - `S` = FSRS stability in days, or the SM-2 interval (min 1 day) when stability is unset;
+/// - `t` = days since `last_reviewed_at`;
+/// - recall `R = (1 + t / (9·S))⁻¹` (FSRS forgetting curve: R = 90 % when t = S).
+///
+/// `strength = round(100 · avg(R))` over the level's rows, `None` when nothing was reviewed.
+/// `due_count` = distinct cards with a side whose `next_review_at <= now()`.
+/// `needs_watering` = reviewed and (`due_count > 0` or `strength < 70`).
+pub(crate) async fn level_strengths(
+    transaction: &Transaction<'_>,
+    collection_id: i32,
+    user_id: i32,
+) -> Result<HashMap<i32, LevelStrength>, FlashcardError> {
+    let rows = transaction
+        .query(
+            "SELECT fli.level_id,
+                    ROUND(100 * AVG(
+                        1.0 / (1.0 + GREATEST(EXTRACT(EPOCH FROM (now() - p.last_reviewed_at)) / 86400.0, 0)
+                               / (9.0 * CASE WHEN p.stability > 0 THEN p.stability
+                                             ELSE GREATEST(p.interval, 1) END))
+                    ))::int AS strength,
+                    COUNT(DISTINCT p.flashcard_id) FILTER (WHERE p.next_review_at <= now())::int AS due_count
+             FROM flashcard_levels l
+             JOIN flashcard_level_items fli ON fli.level_id = l.level_id
+             JOIN flashcards f ON f.id = fli.flashcard_id AND f.direction <> 'just_information'
+             JOIN user_flashcard_progress p ON p.flashcard_id = f.id AND p.user_id = $2
+                  AND NOT p.archived AND p.last_reviewed_at IS NOT NULL
+             WHERE l.collection_id = $1
+             GROUP BY fli.level_id",
+            &[&collection_id, &user_id],
+        )
+        .await?;
+    Ok(rows
+        .into_iter()
+        .map(|row| {
+            let strength: Option<i32> = row.get("strength");
+            let due_count: i32 = row.get("due_count");
+            let needs_watering =
+                strength.is_some_and(|s| due_count > 0 || s < WATERING_STRENGTH_THRESHOLD);
+            (
+                row.get("level_id"),
+                LevelStrength {
+                    strength,
+                    due_count,
+                    needs_watering,
+                },
+            )
+        })
+        .collect())
 }
 
 async fn get_prerequisites(

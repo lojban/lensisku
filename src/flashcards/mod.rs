@@ -17,6 +17,8 @@ mod info_card_tests;
 #[cfg(test)]
 mod level_completion_tests;
 #[cfg(test)]
+mod level_strength_tests;
+#[cfg(test)]
 mod merge_progress_tests;
 pub mod models;
 pub(crate) mod rating_policy;
