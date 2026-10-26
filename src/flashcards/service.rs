@@ -315,8 +315,8 @@ pub async fn create_flashcard(
             initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
         }
         FlashcardDirection::JustInformation => {
+            // Starts `new` (due once); acknowledging it (OK) retires it for good.
             initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-            mark_progress_graduated(&transaction, user_id, flashcard_id, "direct").await?;
         }
         FlashcardDirection::QuizDirect
         | FlashcardDirection::QuizReverse
@@ -428,17 +428,20 @@ pub async fn initialize_progress(
     Ok(())
 }
 
-async fn mark_progress_graduated(
+/// An acknowledged info card never comes back: graduated, next review far in the future
+/// (not NULL — NULL counts as due), so it is out of every due count / queue and lets
+/// `complete_level_when_nothing_due` finish the level.
+async fn retire_info_card_progress(
     transaction: &Transaction<'_>,
     user_id: i32,
     flashcard_id: i32,
-    side: &str,
 ) -> Result<(), FlashcardError> {
     transaction
         .execute(
-            "UPDATE user_flashcard_progress SET status = 'graduated', next_review_at = NULL
-         WHERE user_id = $1 AND flashcard_id = $2 AND card_side = $3 AND NOT archived",
-            &[&user_id, &flashcard_id, &side],
+            "UPDATE user_flashcard_progress
+             SET status = 'graduated', next_review_at = CURRENT_TIMESTAMP + INTERVAL '100 years'
+             WHERE user_id = $1 AND flashcard_id = $2 AND NOT archived",
+            &[&user_id, &flashcard_id],
         )
         .await?;
     Ok(())
@@ -1201,8 +1204,8 @@ pub async fn list_flashcards(
                 initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
             }
             FlashcardDirection::JustInformation => {
+                // Starts `new` (due once); acknowledging it (OK) retires it for good.
                 initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                mark_progress_graduated(&transaction, user_id, flashcard_id, "direct").await?;
             }
             FlashcardDirection::QuizDirect
             | FlashcardDirection::QuizReverse
@@ -2265,6 +2268,16 @@ pub async fn review_flashcard(
             ],
         )
         .await?;
+    let is_info_card: bool = transaction
+        .query_one(
+            "SELECT direction = 'just_information' FROM flashcards WHERE id = $1",
+            &[&req.flashcard_id],
+        )
+        .await?
+        .get(0);
+    if is_info_card {
+        retire_info_card_progress(&transaction, user_id, req.flashcard_id).await?;
+    }
     if is_auto_review {
         transaction
             .execute(
@@ -4601,6 +4614,8 @@ pub async fn apply_challenge_mix_to_level(
              LEFT JOIN definitions d ON ci.definition_id = d.definitionid
              LEFT JOIN valsi v ON d.valsiid = v.valsiid
              WHERE fli.level_id = $1
+               -- Info cards are only ever `just_information`: no mix may retype them.
+               AND f.direction <> 'just_information'
              ORDER BY fli.position",
             &[&level_id],
         )

@@ -1461,22 +1461,6 @@ pub async fn delete_collection(
     Ok(())
 }
 
-async fn mark_progress_graduated(
-    transaction: &Transaction<'_>,
-    user_id: i32,
-    flashcard_id: i32,
-    side: &str,
-) -> AppResult<()> {
-    transaction
-        .execute(
-            "UPDATE user_flashcard_progress SET status = 'graduated', next_review_at = NULL
-         WHERE user_id = $1 AND flashcard_id = $2 AND card_side = $3 AND NOT archived",
-            &[&user_id, &flashcard_id, &side],
-        )
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
-    Ok(())
-}
 
 pub async fn import_json(
     pool: &Pool,
@@ -2949,6 +2933,14 @@ pub async fn upsert_item(
                 let existing_id: i32 = row.get("id");
                 let existing_direction: FlashcardDirection = row.get("direction");
 
+                // Info cards are only ever `just_information`: never Auto.
+                if existing_direction == FlashcardDirection::JustInformation
+                    && direction == FlashcardDirection::Auto
+                {
+                    return Err(AppError::BadRequest(
+                        "An information card cannot be converted to Auto.".to_string(),
+                    ));
+                }
                 // Handle direction change
                 if existing_direction != direction {
                     // Archive existing progress
@@ -3050,8 +3042,6 @@ pub async fn upsert_item(
                                 "direct",
                             )
                             .await?;
-                            mark_progress_graduated(&transaction, user_id, existing_id, "direct")
-                                .await?;
                         }
                         FlashcardDirection::FillIn
                         | FlashcardDirection::Wordbank
@@ -3204,7 +3194,6 @@ pub async fn upsert_item(
                     FlashcardDirection::JustInformation => {
                         initialize_flashcard_progress(&transaction, user_id, new_id, "direct")
                             .await?;
-                        mark_progress_graduated(&transaction, user_id, new_id, "direct").await?;
                     }
                     FlashcardDirection::QuizDirect
                     | FlashcardDirection::QuizReverse

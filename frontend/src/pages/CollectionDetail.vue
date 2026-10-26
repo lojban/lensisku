@@ -1335,8 +1335,15 @@ const definitionSound = ref(null)
 const definitionRemoveSound = ref(false)
 const addItemDirection = ref('direct')
 
+/** Direction of the card being edited (null when adding). Info cards can never become Auto. */
+const originalItemDirection = ref<string | null>(null)
+const isInfoDirection = (d: string | null | undefined) =>
+  (d ?? '').toLowerCase().replace(/_/g, '') === 'justinformation'
+
 const flashcardDirectionOptions = computed(() => [
-  { value: 'auto', label: t('collectionDetail.direction.auto') },
+  ...(isInfoDirection(originalItemDirection.value)
+    ? []
+    : [{ value: 'auto', label: t('collectionDetail.direction.auto') }]),
   { value: 'direct', label: t('collectionDetail.direction.direct') },
   { value: 'reverse', label: t('collectionDetail.direction.reverse') },
   { value: 'both', label: t('collectionDetail.direction.both') },
@@ -1686,6 +1693,7 @@ const openEditItemModal = async (item) => {
   addItemNotes.value = item.ci_notes
   enableFlashcard.value = !!item.flashcard
   addItemDirection.value = item.flashcard?.direction || 'direct'
+  originalItemDirection.value = item.flashcard?.direction ?? null
   customContent.value.auto_progress = item.auto_progress
   currentItem.value = item
   definitionSound.value = null
@@ -1749,11 +1757,13 @@ const openEditItemModal = async (item) => {
     if (item.flashcard?.direction?.toLowerCase().includes('quiz')) {
       itemType.value = 'quiz'
       addItemDirection.value = item.flashcard.direction // Pre-select quiz direction
+      originalItemDirection.value = item.flashcard.direction ?? null
     } else {
       itemType.value = 'custom'
       // For custom non-quiz, set enableFlashcard and addItemDirection based on existing flashcard
       enableFlashcard.value = !!item.flashcard
       addItemDirection.value = item.flashcard?.direction || 'direct'
+      originalItemDirection.value = item.flashcard?.direction ?? null
     }
 
     customContent.value = {
@@ -2499,6 +2509,7 @@ const resetForm = () => {
   selectedDefinition.value = null
   enableFlashcard.value = false
   addItemDirection.value = 'direct'
+  originalItemDirection.value = null
   isEditingItem.value = false
   currentItem.value = null
   customContent.value = {
