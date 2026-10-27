@@ -37,7 +37,7 @@
           :has-audio="hasAudio(line.index)"
           :playing="audio.playingLine.value === line.index"
           @play="audio.play(line.index, audioVersion)"
-          @gloss="glossSinceAnswer = true"
+          @gloss="onGloss"
         />
       </div>
 
@@ -174,6 +174,11 @@ async function scrollDown() {
   if (el) el.scrollTop = el.scrollHeight
 }
 
+function onGloss() {
+  glossSinceAnswer.value = true
+  void scrollDown()
+}
+
 function advanceLine() {
   const line = lines.value[revealed.value]
   revealed.value += 1
@@ -181,6 +186,8 @@ function advanceLine() {
   if (line && hasAudio(line.index)) void audio.play(line.index, props.audioVersion)
   if (phase.value === 'finished') void finish()
 }
+
+watch(shownLines, () => void scrollDown())
 
 function replayAll() {
   void audio.playAll(
