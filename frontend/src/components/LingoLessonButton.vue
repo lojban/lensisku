@@ -61,7 +61,10 @@
         :title="strengthText"
         aria-hidden="true"
       >
-        <Droplet v-if="needsWatering" class="h-3.5 w-3.5 shrink-0 fill-sky-400 text-sky-500" />
+        <Droplet
+          v-if="needsWatering && !wilted"
+          class="h-3.5 w-3.5 shrink-0 fill-sky-400 text-sky-500"
+        />
         <span class="lingo-strength__track">
           <span
             class="lingo-strength__fill"
@@ -71,6 +74,7 @@
         </span>
       </span>
       <span v-if="label" class="lingo-lesson-label" :title="label">{{ label }}</span>
+      <span v-if="hint" class="lingo-lesson-hint">{{ hint }}</span>
     </a>
     <div v-if="showOwnerMenu" class="relative z-20 flex shrink-0 items-center" @click.stop>
       <button
@@ -150,6 +154,7 @@
       <span v-if="label" class="lingo-lesson-label lingo-lesson-label--locked" :title="label">{{
         label
       }}</span>
+      <span v-if="hint" class="lingo-lesson-hint">{{ hint }}</span>
     </div>
   </div>
 </template>
@@ -180,6 +185,8 @@ const props = defineProps({
   needsWatering: { type: Boolean, default: false },
   /** Localized "Strength 70% · 5 cards due" for tooltip and screen readers. */
   strengthText: { type: String, default: '' },
+  /** e.g. "Water “Level 1” first" (watering gate / hint). */
+  hint: { type: String, default: '' },
 })
 
 const emit = defineEmits<{ start: [] }>()
@@ -207,8 +214,7 @@ const strengthTone = computed(() => {
 })
 
 const accessibleName = computed(() => {
-  if (props.label)
-    return props.strengthText ? `${props.label} · ${props.strengthText}` : props.label
+  if (props.label) return [props.label, props.strengthText, props.hint].filter(Boolean).join(' · ')
   if (props.current) return props.startLabel
   return props.locked ? 'Locked lesson' : 'Lesson'
 })
@@ -252,7 +258,12 @@ const nodeStyle = computed(() => ({
   '--lingo-node-h': String(hueFromIndex(props.index)),
 }))
 
+/** Completed but memory decayed: the node shows a droplet instead of the checkmark (Duolingo
+ *  "cracked skill" idea). Completion and unlocking are unchanged; this is display only. */
+const wilted = computed(() => props.completed && props.needsWatering)
+
 const iconComponent = computed(() => {
+  if (wilted.value || (props.locked && props.hint)) return Droplet
   if (props.completed) return Check
   if (props.index === props.totalCount) return Crown
   return Star
@@ -260,12 +271,22 @@ const iconComponent = computed(() => {
 
 const iconClass = computed(() => {
   if (props.locked) return 'fill-neutral-400 stroke-neutral-400 text-neutral-400'
+  if (wilted.value) return 'fill-white/30 stroke-[2.5] text-white'
   if (props.completed) return 'fill-none stroke-[4] text-white'
   return 'fill-white stroke-white text-white'
 })
 </script>
 
 <style scoped>
+.lingo-lesson-hint {
+  margin-top: 0.125rem;
+  max-width: 11rem;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: rgb(2 132 199);
+}
 .lingo-lesson-button:not(.pointer-events-none):hover .lingo-lesson-node {
   transform: scale(1.05);
 }

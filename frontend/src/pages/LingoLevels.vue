@@ -75,6 +75,7 @@
             :strength="level.strength ?? null"
             :needs-watering="!!level.needs_watering"
             :strength-text="strengthTextFor(level)"
+            :hint="waterFirstHint(level)"
             @start="startStudy(level)"
           />
         </div>
@@ -270,7 +271,16 @@ const effectiveLevels = computed(() => {
   })
 })
 
-const isLevelUnlocked = (level) => level && (!level.is_locked || !!level.progress?.is_unlocked)
+const isLevelUnlocked = (level) =>
+  level && !level.watering_locked && (!level.is_locked || !!level.progress?.is_unlocked)
+
+/** Watering gate (backend `apply_watering_gate`): name the weakest earlier level to water. */
+function waterFirstHint(level: { water_first_level_id?: number | null }): string {
+  const id = level.water_first_level_id
+  if (!id) return ''
+  const target = displayLevels.value.find((l) => Number(l.level_id) === Number(id))
+  return t('flashcardLevels.waterFirst', { name: target?.name || '' })
+}
 
 // Persist the prereq-aware active level for guests (side effect kept out of computed).
 watch(

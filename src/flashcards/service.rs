@@ -3757,6 +3757,8 @@ pub async fn get_level_details(
         strength: None,
         due_count: 0,
         needs_watering: false,
+        watering_locked: false,
+        water_first_level_id: None,
         created_at: level_row.get("created_at"),
     })
 }
@@ -3836,8 +3838,13 @@ pub async fn get_collection_levels(
             strength: if is_locked { None } else { strength.strength },
             due_count: if is_locked { 0 } else { strength.due_count },
             needs_watering: !is_locked && strength.needs_watering,
+            watering_locked: false,
+            water_first_level_id: None,
             created_at: ChronoDateTime(row.get("created_at")),
         });
+    }
+    if user_id.is_some() {
+        apply_watering_gate(&mut levels);
     }
 
     transaction.commit().await?;
@@ -3846,6 +3853,61 @@ pub async fn get_collection_levels(
         total: levels.len() as i64,
         levels,
     })
+}
+
+/// Earlier completed levels weaker than this hold back new levels even when they are not a
+/// direct prerequisite.
+pub(crate) const WILTED_STRENGTH_THRESHOLD: i32 = 40;
+
+/// Watering gate on top of completion-based unlocking (pure; uses the strengths already loaded).
+///
+/// For each level whose prerequisites are all completed (`!is_locked`), the *blocking* set is:
+/// - direct prerequisites that `needs_watering` (due cards or strength < 70), plus
+/// - any earlier (lower `position`) completed level with strength < 40.
+///
+/// If the set is non-empty, `water_first_level_id` = its weakest member (lowest strength, then
+/// earliest position). A level the learner has not started becomes `is_locked` +
+/// `watering_locked`; a started level is never re-locked, it only carries the hint.
+/// Guests are not passed through this (no server strengths).
+pub(crate) fn apply_watering_gate(levels: &mut [LevelResponse]) {
+    let snapshot: Vec<(i32, i32, Option<i32>, bool, bool)> = levels
+        .iter()
+        .map(|l| {
+            let completed = l.progress.as_ref().is_some_and(|p| p.is_completed);
+            (
+                l.level_id,
+                l.position,
+                l.strength,
+                l.needs_watering,
+                completed,
+            )
+        })
+        .collect();
+    for level in levels.iter_mut() {
+        if level.is_locked {
+            continue;
+        }
+        let blocking = snapshot
+            .iter()
+            .filter(|(id, pos, strength, needs, completed)| {
+                let direct = *needs && level.prerequisites.iter().any(|p| p.level_id == *id);
+                let wilted_earlier = *pos < level.position
+                    && *completed
+                    && strength.is_some_and(|s| s < WILTED_STRENGTH_THRESHOLD);
+                *id != level.level_id && (direct || wilted_earlier)
+            });
+        let weakest = blocking.min_by_key(|(_, pos, strength, _, _)| (strength.unwrap_or(0), *pos));
+        if let Some((id, ..)) = weakest {
+            level.water_first_level_id = Some(*id);
+            if !level.is_started {
+                level.is_locked = true;
+                level.watering_locked = true;
+                level.strength = None;
+                level.due_count = 0;
+                level.needs_watering = false;
+            }
+        }
+    }
 }
 
 /// Per-level "watering" state for one learner.

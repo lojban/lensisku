@@ -1791,7 +1791,8 @@
     "deleteLevelConfirmMessage": "确定要删除等级「{levelName}」吗？此操作无法撤销。",
     "strength": "掌握度 {value}%",
     "cardsDue": "{count} 张卡片待复习",
-    "needsWatering": "需要复习"
+    "needsWatering": "需要复习",
+    "waterFirst": "请先复习“{name}”"
   },
   "anonymousProgress": {
     "bannerMessage": "注册以在设备间同步学习进度",

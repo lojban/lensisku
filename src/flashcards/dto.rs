@@ -303,6 +303,11 @@ pub struct LevelResponse {
     pub due_count: i32,
     /// Level should be practised again ("watering"): cards are due or strength fell below 70.
     pub needs_watering: bool,
+    /// Prerequisites are completed, but the level is held locked because earlier levels need
+    /// watering first (see `service::apply_watering_gate`). Never set for started levels.
+    pub watering_locked: bool,
+    /// Weakest earlier level the learner should water first (gate or, for started levels, a hint).
+    pub water_first_level_id: Option<i32>,
     #[schema(value_type = String, format = DateTime)]
     pub created_at: ChronoDateTime,
 }

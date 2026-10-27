@@ -1812,7 +1812,8 @@
     "deleteLevelConfirmMessage": "xu do birti lo nu vimcu lo klesi la'ei '{levelName}'? .i lo nu zukte ti na ku ka'e di'a zasti",
     "strength": "Strength {value}%",
     "cardsDue": "no cards due | {count} card due | {count} cards due",
-    "needsWatering": "Needs practice"
+    "needsWatering": "Needs practice",
+    "waterFirst": "Water “{name}” first"
   },
   "anonymousProgress": {
     "bannerMessage": "ko co'a se jaspu mu'i lo nu vreji lo do zenba ne'i lo drata skami",
