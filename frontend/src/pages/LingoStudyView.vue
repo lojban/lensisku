@@ -516,6 +516,7 @@
 </template>
 
 <script setup lang="ts">
+import { isTypingInEditable } from '@/utils/isEditableTarget'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { Textarea } from '@packages/ui'
 import { EqualApproximately, Heart } from '@lucide/vue'
@@ -1950,7 +1951,7 @@ watch(fillinResult, (newValue) => {
 })
 
 const handleKeydown = (event) => {
-  if (event.target.tagName === 'TEXTAREA') return
+  if (isTypingInEditable(event)) return
 
   if (event.key === ' ' || event.key === 'Enter') {
     event.preventDefault()

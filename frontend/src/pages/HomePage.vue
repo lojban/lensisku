@@ -374,6 +374,7 @@
 </template>
 
 <script setup lang="ts">
+import { isTypingInEditable } from '@/utils/isEditableTarget'
 import { jwtDecode } from 'jwt-decode'
 import { MessageSquare, X } from '@lucide/vue'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
@@ -1518,7 +1519,7 @@ const syncFromRoute = () => {
 
 const handleKeyDown = (event: KeyboardEvent) => {
   // Check if / was pressed and no input/textarea is focused
-  if (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+  if (event.key === '/' && !isTypingInEditable(event)) {
     event.preventDefault()
     searchFormRef.value?.$refs.searchInput?.focus()
   }

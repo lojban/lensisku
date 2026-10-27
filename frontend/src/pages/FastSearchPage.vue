@@ -151,6 +151,7 @@
 </template>
 
 <script setup lang="ts">
+import { isTypingInEditable } from '@/utils/isEditableTarget'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -488,11 +489,7 @@ const syncFromRoute = () => {
 }
 
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (
-    event.key === '/' &&
-    document.activeElement &&
-    !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)
-  ) {
+  if (event.key === '/' && !isTypingInEditable(event)) {
     event.preventDefault()
     searchFormRef.value?.$refs.searchInput?.focus()
   }

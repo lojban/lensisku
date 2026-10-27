@@ -554,6 +554,7 @@
 </template>
 
 <script setup lang="ts">
+import { isTypingInEditable } from '@/utils/isEditableTarget'
 import {
   XCircle,
   Check,
@@ -1308,8 +1309,8 @@ watch(fillinResult, (newValue) => {
 })
 
 const handleKeydown = (event) => {
-  // Ignore if typing in the textarea
-  if (event.target.tagName === 'TEXTAREA') {
+  // Ignore keys typed into inputs, textareas and rich editors (comment modal, etc.)
+  if (isTypingInEditable(event)) {
     return
   }
 

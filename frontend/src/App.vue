@@ -321,6 +321,7 @@
 </template>
 
 <script setup lang="ts">
+import { isTypingInEditable } from '@/utils/isEditableTarget'
 import {
   Users,
   LogIn,
@@ -706,13 +707,7 @@ const handleGlobalKeyDown = async (event: KeyboardEvent) => {
   }
 
   // Don't trigger if user is typing in an input, textarea, or select
-  const activeElement = document.activeElement as HTMLElement | null
-  const tagName = activeElement?.tagName ?? ''
-  const isContentEditable = activeElement?.isContentEditable === true
-
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName) || isContentEditable) {
-    return
-  }
+  if (isTypingInEditable(event)) return
 
   // Prevent default behavior
   event.preventDefault()
