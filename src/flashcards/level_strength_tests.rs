@@ -55,11 +55,12 @@ async fn level_strength_formula_due_and_watering() {
     let untouched = level("untouched", 2).await;
 
     // (level, direction, Some((days since review, stability, next_review in days)) or None)
-    let cards: [Card; 6] = [
+    let cards: [Card; 7] = [
         (fresh, "direct", Some((0.0, 10.0, 10.0))),
         (fresh, "direct", Some((10.0, 10.0, 5.0))), // R = 0.9 at t = S
         (fresh, "just_information", Some((365.0, 1.0, -300.0))), // ignored
         (wilted, "direct", Some((36.0, 4.0, -30.0))), // R = 0.5, due
+        (wilted, "dialogue", Some((36.0, 4.0, -30.0))), // dialogues count: R = 0.5, due
         (wilted, "direct", None),                   // never reviewed: ignored
         (untouched, "direct", None),
     ];
@@ -114,12 +115,12 @@ async fn level_strength_formula_due_and_watering() {
             needs_watering: false
         })
     );
-    // R = 1 / (1 + 36 / 36) = 0.5, one card due
+    // R = 1 / (1 + 36 / 36) = 0.5, the direct card and the dialogue are due
     assert_eq!(
         s.get(&wilted).copied(),
         Some(LevelStrength {
             strength: Some(50),
-            due_count: 1,
+            due_count: 2,
             needs_watering: true
         })
     );

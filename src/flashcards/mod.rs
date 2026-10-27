@@ -29,6 +29,7 @@ pub(crate) use service::generate_and_set_quiz_options;
 pub use service::list_flashcards_public;
 #[cfg(test)]
 pub(crate) use service::{add_cards_to_level, list_flashcards};
+pub(crate) use service::{review_flashcard, verify_study_access};
 
 use actix_web::web;
 use actix_web_httpauth::middleware::HttpAuthentication;

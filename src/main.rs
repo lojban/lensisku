@@ -18,6 +18,7 @@ mod collections;
 mod comments;
 mod config;
 mod db;
+mod dialogue;
 mod export;
 mod flashcards;
 mod jbovlaste;

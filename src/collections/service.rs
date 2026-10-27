@@ -1865,6 +1865,7 @@ fn parse_export_direction(s: Option<&String>) -> FlashcardDirection {
         "listen_wordbank_reverse" => FlashcardDirection::ListenWordbankReverse,
         "listen_wordbank_both" => FlashcardDirection::ListenWordbankBoth,
         "just_information" => FlashcardDirection::JustInformation,
+        "dialogue" => FlashcardDirection::Dialogue,
         "quiz_direct" => FlashcardDirection::QuizDirect,
         "quiz_reverse" => FlashcardDirection::QuizReverse,
         "quiz_both" => FlashcardDirection::QuizBoth,
@@ -2933,7 +2934,7 @@ pub async fn upsert_item(
                 let existing_direction: FlashcardDirection = row.get("direction");
 
                 // Info cards are only ever `just_information`: never Auto.
-                if existing_direction == FlashcardDirection::JustInformation
+                if existing_direction.is_non_answer_material()
                     && direction == FlashcardDirection::Auto
                 {
                     return Err(AppError::BadRequest(
@@ -3033,7 +3034,7 @@ pub async fn upsert_item(
                             )
                             .await?;
                         }
-                        FlashcardDirection::JustInformation => {
+                        FlashcardDirection::JustInformation | FlashcardDirection::Dialogue => {
                             restore_or_initialize_progress(
                                 &transaction,
                                 user_id,
@@ -3190,7 +3191,7 @@ pub async fn upsert_item(
                         initialize_flashcard_progress(&transaction, user_id, new_id, "reverse")
                             .await?;
                     }
-                    FlashcardDirection::JustInformation => {
+                    FlashcardDirection::JustInformation | FlashcardDirection::Dialogue => {
                         initialize_flashcard_progress(&transaction, user_id, new_id, "direct")
                             .await?;
                     }

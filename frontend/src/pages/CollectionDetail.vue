@@ -353,7 +353,19 @@
             ref="customContentContainer"
             class="flex-1 overflow-y-auto space-y-2 p-2"
           >
-            <div>
+            <!-- Dialogue cards: script editor with live preview and per-line audio. -->
+            <div v-if="isDialogueEditing">
+              <DialogueEditor
+                v-model="customContent.front"
+                :item-id="currentItem?.item_id ?? null"
+              />
+              <span
+                v-if="showValidation && !customContent.front.trim()"
+                class="text-sm text-red-600"
+                >{{ t('collectionDetail.frontContentRequired') }}</span
+              >
+            </div>
+            <div v-else>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{
                 t('collectionDetail.frontContentLabel')
               }}</label>
@@ -1193,6 +1205,7 @@ import {
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import type { CommentItemApiComment } from '@/types/comment'
 import { getCollectionItemSaveErrorMessage } from '@/utils/apiError'
+import DialogueEditor from '@/components/dialogue/DialogueEditor.vue'
 
 /** Row from listCollectionItems / searchItems (template + reorder). */
 interface CollectionDetailListItem {
@@ -1335,11 +1348,14 @@ const definitionBackImage = ref(null)
 const definitionSound = ref(null)
 const definitionRemoveSound = ref(false)
 const addItemDirection = ref('direct')
+const isDialogueEditing = computed(
+  () => enableFlashcard.value && addItemDirection.value === 'dialogue'
+)
 
 /** Direction of the card being edited (null when adding). Info cards can never become Auto. */
 const originalItemDirection = ref<string | null>(null)
 const isInfoDirection = (d: string | null | undefined) =>
-  (d ?? '').toLowerCase().replace(/_/g, '') === 'justinformation'
+  ['justinformation', 'dialogue'].includes((d ?? '').toLowerCase().replace(/_/g, ''))
 
 /** API sends `just_information` (serde snake_case); the option value is `justinformation`.
  * Without this the native select matches nothing and shows its first option ("Word → Definition"). */
@@ -1372,6 +1388,7 @@ const flashcardDirectionOptions = computed(() => [
   },
   { value: 'listen_wordbank_both', label: t('collectionDetail.direction.listen_wordbank_both') },
   { value: 'justinformation', label: t('collectionDetail.direction.justinformation') },
+  { value: 'dialogue', label: t('collectionDetail.direction.dialogue') },
 ])
 
 const showCanonicalComparisonOption = computed(() => {

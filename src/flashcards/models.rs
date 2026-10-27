@@ -124,6 +124,8 @@ pub enum FlashcardDirection {
     ListenWordbankReverse,
     ListenWordbankBoth,
     JustInformation,
+    /// Dialogue/story card: script with speaker lines + questions (`src/dialogue`). Never Auto.
+    Dialogue,
     QuizDirect,
     QuizReverse,
     QuizBoth,
@@ -135,6 +137,14 @@ pub enum FlashcardDirection {
 }
 
 impl FlashcardDirection {
+    /// Prose / script cards: never Auto, never answer material (distractors, word-bank chips).
+    pub fn is_non_answer_material(&self) -> bool {
+        matches!(
+            self,
+            FlashcardDirection::JustInformation | FlashcardDirection::Dialogue
+        )
+    }
+
     /// DB / API string (lowercase snake case, as in the `flashcard_direction` enum).
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -151,6 +161,7 @@ impl FlashcardDirection {
             FlashcardDirection::ListenWordbankReverse => "listen_wordbank_reverse",
             FlashcardDirection::ListenWordbankBoth => "listen_wordbank_both",
             FlashcardDirection::JustInformation => "just_information",
+            FlashcardDirection::Dialogue => "dialogue",
             FlashcardDirection::QuizDirect => "quiz_direct",
             FlashcardDirection::QuizReverse => "quiz_reverse",
             FlashcardDirection::QuizBoth => "quiz_both",
@@ -179,6 +190,7 @@ impl FlashcardDirection {
             "listenwordbankreverse" => FlashcardDirection::ListenWordbankReverse,
             "listenwordbankboth" => FlashcardDirection::ListenWordbankBoth,
             "justinformation" => FlashcardDirection::JustInformation,
+            "dialogue" => FlashcardDirection::Dialogue,
             "quizdirect" => FlashcardDirection::QuizDirect,
             "quizreverse" => FlashcardDirection::QuizReverse,
             "quizboth" => FlashcardDirection::QuizBoth,

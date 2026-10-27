@@ -798,6 +798,36 @@ export const generateKokoroTts = (data: { text: string; voice: string; speed?: n
     timeout: 120000,
   })
 
+// --- Dialogue (duostories-style) cards ---
+export const getDialogue = (itemId: number | string) => api.get(`/dialogue/items/${itemId}`)
+
+export const getDialogueLineAudioBlob = (itemId: number | string, line: number) =>
+  api.get(`/dialogue/items/${itemId}/lines/${line}/audio`, { responseType: 'blob' })
+
+export const checkDialogueAnswer = (
+  itemId: number | string,
+  data: { question_index: number; answer: string }
+) => api.post(`/dialogue/items/${itemId}/check`, data)
+
+export const previewDialogue = (data: { text: string; item_id?: number | null }) =>
+  api.post('/dialogue/preview', data)
+
+export const generateDialogueAudio = (
+  itemId: number | string,
+  data: { line?: number | null; force?: boolean; voices?: Record<string, string> }
+) => api.post(`/dialogue/items/${itemId}/audio`, data, { timeout: 600000 })
+
+export const answerDialogue = (
+  flashcardId: number | string,
+  data: {
+    attempt_id: string
+    question_index: number | null
+    answer: string
+    hint_used: boolean
+    finish: boolean
+  }
+) => api.post(`/dialogue/flashcards/${flashcardId}/answer`, data)
+
 export const getBalance = () => api.get('/payments/balance')
 
 export const assignRole = (user_id: number | string, role: string) =>

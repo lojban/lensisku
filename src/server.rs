@@ -186,6 +186,7 @@ pub async fn start_server(
             .configure(subscriptions::configure)
             .configure(collections::configure)
             .configure(flashcards::configure)
+            .configure(crate::dialogue::configure)
             .configure(crate::lingo::configure)
             .configure(crate::openapi::configure)
             .configure(crate::payments::configure)

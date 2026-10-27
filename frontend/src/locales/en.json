@@ -768,7 +768,8 @@
       "quizImageDirect": "Quiz: word → choose image",
       "quizImageReverse": "Quiz: definition → choose image",
       "quizImageBoth": "Quiz: image options (both sides)",
-      "auto": "Auto (mixes question types as you learn)"
+      "auto": "Auto (mixes question types as you learn)",
+      "dialogue": "Dialogue (story)"
     },
     "quizDirectionLabel": "Quiz direction",
     "autoProgressLabel": "Enable auto-progression",
@@ -2098,5 +2099,45 @@
   "levelsPanel": {
     "title": "Levels",
     "empty": "No levels yet."
+  },
+  "dialogue": {
+    "lessonPrompt": "Listen to the dialogue",
+    "playLine": "Play line",
+    "listen": "Listen…",
+    "showTranslation": "Show translation",
+    "questionOf": "Question {n} of {total}",
+    "typeAnswer": "Type the answer",
+    "notQuite": "Not quite",
+    "check": "Check",
+    "replay": "Replay",
+    "showTranscript": "Show text",
+    "hideTranscript": "Hide text",
+    "start": "Start",
+    "summary": "{correct} of {total} answers correct",
+    "restart": "Start again",
+    "loadFailed": "Could not load the dialogue.",
+    "submitFailed": "Could not save the answer. Try again.",
+    "narrator": "Narrator",
+    "importStories": "Import dialogues (JSON)",
+    "importDone": "Imported {count} dialogues",
+    "importFailed": "Import stopped after {count} dialogues: {error}",
+    "editor": {
+      "scriptLabel": "Dialogue script",
+      "showSyntax": "Show syntax",
+      "hideSyntax": "Hide syntax",
+      "syntax": "# Title\nName(F): text        speaker with gender (M/F)\nM: text / F: text    anonymous man / woman\n[Eva] Name: text     force a voice (Martin, Bernd, Victoria, Eva)\n> text               narrator\n~ gloss              translation of the previous line (shown as a hint)\n---                  end of the dialogue, questions follow\n? fill: mi [djica{'|'}nelci] lo nu ...    type the missing word(s)\n? bank: mi [djica] lo nu ...          build from word chips\n? choice: Question\n+ right answer\n- wrong answer",
+      "placeholder": "# coi\nF: coi do\n~ Hello\nM: coi\n---\n? fill: [coi] do",
+      "parsing": "Checking…",
+      "errorAt": "Line {line}: {message}",
+      "stats": "{lines} lines, {questions} questions",
+      "audio": "Audio",
+      "generateAll": "Generate audio",
+      "saveFirst": "Save the card first to generate audio.",
+      "unsaved": "Save your changes before generating audio.",
+      "regenerateLine": "Regenerate this line",
+      "preview": "Preview",
+      "rateLimited": "Too many audio requests, try again later.",
+      "generateFailed": "Audio generation failed."
+    }
   }
 }

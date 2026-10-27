@@ -748,7 +748,8 @@
       "justinformation": "情報のみ",
       "quizImageDirect": "クイズ：語 → 画像を選ぶ",
       "quizImageReverse": "クイズ：定義 → 画像を選ぶ",
-      "quizImageBoth": "クイズ：画像の選択肢（両面）"
+      "quizImageBoth": "クイズ：画像の選択肢（両面）",
+      "dialogue": "会話（ストーリー）"
     },
     "quizDirectionLabel": "クイズの向き",
     "autoProgressLabel": "自動で進捗を進める",
@@ -1996,5 +1997,45 @@
     "searchFilters": "検索フィルター",
     "backToFeed": "フィードに戻る",
     "search": "検索"
+  },
+  "dialogue": {
+    "lessonPrompt": "会話を聞きましょう",
+    "playLine": "この行を再生",
+    "listen": "聞いてください…",
+    "showTranslation": "訳を表示",
+    "questionOf": "問題 {n} / {total}",
+    "typeAnswer": "答えを入力",
+    "notQuite": "惜しい",
+    "check": "確認",
+    "replay": "もう一度再生",
+    "showTranscript": "テキストを表示",
+    "hideTranscript": "テキストを隠す",
+    "start": "開始",
+    "summary": "{total} 問中 {correct} 問正解",
+    "restart": "最初から",
+    "loadFailed": "会話を読み込めませんでした。",
+    "submitFailed": "回答を保存できませんでした。もう一度お試しください。",
+    "narrator": "ナレーター",
+    "importStories": "会話をインポート (JSON)",
+    "importDone": "{count} 件の会話をインポートしました",
+    "importFailed": "{count} 件の後でインポートが停止しました: {error}",
+    "editor": {
+      "scriptLabel": "会話スクリプト",
+      "showSyntax": "書式を表示",
+      "hideSyntax": "書式を隠す",
+      "syntax": "# Title\nName(F): text        speaker with gender (M/F)\nM: text / F: text    anonymous man / woman\n[Eva] Name: text     force a voice (Martin, Bernd, Victoria, Eva)\n> text               narrator\n~ gloss              translation of the previous line (shown as a hint)\n---                  end of the dialogue, questions follow\n? fill: mi [djica{'|'}nelci] lo nu ...    type the missing word(s)\n? bank: mi [djica] lo nu ...          build from word chips\n? choice: Question\n+ right answer\n- wrong answer",
+      "placeholder": "# coi\nF: coi do\n~ こんにちは\nM: coi\n---\n? fill: [coi] do",
+      "parsing": "確認中…",
+      "errorAt": "{line} 行目: {message}",
+      "stats": "{lines} 行、{questions} 問",
+      "audio": "音声",
+      "generateAll": "音声を生成",
+      "saveFirst": "音声を生成するには先にカードを保存してください。",
+      "unsaved": "音声を生成する前に変更を保存してください。",
+      "regenerateLine": "この行を再生成",
+      "preview": "プレビュー",
+      "rateLimited": "音声リクエストが多すぎます。後でお試しください。",
+      "generateFailed": "音声の生成に失敗しました。"
+    }
   }
 }

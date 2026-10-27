@@ -314,7 +314,7 @@ pub async fn create_flashcard(
             initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
             initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
         }
-        FlashcardDirection::JustInformation => {
+        FlashcardDirection::JustInformation | FlashcardDirection::Dialogue => {
             // Starts `new` (due once); acknowledging it (OK) retires it for good.
             initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
         }
@@ -841,7 +841,7 @@ fn attach_wordbank_chips(cards: &mut [FlashcardResponse]) {
             .filter(|(j, _)| *j != i)
             .filter(|(_, c)| c.flashcard.id != id)
             // Information cards are prose, never answer material.
-            .filter(|(_, c)| c.flashcard.direction != FlashcardDirection::JustInformation)
+            .filter(|(_, c)| !c.flashcard.direction.is_non_answer_material())
             .flat_map(|(_, c)| flashcard_distractor_texts(&c.flashcard, lang))
             .collect();
         let (chips, expected_normalized) =
@@ -917,7 +917,7 @@ fn attach_wordbank_chips_to_level_cards(cards: &mut [LevelCardResponse]) {
             .iter()
             .filter(|c| c.flashcard_id != id)
             // Information cards are prose, never answer material.
-            .filter(|c| c.direction != FlashcardDirection::JustInformation)
+            .filter(|c| !c.direction.is_non_answer_material())
             .flat_map(|c| {
                 distractor_texts_for_lang(
                     c.word.as_ref(),
@@ -1213,7 +1213,7 @@ pub async fn list_flashcards(
                 initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
                 initialize_progress(&transaction, user_id, flashcard_id, "reverse").await?;
             }
-            FlashcardDirection::JustInformation => {
+            FlashcardDirection::JustInformation | FlashcardDirection::Dialogue => {
                 // Starts `new` (due once); acknowledging it (OK) retires it for good.
                 initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
             }
@@ -1633,7 +1633,7 @@ pub(crate) async fn get_quiz_options_for_listing(
                  FROM flashcards f
                  JOIN collection_item_images cii ON cii.item_id = f.item_id AND cii.side = $2
                  WHERE f.collection_id = $1 AND f.item_id != $3
-                   AND f.direction <> 'just_information'
+                   AND f.direction NOT IN ('just_information', 'dialogue')
                  ORDER BY RANDOM()
                  LIMIT 3",
                 &[&collection_id, &side, &current_item_id],
@@ -1668,7 +1668,7 @@ pub(crate) async fn get_quiz_options_for_listing(
                SELECT 1 FROM flashcards fi
                JOIN collection_items cii ON cii.item_id = fi.item_id
                WHERE fi.collection_id = (SELECT collection_id FROM flashcards WHERE id = $2)
-                 AND fi.direction = 'just_information'
+                 AND fi.direction IN ('just_information', 'dialogue')
                  AND selected_option_text IN (cii.free_content_front, cii.free_content_back)
            )
          GROUP BY selected_option_text
@@ -1708,7 +1708,7 @@ pub(crate) async fn get_quiz_options_for_listing(
                     LEFT JOIN definitions d ON ci.definition_id = d.definitionid
                     LEFT JOIN valsi v ON d.valsiid = v.valsiid
                     WHERE f.collection_id = (SELECT collection_id FROM flashcards WHERE id = $1)
-                      AND f.direction <> 'just_information'
+                      AND f.direction NOT IN ('just_information', 'dialogue')
                  ) c
                  WHERE distractor IS NOT NULL
                    AND distractor <> ''
@@ -2407,7 +2407,7 @@ pub async fn reset_progress(
     Ok(())
 }
 
-async fn verify_study_access(
+pub(crate) async fn verify_study_access(
     transaction: &Transaction<'_>,
     flashcard_id: i32,
     user_id: i32,
@@ -2715,8 +2715,8 @@ pub async fn check_answer(
         )
         .await?
         .get("direction");
-    if direction == FlashcardDirection::JustInformation {
-        return Err("Cannot answer 'Just Information' cards.".into());
+    if direction.is_non_answer_material() {
+        return Err("Cannot answer information or dialogue cards here.".into());
     }
 
     // Get use_canonical_comparison flag
@@ -2896,8 +2896,8 @@ pub async fn review_flashcard_serverside(
         )
         .await?
         .get("direction");
-    if direction == FlashcardDirection::JustInformation {
-        return Err("Cannot answer 'Just Information' cards.".into());
+    if direction.is_non_answer_material() {
+        return Err("Cannot answer information or dialogue cards here.".into());
     }
 
     let mut flashcard = get_flashcard(&transaction, req.flashcard_id).await?;
@@ -4672,6 +4672,7 @@ async fn reseed_owner_progress_for_direction(
         | FlashcardDirection::Wordbank
         | FlashcardDirection::ListenWordbank
         | FlashcardDirection::JustInformation
+        | FlashcardDirection::Dialogue
         | FlashcardDirection::QuizDirect
         | FlashcardDirection::QuizReverse
         | FlashcardDirection::QuizBoth
@@ -4727,7 +4728,7 @@ pub async fn apply_challenge_mix_to_level(
              LEFT JOIN valsi v ON d.valsiid = v.valsiid
              WHERE fli.level_id = $1
                -- Info cards are only ever `just_information`: no mix may retype them.
-               AND f.direction <> 'just_information'
+               AND f.direction NOT IN ('just_information', 'dialogue')
              ORDER BY fli.position",
             &[&level_id],
         )
@@ -5016,7 +5017,7 @@ pub async fn convert_level_to_auto(
         .query(
             "SELECT f.id, f.direction
              FROM flashcard_level_items fli JOIN flashcards f ON f.id = fli.flashcard_id
-             WHERE fli.level_id = $1 AND f.direction <> 'just_information'
+             WHERE fli.level_id = $1 AND f.direction NOT IN ('just_information', 'dialogue')
              ORDER BY fli.position",
             &[&level_id],
         )

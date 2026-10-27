@@ -8,6 +8,8 @@ use super::service::get_quiz_options_for_listing;
 
 const INFO_FRONT: &str = "About this level: INFO FRONT";
 const INFO_BACK: &str = "INFO BACK prose that explains grammar";
+const DIALOGUE_FRONT: &str = "M: DIALOGUE FRONT coi\n---\n? fill: M: [coi]";
+const DIALOGUE_BACK: &str = "DIALOGUE BACK translation";
 
 #[tokio::test]
 #[ignore = "requires FLASHCARDS_TEST_DATABASE_URL (disposable DB with the lensisku schema)"]
@@ -39,8 +41,9 @@ async fn info_card_text_is_never_a_quiz_option() {
         .get(0);
 
     let mut quiz_id = 0;
-    let cards: [(&str, &str, &str); 5] = [
+    let cards: [(&str, &str, &str); 6] = [
         (INFO_FRONT, INFO_BACK, "just_information"),
+        (DIALOGUE_FRONT, DIALOGUE_BACK, "dialogue"),
         ("coi", "hi", "quiz_direct"),
         ("co'o", "bye", "direct"),
         ("ki'e", "thanks", "direct"),
@@ -85,7 +88,7 @@ async fn info_card_text_is_never_a_quiz_option() {
             "INSERT INTO user_quiz_answer_history
                  (user_id, flashcard_id, selected_option_text, is_correct_selection, answered_at)
              VALUES ($1, $2, $3, false, now()), ($1, $2, $4, false, now())",
-            &[&user_id, &quiz_id, &INFO_BACK, &INFO_FRONT],
+            &[&user_id, &quiz_id, &INFO_BACK, &DIALOGUE_BACK],
         )
         .await
         .unwrap();
@@ -97,8 +100,11 @@ async fn info_card_text_is_never_a_quiz_option() {
                 .await
                 .unwrap();
             assert!(
-                !options.iter().any(|o| o == INFO_FRONT || o == INFO_BACK),
-                "info-card text offered as a {side} option: {options:?}"
+                !options
+                    .iter()
+                    .any(|o| [INFO_FRONT, INFO_BACK, DIALOGUE_FRONT, DIALOGUE_BACK]
+                        .contains(&o.as_str())),
+                "info/dialogue text offered as a {side} option: {options:?}"
             );
         }
     }

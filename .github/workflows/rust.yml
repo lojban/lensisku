@@ -148,3 +148,4 @@ jobs:
         security_boundaries rafsi_authority_database wiki_dictionary_namespace_database
         activity_feed_fixtures import_paths_current_behaviour
         merge_anonymous_progress_current_behaviour apply_mix_keeps_owner_progress_active
+        dialogue_audio_cache_and_per_question_scores

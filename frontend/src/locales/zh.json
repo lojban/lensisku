@@ -753,7 +753,8 @@
       "justinformation": "仅展示信息",
       "quizImageDirect": "测验：词 → 选图",
       "quizImageReverse": "测验：释义 → 选图",
-      "quizImageBoth": "测验：图片选项（双面）"
+      "quizImageBoth": "测验：图片选项（双面）",
+      "dialogue": "对话（故事）"
     },
     "quizDirectionLabel": "测验方向",
     "autoProgressLabel": "启用自动进阶",
@@ -2001,5 +2002,45 @@
     "searchFilters": "搜索筛选",
     "backToFeed": "返回动态",
     "search": "搜索"
+  },
+  "dialogue": {
+    "lessonPrompt": "听对话",
+    "playLine": "播放这句",
+    "listen": "请听…",
+    "showTranslation": "显示翻译",
+    "questionOf": "第 {n} 题，共 {total} 题",
+    "typeAnswer": "输入答案",
+    "notQuite": "不太对",
+    "check": "检查",
+    "replay": "重播",
+    "showTranscript": "显示文本",
+    "hideTranscript": "隐藏文本",
+    "start": "开始",
+    "summary": "答对 {correct} / {total}",
+    "restart": "重新开始",
+    "loadFailed": "无法加载对话。",
+    "submitFailed": "无法保存答案，请重试。",
+    "narrator": "旁白",
+    "importStories": "导入对话 (JSON)",
+    "importDone": "已导入 {count} 个对话",
+    "importFailed": "导入在 {count} 个对话后停止：{error}",
+    "editor": {
+      "scriptLabel": "对话脚本",
+      "showSyntax": "显示语法",
+      "hideSyntax": "隐藏语法",
+      "syntax": "# Title\nName(F): text        speaker with gender (M/F)\nM: text / F: text    anonymous man / woman\n[Eva] Name: text     force a voice (Martin, Bernd, Victoria, Eva)\n> text               narrator\n~ gloss              translation of the previous line (shown as a hint)\n---                  end of the dialogue, questions follow\n? fill: mi [djica{'|'}nelci] lo nu ...    type the missing word(s)\n? bank: mi [djica] lo nu ...          build from word chips\n? choice: Question\n+ right answer\n- wrong answer",
+      "placeholder": "# coi\nF: coi do\n~ 你好\nM: coi\n---\n? fill: [coi] do",
+      "parsing": "检查中…",
+      "errorAt": "第 {line} 行：{message}",
+      "stats": "{lines} 句，{questions} 题",
+      "audio": "音频",
+      "generateAll": "生成音频",
+      "saveFirst": "请先保存卡片再生成音频。",
+      "unsaved": "生成音频前请先保存修改。",
+      "regenerateLine": "重新生成这句",
+      "preview": "预览",
+      "rateLimited": "音频请求过多，请稍后再试。",
+      "generateFailed": "音频生成失败。"
+    }
   }
 }

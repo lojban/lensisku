@@ -709,7 +709,8 @@
       "quizImageDirect": "Викторина: слово → выбрать изображение",
       "quizImageReverse": "Викторина: определение → выбрать изображение",
       "quizImageBoth": "Викторина: изображения (оба направления)",
-      "auto": "Авто (типы заданий меняются по мере изучения)"
+      "auto": "Авто (типы заданий меняются по мере изучения)",
+      "dialogue": "Диалог (история)"
     },
     "quizDirectionLabel": "Направление викторины",
     "autoProgressLabel": "Включить автопрогресс",
@@ -2005,5 +2006,45 @@
   "levelsPanel": {
     "title": "Уровни",
     "empty": "Уровней пока нет."
+  },
+  "dialogue": {
+    "lessonPrompt": "Послушайте диалог",
+    "playLine": "Воспроизвести реплику",
+    "listen": "Слушайте…",
+    "showTranslation": "Показать перевод",
+    "questionOf": "Вопрос {n} из {total}",
+    "typeAnswer": "Введите ответ",
+    "notQuite": "Не совсем",
+    "check": "Проверить",
+    "replay": "Повторить",
+    "showTranscript": "Показать текст",
+    "hideTranscript": "Скрыть текст",
+    "start": "Начать",
+    "summary": "Верных ответов: {correct} из {total}",
+    "restart": "Начать заново",
+    "loadFailed": "Не удалось загрузить диалог.",
+    "submitFailed": "Не удалось сохранить ответ. Попробуйте ещё раз.",
+    "narrator": "Рассказчик",
+    "importStories": "Импорт диалогов (JSON)",
+    "importDone": "Импортировано диалогов: {count}",
+    "importFailed": "Импорт остановлен после {count} диалогов: {error}",
+    "editor": {
+      "scriptLabel": "Сценарий диалога",
+      "showSyntax": "Показать синтаксис",
+      "hideSyntax": "Скрыть синтаксис",
+      "syntax": "# Title\nName(F): text        speaker with gender (M/F)\nM: text / F: text    anonymous man / woman\n[Eva] Name: text     force a voice (Martin, Bernd, Victoria, Eva)\n> text               narrator\n~ gloss              translation of the previous line (shown as a hint)\n---                  end of the dialogue, questions follow\n? fill: mi [djica{'|'}nelci] lo nu ...    type the missing word(s)\n? bank: mi [djica] lo nu ...          build from word chips\n? choice: Question\n+ right answer\n- wrong answer",
+      "placeholder": "# coi\nF: coi do\n~ Привет\nM: coi\n---\n? fill: [coi] do",
+      "parsing": "Проверка…",
+      "errorAt": "Строка {line}: {message}",
+      "stats": "Реплик: {lines}, вопросов: {questions}",
+      "audio": "Аудио",
+      "generateAll": "Озвучить",
+      "saveFirst": "Сначала сохраните карточку, чтобы озвучить её.",
+      "unsaved": "Сохраните изменения перед озвучкой.",
+      "regenerateLine": "Переозвучить реплику",
+      "preview": "Предпросмотр",
+      "rateLimited": "Слишком много запросов озвучки, попробуйте позже.",
+      "generateFailed": "Не удалось озвучить."
+    }
   }
 }

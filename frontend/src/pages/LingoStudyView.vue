@@ -126,101 +126,146 @@
         <!-- Top-anchored (not centered) so answer reveal does not shove the question. -->
         <div class="flex flex-1 min-h-0 items-center justify-center overflow-hidden">
           <div class="lingo-study-lesson-stack overflow-auto">
-            <!-- Clone lesson title: large; stimulus below is smaller in a bubble -->
-            <h1 v-if="lessonPrompt" class="lingo-study-lesson-title">
-              {{ lessonPrompt }}
-            </h1>
+            <!-- Dialogue (duostories-style): own lines, questions and controls. -->
+            <LingoDialogueCard
+              v-if="isDialogueMode"
+              :key="'dialogue-' + currentCard.flashcard.id"
+              :mode="isAnonStudy ? 'guest' : 'study'"
+              :item-id="currentCard.flashcard.item_id"
+              :flashcard-id="currentCard.flashcard.id"
+              @answered="onDialogueAnswered"
+              @done="onDialogueDone"
+            />
+            <template v-else>
+              <!-- Clone lesson title: large; stimulus below is smaller in a bubble -->
+              <h1 v-if="lessonPrompt" class="lingo-study-lesson-title">
+                {{ lessonPrompt }}
+              </h1>
 
-            <div
-              v-if="currentCard.flashcard.definition_language_id"
-              class="text-[10px] text-gray-600 text-center sm:text-xs lg:text-start"
-            >
-              {{
-                t('flashcardStudy.definitionLanguage', {
-                  language: getLanguageName(currentCard.flashcard.definition_language_id),
-                })
-              }}
-            </div>
-
-            <!-- Listen-tap: big speaker + slow (no written prompt). -->
-            <div
-              v-if="isListenModeActive && currentCard.flashcard.sound_url"
-              class="lingo-study-listen-prompt"
-            >
-              <AudioPlayer
-                :key="'listen-' + currentCard.flashcard.id"
-                ref="questionAudioPlayerRef"
-                variant="lingo-speaker"
-                :url="currentCard.flashcard.sound_url"
-                :collection-id="
-                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                    ? currentCard.flashcard.collection_id
-                    : undefined
-                "
-                :item-id="
-                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                    ? currentCard.flashcard.item_id
-                    : undefined
-                "
-                :suppress-play-errors="true"
-              />
-              <AudioPlayer
-                :key="'listen-slow-' + currentCard.flashcard.id"
-                variant="lingo-speaker-slow"
-                :url="currentCard.flashcard.sound_url"
-                :collection-id="
-                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                    ? currentCard.flashcard.collection_id
-                    : undefined
-                "
-                :item-id="
-                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                    ? currentCard.flashcard.item_id
-                    : undefined
-                "
-                :suppress-play-errors="true"
-              />
-            </div>
-
-            <!-- Stimulus: question speaker + bubble (caret sits in the gap). -->
-            <div v-else class="lingo-study-question-row">
               <div
-                class="lingo-study-mascot"
-                role="img"
-                aria-hidden="true"
-                :style="{ backgroundImage: `url(${studyQuestionCharacterSrc})` }"
-              />
-              <div class="lingo-study-question-bubble">
-                <!-- Information card: title + Markdown body, no hints and no reply bubble. -->
+                v-if="currentCard.flashcard.definition_language_id"
+                class="text-[10px] text-gray-600 text-center sm:text-xs lg:text-start"
+              >
+                {{
+                  t('flashcardStudy.definitionLanguage', {
+                    language: getLanguageName(currentCard.flashcard.definition_language_id),
+                  })
+                }}
+              </div>
+
+              <!-- Listen-tap: big speaker + slow (no written prompt). -->
+              <div
+                v-if="isListenModeActive && currentCard.flashcard.sound_url"
+                class="lingo-study-listen-prompt"
+              >
+                <AudioPlayer
+                  :key="'listen-' + currentCard.flashcard.id"
+                  ref="questionAudioPlayerRef"
+                  variant="lingo-speaker"
+                  :url="currentCard.flashcard.sound_url"
+                  :collection-id="
+                    currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                      ? currentCard.flashcard.collection_id
+                      : undefined
+                  "
+                  :item-id="
+                    currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                      ? currentCard.flashcard.item_id
+                      : undefined
+                  "
+                  :suppress-play-errors="true"
+                />
+                <AudioPlayer
+                  :key="'listen-slow-' + currentCard.flashcard.id"
+                  variant="lingo-speaker-slow"
+                  :url="currentCard.flashcard.sound_url"
+                  :collection-id="
+                    currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                      ? currentCard.flashcard.collection_id
+                      : undefined
+                  "
+                  :item-id="
+                    currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                      ? currentCard.flashcard.item_id
+                      : undefined
+                  "
+                  :suppress-play-errors="true"
+                />
+              </div>
+
+              <!-- Stimulus: question speaker + bubble (caret sits in the gap). -->
+              <div v-else class="lingo-study-question-row">
                 <div
-                  v-if="isJustInformationMode"
-                  class="lingo-study-info prose prose-sm max-w-none [overflow-wrap:anywhere]"
-                >
-                  <div class="lingo-study-info__title">
+                  class="lingo-study-mascot"
+                  role="img"
+                  aria-hidden="true"
+                  :style="{ backgroundImage: `url(${studyQuestionCharacterSrc})` }"
+                />
+                <div class="lingo-study-question-bubble">
+                  <!-- Information card: title + Markdown body, no hints and no reply bubble. -->
+                  <div
+                    v-if="isJustInformationMode"
+                    class="lingo-study-info prose prose-sm max-w-none [overflow-wrap:anywhere]"
+                  >
+                    <div class="lingo-study-info__title">
+                      <LazyMathJax
+                        :content="
+                          currentCard.flashcard.word ??
+                          currentCard.flashcard.free_content_front ??
+                          ''
+                        "
+                        :enable-markdown="true"
+                      />
+                    </div>
                     <LazyMathJax
+                      v-if="
+                        currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
+                      "
                       :content="
-                        currentCard.flashcard.word ?? currentCard.flashcard.free_content_front ?? ''
+                        currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
                       "
                       :enable-markdown="true"
                     />
                   </div>
-                  <LazyMathJax
-                    v-if="
-                      currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
-                    "
-                    :content="
-                      currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
-                    "
-                    :enable-markdown="true"
-                  />
-                </div>
-                <div
-                  v-else-if="currentCard.progress[0].card_side === 'direct'"
-                  class="flex items-start justify-between gap-2"
-                >
-                  <p class="lingo-study-stimulus min-w-0 flex-1 [overflow-wrap:anywhere]">
+                  <div
+                    v-else-if="currentCard.progress[0].card_side === 'direct'"
+                    class="flex items-start justify-between gap-2"
+                  >
+                    <p class="lingo-study-stimulus min-w-0 flex-1 [overflow-wrap:anywhere]">
+                      <LingoHintPhrase
+                        v-if="showStimulusHints"
+                        :text="stimulusText"
+                        :phrase-gloss="stimulusPhraseGloss"
+                        :token-glosses="stimulusTokenGlosses"
+                        :auto-open-first="stimulusAutoHint"
+                        @auto-opened="markStimulusHintSeen"
+                        @hint-opened="hintUsed = true"
+                      />
+                      <template v-else>{{ stimulusText }}</template>
+                    </p>
+                    <AudioPlayer
+                      v-if="currentCard.flashcard.sound_url"
+                      :key="'q-' + currentCard.flashcard.id"
+                      ref="questionAudioPlayerRef"
+                      class="shrink-0"
+                      variant="lingo-speaker-inline"
+                      :url="currentCard.flashcard.sound_url"
+                      :collection-id="
+                        currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                          ? currentCard.flashcard.collection_id
+                          : undefined
+                      "
+                      :item-id="
+                        currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                          ? currentCard.flashcard.item_id
+                          : undefined
+                      "
+                      :suppress-play-errors="true"
+                    />
+                  </div>
+                  <div v-else class="lingo-study-stimulus prose prose-sm max-w-none">
                     <LingoHintPhrase
-                      v-if="showStimulusHints"
+                      v-if="showStimulusHints && !stimulusLooksLikeMath"
                       :text="stimulusText"
                       :phrase-gloss="stimulusPhraseGloss"
                       :token-glosses="stimulusTokenGlosses"
@@ -228,237 +273,209 @@
                       @auto-opened="markStimulusHintSeen"
                       @hint-opened="hintUsed = true"
                     />
-                    <template v-else>{{ stimulusText }}</template>
-                  </p>
-                  <AudioPlayer
-                    v-if="currentCard.flashcard.sound_url"
-                    :key="'q-' + currentCard.flashcard.id"
-                    ref="questionAudioPlayerRef"
-                    class="shrink-0"
-                    variant="lingo-speaker-inline"
-                    :url="currentCard.flashcard.sound_url"
-                    :collection-id="
-                      currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                        ? currentCard.flashcard.collection_id
-                        : undefined
-                    "
-                    :item-id="
-                      currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                        ? currentCard.flashcard.item_id
-                        : undefined
-                    "
-                    :suppress-play-errors="true"
-                  />
-                </div>
-                <div v-else class="lingo-study-stimulus prose prose-sm max-w-none">
-                  <LingoHintPhrase
-                    v-if="showStimulusHints && !stimulusLooksLikeMath"
-                    :text="stimulusText"
-                    :phrase-gloss="stimulusPhraseGloss"
-                    :token-glosses="stimulusTokenGlosses"
-                    :auto-open-first="stimulusAutoHint"
-                    @auto-opened="markStimulusHintSeen"
-                    @hint-opened="hintUsed = true"
-                  />
-                  <LazyMathJax v-else :content="stimulusText" />
+                    <LazyMathJax v-else :content="stimulusText" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div
-              v-if="
-                !isListenModeActive &&
-                currentCard.progress[0].card_side === 'direct' &&
-                currentCard.flashcard.has_front_image
-              "
-              class="flex justify-center"
-            >
-              <img
-                :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
-                class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
-                alt=""
-              />
-            </div>
-            <div
-              v-else-if="
-                currentCard.progress[0].card_side !== 'direct' &&
-                currentCard.flashcard.has_back_image
-              "
-              class="flex justify-center"
-            >
-              <img
-                :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
-                class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
-                alt=""
-              />
-            </div>
-
-            <!-- Reply: empty/fill-in bubble + speaker on the right (mirrored). Hidden for quiz assist. -->
-            <div
-              v-if="!isQuizMode && !isJustInformationMode"
-              class="lingo-study-question-row lingo-study-question-row--reply"
-            >
               <div
-                class="lingo-study-question-bubble"
-                :class="showAnswerBubble ? 'lingo-study-answer-bubble' : 'lingo-study-reply-bubble'"
-                :aria-label="showAnswerBubble ? undefined : t('flashcardStudy.typeAnswer')"
+                v-if="
+                  !isListenModeActive &&
+                  currentCard.progress[0].card_side === 'direct' &&
+                  currentCard.flashcard.has_front_image
+                "
+                class="flex justify-center"
               >
-                <template v-if="showAnswerBubble">
-                  <p class="lingo-study-answer-label">{{ t('flashcardStudy.correctAnswer') }}</p>
-                  <div class="lingo-study-stimulus prose prose-sm max-w-none">
-                    <template v-if="currentCard.progress[0].card_side === 'direct'">
-                      <LazyMathJax
-                        :content="
-                          currentCard.flashcard.definition ??
-                          currentCard.flashcard.free_content_back
-                        "
-                      />
-                      <div
-                        v-if="currentCard.flashcard.has_back_image"
-                        class="mt-1 flex justify-center"
-                      >
-                        <img
-                          :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
-                          class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
-                          alt=""
-                        />
-                      </div>
-                    </template>
-                    <template v-else>
-                      <div class="flex items-center gap-1.5">
-                        <span>{{
-                          currentCard.flashcard.word ?? currentCard.flashcard.free_content_front
-                        }}</span>
-                        <AudioPlayer
-                          v-if="currentCard.flashcard.sound_url"
-                          ref="answerAudioPlayerRef"
-                          variant="lingo-speaker-inline"
-                          :url="currentCard.flashcard.sound_url"
-                          :collection-id="
-                            currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                              ? currentCard.flashcard.collection_id
-                              : undefined
-                          "
-                          :item-id="
-                            currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                              ? currentCard.flashcard.item_id
-                              : undefined
-                          "
-                          :suppress-play-errors="true"
-                        />
-                      </div>
-                      <div
-                        v-if="currentCard.flashcard.has_front_image"
-                        class="mt-1 flex justify-center"
-                      >
-                        <img
-                          :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
-                          class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
-                          alt=""
-                        />
-                      </div>
-                    </template>
-                  </div>
-                  <!-- Tersmu / canonical form under the revealed answer (not a “feature on” badge). -->
-                  <div v-if="showCanonicalForm" class="lingo-study-canonical">
-                    <div class="lingo-study-canonical__label">
-                      <EqualApproximately class="h-3 w-3 text-sky-500" aria-hidden="true" />
-                      <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
-                    </div>
-                    <div class="lingo-study-canonical__value">
-                      {{ currentCard.flashcard.canonical_form }}
-                    </div>
-                  </div>
-                  <div
-                    v-if="
-                      currentCard.flashcard.notes && currentCard.progress[0].card_side === 'direct'
-                    "
-                    class="mt-1.5 border-t border-green-100 pt-1.5 text-[10px] sm:text-xs"
-                  >
-                    <h4 class="mb-0.5 font-medium text-gray-700">
-                      {{ t('flashcardStudy.notes') }}
-                    </h4>
-                    <LazyMathJax :content="currentCard.flashcard.notes" :enable-markdown="true" />
-                  </div>
-                </template>
-                <template v-else-if="isWordbankMode">
-                  <LingoWordbankPanel
-                    mode="line"
-                    :bank="wordbankChips"
-                    :selected-ids="wordbankSelectedIds"
-                    :disabled="!!fillinResult"
-                    :placeholder="t('flashcardStudy.assembleAnswerHint')"
-                    :aria-label="t('flashcardStudy.assembleAnswer')"
-                    @unpick="unpickWordbankChip"
-                  />
-                </template>
-                <template v-else-if="isFillInMode">
-                  <Textarea
-                    ref="fillInTextareaRef"
-                    v-model="userAnswer"
-                    type="text"
-                    rows="2"
-                    class="lingo-study-reply-input"
-                    :placeholder="t('flashcardStudy.typeAnswer')"
-                    :disabled="!!fillinResult"
-                    @keydown.enter.prevent="() => submitAnswer()"
-                  />
-                </template>
-                <!-- Empty two-line invite for recall / just-info (Check fills this slot). -->
-                <div v-else class="lingo-study-reply-invite" aria-hidden="true"><br /><br /></div>
+                <img
+                  :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
+                  class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
+                  alt=""
+                />
               </div>
               <div
-                class="lingo-study-mascot"
-                role="img"
-                aria-hidden="true"
-                :style="{ backgroundImage: `url(${studyAnswerCharacterSrc})` }"
-              />
-            </div>
-
-            <!-- Word bank tray (typed fill-in lives in the reply bubble). -->
-            <div v-if="isWordbankMode && !showAnswerBubble" class="lingo-study-card-shell">
-              <LingoWordbankPanel
-                mode="bank"
-                :bank="wordbankChips"
-                :selected-ids="wordbankSelectedIds"
-                :disabled="!!fillinResult"
-                :aria-label="t('flashcardStudy.wordBank')"
-                @pick="pickWordbankChip"
-              />
-            </div>
-
-            <!-- Quiz assist: Duo-style numbered choices (select, then Check). -->
-            <div
-              v-if="isQuizMode && quizChoiceItems.length"
-              class="lingo-study-quiz-list"
-              role="radiogroup"
-              :aria-label="lessonPrompt"
-            >
-              <button
-                v-for="(opt, idx) in quizChoiceItems"
-                :key="opt.id"
-                type="button"
-                role="radio"
-                class="lingo-study-quiz-choice"
-                :class="quizChoiceClass(opt.id)"
-                :aria-checked="selectedQuizOption === opt.id"
-                :disabled="!!quizResult || isSubmitting"
-                @click="selectQuizOption(opt.id)"
+                v-else-if="
+                  currentCard.progress[0].card_side !== 'direct' &&
+                  currentCard.flashcard.has_back_image
+                "
+                class="flex justify-center"
               >
-                <span class="lingo-study-quiz-choice__num" aria-hidden="true">{{
-                  Number(idx) + 1
-                }}</span>
-                <span class="lingo-study-quiz-choice__label">
-                  <img
-                    v-if="opt.imageUrl"
-                    :src="opt.imageUrl"
-                    class="lingo-study-quiz-choice__image"
-                    alt=""
-                  />
-                  <LazyMathJax v-else :content="opt.label" />
-                </span>
-              </button>
-            </div>
+                <img
+                  :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
+                  class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
+                  alt=""
+                />
+              </div>
+
+              <!-- Reply: empty/fill-in bubble + speaker on the right (mirrored). Hidden for quiz assist. -->
+              <div
+                v-if="!isQuizMode && !isJustInformationMode"
+                class="lingo-study-question-row lingo-study-question-row--reply"
+              >
+                <div
+                  class="lingo-study-question-bubble"
+                  :class="
+                    showAnswerBubble ? 'lingo-study-answer-bubble' : 'lingo-study-reply-bubble'
+                  "
+                  :aria-label="showAnswerBubble ? undefined : t('flashcardStudy.typeAnswer')"
+                >
+                  <template v-if="showAnswerBubble">
+                    <p class="lingo-study-answer-label">{{ t('flashcardStudy.correctAnswer') }}</p>
+                    <div class="lingo-study-stimulus prose prose-sm max-w-none">
+                      <template v-if="currentCard.progress[0].card_side === 'direct'">
+                        <LazyMathJax
+                          :content="
+                            currentCard.flashcard.definition ??
+                            currentCard.flashcard.free_content_back
+                          "
+                        />
+                        <div
+                          v-if="currentCard.flashcard.has_back_image"
+                          class="mt-1 flex justify-center"
+                        >
+                          <img
+                            :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
+                            class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
+                            alt=""
+                          />
+                        </div>
+                      </template>
+                      <template v-else>
+                        <div class="flex items-center gap-1.5">
+                          <span>{{
+                            currentCard.flashcard.word ?? currentCard.flashcard.free_content_front
+                          }}</span>
+                          <AudioPlayer
+                            v-if="currentCard.flashcard.sound_url"
+                            ref="answerAudioPlayerRef"
+                            variant="lingo-speaker-inline"
+                            :url="currentCard.flashcard.sound_url"
+                            :collection-id="
+                              currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                                ? currentCard.flashcard.collection_id
+                                : undefined
+                            "
+                            :item-id="
+                              currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                                ? currentCard.flashcard.item_id
+                                : undefined
+                            "
+                            :suppress-play-errors="true"
+                          />
+                        </div>
+                        <div
+                          v-if="currentCard.flashcard.has_front_image"
+                          class="mt-1 flex justify-center"
+                        >
+                          <img
+                            :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
+                            class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
+                            alt=""
+                          />
+                        </div>
+                      </template>
+                    </div>
+                    <!-- Tersmu / canonical form under the revealed answer (not a “feature on” badge). -->
+                    <div v-if="showCanonicalForm" class="lingo-study-canonical">
+                      <div class="lingo-study-canonical__label">
+                        <EqualApproximately class="h-3 w-3 text-sky-500" aria-hidden="true" />
+                        <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+                      </div>
+                      <div class="lingo-study-canonical__value">
+                        {{ currentCard.flashcard.canonical_form }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="
+                        currentCard.flashcard.notes &&
+                        currentCard.progress[0].card_side === 'direct'
+                      "
+                      class="mt-1.5 border-t border-green-100 pt-1.5 text-[10px] sm:text-xs"
+                    >
+                      <h4 class="mb-0.5 font-medium text-gray-700">
+                        {{ t('flashcardStudy.notes') }}
+                      </h4>
+                      <LazyMathJax :content="currentCard.flashcard.notes" :enable-markdown="true" />
+                    </div>
+                  </template>
+                  <template v-else-if="isWordbankMode">
+                    <LingoWordbankPanel
+                      mode="line"
+                      :bank="wordbankChips"
+                      :selected-ids="wordbankSelectedIds"
+                      :disabled="!!fillinResult"
+                      :placeholder="t('flashcardStudy.assembleAnswerHint')"
+                      :aria-label="t('flashcardStudy.assembleAnswer')"
+                      @unpick="unpickWordbankChip"
+                    />
+                  </template>
+                  <template v-else-if="isFillInMode">
+                    <Textarea
+                      ref="fillInTextareaRef"
+                      v-model="userAnswer"
+                      type="text"
+                      rows="2"
+                      class="lingo-study-reply-input"
+                      :placeholder="t('flashcardStudy.typeAnswer')"
+                      :disabled="!!fillinResult"
+                      @keydown.enter.prevent="() => submitAnswer()"
+                    />
+                  </template>
+                  <!-- Empty two-line invite for recall / just-info (Check fills this slot). -->
+                  <div v-else class="lingo-study-reply-invite" aria-hidden="true"><br /><br /></div>
+                </div>
+                <div
+                  class="lingo-study-mascot"
+                  role="img"
+                  aria-hidden="true"
+                  :style="{ backgroundImage: `url(${studyAnswerCharacterSrc})` }"
+                />
+              </div>
+
+              <!-- Word bank tray (typed fill-in lives in the reply bubble). -->
+              <div v-if="isWordbankMode && !showAnswerBubble" class="lingo-study-card-shell">
+                <LingoWordbankPanel
+                  mode="bank"
+                  :bank="wordbankChips"
+                  :selected-ids="wordbankSelectedIds"
+                  :disabled="!!fillinResult"
+                  :aria-label="t('flashcardStudy.wordBank')"
+                  @pick="pickWordbankChip"
+                />
+              </div>
+
+              <!-- Quiz assist: Duo-style numbered choices (select, then Check). -->
+              <div
+                v-if="isQuizMode && quizChoiceItems.length"
+                class="lingo-study-quiz-list"
+                role="radiogroup"
+                :aria-label="lessonPrompt"
+              >
+                <button
+                  v-for="(opt, idx) in quizChoiceItems"
+                  :key="opt.id"
+                  type="button"
+                  role="radio"
+                  class="lingo-study-quiz-choice"
+                  :class="quizChoiceClass(opt.id)"
+                  :aria-checked="selectedQuizOption === opt.id"
+                  :disabled="!!quizResult || isSubmitting"
+                  @click="selectQuizOption(opt.id)"
+                >
+                  <span class="lingo-study-quiz-choice__num" aria-hidden="true">{{
+                    Number(idx) + 1
+                  }}</span>
+                  <span class="lingo-study-quiz-choice__label">
+                    <img
+                      v-if="opt.imageUrl"
+                      :src="opt.imageUrl"
+                      class="lingo-study-quiz-choice__image"
+                      alt=""
+                    />
+                    <LazyMathJax v-else :content="opt.label" />
+                  </span>
+                </button>
+              </div>
+            </template>
 
             <LingoGuestSaveAlert
               v-if="showGuestSaveAlert"
@@ -472,7 +489,12 @@
 
     <!-- Single footer instance — status swaps inside a fixed-height chrome box. -->
     <LingoStudyFooter
-      v-if="(currentCard || showEncouragement || showNoListening) && !isLoading && !outOfHearts"
+      v-if="
+        (currentCard || showEncouragement || showNoListening) &&
+        !isLoading &&
+        !outOfHearts &&
+        !(isDialogueMode && !showEncouragement && !showNoListening)
+      "
       :status="studyFooterStatus"
       :disabled="studyFooterDisabled"
       :compact="true"
@@ -527,6 +549,7 @@ import LingoGuestSaveAlert from '@/components/LingoGuestSaveAlert.vue'
 import LingoModal from '@/components/LingoModal.vue'
 import LingoStudyHeader from '@/components/LingoStudyHeader.vue'
 import LingoStudyFooter from '@/components/LingoStudyFooter.vue'
+import LingoDialogueCard from '@/components/dialogue/LingoDialogueCard.vue'
 import LingoHintPhrase from '@/components/LingoHintPhrase.vue'
 import LingoResultCard from '@/components/LingoResultCard.vue'
 import LingoUserProgress from '@/components/LingoUserProgress.vue'
@@ -825,6 +848,27 @@ const isJustInformationMode = computed(() => {
   const dir = cardDir(currentCard.value)
   return dir && dir.toLowerCase() === 'justinformation'
 })
+
+/** Dialogue card: lines + questions handled by LingoDialogueCard. */
+const isDialogueMode = computed(() => cardDir(currentCard.value)?.toLowerCase() === 'dialogue')
+
+function onDialogueAnswered(correct: boolean) {
+  if (correct) registerCorrectAnswer()
+  else registerWrongAnswer()
+}
+
+/** Dialogue finished: the card already committed its single FSRS review server-side. */
+async function onDialogueDone(rating: number) {
+  const next = cardsAnsweredInSession.value + 1
+  cardsAnsweredInSession.value = next
+  bumpGuestAnswersThisVisit()
+  try {
+    sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
+  } catch (_) {}
+  if (isAnonStudy.value) applyAnonLevelProgress(rating >= 3)
+  lastAnswerWasCorrect.value = rating >= 2
+  await handleNextCard()
+}
 
 /** Multiple-choice quiz: select one of the options (text or image). */
 const isQuizMode = computed(() => {
@@ -1560,6 +1604,7 @@ const isReverseSide = computed(() => currentCard.value?.progress?.[0]?.card_side
 /** Duolingo-style instruction above the card (clone lesson `title` h1). Kept on reveal to avoid CLS. */
 const lessonPrompt = computed(() => {
   if (!currentCard.value) return ''
+  if (isDialogueMode.value) return t('dialogue.lessonPrompt')
   const reverse = isReverseSide.value
   if (isQuizMode.value && !quizResult.value) {
     return reverse ? t('flashcardStudy.howDoYouSayThis') : t('flashcardStudy.selectOption')
@@ -1952,6 +1997,8 @@ watch(fillinResult, (newValue) => {
 
 const handleKeydown = (event) => {
   if (isTypingInEditable(event)) return
+  // Dialogue cards drive their own buttons; keep native Space/Enter on them.
+  if (isDialogueMode.value && !showEncouragement.value && !showNoListening.value) return
 
   if (event.key === ' ' || event.key === 'Enter') {
     event.preventDefault()
