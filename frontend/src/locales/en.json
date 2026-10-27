@@ -1852,8 +1852,7 @@
     "levelAutoHint": "Auto cards start as a quiz or word bank and move on to listening and typing as you learn.",
     "strength": "Strength {value}%",
     "cardsDue": "no cards due | {count} card due | {count} cards due",
-    "needsWatering": "Needs practice",
-    "waterFirst": "Water “{name}” first"
+    "needsWatering": "Needs practice"
   },
   "anonymousProgress": {
     "bannerMessage": "Sign up to save your progress across devices",

@@ -23,8 +23,6 @@ mod merge_progress_tests;
 pub mod models;
 pub(crate) mod rating_policy;
 mod service;
-#[cfg(test)]
-mod watering_gate_tests;
 
 pub(crate) use error::FlashcardError;
 pub(crate) use service::generate_and_set_quiz_options;

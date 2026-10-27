@@ -1786,8 +1786,7 @@
     "deleteLevelConfirmMessage": "レベル「{levelName}」を削除しますか？この操作は取り消せません。",
     "strength": "定着度 {value}%",
     "cardsDue": "{count} 枚の復習",
-    "needsWatering": "復習が必要",
-    "waterFirst": "先に「{name}」を復習しましょう"
+    "needsWatering": "復習が必要"
   },
   "anonymousProgress": {
     "bannerMessage": "登録すると端末をまたいで進捗を保存できます",
