@@ -51,6 +51,36 @@
           </div>
         </div>
       </div>
+      <div v-else-if="strength != null" class="relative h-[102px] w-[102px]">
+        <svg
+          class="absolute inset-0 h-[102px] w-[102px] -rotate-90"
+          viewBox="0 0 102 102"
+          aria-hidden="true"
+        >
+          <circle cx="51" cy="51" r="43" fill="none" stroke="#e5e7eb" stroke-width="8" />
+          <circle
+            cx="51"
+            cy="51"
+            r="43"
+            fill="none"
+            :stroke="strengthColor"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-dasharray="270.2"
+            :stroke-dashoffset="270.2 - (270.2 * strengthRingValue) / 100"
+          />
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="lingo-lesson-node lingo-lesson-node--open">
+            <Loader
+              v-if="showSpinner"
+              class="h-10 w-10 animate-spin text-white"
+              aria-hidden="true"
+            />
+            <component :is="iconComponent" v-else class="h-10 w-10" :class="iconClass" />
+          </div>
+        </div>
+      </div>
       <div v-else class="lingo-lesson-node lingo-lesson-node--open">
         <Loader v-if="showSpinner" class="h-10 w-10 animate-spin text-white" aria-hidden="true" />
         <component :is="iconComponent" v-else class="h-10 w-10" :class="iconClass" />
@@ -140,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, type PropType } from 'vue'
 import { Check, Crown, Droplet, Star, Settings, Loader } from '@lucide/vue'
 
 const props = defineProps({
@@ -162,6 +192,8 @@ const props = defineProps({
   /** Level asks for practice (cards due or strength below threshold). */
   needsWatering: { type: Boolean, default: false },
   /** Localized "Strength 70% · 5 cards due" for tooltip and screen readers. */
+  /** Memory strength 0–100 (`null`: not reviewed / guest); drawn as the ring around the node. */
+  strength: { type: Number as PropType<number | null>, default: null },
   strengthText: { type: String, default: '' },
 })
 
@@ -181,6 +213,17 @@ function onStudyClick(event: MouseEvent) {
   starting.value = true
   emit('start')
 }
+
+/** Ring fill: true strength, but never below 7 % so a weak level still shows a visible arc. */
+const strengthRingValue = computed(() => Math.min(100, Math.max(7, props.strength ?? 0)))
+
+/** Strength ring colour: green ≥70, amber 40–69, red <40. */
+const strengthColor = computed(() => {
+  const v = props.strength ?? 0
+  if (v >= 70) return '#22c55e'
+  if (v >= 40) return '#f59e0b'
+  return '#f43f5e'
+})
 
 const accessibleName = computed(() => {
   if (props.label) return [props.label, props.strengthText].filter(Boolean).join(' · ')

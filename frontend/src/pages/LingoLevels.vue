@@ -72,6 +72,7 @@
             :label="level.name || ''"
             :show-owner-menu="false"
             :pending="pendingStudyLevelId === level.level_id"
+            :strength="level.strength ?? null"
             :needs-watering="!!level.needs_watering"
             :strength-text="strengthTextFor(level)"
             @start="startStudy(level)"
