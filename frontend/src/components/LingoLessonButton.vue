@@ -63,7 +63,7 @@
             cy="51"
             r="43"
             fill="none"
-            :stroke="strengthColor"
+            class="lingo-lesson-progress"
             stroke-width="8"
             stroke-linecap="round"
             stroke-dasharray="270.2"
@@ -217,14 +217,6 @@ function onStudyClick(event: MouseEvent) {
 /** Ring fill: true strength, but never below 7 % so a weak level still shows a visible arc. */
 const strengthRingValue = computed(() => Math.min(100, Math.max(7, props.strength ?? 0)))
 
-/** Strength ring colour: green ≥70, amber 40–69, red <40. */
-const strengthColor = computed(() => {
-  const v = props.strength ?? 0
-  if (v >= 70) return '#22c55e'
-  if (v >= 40) return '#f59e0b'
-  return '#f43f5e'
-})
-
 const accessibleName = computed(() => {
   if (props.label) return [props.label, props.strengthText].filter(Boolean).join(' · ')
   if (props.current) return props.startLabel
@@ -304,9 +296,8 @@ const iconClass = computed(() => {
   background-color: hsl(var(--lingo-node-h, 142) 71% 40%);
 }
 
-/* Strength meter under the node: droplet when the level needs watering, then a 0–100 bar. */
-
 .lingo-lesson-progress {
-  stroke: hsl(var(--lingo-node-h, 142) 71% 60%);
+  /* Same colour as the node face (`.lingo-lesson-node--open`). */
+  stroke: hsl(var(--lingo-node-h, 142) 71% 45%);
 }
 </style>
