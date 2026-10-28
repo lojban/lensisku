@@ -54,6 +54,7 @@ async fn main() -> AppResult<()> {
 
     // Use ? directly as create_app_config now returns AppResult
     let config = config::create_app_config()?;
+    auth::secrets::init()?;
 
     // Enable database extensions and run migrations using import pool
     // Use ? directly as db functions now return AppResult

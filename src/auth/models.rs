@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use futures::future::LocalBoxFuture;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
-use std::{env, error::Error, str::FromStr};
+use std::{error::Error, str::FromStr};
 use utoipa::ToSchema;
 
 use crate::AppError;
@@ -94,8 +94,8 @@ pub struct Claims {
 }
 
 pub fn decode_token(token: &str) -> Result<Claims, AppError> {
-    let secret =
-        env::var("JWT_SECRET").map_err(|e| AppError::Auth(format!("JWT_SECRET not set: {}", e)))?;
+    let secret = crate::auth::secrets::jwt_secret()
+        .map_err(|e| AppError::Auth(format!("JWT_SECRET not set: {}", e)))?;
     let key = DecodingKey::from_secret(secret.as_bytes());
 
     let validation = Validation::new(Algorithm::HS256);

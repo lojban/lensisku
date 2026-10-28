@@ -6,6 +6,7 @@ pub mod extractor;
 pub mod models;
 pub mod oauth;
 pub mod permissions;
+pub mod secrets;
 pub mod service;
 
 use actix_web::web;

@@ -1389,7 +1389,7 @@ pub fn generate_access_token(
     };
 
     let secret =
-        env::var("JWT_SECRET").map_err(|e| AppError::Config(vec![format!("JWT_SECRET: {e}")]))?;
+        crate::auth::secrets::jwt_secret().map_err(|e| AppError::Config(vec![e.to_string()]))?;
     encode(
         // Map JWT error
         &Header::default(),
@@ -1419,8 +1419,8 @@ pub fn generate_refresh_token(user: &User, session_id: Option<Uuid>) -> AppResul
         sid: session_id,
     };
 
-    let secret = env::var("REFRESH_TOKEN_SECRET")
-        .map_err(|e| AppError::Config(vec![format!("REFRESH_TOKEN_SECRET: {e}")]))?;
+    let secret = crate::auth::secrets::refresh_token_secret()
+        .map_err(|e| AppError::Config(vec![e.to_string()]))?;
     encode(
         // Map JWT error
         &Header::default(),
@@ -1436,8 +1436,8 @@ pub async fn refresh_tokens(
     ip_address: String,
     user_agent: String,
 ) -> AppResult<TokenPair> {
-    let secret =
-        env::var("REFRESH_TOKEN_SECRET").map_err(|e| AppError::Config(vec![e.to_string()]))?;
+    let secret = crate::auth::secrets::refresh_token_secret()
+        .map_err(|e| AppError::Config(vec![e.to_string()]))?;
 
     // Validate refresh token (explicit HS256 to prevent algorithm confusion)
     let validation = Validation::new(Algorithm::HS256);

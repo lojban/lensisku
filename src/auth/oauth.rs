@@ -160,11 +160,15 @@ fn load_config(provider: OAuthProvider) -> AppResult<ProviderConfig> {
 }
 
 fn jwt_secret() -> AppResult<String> {
-    env_nonempty("JWT_SECRET").ok_or_else(|| {
-        AppError::Config(vec![
-            "JWT_SECRET must be set to sign OAuth state".to_string()
-        ])
-    })
+    crate::auth::secrets::jwt_secret()
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| {
+            AppError::Config(vec![
+                "JWT_SECRET must be set to sign OAuth state".to_string()
+            ])
+        })
 }
 
 /// Relative in-app path only (blocks open redirects).
