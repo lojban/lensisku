@@ -116,7 +116,7 @@ pub async fn get_paypal_subscription_details(
                 subscription_id,
                 e
             );
-            if e.to_string().contains("RESOURCE_NOT_FOUND") {
+            if e.detail().contains("RESOURCE_NOT_FOUND") {
                 Err(AppError::NotFound(format!(
                     "Subscription {subscription_id} not found."
                 )))
@@ -250,7 +250,7 @@ pub async fn create_payment(
         }
         Err(e) => {
             log::error!("Failed to create PayPal order: {}", e);
-            Err(AppError::BadRequest(e.to_string()))
+            Err(AppError::BadRequest(e.detail()))
         }
     }
 }
@@ -308,7 +308,7 @@ pub async fn capture_order(
         },
         Err(e) => {
             log::error!("Failed to capture PayPal order: {}", e);
-            Err(AppError::BadRequest(e.to_string()))
+            Err(AppError::BadRequest(e.detail()))
         }
     }
 }
@@ -379,7 +379,10 @@ pub async fn paypal_webhook(
         )
         .await
         .map_err(|e| {
-            actix_web::error::ErrorBadRequest(format!("Signature verification failed: {}", e))
+            actix_web::error::ErrorBadRequest(format!(
+                "Signature verification failed: {}",
+                e.detail()
+            ))
         })?;
 
     if !is_valid {

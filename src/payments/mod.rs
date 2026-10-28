@@ -1,3 +1,4 @@
+use crate::error::AppError;
 pub mod controller;
 pub mod dto;
 pub mod paypal;
@@ -16,7 +17,7 @@ pub trait PaymentProvider: Send + Sync {
         transmission_id: &str,
         transmission_time: &str,
         cert_url: &str,
-    ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>>;
+    ) -> Result<bool, AppError>;
 }
 
 pub fn configure(cfg: &mut web::ServiceConfig) {

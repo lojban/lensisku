@@ -2,6 +2,7 @@ use super::dto::{
     CancelSubscriptionRequestDto, CreateSubscriptionRequest, PayPalLink, PayPalSubscriptionDto,
 };
 use super::PaymentProvider;
+use crate::error::AppError;
 use async_trait::async_trait;
 use log::{debug, error, info};
 use once_cell::sync::Lazy;
@@ -65,7 +66,7 @@ pub struct PayPalOrder {
 static CERT_CACHE: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 impl PayPalProvider {
-    pub fn shared() -> Result<&'static Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn shared() -> Result<&'static Self, AppError> {
         static SHARED: OnceLock<PayPalProvider> = OnceLock::new();
         if let Some(provider) = SHARED.get() {
             return Ok(provider);
@@ -77,13 +78,10 @@ impl PayPalProvider {
         let _ = SHARED.set(provider);
         SHARED
             .get()
-            .ok_or_else(|| "PayPal provider unavailable".into())
+            .ok_or_else(|| ext("PayPal provider unavailable"))
     }
 
-    pub fn new(
-        client_id: String,
-        client_secret: String,
-    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn new(client_id: String, client_secret: String) -> Result<Self, AppError> {
         let sandbox_mode = std::env::var("PAYPAL_SANDBOX_MODE")
             .unwrap_or_else(|_| "true".to_string())
             .parse()
@@ -109,10 +107,7 @@ impl PayPalProvider {
         }
     }
 
-    async fn download_and_cache_cert(
-        &self,
-        url: &str,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    async fn download_and_cache_cert(&self, url: &str) -> Result<String, AppError> {
         use openssl::x509::X509;
 
         {
@@ -123,17 +118,17 @@ impl PayPalProvider {
         }
 
         if !url.starts_with("https://api.paypal.com/") {
-            return Err("Invalid certificate URL".into());
+            return Err(ext("Invalid certificate URL"));
         }
 
         // Download certificate
         let cert_pem = self.client.get(url).send().await?.text().await?;
 
         // Validate certificate
-        let cert = X509::from_pem(cert_pem.as_bytes())?;
+        let cert = X509::from_pem(cert_pem.as_bytes()).map_err(ext)?;
 
         // Verify certificate time validity
-        let now = openssl::asn1::Asn1Time::days_from_now(0)?;
+        let now = openssl::asn1::Asn1Time::days_from_now(0).map_err(ext)?;
         let not_before = cert.not_before();
         let not_after = cert.not_after();
 
@@ -142,14 +137,14 @@ impl PayPalProvider {
         // Compare against not_before (cert shouldn't be used before this time)
         if let Ok(ordering) = now.compare(not_before) {
             if ordering == Ordering::Less {
-                return Err("Certificate is not yet valid".into());
+                return Err(ext("Certificate is not yet valid"));
             }
         }
 
         // Compare against not_after (cert shouldn't be used after this time)
         if let Ok(ordering) = now.compare(not_after) {
             if ordering == Ordering::Greater {
-                return Err("Certificate is expired".into());
+                return Err(ext("Certificate is expired"));
             }
         }
 
@@ -161,7 +156,7 @@ impl PayPalProvider {
         Ok(cert_pem)
     }
 
-    async fn get_access_token(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_access_token(&self) -> Result<String, AppError> {
         log::debug!("Getting PayPal access token");
         let mut headers = HeaderMap::new();
         let auth = base64::Engine::encode(
@@ -170,7 +165,7 @@ impl PayPalProvider {
         );
         headers.insert(
             AUTHORIZATION,
-            HeaderValue::from_str(&format!("Basic {}", auth))?,
+            HeaderValue::from_str(&format!("Basic {}", auth)).map_err(ext)?,
         );
 
         let params = [("grant_type", "client_credentials")];
@@ -188,13 +183,13 @@ impl PayPalProvider {
             .await
             .map_err(|e| {
                 log::error!("PayPal token request failed: {}", e);
-                Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+                AppError::ExternalService(e.to_string())
             })?;
 
         let status = response.status();
         let response_body = response.text().await.map_err(|e| {
             log::error!("Failed to read PayPal token response: {}", e);
-            Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+            AppError::ExternalService(e.to_string())
         })?;
 
         log::debug!("PayPal token response: {} - {}", status, response_body);
@@ -205,7 +200,7 @@ impl PayPalProvider {
                 "PayPal token request failed: {} - {}",
                 status, response_body
             );
-            return Err(Box::from(err_msg) as Box<dyn std::error::Error + Send + Sync>);
+            return Err(AppError::ExternalService(err_msg));
         }
 
         #[derive(Deserialize)]
@@ -219,7 +214,7 @@ impl PayPalProvider {
                 e,
                 response_body
             );
-            Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+            AppError::ExternalService(e.to_string())
         })?;
 
         log::debug!("Successfully obtained PayPal access token");
@@ -231,7 +226,7 @@ impl PayPalProvider {
         amount_cents: u64,
         currency: &str,
         user_id: i32,
-    ) -> Result<PayPalOrder, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<PayPalOrder, AppError> {
         // Convert amount to dollars with 2 decimal places
         info!(
             "Creating PayPal order for user {}: {} {}",
@@ -243,7 +238,7 @@ impl PayPalProvider {
         let mut headers = HeaderMap::new();
         headers.insert(
             AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {}", access_token))?,
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).map_err(ext)?,
         );
 
         let amount = Amount {
@@ -275,13 +270,13 @@ impl PayPalProvider {
             .map_err(|e| {
                 log::error!("PayPal API request failed: {}", e);
                 log::debug!("Request headers: {:?}", headers);
-                Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+                AppError::ExternalService(e.to_string())
             })?;
 
         let status = response.status();
         let response_body = response.text().await.map_err(|e| {
             log::error!("Failed to read PayPal response: {}", e);
-            Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+            AppError::ExternalService(e.to_string())
         })?;
 
         log::debug!("PayPal API response: {} - {}", status, response_body);
@@ -322,7 +317,7 @@ impl PayPalProvider {
             };
 
             log::error!("{}", error_msg);
-            return Err(Box::from(error_msg) as Box<dyn std::error::Error + Send + Sync>);
+            return Err(AppError::ExternalService(error_msg));
         }
 
         let order: PayPalOrder = serde_json::from_str(&response_body).map_err(|e| {
@@ -331,20 +326,17 @@ impl PayPalProvider {
                 e, response_body
             );
             log::error!("{}", err_msg);
-            Box::from(err_msg) as Box<dyn std::error::Error + Send + Sync>
+            AppError::ExternalService(err_msg)
         })?;
         Ok(order)
     }
 
-    pub async fn capture_order(
-        &self,
-        order_id: &str,
-    ) -> Result<PayPalOrder, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn capture_order(&self, order_id: &str) -> Result<PayPalOrder, AppError> {
         let access_token = self.get_access_token().await?;
         let mut headers = HeaderMap::new();
         headers.insert(
             AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {}", access_token))?,
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).map_err(ext)?,
         );
 
         let url = format!("{}/v2/checkout/orders/{}/capture", self.api_url(), order_id);
@@ -358,13 +350,13 @@ impl PayPalProvider {
             .await
             .map_err(|e| {
                 log::error!("PayPal capture request failed: {}", e);
-                Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+                AppError::ExternalService(e.to_string())
             })?;
 
         let status = response.status();
         let response_body = response.text().await.map_err(|e| {
             log::error!("Failed to read PayPal capture response: {}", e);
-            Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+            AppError::ExternalService(e.to_string())
         })?;
 
         log::debug!("PayPal capture response: {} - {}", status, response_body);
@@ -408,7 +400,7 @@ impl PayPalProvider {
             };
 
             log::error!("{}", error_msg);
-            return Err(Box::from(error_msg) as Box<dyn std::error::Error + Send + Sync>);
+            return Err(AppError::ExternalService(error_msg));
         }
 
         let order: PayPalOrder = serde_json::from_str(&response_body).map_err(|e| {
@@ -417,7 +409,7 @@ impl PayPalProvider {
                 e, response_body
             );
             log::error!("{}", err_msg);
-            Box::from(err_msg) as Box<dyn std::error::Error + Send + Sync>
+            AppError::ExternalService(err_msg)
         })?;
         Ok(order)
     }
@@ -425,7 +417,7 @@ impl PayPalProvider {
     pub async fn create_subscription(
         &self,
         request: &CreateSubscriptionRequest,
-    ) -> Result<PayPalSubscriptionDto, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<PayPalSubscriptionDto, AppError> {
         info!(
             "Creating PayPal subscription with plan_id: {}",
             request.plan_id
@@ -434,7 +426,7 @@ impl PayPalProvider {
         let mut headers = HeaderMap::new();
         headers.insert(
             AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {}", access_token))?,
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).map_err(ext)?,
         );
         headers.insert(
             HeaderName::from_static("prefer"),
@@ -456,13 +448,18 @@ impl PayPalProvider {
                 error!("PayPal create subscription API request failed: {}", e);
                 debug!("Request headers: {:?}", headers);
                 format!("PayPal create subscription API request failed: {}", e)
-            })?;
+            })
+            .map_err(ext)?;
 
         let status = response.status();
-        let response_body = response.text().await.map_err(|e| {
-            error!("Failed to read PayPal create subscription response: {}", e);
-            format!("Failed to read PayPal create subscription response: {}", e)
-        })?;
+        let response_body = response
+            .text()
+            .await
+            .map_err(|e| {
+                error!("Failed to read PayPal create subscription response: {}", e);
+                format!("Failed to read PayPal create subscription response: {}", e)
+            })
+            .map_err(ext)?;
 
         debug!(
             "PayPal create subscription API response: {} - {}",
@@ -475,29 +472,29 @@ impl PayPalProvider {
                 "PayPal create subscription request failed with status: {} and body: {}",
                 status, response_body
             );
-            return Err(format!(
+            return Err(ext(format!(
                 "PayPal create subscription request failed: {} - {}",
                 status, response_body
-            )
-            .into());
+            )));
         }
 
-        let subscription: PayPalSubscriptionDto =
-            serde_json::from_str(&response_body).map_err(|e| {
+        let subscription: PayPalSubscriptionDto = serde_json::from_str(&response_body)
+            .map_err(|e| {
                 let err_msg = format!(
                     "Failed to parse PayPal create subscription response: {} - Response: {}",
                     e, response_body
                 );
                 error!("{}", err_msg);
                 err_msg
-            })?;
+            })
+            .map_err(ext)?;
         Ok(subscription)
     }
 
     pub async fn get_subscription_details(
         &self,
         subscription_id: &str,
-    ) -> Result<PayPalSubscriptionDto, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<PayPalSubscriptionDto, AppError> {
         info!(
             "Getting PayPal subscription details for ID: {}",
             subscription_id
@@ -506,7 +503,7 @@ impl PayPalProvider {
         let mut headers = HeaderMap::new();
         headers.insert(
             AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {}", access_token))?,
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).map_err(ext)?,
         );
 
         let url = format!(
@@ -532,19 +529,24 @@ impl PayPalProvider {
                     "PayPal get subscription details API request failed for ID {}: {}",
                     subscription_id, e
                 )
-            })?;
+            })
+            .map_err(ext)?;
 
         let status = response.status();
-        let response_body = response.text().await.map_err(|e| {
-            error!(
-                "Failed to read PayPal get subscription details response for ID {}: {}",
-                subscription_id, e
-            );
-            format!(
-                "Failed to read PayPal get subscription details response for ID {}: {}",
-                subscription_id, e
-            )
-        })?;
+        let response_body = response
+            .text()
+            .await
+            .map_err(|e| {
+                error!(
+                    "Failed to read PayPal get subscription details response for ID {}: {}",
+                    subscription_id, e
+                );
+                format!(
+                    "Failed to read PayPal get subscription details response for ID {}: {}",
+                    subscription_id, e
+                )
+            })
+            .map_err(ext)?;
 
         debug!(
             "PayPal get subscription details API response for ID {}: {} - {}",
@@ -556,11 +558,10 @@ impl PayPalProvider {
                 "PayPal get subscription details request failed for ID {} with status: {} and body: {}",
                 subscription_id, status, response_body
             );
-            return Err(format!(
+            return Err(ext(format!(
                 "PayPal get subscription details request failed for ID {}: {} - {}",
                 subscription_id, status, response_body
-            )
-            .into());
+            )));
         }
 
         let subscription: PayPalSubscriptionDto =
@@ -571,7 +572,7 @@ impl PayPalProvider {
                 );
                 error!("{}", err_msg);
                 err_msg
-            })?;
+            }).map_err(ext)?;
         Ok(subscription)
     }
 
@@ -579,7 +580,7 @@ impl PayPalProvider {
         &self,
         subscription_id: &str,
         reason: &str,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<(), AppError> {
         info!(
             "Cancelling PayPal subscription ID: {} with reason: {}",
             subscription_id, reason
@@ -588,7 +589,7 @@ impl PayPalProvider {
         let mut headers = HeaderMap::new();
         headers.insert(
             AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {}", access_token))?,
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).map_err(ext)?,
         );
 
         let request_body = CancelSubscriptionRequestDto {
@@ -620,7 +621,8 @@ impl PayPalProvider {
                     "PayPal cancel subscription API request failed for ID {}: {}",
                     subscription_id, e
                 )
-            })?;
+            })
+            .map_err(ext)?;
 
         let status = response.status();
         // PayPal typically returns 204 No Content on successful cancellation.
@@ -642,11 +644,10 @@ impl PayPalProvider {
                 "PayPal cancel subscription request failed for ID {} with status: {} and body: {}",
                 subscription_id, status, response_body
             );
-            Err(format!(
+            Err(ext(format!(
                 "PayPal cancel subscription request failed for ID {}: {} - {}",
                 subscription_id, status, response_body
-            )
-            .into())
+            )))
         }
     }
 }
@@ -660,14 +661,15 @@ impl PaymentProvider for PayPalProvider {
         transmission_id: &str,
         timestamp: &str,
         cert_url: &str,
-    ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<bool, AppError> {
         use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
         use crc32fast::hash;
         use openssl::sign::Verifier;
         use openssl::x509::X509;
 
         let webhook_id = std::env::var("PAYPAL_WEBHOOK_ID")
-            .map_err(|_| "PAYPAL_WEBHOOK_ID environment variable not set")?;
+            .map_err(|_| "PAYPAL_WEBHOOK_ID environment variable not set")
+            .map_err(ext)?;
 
         log::info!("\nPayPal Webhook Validation Debug:");
         log::info!("Raw payload length: {}", payload.len());
@@ -701,23 +703,29 @@ impl PaymentProvider for PayPalProvider {
         log::info!("Certificate length: {}", cert_pem.len());
 
         // Decode signature
-        let signature = BASE64.decode(signature_b64)?;
+        let signature = BASE64.decode(signature_b64).map_err(ext)?;
         log::info!("Decoded signature length: {}", signature.len());
 
         // Load certificate and get public key
-        let cert = X509::from_pem(cert_pem.as_bytes())?;
-        let public_key = cert.public_key()?;
+        let cert = X509::from_pem(cert_pem.as_bytes()).map_err(ext)?;
+        let public_key = cert.public_key().map_err(ext)?;
 
         // Create and configure verifier
-        let mut verifier = Verifier::new(openssl::hash::MessageDigest::sha256(), &public_key)?;
-        verifier.update(message.as_bytes())?;
+        let mut verifier =
+            Verifier::new(openssl::hash::MessageDigest::sha256(), &public_key).map_err(ext)?;
+        verifier.update(message.as_bytes()).map_err(ext)?;
 
         // Verify signature
-        let result = verifier.verify(&signature)?;
+        let result = verifier.verify(&signature).map_err(ext)?;
         log::info!("\nSignature verification result: {}", result);
 
         Ok(result)
     }
+}
+
+/// PayPal and certificate failures are upstream errors; keeps their text as the detail.
+fn ext(e: impl std::fmt::Display) -> AppError {
+    AppError::ExternalService(e.to_string())
 }
 
 #[cfg(test)]
