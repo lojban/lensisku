@@ -144,6 +144,54 @@ impl AppError {
     }
 }
 
+impl AppError {
+    /// The message without the variant prefix that `Display` adds. For errors built
+    /// from a message this is that message; wrapped errors give their own text. Lets
+    /// handlers that were written against `Box<dyn Error>` keep the same bodies.
+    pub fn detail(&self) -> String {
+        match self {
+            AppError::Database(s)
+            | AppError::Migration(s)
+            | AppError::Auth(s)
+            | AppError::NotFound(s)
+            | AppError::ExternalService(s)
+            | AppError::Validation(s)
+            | AppError::Conflict(s)
+            | AppError::BadRequest(s)
+            | AppError::Unauthorized(s)
+            | AppError::Internal(s) => s.clone(),
+            AppError::ExternalServiceWithRaw { message, .. }
+            | AppError::ExternalServiceRetryable { message, .. } => message.clone(),
+            AppError::Config(v) => v.join(", "),
+            AppError::Io(e) => e.to_string(),
+            AppError::Reqwest(e) => e.to_string(),
+            AppError::Json(e) => e.to_string(),
+            AppError::Redis(e) => e.to_string(),
+            AppError::Jwt(e) => e.to_string(),
+        }
+    }
+
+    /// True for the typed client errors that the database mapping produces
+    /// (constraint conflicts and rejected input).
+    pub fn is_input_error(&self) -> bool {
+        matches!(self, AppError::Conflict(_) | AppError::Validation(_))
+    }
+}
+
+/// For handlers that answer every service error with their own 5xx body: typed
+/// input errors (409/400 from constraint violations) keep their typed response,
+/// anything else gets `fallback`.
+pub fn input_error_or(
+    e: AppError,
+    fallback: impl FnOnce(AppError) -> actix_web::HttpResponse,
+) -> actix_web::HttpResponse {
+    if e.is_input_error() {
+        actix_web::ResponseError::error_response(&e)
+    } else {
+        fallback(e)
+    }
+}
+
 /// Message shown to clients for every 5xx response.
 pub const INTERNAL_ERROR_MESSAGE: &str = "Internal server error";
 
@@ -262,6 +310,35 @@ mod tests {
     use tokio_postgres::error::SqlState;
 
     use super::{client_error_for_sql_state, AppError};
+
+    #[test]
+    fn detail_drops_variant_prefix() {
+        assert_eq!(
+            AppError::NotFound("Comment not found".into()).detail(),
+            "Comment not found"
+        );
+        assert_eq!(
+            AppError::Auth("Access denied".into()).to_string(),
+            "Authentication/Authorization error: Access denied"
+        );
+        assert_eq!(
+            AppError::Auth("Access denied".into()).detail(),
+            "Access denied"
+        );
+    }
+
+    #[test]
+    fn input_error_or_keeps_typed_conflict() {
+        let fallback = |_e: AppError| actix_web::HttpResponse::InternalServerError().finish();
+        let r = super::input_error_or(AppError::Conflict("dup".into()), fallback);
+        assert_eq!(r.status(), StatusCode::CONFLICT);
+        let r = super::input_error_or(AppError::Validation("Invalid input".into()), fallback);
+        assert_eq!(r.status(), StatusCode::BAD_REQUEST);
+        let r = super::input_error_or(AppError::BadRequest("x".into()), fallback);
+        assert_eq!(r.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let r = super::input_error_or(AppError::Database("x".into()), fallback);
+        assert_eq!(r.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
 
     #[test]
     fn sql_states_for_bad_input_become_client_errors() {

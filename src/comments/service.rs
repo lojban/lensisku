@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use crate::utils::remove_html_tags;
 use std::{
     collections::{HashMap, HashSet},
@@ -31,7 +32,7 @@ fn bounded_page(page: i64, per_page: i64) -> (i64, i64, i64) {
 pub async fn get_thread_comments(
     pool: &Pool,
     params: ThreadParams,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -211,7 +212,7 @@ pub async fn get_thread_comments(
                 last_comment_username: None,
             })
         })
-        .collect::<Result<Vec<_>, Box<dyn std::error::Error>>>()?;
+        .collect::<Result<Vec<_>, AppError>>()?;
 
     transaction.commit().await?;
 
@@ -223,7 +224,7 @@ pub async fn get_thread_comments(
     })
 }
 
-pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn std::error::Error>> {
+pub async fn add_comment(params: NewCommentParams) -> Result<Comment, AppError> {
     let mut client = params.pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -261,7 +262,9 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
     ] {
         if let Some(requested) = requested.filter(|id| *id > 0) {
             if stored.get::<_, Option<i32>>(column) != Some(requested) {
-                return Err("Comment context does not match parent thread".into());
+                return Err(AppError::BadRequest(
+                    "Comment context does not match parent thread".into(),
+                ));
             }
         }
     }
@@ -278,7 +281,7 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
     // Store media items
 
     let mut content_parts: Vec<ContentPart> = serde_json::from_str(&params.content)
-        .map_err(|e| format!("Failed to parse content: {}", e))?;
+        .map_err(|e| AppError::BadRequest(format!("Failed to parse content: {}", e)))?;
 
     // Sanitize each part's content
     for part in content_parts.iter_mut() {
@@ -300,11 +303,10 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
     let total_size: usize = content_parts.iter().map(|p| p.data.len()).sum();
     const MAX_COMMENT_SIZE: usize = 5 * 1024 * 1024; // 5MB limit
     if total_size > MAX_COMMENT_SIZE {
-        return Err(format!(
+        return Err(AppError::BadRequest(format!(
             "Comment content exceeds the maximum size of {}MB",
             MAX_COMMENT_SIZE / (1024 * 1024)
-        )
-        .into());
+        )));
     }
 
     let sanitized_subject = sanitize_html(&params.subject);
@@ -380,13 +382,14 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
 
     // Extract hashtags from all text parts
     let content_parts: Vec<ContentPart> = serde_json::from_str(&params.content)
-        .map_err(|e| format!("Failed to parse content: {}", e))?;
+        .map_err(|e| AppError::BadRequest(format!("Failed to parse content: {}", e)))?;
 
     let hashtags = content_parts
         .iter()
         .filter(|p| p.r#type == "text")
         .map(|p| Comment::extract_hashtags(&p.data))
-        .collect::<Result<Vec<_>, _>>()?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| AppError::Internal(format!("hashtag regex: {e}")))?
         .into_iter()
         .flatten()
         .collect::<HashSet<_>>();
@@ -489,7 +492,7 @@ async fn get_thread_id_by_context(
     definition_link_id: Option<i32>,
     target_user_id: Option<i32>,
     collection_id: Option<i32>,
-) -> Result<Option<i32>, Box<dyn std::error::Error>> {
+) -> Result<Option<i32>, AppError> {
     // Ensure only one context type is primarily active or it's a free-standing thread context
     let has_entry_context =
         valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some();
@@ -517,7 +520,9 @@ async fn get_thread_id_by_context(
     if active_contexts > 1 {
         // This case should ideally be prevented by frontend/controller logic
         // but as a safeguard:
-        return Err("Ambiguous thread context: Multiple context IDs provided.".into());
+        return Err(AppError::BadRequest(
+            "Ambiguous thread context: Multiple context IDs provided.".into(),
+        ));
     }
 
     Ok(transaction
@@ -548,7 +553,7 @@ async fn get_comment_by_id(
     transaction: &tokio_postgres::Transaction<'_>,
     comment_id: i32,
     user_id: Option<i32>,
-) -> Result<Comment, Box<dyn std::error::Error>> {
+) -> Result<Comment, AppError> {
     let row = transaction
         .query_one(
             "SELECT
@@ -617,7 +622,7 @@ pub async fn get_bookmarked_comments(
     user_id: i32,
     page: i64,
     per_page: i64,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -703,7 +708,7 @@ pub async fn get_bookmarked_comments(
                 last_comment_username: None,
             })
         })
-        .collect::<Result<Vec<_>, Box<dyn std::error::Error>>>()?;
+        .collect::<Result<Vec<_>, AppError>>()?;
 
     transaction.commit().await?;
 
@@ -720,7 +725,7 @@ pub async fn toggle_bookmark(
     comment_id: i32,
     user_id: i32,
     bookmark: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     verify_comment_access(&transaction, comment_id, Some(user_id)).await?;
@@ -776,7 +781,7 @@ pub async fn get_user_comments(
     page: i64,
     per_page: i64,
     current_user_id: Option<i32>,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -862,7 +867,7 @@ pub async fn get_user_comments(
                 last_comment_username: None,
             })
         })
-        .collect::<Result<Vec<_>, Box<dyn std::error::Error>>>()?;
+        .collect::<Result<Vec<_>, AppError>>()?;
 
     transaction.commit().await?;
 
@@ -878,9 +883,9 @@ pub async fn create_opinion(
     pool: &Pool,
     user_id: i32,
     request: &CreateOpinionRequest,
-) -> Result<CommentOpinion, Box<dyn std::error::Error>> {
+) -> Result<CommentOpinion, AppError> {
     let content = CommentOpinion::parse(&request.opinion)
-        .ok_or_else(|| "Invalid opinion content".to_string())?;
+        .ok_or_else(|| AppError::BadRequest("Invalid opinion content".to_string()))?;
 
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -925,7 +930,7 @@ pub async fn set_opinion_vote(
     pool: &Pool,
     user_id: i32,
     request: &OpinionVoteRequest,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     verify_comment_access(&transaction, request.comment_id, Some(user_id)).await?;
@@ -938,7 +943,9 @@ pub async fn set_opinion_vote(
         .await?
         .is_none()
     {
-        return Err("Opinion does not belong to the comment".into());
+        return Err(AppError::BadRequest(
+            "Opinion does not belong to the comment".into(),
+        ));
     }
     let has_voted = transaction
         .query_opt(
@@ -998,7 +1005,7 @@ pub async fn get_comment_opinions(
     pool: &Pool,
     comment_id: i32,
     user_id: Option<i32>,
-) -> Result<Vec<CommentOpinion>, Box<dyn std::error::Error>> {
+) -> Result<Vec<CommentOpinion>, AppError> {
     let client = pool.get().await?;
 
     let opinions = client
@@ -1043,7 +1050,7 @@ pub async fn get_trending_comments(
     timespan: TrendingTimespan,
     current_user_id: Option<i32>,
     limit: i32,
-) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+) -> Result<Vec<Comment>, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1152,7 +1159,7 @@ async fn compute_top_comments(
     min_count: i32,
     limit: i32,
     current_user_id: Option<i32>,
-) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+) -> Result<Vec<Comment>, AppError> {
     let start_days = start_days.clamp(1, 3650);
     let min_count = min_count.clamp(1, 100);
     let limit = limit.clamp(1, 100);
@@ -1271,7 +1278,7 @@ const TOP_COMMENTS_CACHE_TTL: Duration = Duration::from_secs(600);
 pub async fn update_top_comments_cache(
     pool: &Pool,
     redis_cache: &RedisCache,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let comments = compute_top_comments(pool, 7, 3, 3, None).await?;
     redis_cache
         .set(
@@ -1280,16 +1287,18 @@ pub async fn update_top_comments_cache(
             Some(TOP_COMMENTS_CACHE_TTL),
         )
         .await
+        .map_err(|e| AppError::Internal(format!("top comments cache: {e}")))
 }
 
 /// Returns the cached top 3 comments. The cron keeps this fresh.
 pub async fn get_cached_top_comments(
     pool: &Pool,
     redis_cache: &RedisCache,
-) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+) -> Result<Vec<Comment>, AppError> {
     let mut comments = redis_cache
         .get::<Vec<Comment>>(TOP_COMMENTS_CACHE_KEY)
-        .await?
+        .await
+        .map_err(|e| AppError::Internal(format!("top comments cache: {e}")))?
         .unwrap_or_default();
     if !comments.is_empty() {
         let ids: Vec<i32> = comments.iter().map(|comment| comment.comment_id).collect();
@@ -1304,7 +1313,7 @@ pub async fn get_comment_stats(
     pool: &Pool,
     comment_id: i32,
     user_id: Option<i32>,
-) -> Result<CommentStats, Box<dyn std::error::Error>> {
+) -> Result<CommentStats, AppError> {
     let client = pool.get().await?;
 
     let row = client
@@ -1331,7 +1340,7 @@ pub async fn get_most_bookmarked_comments(
     page: i64,
     per_page: i64,
     current_user_id: Option<i32>,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let (page, per_page, offset) = bounded_page(page, per_page);
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -1427,7 +1436,7 @@ pub async fn get_trending_hashtags(
     pool: &Pool,
     timespan: TrendingTimespan,
     limit: i32,
-) -> Result<Vec<TrendingHashtag>, Box<dyn std::error::Error>> {
+) -> Result<Vec<TrendingHashtag>, AppError> {
     let client = pool.get().await?;
 
     let hours = match timespan {
@@ -1472,7 +1481,7 @@ pub async fn get_comments_by_hashtag(
     user_id: Option<i32>,
     page: Option<i64>,
     per_page: Option<i64>,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1559,11 +1568,7 @@ pub async fn get_comments_by_hashtag(
     })
 }
 
-pub async fn delete_comment(
-    pool: &Pool,
-    comment_id: i32,
-    user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn delete_comment(pool: &Pool, comment_id: i32, user_id: i32) -> Result<(), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1580,7 +1585,7 @@ pub async fn delete_comment(
 
     let row = match row {
         Some(r) => r,
-        None => return Err("Comment not found".into()),
+        None => return Err(AppError::NotFound("Comment not found".into())),
     };
 
     let comment_user_id: i32 = row.get("userid");
@@ -1588,11 +1593,15 @@ pub async fn delete_comment(
     let thread_id: i32 = row.get("threadid");
 
     if comment_user_id != user_id {
-        return Err("Unauthorized: You can only delete your own comments".into());
+        return Err(AppError::Auth(
+            "Unauthorized: You can only delete your own comments".into(),
+        ));
     }
 
     if total_replies > 0 {
-        return Err("Cannot delete comment with replies".into());
+        return Err(AppError::BadRequest(
+            "Cannot delete comment with replies".into(),
+        ));
     }
 
     // Delete related data
@@ -1677,10 +1686,10 @@ pub async fn toggle_reaction(
     comment_id: i32,
     user_id: i32,
     reaction: &str,
-) -> Result<bool, Box<dyn std::error::Error>> {
+) -> Result<bool, AppError> {
     // Basic validation
     if reaction.len() > 32 {
-        return Err(Box::new(ReactionError::TooLong));
+        return Err(AppError::BadRequest(ReactionError::TooLong.to_string()));
     }
 
     let mut client = pool.get().await?;
@@ -1719,7 +1728,9 @@ pub async fn toggle_reaction(
             .get::<_, bool>(0);
 
         if !can_add {
-            return Err(Box::new(ReactionError::LimitReached));
+            return Err(AppError::BadRequest(
+                ReactionError::LimitReached.to_string(),
+            ));
         }
 
         // Add reaction
@@ -1742,7 +1753,7 @@ pub(crate) async fn search_comments(
     pool: &Pool,
     search_params: SearchCommentsParams,
     current_user_id: Option<i32>,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     search_comments_inner(pool, search_params, current_user_id, None).await
 }
 
@@ -1751,7 +1762,7 @@ pub(crate) async fn search_comment_hits(
     pool: &Pool,
     ids: &[i32],
     current_user_id: Option<i32>,
-) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+) -> Result<Vec<Comment>, AppError> {
     let params = SearchCommentsParams {
         page: 1,
         per_page: ids.len() as i64,
@@ -1778,7 +1789,7 @@ async fn search_comments_inner(
     search_params: SearchCommentsParams,
     current_user_id: Option<i32>,
     ids: Option<&[i32]>,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1992,7 +2003,7 @@ pub async fn get_my_reactions(
     user_id: i32,
     page: i64,
     per_page: i64,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2095,7 +2106,7 @@ async fn fetch_reactions(
     transaction: &tokio_postgres::Transaction<'_>,
     comment_ids: &[i32],
     current_user_id: Option<i32>,
-) -> Result<HashMap<i32, Vec<ReactionResponse>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<i32, Vec<ReactionResponse>>, AppError> {
     let reactions = transaction
         .query(
             "SELECT
@@ -2138,7 +2149,7 @@ async fn get_or_create_thread_id(
     definition_link_id: Option<i32>,
     target_user_id: Option<i32>,
     collection_id: Option<i32>,
-) -> Result<i32, Box<dyn std::error::Error>> {
+) -> Result<i32, AppError> {
     // Validate that only one context type is primarily active or it's a free-standing thread
     let has_entry_context =
         valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some();
@@ -2164,7 +2175,7 @@ async fn get_or_create_thread_id(
     }
 
     if active_contexts > 1 {
-        return Err("Ambiguous thread context: Multiple context IDs (e.g., valsi_id and target_user_id) provided. Only one type of context or none (for free-standing threads) is allowed.".into());
+        return Err(AppError::BadRequest("Ambiguous thread context: Multiple context IDs (e.g., valsi_id and target_user_id) provided. Only one type of context or none (for free-standing threads) is allowed.".into()));
     }
 
     // Every free wave starts a new thread; the all-NULL context is not reusable.
@@ -2243,7 +2254,7 @@ pub(crate) async fn list_threads(
     sort_by: &str,
     sort_order: &str,
     wave_source: Option<&str>,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     let (page, per_page, offset) = bounded_page(page, per_page);
@@ -2417,7 +2428,7 @@ pub async fn list_comments(
     per_page: i64,
     sort_order: &str,
     current_user_id: Option<i32>,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+) -> Result<PaginatedCommentsResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     let (page, per_page, offset) = bounded_page(page, per_page);
@@ -2528,7 +2539,7 @@ async fn verify_thread_access(
     client: &impl deadpool_postgres::GenericClient,
     thread_id: i32,
     user_id: Option<i32>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let allowed: bool = client
         .query_one(
             "SELECT can_read_comment_thread($1, $2)",
@@ -2537,7 +2548,7 @@ async fn verify_thread_access(
         .await?
         .get(0);
     if !allowed {
-        return Err("Access denied".into());
+        return Err(AppError::Auth("Access denied".into()));
     }
     Ok(())
 }
@@ -2545,13 +2556,13 @@ async fn verify_comment_access(
     client: &impl deadpool_postgres::GenericClient,
     comment_id: i32,
     user_id: Option<i32>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let allowed: bool = client
         .query_one("SELECT can_read_comment($1, $2)", &[&comment_id, &user_id])
         .await?
         .get(0);
     if !allowed {
-        return Err("Access denied".into());
+        return Err(AppError::Auth("Access denied".into()));
     }
     Ok(())
 }

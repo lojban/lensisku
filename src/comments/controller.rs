@@ -127,7 +127,7 @@ pub async fn get_thread(
         {
             return HttpResponse::Forbidden().json(json!({
                 "error": "Access denied",
-                "details": e.to_string()
+                "details": e.detail()
             }));
         }
     }
@@ -163,10 +163,12 @@ pub async fn get_thread(
 
     match service::get_thread_comments(&pool, params).await {
         Ok(comments) => HttpResponse::Ok().json(comments),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get comments",
-            "details": format!("{:#?}", e)
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get comments",
+                "details": format!("{:#?}", e)
+            }))
+        }),
     }
 }
 
@@ -204,10 +206,12 @@ pub async fn list_comments(
 
     match service::list_comments(&pool, page, per_page, sort_order, claims.map(|c| c.sub)).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to list comments",
-            "details": e.to_string()
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to list comments",
+                "details": e.detail()
+            }))
+        }),
     }
 }
 
@@ -259,7 +263,7 @@ pub async fn add_comment(
         {
             return HttpResponse::Forbidden().json(json!({
                 "error": "Access denied",
-                "details": e.to_string()
+                "details": e.detail()
             }));
         }
     }
@@ -310,7 +314,7 @@ pub async fn add_comment(
             HttpResponse::Ok().json(comment)
         }
         Err(e) => {
-            let error_message = e.to_string();
+            let error_message = e.detail();
             if error_message.contains("exceeds the maximum size") {
                 HttpResponse::BadRequest().json(json!({
                     "error": "Comment too large",
@@ -358,10 +362,12 @@ pub async fn get_bookmarks(
 
     match service::get_bookmarked_comments(&pool, claims.sub, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get bookmarked comments",
-            "details": format!("{:#?}", e)
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get bookmarked comments",
+                "details": format!("{:#?}", e)
+            }))
+        }),
     }
 }
 
@@ -397,10 +403,12 @@ pub async fn get_my_reactions(
 
     match service::get_my_reactions(&pool, claims.sub, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get reaction comments",
-            "details": format!("{:#?}", e)
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get reaction comments",
+                "details": format!("{:#?}", e)
+            }))
+        }),
     }
 }
 
@@ -447,10 +455,12 @@ pub async fn get_user_comments(
     .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get user comments",
-            "details": format!("{:#?}", e)
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get user comments",
+                "details": format!("{:#?}", e)
+            }))
+        }),
     }
 }
 
@@ -481,10 +491,12 @@ pub async fn toggle_bookmark(
             "success": true,
             "message": if request.action { "Comment bookmarked" } else { "Comment unbookmarked" }
         })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to toggle bookmark",
-            "details": format!("{:#?}", e)
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to toggle bookmark",
+                "details": format!("{:#?}", e)
+            }))
+        }),
     }
 }
 
@@ -513,14 +525,14 @@ pub async fn create_opinion(
     match service::create_opinion(&pool, claims.sub, &request).await {
         Ok(opinion) => HttpResponse::Ok().json(opinion),
         Err(e) => {
-            if e.to_string().contains("Invalid opinion") {
+            if e.detail().contains("Invalid opinion") {
                 HttpResponse::BadRequest().json(json!({
-                    "error": e.to_string()
+                    "error": e.detail()
                 }))
             } else {
                 HttpResponse::InternalServerError().json(json!({
                     "error": "Failed to create opinion",
-                    "details": e.to_string()
+                    "details": e.detail()
                 }))
             }
         }
@@ -554,10 +566,12 @@ pub async fn vote_opinion(
             "success": true,
             "message": if request.vote { "Vote added" } else { "Vote removed" }
         })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to process vote",
-            "details": e.to_string()
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to process vote",
+                "details": e.detail()
+            }))
+        }),
     }
 }
 
@@ -587,10 +601,12 @@ pub async fn get_opinions(
     match service::get_comment_opinions(&pool, comment_id.into_inner(), claims.map(|c| c.sub)).await
     {
         Ok(opinions) => HttpResponse::Ok().json(opinions),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get opinions",
-            "details": e.to_string()
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get opinions",
+                "details": e.detail()
+            }))
+        }),
     }
 }
 
@@ -630,10 +646,12 @@ pub async fn get_trending(
 
     match service::get_trending_comments(&pool, timespan, claims.map(|c| c.sub), limit).await {
         Ok(comments) => HttpResponse::Ok().json(comments),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get trending comments",
-            "details": e.to_string()
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get trending comments",
+                "details": e.detail()
+            }))
+        }),
     }
 }
 
@@ -652,10 +670,12 @@ pub async fn get_trending(
 pub async fn get_top(pool: web::Data<Pool>, redis_cache: web::Data<RedisCache>) -> impl Responder {
     match service::get_cached_top_comments(&pool, &redis_cache).await {
         Ok(comments) => HttpResponse::Ok().json(comments),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get top comments",
-            "details": e.to_string()
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get top comments",
+                "details": e.detail()
+            }))
+        }),
     }
 }
 
@@ -688,11 +708,11 @@ pub async fn get_comment_stats(
     .await
     {
         Ok(stats) => HttpResponse::Ok().json(stats),
-        Err(e) => match e.to_string() {
+        Err(e) => match e.detail() {
             s if s.contains("not found") => HttpResponse::NotFound().finish(),
             _ => HttpResponse::InternalServerError().json(json!({
                 "error": "Failed to get comment statistics",
-                "details": e.to_string()
+                "details": e.detail()
             })),
         },
     }
@@ -731,10 +751,12 @@ pub async fn get_most_bookmarked(
     match service::get_most_bookmarked_comments(&pool, page, per_page, claims.map(|c| c.sub)).await
     {
         Ok(comments) => HttpResponse::Ok().json(comments),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get most bookmarked comments",
-            "details": e.to_string()
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get most bookmarked comments",
+                "details": e.detail()
+            }))
+        }),
     }
 }
 
@@ -773,10 +795,12 @@ pub async fn trending_hashtags(
 
     match service::get_trending_hashtags(&pool, timespan, limit).await {
         Ok(hashtags) => HttpResponse::Ok().json(hashtags),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get trending hashtags",
-            "details": e.to_string()
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get trending hashtags",
+                "details": e.detail()
+            }))
+        }),
     }
 }
 
@@ -815,10 +839,12 @@ pub async fn comments_by_hashtag(
     .await
     {
         Ok(comments) => HttpResponse::Ok().json(comments),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get comments by hashtag",
-            "details": e.to_string()
-        })),
+        Err(e) => crate::error::input_error_or(e, |e| {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to get comments by hashtag",
+                "details": e.detail()
+            }))
+        }),
     }
 }
 
@@ -854,7 +880,7 @@ pub async fn delete_comment(
             "message": "Comment deleted successfully"
         })),
         Err(e) => {
-            let err_msg = e.to_string();
+            let err_msg = e.detail();
             let mut status = if err_msg.contains("Unauthorized") {
                 HttpResponse::Forbidden()
             } else if err_msg.contains("replies") {
@@ -901,7 +927,7 @@ pub async fn toggle_reaction(
             "message": if added { "Reaction added" } else { "Reaction removed" }
         })),
         Err(e) => {
-            let err_msg = e.to_string();
+            let err_msg = e.detail();
             if err_msg.contains("too long") {
                 HttpResponse::BadRequest().json(json!({
                     "error": "Invalid reaction",

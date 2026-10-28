@@ -5,6 +5,8 @@ use crate::auth::extractor::extract_authorities;
 
 pub mod controller;
 pub mod dto;
+#[cfg(test)]
+mod error_mapping_tests;
 mod errors;
 pub mod models;
 pub mod service;
