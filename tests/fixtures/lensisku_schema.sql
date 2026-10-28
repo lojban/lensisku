@@ -9001,6 +9001,10 @@ SELECT pg_catalog.setval('public.languages_langid_seq', 324, true);
 
 REFRESH MATERIALIZED VIEW public.user_reaction_counts;
 
+-- The dump above clears search_path; the hand-appended migrations below use
+-- unqualified names.
+SELECT pg_catalog.set_config('search_path', 'public', false);
+
 -- V206 dialogue cards
 -- Dialogue ("story") cards: a script of speaker lines (front) plus questions, see src/dialogue.
 -- Never Auto, never answer material; they count toward level strength and completion.
