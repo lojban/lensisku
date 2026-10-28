@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use actix_web::{get, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
 
@@ -32,7 +33,7 @@ async fn fetch_valsi_seo(
     pool: &Pool,
     id_or_word: &str,
     locale: &str,
-) -> Result<Option<(String, String)>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Option<(String, String)>, AppError> {
     let client = pool.get().await?;
     let decoded = urlencoding::decode(id_or_word)
         .map(|s| s.into_owned())
