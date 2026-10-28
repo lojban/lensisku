@@ -2593,20 +2593,6 @@ pub async fn import_from_collection(
         .await?
         .ok_or("Collection not found or access denied")?;
 
-    // Get all items from the collection
-    let items = transaction
-        .query(
-            "SELECT ci.*
-             FROM collection_items ci
-             WHERE ci.collection_id = $1
-             ORDER BY ci.position",
-            &[&collection_id],
-        )
-        .await?;
-
-    let mut imported_count = 0;
-    let mut skipped_count = 0;
-
     // Get current max position
     let max_position: i32 = transaction
         .query_one(
@@ -2616,78 +2602,52 @@ pub async fn import_from_collection(
         .await?
         .get(0);
 
-    // Create flashcards for each item if they don't already exist
-    for (idx, item) in items.iter().enumerate() {
-        let item_id: i32 = item.get("item_id");
-
-        // Check if flashcard already exists
-        let exists = transaction
-            .query_one(
-                "SELECT EXISTS(
-                    SELECT 1 FROM flashcards f
-                    WHERE f.collection_id = $1 and f.item_id = $2
-                )",
-                &[&collection_id, &item_id],
-            )
-            .await?
-            .get::<_, bool>(0);
-
-        if exists {
-            skipped_count += 1;
-            continue;
-        }
-
-        // Check if flashcard already exists for this collection/item
-        let exists = transaction
-            .query_one(
-                "SELECT 1 FROM flashcards WHERE collection_id = $1 AND item_id = $2",
-                &[&collection_id, &item_id],
-            )
-            .await
-            .is_ok();
-
-        if exists {
-            continue;
-        }
-
-        // Insert new flashcard with unique position
-        let flashcard_id: i32 = transaction
-            .query_one(
-                "INSERT INTO flashcards (collection_id, position, item_id, direction)
-                 VALUES ($1, $2, $3, $4)
-                 RETURNING id",
-                &[
-                    &collection_id,
-                    &(max_position + 1 + idx as i32),
-                    &item_id,
-                    &FlashcardDirection::Both,
-                ],
-            )
-            .await?
-            .get(0);
-
-        // Create initial progress record
-        transaction
-            .execute(
-                "INSERT INTO user_flashcard_progress
-                 (user_id, flashcard_id, next_review_at, card_side)
-                 VALUES ($1, $2, CURRENT_TIMESTAMP, 'direct')
-                 ON CONFLICT (user_id, flashcard_id, card_side) DO NOTHING",
-                &[&user_id, &flashcard_id],
-            )
-            .await?;
-        transaction
-            .execute(
-                "INSERT INTO user_flashcard_progress
-                 (user_id, flashcard_id, next_review_at, card_side)
-                 VALUES ($1, $2, CURRENT_TIMESTAMP, 'reverse')
-                 ON CONFLICT (user_id, flashcard_id, card_side) DO NOTHING",
-                &[&user_id, &flashcard_id],
-            )
-            .await?;
-
-        imported_count += 1;
-    }
+    // One statement instead of a per-item loop: every item without a card gets one at
+    // `max_position + 1 + its index in the collection` (gaps where items already had cards),
+    // plus direct and reverse progress rows for the importing user.
+    let counts = transaction
+        .query_one(
+            "WITH items AS (
+                 SELECT ci.item_id,
+                        (ROW_NUMBER() OVER (ORDER BY ci.position, ci.item_id) - 1)::int AS idx
+                 FROM collection_items ci
+                 WHERE ci.collection_id = $1
+             ),
+             fresh AS (
+                 SELECT i.item_id, i.idx FROM items i
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM flashcards f WHERE f.collection_id = $1 AND f.item_id = i.item_id
+                 )
+             ),
+             inserted AS (
+                 INSERT INTO flashcards (collection_id, position, item_id, direction)
+                 SELECT $1, $2::int + 1 + fresh.idx, fresh.item_id, $3
+                 FROM fresh ORDER BY fresh.idx
+                 RETURNING id
+             ),
+             direct_progress AS (
+                 INSERT INTO user_flashcard_progress (user_id, flashcard_id, next_review_at, card_side)
+                 SELECT $4::int, inserted.id, CURRENT_TIMESTAMP, 'direct' FROM inserted
+                 ON CONFLICT (user_id, flashcard_id, card_side) DO NOTHING
+             ),
+             reverse_progress AS (
+                 INSERT INTO user_flashcard_progress (user_id, flashcard_id, next_review_at, card_side)
+                 SELECT $4::int, inserted.id, CURRENT_TIMESTAMP, 'reverse' FROM inserted
+                 ON CONFLICT (user_id, flashcard_id, card_side) DO NOTHING
+             )
+             SELECT (SELECT count(*) FROM items)::int AS total,
+                    (SELECT count(*) FROM inserted)::int AS imported",
+            &[
+                &collection_id,
+                &max_position,
+                &FlashcardDirection::Both,
+                &user_id,
+            ],
+        )
+        .await?;
+    let total: i32 = counts.get("total");
+    let imported_count: i32 = counts.get("imported");
+    let skipped_count = total - imported_count;
 
     transaction.commit().await?;
 
