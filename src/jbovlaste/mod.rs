@@ -1,5 +1,7 @@
 mod activity;
 pub mod broadcast;
+#[cfg(test)]
+mod bulk_delete_tests;
 pub mod controller;
 pub mod dto;
 pub mod models;

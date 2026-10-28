@@ -6446,92 +6446,48 @@ pub async fn delete_bulk_definitions(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    // Get all definitions with this client_id in metadata
-    let definitions = transaction
+    // Definitions with this client_id in metadata; those with comments are kept.
+    let rows = transaction
         .query(
-            "SELECT definitionid FROM definitions
-            WHERE metadata->>'client_id' = $1", // Use ->> to extract as text
+            "SELECT d.definitionid,
+                    EXISTS(
+                        SELECT 1 FROM threads t
+                        JOIN comments c ON t.threadid = c.threadid
+                        WHERE t.definitionid = d.definitionid
+                    ) AS has_comments
+             FROM definitions d
+             WHERE d.metadata->>'client_id' = $1
+             ORDER BY d.definitionid",
             &[&client_id],
         )
         .await?;
 
     let mut deleted = Vec::new();
     let mut skipped = Vec::new();
-
-    for row in definitions {
-        let def_id: i32 = row.get("definitionid");
-
-        // Check if definition has any comments
-        let has_comments: bool = transaction
-            .query_one(
-                "SELECT EXISTS(
-                    SELECT 1 FROM threads t
-                    JOIN comments c ON t.threadid = c.threadid
-                    WHERE t.definitionid = $1
-                )",
-                &[&def_id],
-            )
-            .await?
-            .get(0);
-
-        if has_comments {
-            skipped.push(def_id);
-            continue;
+    for row in &rows {
+        let definition_id: i32 = row.get("definitionid");
+        if row.get::<_, bool>("has_comments") {
+            skipped.push(definition_id);
+        } else {
+            deleted.push(definition_id);
         }
+    }
 
-        // Delete related records
-        transaction
-            .execute(
-                "DELETE FROM keywordmapping WHERE definitionid = $1",
-                &[&def_id],
-            )
-            .await?;
-
-        transaction
-            .execute(
-                "DELETE FROM definitionvotes WHERE definitionid = $1",
-                &[&def_id],
-            )
-            .await?;
-
-        transaction
-            .execute(
-                "DELETE FROM natlangwordvotes WHERE definitionid = $1",
-                &[&def_id],
-            )
-            .await?;
-
-        transaction
-            .execute(
-                "DELETE FROM definition_images WHERE definition_id = $1",
-                &[&def_id],
-            )
-            .await?;
-
-        transaction
-            .execute(
-                "DELETE FROM definition_versions WHERE definition_id = $1",
-                &[&def_id],
-            )
-            .await?;
-
-        // Delete user notifications referencing this definition
-        transaction
-            .execute(
-                "DELETE FROM user_notifications WHERE definition_id = $1",
-                &[&def_id],
-            )
-            .await?;
-
-        // Delete the definition itself
-        transaction
-            .execute(
-                "DELETE FROM definitions WHERE definitionid = $1",
-                &[&def_id],
-            )
-            .await?;
-
-        deleted.push(def_id);
+    if !deleted.is_empty() {
+        // Same dependent tables, in the same order, as `delete_definition`.
+        const DELETE_STATEMENTS: [&str; 8] = [
+            "DELETE FROM keywordmapping WHERE definitionid = ANY($1)",
+            "DELETE FROM definitionvotes WHERE definitionid = ANY($1)",
+            "DELETE FROM natlangwordvotes WHERE definitionid = ANY($1)",
+            "DELETE FROM definition_images WHERE definition_id = ANY($1)",
+            "DELETE FROM definition_versions WHERE definition_id = ANY($1)",
+            "DELETE FROM user_notifications WHERE definition_id = ANY($1)",
+            "DELETE FROM valsi_subscriptions WHERE source_definition_id = ANY($1)",
+            "DELETE FROM definitions WHERE definitionid = ANY($1)",
+        ];
+        for statement in DELETE_STATEMENTS {
+            transaction.execute(statement, &[&deleted]).await?;
+        }
     }
 
     transaction.commit().await?;
