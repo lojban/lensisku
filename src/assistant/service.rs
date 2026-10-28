@@ -1,4 +1,5 @@
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+// Remaining `expect`s guard local invariants (static regex, semaphore never closed, slot map filled above).
+#![allow(clippy::expect_used)]
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -278,7 +279,10 @@ async fn resolve_jbovlaste_language_tags_to_langids(
 
     let mut ids = Vec::with_capacity(norm.len());
     for t in &norm {
-        ids.push(*resolved_map.get(t).expect("all norm tags resolved"));
+        let id = resolved_map
+            .get(t)
+            .ok_or_else(|| AppError::Internal(format!("language tag `{t}` not resolved")))?;
+        ids.push(*id);
     }
     Ok(Some(ids))
 }
@@ -854,13 +858,14 @@ async fn run_jbovlaste_semantic_search_core(
         })
     };
 
-    if assistant_semantic_cache_disabled() || redis.is_none() {
-        let mut response = run_db().await?;
-        attach_examples_to_definitions(pool, &mut response.definitions).await?;
-        return Ok(response);
-    }
-
-    let redis = redis.expect("checked");
+    let redis = match redis {
+        Some(redis) if !assistant_semantic_cache_disabled() => redis,
+        _ => {
+            let mut response = run_db().await?;
+            attach_examples_to_definitions(pool, &mut response.definitions).await?;
+            return Ok(response);
+        }
+    };
     let mut cache_key = generate_assistant_semantic_cache_key(
         &query,
         limit,
