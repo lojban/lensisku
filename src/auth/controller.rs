@@ -108,7 +108,7 @@ pub async fn create_role(
         Ok(role) => {
             if let Err(e) = perm_cache.load_permissions().await {
                 return HttpResponse::InternalServerError().json(json!({
-                    "error": format!("Failed to reload permissions: {}", e)
+                    "error": format!("Failed to reload permissions: {}", e.detail())
                 }));
             }
             HttpResponse::Created().json(role)
@@ -148,7 +148,7 @@ pub async fn update_role(
         Ok(role) => {
             if let Err(e) = perm_cache.load_permissions().await {
                 return HttpResponse::InternalServerError().json(json!({
-                    "error": format!("Failed to reload permissions: {}", e)
+                    "error": format!("Failed to reload permissions: {}", e.detail())
                 }));
             }
             HttpResponse::Ok().json(role)
@@ -189,7 +189,7 @@ pub async fn delete_role(
             if let Err(e) = perm_cache.load_permissions().await {
                 return HttpResponse::InternalServerError().json(json!({
                     "success": false,
-                    "error": format!("Failed to reload permissions: {}", e)
+                    "error": format!("Failed to reload permissions: {}", e.detail())
                 }));
             }
             HttpResponse::Ok().json(json!({
@@ -381,7 +381,7 @@ pub async fn confirm_email(
             } else {
                 HttpResponse::InternalServerError().json(json!({
                     "success": false,
-                    "error": format!("Failed to confirm email: {}", e)
+                    "error": format!("Failed to confirm email: {}", e.detail())
                 }))
             }
         }

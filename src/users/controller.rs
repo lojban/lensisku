@@ -35,7 +35,9 @@ use super::{dto::*, service};
 pub async fn list_users(pool: web::Data<Pool>, query: web::Query<UserListQuery>) -> impl Responder {
     match service::list_users(&pool, query.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
 
@@ -63,9 +65,8 @@ pub async fn get_public_profile(
         Ok(profile) => HttpResponse::Ok().json(profile),
         Err(e) => match &e {
             crate::error::AppError::NotFound(_) => HttpResponse::NotFound().body("User not found"),
-            _ => {
-                HttpResponse::InternalServerError().body(format!("Failed to fetch profile: {}", e))
-            }
+            _ => HttpResponse::InternalServerError()
+                .body(format!("Failed to fetch profile: {}", e.detail())),
         },
     }
 }

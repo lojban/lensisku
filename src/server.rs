@@ -85,7 +85,7 @@ pub async fn start_server(
     perm_cache
         .load_permissions()
         .await
-        .map_err(|e| AppError::Auth(format!("Failed to load permissions: {}", e)))?;
+        .map_err(|e| AppError::Auth(format!("Failed to load permissions: {}", e.detail())))?;
 
     HttpServer::new(move || {
         // Create parsers for this specific worker thread

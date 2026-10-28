@@ -400,6 +400,43 @@ mod tests {
     use actix_web::{body::MessageBody, http::StatusCode, ResponseError};
     use tokio_postgres::error::SqlState;
 
+    #[test]
+    fn message_errors_are_classified_and_keep_text() {
+        let cases = [
+            ("Definition not found", "not_found"),
+            ("Valsi does not exist", "not_found"),
+            ("You do not have permission to edit", "auth"),
+            ("Access denied", "auth"),
+            ("Failed to parse response", "internal"),
+            ("Invalid definition ID", "bad_request"),
+        ];
+        for (msg, kind) in cases {
+            for e in [
+                super::AppError::from(msg),
+                super::AppError::from(msg.to_string()),
+            ] {
+                let got = match &e {
+                    super::AppError::NotFound(_) => "not_found",
+                    super::AppError::Auth(_) => "auth",
+                    super::AppError::Internal(_) => "internal",
+                    super::AppError::BadRequest(_) => "bad_request",
+                    other => panic!("unexpected {other:?}"),
+                };
+                assert_eq!(got, kind, "{msg}");
+                assert_eq!(e.detail(), msg);
+            }
+        }
+    }
+
+    #[test]
+    fn boxed_and_payment_errors_keep_display_text() {
+        let b: Box<dyn std::error::Error> = "boom".into();
+        assert_eq!(super::AppError::from(b).detail(), "boom");
+        let p = crate::payments::error::PaymentError::Database("x".into());
+        let text = p.to_string();
+        assert_eq!(super::AppError::from(p).detail(), text);
+    }
+
     use super::{client_error_for_sql_state, AppError};
 
     #[test]

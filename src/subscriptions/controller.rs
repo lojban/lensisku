@@ -53,7 +53,10 @@ pub async fn subscribe(
             Ok(HttpResponse::Ok().json(response))
         }
         Ok(response) => Err(AppError::NotFound(response.message)),
-        Err(e) => Err(AppError::Internal(format!("Failed to subscribe: {e}"))),
+        Err(e) => Err(AppError::Internal(format!(
+            "Failed to subscribe: {}",
+            e.detail()
+        ))),
     }
 }
 
@@ -95,7 +98,10 @@ pub async fn unsubscribe(
             Ok(HttpResponse::Ok().json(response))
         }
         Ok(response) => Err(AppError::NotFound(response.message)),
-        Err(e) => Err(AppError::Internal(format!("Failed to unsubscribe: {e}"))),
+        Err(e) => Err(AppError::Internal(format!(
+            "Failed to unsubscribe: {}",
+            e.detail()
+        ))),
     }
 }
 
@@ -122,7 +128,8 @@ pub async fn get_subscriptions(
     match super::service::get_user_subscriptions(&pool, claims.sub).await {
         Ok(subscriptions) => Ok(HttpResponse::Ok().json(subscriptions)),
         Err(e) => Err(AppError::Internal(format!(
-            "Failed to get subscriptions: {e}"
+            "Failed to get subscriptions: {}",
+            e.detail()
         ))),
     }
 }
@@ -162,7 +169,8 @@ pub async fn get_notifications(
     {
         Ok(response) => Ok(HttpResponse::Ok().json(response)),
         Err(e) => Err(AppError::Internal(format!(
-            "Failed to get notifications: {e}"
+            "Failed to get notifications: {}",
+            e.detail()
         ))),
     }
 }
@@ -201,7 +209,8 @@ pub async fn mark_notifications_read(
             "marked_count": count
         }))),
         Err(e) => Err(AppError::Internal(format!(
-            "Failed to mark notifications as read: {e}"
+            "Failed to mark notifications as read: {}",
+            e.detail()
         ))),
     }
 }
@@ -233,7 +242,8 @@ pub async fn get_subscription_state(
     match super::service::get_subscription_state(&pool, claims.sub, valsi_id.into_inner()).await {
         Ok(state) => Ok(HttpResponse::Ok().json(state)),
         Err(e) => Err(AppError::Internal(format!(
-            "Failed to get subscription state: {e}"
+            "Failed to get subscription state: {}",
+            e.detail()
         ))),
     }
 }

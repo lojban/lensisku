@@ -97,7 +97,9 @@ pub async fn validate_and_tts(
 pub async fn get_languages(pool: web::Data<Pool>) -> impl Responder {
     match service::get_languages(&pool).await {
         Ok(languages) => HttpResponse::Ok().json(languages),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
 
@@ -182,7 +184,9 @@ pub async fn analyze_word(
                 HttpResponse::BadRequest().json(response)
             }
         }
-        Err(e) => HttpResponse::InternalServerError().body(format!("Analysis error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Analysis error: {}", e.detail()))
+        }
     }
 }
 

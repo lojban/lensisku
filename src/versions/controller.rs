@@ -49,7 +49,8 @@ pub async fn get_definition_history(
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => match &e {
             crate::error::AppError::NotFound(_) => HttpResponse::NotFound().finish(),
-            _ => HttpResponse::InternalServerError().body(format!("Failed to get history: {}", e)),
+            _ => HttpResponse::InternalServerError()
+                .body(format!("Failed to get history: {}", e.detail())),
         },
     }
 }
@@ -80,7 +81,8 @@ pub async fn get_version(pool: web::Data<Pool>, version_id: web::Path<i32>) -> i
         Ok(version) => HttpResponse::Ok().json(version),
         Err(e) => match &e {
             crate::error::AppError::NotFound(_) => HttpResponse::NotFound().finish(),
-            _ => HttpResponse::InternalServerError().body(format!("Failed to get version: {}", e)),
+            _ => HttpResponse::InternalServerError()
+                .body(format!("Failed to get version: {}", e.detail())),
         },
     }
 }
@@ -148,7 +150,8 @@ pub async fn revert_to_version(
         }
         Err(e) => match &e {
             crate::error::AppError::NotFound(_) => HttpResponse::NotFound().finish(),
-            _ => HttpResponse::InternalServerError().body(format!("Failed to revert: {}", e)),
+            _ => HttpResponse::InternalServerError()
+                .body(format!("Failed to revert: {}", e.detail())),
         },
     }
 }
@@ -186,7 +189,8 @@ pub async fn get_version_diff(
             crate::error::AppError::NotFound(_) => {
                 HttpResponse::NotFound().body("One or both versions not found")
             }
-            _ => HttpResponse::InternalServerError().body(format!("Failed to get diff: {}", e)),
+            _ => HttpResponse::InternalServerError()
+                .body(format!("Failed to get diff: {}", e.detail())),
         },
     }
 }

@@ -162,7 +162,7 @@ pub async fn semantic_search(
             }
             Err(e) => {
                 return HttpResponse::InternalServerError().json(json!({
-                    "error": format!("Failed to load definition embedding: {}", e)
+                    "error": format!("Failed to load definition embedding: {}", e.detail())
                 }));
             }
         }
@@ -226,7 +226,7 @@ pub async fn semantic_search(
         Ok(response) => {
             HttpResponse::Ok().json(definition_list_from_response(response, page, per_page))
         }
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }
 
@@ -329,7 +329,7 @@ pub async fn semantic_graph(
             }
             Err(e) => {
                 return HttpResponse::InternalServerError().json(json!({
-                    "error": format!("Failed to resolve focus embedding: {}", e)
+                    "error": format!("Failed to resolve focus embedding: {}", e.detail())
                 }));
             }
         };
@@ -352,7 +352,7 @@ pub async fn semantic_graph(
             .await
         {
             Ok(response) => HttpResponse::Ok().json(response),
-            Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+            Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
         };
     }
 
@@ -369,7 +369,7 @@ pub async fn semantic_graph(
             .await
         {
             Ok(response) => HttpResponse::Ok().json(response),
-            Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+            Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
         };
     }
 
@@ -391,7 +391,7 @@ pub async fn semantic_graph(
             }
             Err(e) => {
                 return HttpResponse::InternalServerError().json(json!({
-                    "error": format!("Failed to resolve valsi embedding: {}", e)
+                    "error": format!("Failed to resolve valsi embedding: {}", e.detail())
                 }));
             }
         }
@@ -421,7 +421,7 @@ pub async fn semantic_graph(
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }
 
@@ -450,7 +450,7 @@ pub async fn list_definitions(
 ) -> impl Responder {
     match service::list_definitions(&pool, &query, claims.map(|c| c.sub)).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }
 
@@ -483,7 +483,7 @@ pub async fn list_non_lojban_definitions(
 ) -> impl Responder {
     match service::list_non_lojban_definitions(&pool, query.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }
 
@@ -641,7 +641,7 @@ pub async fn get_entry_details(
                 }))
             } else {
                 HttpResponse::InternalServerError().json(json!({
-                    "error": format!("Database error: {}", e)
+                    "error": format!("Database error: {}", e.detail())
                 }))
             }
         }
@@ -686,7 +686,7 @@ pub async fn get_valsi_sound(
                 .body(sound_data)
         }
         Ok(None) => HttpResponse::NotFound().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }
 
@@ -749,7 +749,7 @@ pub async fn get_definitions_by_entry(
             if is_authenticated {
                 response.insert_header((CACHE_CONTROL, "private, no-store, max-age=0"));
             }
-            response.body(format!("Database error: {}", e))
+            response.body(format!("Database error: {}", e.detail()))
         }
     }
 }
@@ -782,7 +782,9 @@ pub async fn get_wiki_by_word(
     match service::get_wiki_by_word(&pool, &word, claims.map(|c| c.sub)).await {
         Ok(Some(definition)) => HttpResponse::Ok().json(definition),
         Ok(None) => HttpResponse::NotFound().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
 
@@ -809,7 +811,9 @@ pub async fn get_wiki_by_definition_id(
     match service::get_wiki_by_definition_id(&pool, id.into_inner()).await {
         Ok(Some(page)) => HttpResponse::Ok().json(page),
         Ok(None) => HttpResponse::NotFound().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
 
@@ -1094,7 +1098,9 @@ pub async fn get_definition(
     match service::get_definition(&pool, definition_id, claims.map(|c| c.sub)).await {
         Ok(Some(definition)) => HttpResponse::Ok().json(definition),
         Ok(None) => HttpResponse::NotFound().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
 
@@ -1133,7 +1139,9 @@ pub async fn check_rafsi_overlap(
             })
         }
         Ok(None) => HttpResponse::Ok().json(RafsiOverlapResponse { overlap: None }),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
 
@@ -1174,7 +1182,7 @@ pub async fn get_definition_image(
                 .body(image_data)
         }
         Ok(None) => HttpResponse::NotFound().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }
 
@@ -1331,7 +1339,7 @@ pub async fn get_vote(
             "vote": vote,
         })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to get vote: {}", e)
+            "error": format!("Failed to get vote: {}", e.detail())
         })),
     }
 }
@@ -1389,7 +1397,7 @@ pub async fn update_vote(
                 }
                 _ => HttpResponse::InternalServerError().json(VoteResponse {
                     success: false,
-                    message: format!("Server error: {}", e),
+                    message: format!("Server error: {}", e.detail()),
                     word: None,
                     score: None,
                 }),
@@ -1547,7 +1555,7 @@ pub async fn get_bulk_votes(
     match service::get_bulk_user_votes(&pool, claims.sub, &req.definition_ids).await {
         Ok(votes) => HttpResponse::Ok().json(BulkVoteResponse { votes }),
         Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to get votes: {}", e)
+            "error": format!("Failed to get votes: {}", e.detail())
         })),
     }
 }
@@ -1585,7 +1593,7 @@ pub async fn delete_bulk_definitions(
             "skipped": skipped
         })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to delete definitions: {}", e)
+            "error": format!("Failed to delete definitions: {}", e.detail())
         })),
     }
 }
@@ -1716,7 +1724,7 @@ pub async fn bulk_import_definitions(
                 let error_payload = json!({
                     "type": "error", // Use 'error' type for fatal service errors
                     "success": false,
-                    "error": format!("Import process failed: {}", e)
+                    "error": format!("Import process failed: {}", e.detail())
                 });
                 if let Ok(json_str) = serde_json::to_string(&error_payload) {
                     log::info!(
@@ -1772,7 +1780,9 @@ pub async fn bulk_import_definitions(
 pub async fn list_valsi_types(pool: web::Data<Pool>) -> impl Responder {
     match service::list_valsi_types(&pool).await {
         Ok(types) => HttpResponse::Ok().json(ValsiTypeListResponse { types }),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
 
@@ -1834,7 +1844,7 @@ pub async fn upload_definition_image(
             } else {
                 HttpResponse::InternalServerError().json(json!({
                     "success": false,
-                    "error": format!("Failed to upload image: {}", e)
+                    "error": format!("Failed to upload image: {}", e.detail())
                 }))
             }
         }
@@ -1861,9 +1871,8 @@ pub async fn get_sitemap(
         Ok(xml) => HttpResponse::Ok()
             .content_type(ContentType::xml())
             .body(xml),
-        Err(e) => {
-            HttpResponse::InternalServerError().body(format!("Error generating sitemap: {}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError()
+            .body(format!("Error generating sitemap: {}", e.detail())),
     }
 }
 
@@ -1927,7 +1936,7 @@ pub async fn delete_definition(
         }
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "success": false,
-            "message": format!("Failed to delete definition: {}", e)
+            "message": format!("Failed to delete definition: {}", e.detail())
         })),
     }
 }
@@ -2120,7 +2129,7 @@ pub async fn unlink_definitions_handler(
 pub async fn get_translations_handler(pool: web::Data<Pool>, id: web::Path<i32>) -> impl Responder {
     match service::get_definition_translations(&pool, id.into_inner()).await {
         Ok(translations) => HttpResponse::Ok().json(translations),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }
 
@@ -2158,7 +2167,7 @@ pub async fn export_pairs_handler(
                 .insert_header(cd)
                 .body(tsv_content)
         }
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }
 
@@ -2185,6 +2194,6 @@ pub async fn get_definition_link_handler(
     match service::get_definition_link(&pool, id.into_inner()).await {
         Ok(Some(link)) => HttpResponse::Ok().json(link),
         Ok(None) => HttpResponse::NotFound().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.detail())),
     }
 }

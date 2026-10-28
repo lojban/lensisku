@@ -7,7 +7,7 @@ pub mod service;
 use actix_web::web;
 use async_trait::async_trait;
 
-mod error;
+pub(crate) mod error;
 #[async_trait]
 pub trait PaymentProvider: Send + Sync {
     async fn verify_webhook_signature(

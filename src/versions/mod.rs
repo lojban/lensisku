@@ -23,3 +23,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::revert_to_version),
     );
 }
+
+#[cfg(test)]
+mod error_mapping_tests;

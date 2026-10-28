@@ -70,7 +70,9 @@ pub async fn get_message(
     match service::get_message(&pool, id.into_inner(), user_id).await {
         Ok(Some(message)) => HttpResponse::Ok().json(message),
         Ok(None) => HttpResponse::NotFound().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
 
@@ -99,6 +101,8 @@ pub async fn get_message(
 pub async fn show_thread(pool: web::Data<Pool>, query: web::Query<ThreadQuery>) -> impl Responder {
     match service::show_thread(&pool, query.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Database error: {}", e.detail()))
+        }
     }
 }
