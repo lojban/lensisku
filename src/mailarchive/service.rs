@@ -12,7 +12,7 @@ use encoding_rs::{GB18030, KOI8_R, WINDOWS_1252};
 use mailparse::{parse_mail, MailHeaderMap};
 use std::collections::HashSet;
 use std::path::Path;
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 use tokio_postgres::Client;
 use walkdir::WalkDir;
 
@@ -383,7 +383,7 @@ pub async fn import_maildir(
         let mut tasks = Vec::new();
 
         // Pre-check existence for all files in this batch
-        let client = pool.get().await.expect("Failed to get database connection");
+        let client = pool.get().await?;
         let relative_paths: Vec<String> = chunk
             .iter()
             .filter_map(|path| {
@@ -454,7 +454,7 @@ async fn process_email(
     file_path: &Path,
     maildir_path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let content = fs::read(file_path)?;
+    let content = tokio::fs::read(file_path).await?;
 
     // Try to parse the email with raw content first to get headers
     let content_str = &String::from_utf8_lossy(&content)
