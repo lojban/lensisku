@@ -5,9 +5,14 @@ use chrono::Utc;
 use deadpool_postgres::Pool;
 
 use super::dto::WebSocketMessage;
-use super::dto::*;
+use super::dto::{
+    AddParticipantRequest, BlockUserRequest, BlockedUserResponse, CreateThreadRequest,
+    GetMessagesQuery, GetNotificationsQuery, GetThreadsQuery, MessageListResponse, MessageResponse,
+    NotificationListResponse, NotificationResponse, SendMessageRequest, ThreadListResponse,
+    ThreadParticipantResponse, ThreadResponse, UpdateMessageRequest, UpdateThreadRequest,
+};
 use super::encryption::EncryptionService;
-use super::models::*;
+use super::models::{MessageType, ParticipantRole, SignalType, ThreadType, WebRTCSignaling};
 use super::websocket::{BroadcastToUsers, ChatServer};
 
 // Helper function to build dynamic message query

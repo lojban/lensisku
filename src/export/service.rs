@@ -272,7 +272,11 @@ async fn generate_pdf(
     }
 }
 
-use super::latex::*;
+use super::latex::{
+    breakable_escape_all, escape_all, format_definition, format_export_text, format_lojban_heading,
+    format_meaning, format_natural_heading, format_notes, format_place, format_rafsi,
+    format_selmaho, format_valsi, generate_title, latex_footer, latex_header, markboth, sniff_tex,
+};
 
 pub async fn verify_language_exists(
     transaction: &mut Transaction<'_>,
@@ -2823,6 +2827,7 @@ async fn export_full_collection_json(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::export::latex::escape_tex;
 
     #[test]
     fn pdf_images_include_each_attachment_at_every_matching_entry() {

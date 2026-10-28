@@ -14,7 +14,14 @@ use crate::{
     middleware::limiter::{EmailConfirmationLimiter, LoginLimiter, PasswordResetLimiter},
 };
 
-use super::dto::*;
+use super::dto::{
+    AssignRoleRequest, AssignRoleResponse, BlockUserRequest, BlockUserResponse,
+    CompletePasswordChangeResponse, CreateRoleRequest, FollowResponse,
+    InitiatePasswordChangeRequest, InitiatePasswordChangeResponse, OAuthAuthorizeQuery,
+    OAuthAuthorizeResponse, OAuthCompleteRequest, OAuthCompleteResponse, OAuthProvidersResponse,
+    PasswordRestoreRequest, PermissionsListResponse, ProfileResponse, ResendConfirmationResponse,
+    RoleResponse, SignupRequest, UpdateProfileRequest, UpdateRoleRequest, UserRoleResponse,
+};
 
 /// Email credentials must only be sent to the configured frontend origin.
 fn frontend_url_from_request(_req: &HttpRequest) -> Result<String, AppError> {
