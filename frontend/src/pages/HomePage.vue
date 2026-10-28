@@ -155,8 +155,20 @@
           </div>
 
           <div class="relative" :class="{ 'min-h-[12rem]': isLoading }">
-            <LoadingSpinner v-if="isLoading" variant="content" />
-            <div :class="{ 'pointer-events-none select-none': isLoading }">
+            <PageSkeleton v-if="showFirstLoadSkeleton" layout="list" :rows="5" />
+            <!-- Refresh: small spinner pinned above the previous results, which stay visible but dimmed. -->
+            <LoadingSpinner
+              v-else-if="isLoading"
+              variant="inline"
+              size="sm"
+              class="pointer-events-none sticky top-16 z-10 pb-3"
+            />
+            <div
+              v-show="!showFirstLoadSkeleton"
+              :class="{
+                'pointer-events-none select-none opacity-60 transition-opacity': isLoading,
+              }"
+            >
               <PhraseSplit
                 v-if="
                   (searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId
@@ -180,6 +192,8 @@
                 :collection-matches="collectionMatches"
                 :expand-collection-items="!expandCollectionItemId"
                 :show-global-dictionary-banner="
+                  !isLoading &&
+                  definitions.length > 0 &&
                   !similarDefinitionId &&
                   (filters.selectedCollections?.length > 0 ||
                     filters.usernames?.length > 0 ||
@@ -411,6 +425,7 @@ import {
   SortFieldOrderDropdown,
 } from '@packages/ui'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import PageSkeleton from '@/components/skeletons/PageSkeleton.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import ActivityFeed from '@/components/activity/ActivityFeed.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
@@ -724,6 +739,15 @@ type WaveSource = (typeof WAVE_SOURCES)[number]
 
 const waveSource = ref<WaveSource>('all')
 const isLoading = ref(true) // Loading state for search results
+// First search (nothing to keep on screen) shows a list skeleton; later searches keep the
+// previous results dimmed under the spinner.
+const showFirstLoadSkeleton = computed(
+  () =>
+    isLoading.value &&
+    (searchMode.value === 'dictionary' || searchMode.value === 'semantic') &&
+    definitions.value.length === 0 &&
+    collectionMatches.value.length === 0
+)
 const isInitialLoading = ref(true) // Loading state for initial component setup (languages etc.)
 const error = ref(null)
 const searchFormRef = ref(null)
