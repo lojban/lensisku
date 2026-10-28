@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use actix_web::{get, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
 
@@ -28,7 +29,7 @@ async fn fetch_wiki_seo(
     pool: &Pool,
     title_raw: &str,
     locale: &str,
-) -> Result<Option<(String, String)>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Option<(String, String)>, AppError> {
     let client = pool.get().await?;
     let decoded = urlencoding::decode(title_raw)
         .map(|s| s.into_owned())
@@ -87,7 +88,7 @@ async fn fetch_wiki_seo_by_definition_id(
     pool: &Pool,
     definition_id: i32,
     locale: &str,
-) -> Result<Option<(String, String)>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Option<(String, String)>, AppError> {
     let client = pool.get().await?;
     let row = client
         .query_opt(

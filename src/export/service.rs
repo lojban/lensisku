@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use chrono::DateTime;
 use chrono::Utc;
@@ -386,6 +387,12 @@ export_error_from!(
     zip::result::ZipError,
     std::string::FromUtf8Error,
 );
+
+impl From<AppError> for ExportError {
+    fn from(e: AppError) -> Self {
+        ExportError::Other(Box::new(e))
+    }
+}
 
 fn boxed(e: impl std::error::Error + Send + Sync + 'static) -> ExportError {
     ExportError::Other(Box::new(e))
@@ -2550,7 +2557,7 @@ pub async fn export_search_results(
                 SEARCH_EXPORT_ROW_CAP,
             )
             .await
-            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.to_string().into() })
+            .map_err(|e| -> AppError { e.to_string().into() })
         };
 
         if skip_dictionary_fallback {
@@ -2590,7 +2597,7 @@ pub async fn export_search_results(
             crate::jbovlaste::service::semantic_search(pool, params, embedding, None)
         );
         let (collection_items, collection_total) = collection_result?;
-        let defs = defs_result.map_err(|e| e.to_string())?;
+        let defs = defs_result.map_err(|e| e.detail())?;
         return finalize_search_export(
             pool,
             format,
@@ -2634,7 +2641,7 @@ pub async fn export_search_results(
             SEARCH_EXPORT_ROW_CAP,
         )
         .await
-        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.to_string().into() })
+        .map_err(|e| -> AppError { e.to_string().into() })
     };
 
     if skip_dictionary_fallback {
@@ -2674,7 +2681,7 @@ pub async fn export_search_results(
         crate::jbovlaste::service::search_definitions(pool, params, None)
     );
     let (collection_items, collection_total) = collection_result?;
-    let defs = defs_result.map_err(|e| e.to_string())?;
+    let defs = defs_result.map_err(|e| e.detail())?;
     finalize_search_export(
         pool,
         format,

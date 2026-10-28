@@ -596,8 +596,8 @@ pub async fn search_definitions(
         Ok(response) => {
             HttpResponse::Ok().json(definition_list_from_response(response, page, per_page))
         }
-        Err(e) => match e.downcast_ref::<crate::error::AppError>() {
-            Some(crate::error::AppError::BadRequest(message)) => {
+        Err(e) => match &e {
+            crate::error::AppError::BadRequest(message) => {
                 HttpResponse::BadRequest().json(json!({"error": message}))
             }
             _ => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
@@ -635,7 +635,7 @@ pub async fn get_entry_details(
             "valsi": valsi_detail
         })),
         Err(e) => {
-            if e.to_string().contains("Valsi not found") {
+            if e.detail().contains("Valsi not found") {
                 HttpResponse::NotFound().json(json!({
                     "error": "Valsi not found"
                 }))
@@ -847,7 +847,7 @@ pub async fn rename_wiki_page(
     match service::rename_wiki_page(&pool, &claims, definition_id, &request, &redis_cache).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            let msg = e.to_string();
+            let msg = e.detail();
             if msg.contains("not found") {
                 HttpResponse::NotFound().json(RenameWikiResponse {
                     success: false,
@@ -924,7 +924,7 @@ pub async fn rename_definition_valsi(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            let msg = e.to_string();
+            let msg = e.detail();
             let body = RenameDefinitionResponse {
                 success: false,
                 old_word: String::new(),
@@ -1035,7 +1035,7 @@ pub async fn add_definition(
             warning,
         }),
         Err(e) => {
-            let msg = error_chain(&*e);
+            let msg = error_chain(&e);
             log::error!("Failed to add definition: {}", msg);
             if msg.contains(service::PLACE_SPAN_REQUIRED_ERROR) {
                 HttpResponse::BadRequest().json(AddValsiResponse {
@@ -1267,7 +1267,7 @@ pub async fn update_definition(
             })
         }
         Err(e) => {
-            let msg = e.to_string();
+            let msg = e.detail();
             if msg.contains("Conflict:") {
                 HttpResponse::Conflict().json(UpdateDefinitionResponse {
                     success: false,
@@ -1378,7 +1378,7 @@ pub async fn update_vote(
         }),
         Err(e) => {
             // Determine error type and return appropriate response
-            match e.to_string() {
+            match e.detail() {
                 e if e.contains("Invalid definition ID") => {
                     HttpResponse::BadRequest().json(VoteResponse {
                         success: false,
@@ -1464,7 +1464,7 @@ pub async fn get_recent_changes(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            let detail = error_chain(&*e);
+            let detail = error_chain(&e);
             log::error!("Error retrieving recent changes: {}", detail);
             HttpResponse::InternalServerError().json(json!({
                 "error": "Error retrieving changes",
@@ -1826,10 +1826,10 @@ pub async fn upload_definition_image(
             "image_id": image_id
         })),
         Err(e) => {
-            if e.to_string().contains("not authorized") {
+            if e.detail().contains("not authorized") {
                 HttpResponse::Forbidden().json(json!({
                     "success": false,
-                    "error": e.to_string()
+                    "error": e.detail()
                 }))
             } else {
                 HttpResponse::InternalServerError().json(json!({
@@ -2047,7 +2047,7 @@ pub async fn link_definitions_handler(
     {
         Ok(link_id) => HttpResponse::Ok().json(json!({ "success": true, "link_id": link_id })),
         Err(e) => {
-            let msg = e.to_string();
+            let msg = e.detail();
             // Return 400 for known validation errors
             if msg.contains("Linking is only allowed for phrases")
                 || msg.contains("Cannot link a definition to itself")
@@ -2097,7 +2097,7 @@ pub async fn unlink_definitions_handler(
         Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "success": false,
-            "error": e.to_string()
+            "error": e.detail()
         })),
     }
 }

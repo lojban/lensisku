@@ -1,4 +1,4 @@
-use std::io;
+use crate::error::AppError;
 
 use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
@@ -13,8 +13,7 @@ use super::dto::{WavesSearchResponse, WavesThreadsResponse};
 async fn fetch_comment_import_sources(
     pool: &Pool,
     comment_ids: &[i32],
-) -> Result<std::collections::HashMap<i32, Option<String>>, Box<dyn std::error::Error + Send + Sync>>
-{
+) -> Result<std::collections::HashMap<i32, Option<String>>, AppError> {
     use std::collections::HashMap;
     if comment_ids.is_empty() {
         return Ok(HashMap::new());
@@ -22,18 +21,14 @@ async fn fetch_comment_import_sources(
     let client = pool
         .get()
         .await
-        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-            Box::new(io::Error::other(e.to_string()))
-        })?;
+        .map_err(|e| -> AppError { AppError::Internal(e.to_string()) })?;
     let rows = client
         .query(
             "SELECT commentid, import_source FROM comments WHERE commentid = ANY($1)",
             &[&comment_ids],
         )
         .await
-        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-            Box::new(io::Error::other(e.to_string()))
-        })?;
+        .map_err(|e| -> AppError { AppError::Internal(e.to_string()) })?;
     let mut out = HashMap::new();
     for row in rows {
         let comment_id: i32 = row.get("commentid");
@@ -46,8 +41,7 @@ async fn fetch_comment_import_sources(
 async fn fetch_thread_root_import_sources(
     pool: &Pool,
     thread_ids: &[i32],
-) -> Result<std::collections::HashMap<i32, Option<String>>, Box<dyn std::error::Error + Send + Sync>>
-{
+) -> Result<std::collections::HashMap<i32, Option<String>>, AppError> {
     use std::collections::HashMap;
     if thread_ids.is_empty() {
         return Ok(HashMap::new());
@@ -55,9 +49,7 @@ async fn fetch_thread_root_import_sources(
     let client = pool
         .get()
         .await
-        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-            Box::new(io::Error::other(e.to_string()))
-        })?;
+        .map_err(|e| -> AppError { AppError::Internal(e.to_string()) })?;
     let rows = client
         .query(
             "SELECT DISTINCT ON (threadid) threadid, import_source
@@ -67,9 +59,7 @@ async fn fetch_thread_root_import_sources(
             &[&thread_ids],
         )
         .await
-        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-            Box::new(io::Error::other(e.to_string()))
-        })?;
+        .map_err(|e| -> AppError { AppError::Internal(e.to_string()) })?;
     let mut out = HashMap::new();
     for row in rows {
         let tid: i32 = row.get("threadid");
@@ -181,7 +171,7 @@ pub async fn search_waves(
     pool: &Pool,
     query: WavesSearchQuery,
     current_user_id: Option<i32>,
-) -> Result<WavesSearchResponse, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<WavesSearchResponse, AppError> {
     if query
         .search
         .as_deref()
@@ -248,18 +238,14 @@ pub async fn search_waves(
         comments_res = Some(
             comments_service::search_comments(pool, comments_params, current_user_id)
                 .await
-                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                    Box::new(io::Error::other(e.to_string()))
-                })?,
+                .map_err(|e| -> AppError { AppError::Internal(e.to_string()) })?,
         );
     }
     if want_mail {
         mail_res = Some(
             mailarchive_service::search_messages(pool, mail_query)
                 .await
-                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                    Box::new(io::Error::other(e.to_string()))
-                })?,
+                .map_err(|e| -> AppError { AppError::Internal(e.detail()) })?,
         );
     }
     if want_wiki {
@@ -333,7 +319,7 @@ pub async fn search_waves(
 pub async fn list_wave_threads(
     pool: &Pool,
     query: WavesThreadsQuery,
-) -> Result<WavesThreadsResponse, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<WavesThreadsResponse, AppError> {
     let page = query.page.unwrap_or(1);
     let per_page = query
         .per_page
@@ -384,9 +370,7 @@ pub async fn list_wave_threads(
                 wave_source,
             )
             .await
-            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                Box::new(io::Error::other(e.to_string()))
-            })?,
+            .map_err(|e| -> AppError { AppError::Internal(e.to_string()) })?,
         );
     }
     if want_mail {
@@ -398,9 +382,7 @@ pub async fn list_wave_threads(
             mail_sort_by,
         )
         .await
-        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-            Box::new(io::Error::other(e.to_string()))
-        })?;
+        .map_err(|e| -> AppError { AppError::Internal(e.detail()) })?;
         mail_threads = mt;
         mail_total = mt_total;
     }

@@ -4481,7 +4481,7 @@ pub async fn list_collection_items(
     } else {
         get_valsi_sound_urls_from_db(pool, &words_to_check)
             .await
-            .map_err(|e| AppError::Database(e.to_string()))?
+            .map_err(|e| AppError::Database(e.detail()))?
     };
     for (item, row) in items.iter_mut().zip(rows.iter()) {
         if !item.has_sound {
@@ -4956,7 +4956,7 @@ pub async fn search_items_in_collections(
     } else {
         get_valsi_sound_urls_from_db(pool, &words_to_check)
             .await
-            .map_err(|e| AppError::Database(e.to_string()))?
+            .map_err(|e| AppError::Database(e.detail()))?
     };
     for (item, row) in items.iter_mut().zip(rows.iter()) {
         if !item.has_sound {

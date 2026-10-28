@@ -206,10 +206,10 @@ pub fn validate_item_audio(sound: &SoundData) -> Result<(), String> {
     Ok(())
 }
 
-pub fn handle_error(e: Box<dyn std::error::Error>, context: &str) -> HttpResponse {
+pub fn handle_error(e: crate::error::AppError, context: &str) -> HttpResponse {
     use crate::error::AppError;
 
-    let msg = e.to_string();
+    let msg = e.detail();
     let app_error = if msg.contains("not found") {
         AppError::NotFound(msg)
     } else if msg.contains("access denied") || msg.contains("Forbidden") {
@@ -223,7 +223,7 @@ pub fn handle_error(e: Box<dyn std::error::Error>, context: &str) -> HttpRespons
     app_error.error_response()
 }
 
-pub fn handle_import_error(e: Box<dyn std::error::Error>) -> HttpResponse {
+pub fn handle_import_error(e: crate::error::AppError) -> HttpResponse {
     handle_error(e, "Import failed")
 }
 

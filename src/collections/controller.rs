@@ -1708,7 +1708,9 @@ pub async fn import_collection_from_json(
     .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => crate::utils::handle_import_error(Box::new(e)),
+        Err(e) => {
+            crate::utils::handle_import_error(crate::error::AppError::Internal(e.to_string()))
+        }
     }
 }
 

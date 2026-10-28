@@ -2,6 +2,7 @@ use super::{
     models::{Change, ChangeType, Version, VersionContent, VersionDiff},
     VersionHistoryResponse,
 };
+use crate::error::AppError;
 use crate::{auth::permissions::PermissionCache, jbovlaste::KeywordMapping};
 use deadpool_postgres::Pool;
 
@@ -74,7 +75,7 @@ pub async fn next_definitionnum_for_language(
     transaction: &tokio_postgres::Transaction<'_>,
     valsi_id: i32,
     lang_id: i32,
-) -> Result<i32, Box<dyn std::error::Error>> {
+) -> Result<i32, AppError> {
     Ok(transaction
         .query_one(
             "SELECT COALESCE(MAX(definitionnum), 0) + 1
@@ -91,7 +92,7 @@ pub async fn retarget_definition_votes(
     transaction: &tokio_postgres::Transaction<'_>,
     definition_id: i32,
     new_lang_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     transaction
         .execute(
             "DELETE FROM definitionvotes a
@@ -121,7 +122,7 @@ pub async fn get_definition_history(
     definition_id: i32,
     page: i64,
     per_page: i64,
-) -> Result<VersionHistoryResponse, Box<dyn std::error::Error>> {
+) -> Result<VersionHistoryResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     let offset = (page - 1) * per_page;
@@ -159,10 +160,7 @@ pub async fn get_definition_history(
     })
 }
 
-pub async fn get_version(
-    pool: &Pool,
-    version_id: i32,
-) -> Result<Version, Box<dyn std::error::Error>> {
+pub async fn get_version(pool: &Pool, version_id: i32) -> Result<Version, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -176,7 +174,7 @@ pub async fn get_version(
 pub async fn get_version_with_transaction(
     transaction: &tokio_postgres::Transaction<'_>,
     version_id: i32,
-) -> Result<Version, Box<dyn std::error::Error>> {
+) -> Result<Version, AppError> {
     let row = transaction
         .query_one(
             &format!("{VERSION_SELECT_SQL} WHERE v.version_id = $1"),
@@ -193,7 +191,7 @@ pub async fn create_version(
     user_id: i32,
     content: &VersionContent,
     commit_message: &str,
-) -> Result<Version, Box<dyn std::error::Error>> {
+) -> Result<Version, AppError> {
     // Get valsi and lang IDs from the definition
     let def_info = transaction
         .query_one(
@@ -268,7 +266,7 @@ pub async fn revert_to_version(
     user_id: i32,
     user_role: &str,
     perm_cache: &PermissionCache,
-) -> Result<Version, Box<dyn std::error::Error>> {
+) -> Result<Version, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -289,9 +287,9 @@ pub async fn revert_to_version(
             .get("user_id");
 
         if definition_author != user_id {
-            return Err(Box::new(actix_web::error::ErrorForbidden(
-                "You must be the definition author or have revert permissions",
-            )));
+            return Err(AppError::Auth(
+                "You must be the definition author or have revert permissions".into(),
+            ));
         }
     }
 
@@ -417,7 +415,7 @@ pub async fn get_diff_with_transaction(
     pool: &deadpool_postgres::Pool,
     from_version: i32,
     to_version: i32,
-) -> Result<VersionDiff, Box<dyn std::error::Error>> {
+) -> Result<VersionDiff, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -431,7 +429,7 @@ pub async fn get_diff(
     transaction: &tokio_postgres::Transaction<'_>,
     from_version: i32,
     to_version: i32,
-) -> Result<VersionDiff, Box<dyn std::error::Error>> {
+) -> Result<VersionDiff, AppError> {
     let old_version = get_version_with_transaction(transaction, from_version).await?;
     let new_version = get_version_with_transaction(transaction, to_version).await?;
 

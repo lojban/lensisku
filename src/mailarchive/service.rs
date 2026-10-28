@@ -1,4 +1,5 @@
 #![allow(clippy::expect_used)]
+use crate::error::AppError;
 
 use crate::mailarchive::{
     dto::MailThreadSummary, Message, SearchQuery, SearchResponse, ThreadQuery, ThreadResponse,
@@ -32,10 +33,7 @@ static DAY_OF_WEEK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 const BATCH_SIZE: usize = 1000;
 const BATCH_DELAY: Duration = Duration::from_millis(100);
 
-pub async fn search_messages(
-    pool: &Pool,
-    query: SearchQuery,
-) -> Result<SearchResponse, Box<dyn std::error::Error>> {
+pub async fn search_messages(pool: &Pool, query: SearchQuery) -> Result<SearchResponse, AppError> {
     let client = pool.get().await?;
     let page = query.page.unwrap_or(1);
     let per_page = query
@@ -172,7 +170,7 @@ pub async fn get_message(
     pool: &Pool,
     id: i32,
     user_id: Option<i32>,
-) -> Result<Option<Message>, Box<dyn std::error::Error>> {
+) -> Result<Option<Message>, AppError> {
     let client = pool.get().await?;
 
     let message = client
@@ -190,10 +188,7 @@ pub async fn get_message(
     Ok(message)
 }
 
-pub async fn show_thread(
-    pool: &Pool,
-    query: ThreadQuery,
-) -> Result<ThreadResponse, Box<dyn std::error::Error>> {
+pub async fn show_thread(pool: &Pool, query: ThreadQuery) -> Result<ThreadResponse, AppError> {
     let client = pool.get().await?;
     let page = query.page.unwrap_or(1);
     let per_page = query
@@ -261,7 +256,7 @@ pub async fn list_mail_threads(
     per_page: i64,
     sort_order: &str,
     sort_by: &str,
-) -> Result<(Vec<MailThreadSummary>, i64), Box<dyn std::error::Error>> {
+) -> Result<(Vec<MailThreadSummary>, i64), AppError> {
     let client = pool.get().await?;
     let offset = (page - 1) * per_page;
     let order_dir = if sort_order.eq_ignore_ascii_case("asc") {
@@ -365,7 +360,7 @@ pub(crate) fn remove_prefixes(subject: &str) -> String {
 pub async fn import_maildir(
     pool: &deadpool_postgres::Pool,
     maildir_path: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let maildir = Path::new(maildir_path);
     let mut email_paths = Vec::new();
 
@@ -453,7 +448,7 @@ async fn process_email(
     client: &mut Client,
     file_path: &Path,
     maildir_path: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let content = tokio::fs::read(file_path).await?;
 
     // Try to parse the email with raw content first to get headers
@@ -856,7 +851,7 @@ fn convert_to_utf8(content: &str, headers: &mailparse::headers::Headers) -> Opti
 }
 
 /// Normalizes email headers by replacing tabs and spaces according to email format conventions
-fn normalize_email_headers(headers: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn normalize_email_headers(headers: &str) -> Result<String, AppError> {
     // Create regexes for each replacement
     let re_leading = Regex::new(r"(?m)(\r\n)[\t ]+")?; // Merge continuation lines starting with tab/space
     let re_remaining_tabs = Regex::new(r"\t")?; // Replace remaining tabs
@@ -889,7 +884,7 @@ fn parse_content_type(header: &str) -> (String, String) {
     (mime_type, content_type)
 }
 
-fn parse_email_date(date_str: &str) -> Result<DateTime<FixedOffset>, Box<dyn std::error::Error>> {
+fn parse_email_date(date_str: &str) -> Result<DateTime<FixedOffset>, AppError> {
     // Try removing the leading day abbreviation if present
     if let Ok(Some(mat)) = DAY_OF_WEEK_REGEX.find(date_str) {
         let remaining_str = &date_str[mat.end()..];
@@ -935,33 +930,33 @@ fn parse_email_date(date_str: &str) -> Result<DateTime<FixedOffset>, Box<dyn std
         })
         .or_else(|_| {
             NaiveDateTime::parse_from_str(date_str, "%a %b %e %H:%M:%S")
-                .map_err(|e| e.into())
+                .map_err(|e| AppError::BadRequest(e.to_string()))
                 .and_then(|ndt| {
                     // Assume EST if no timezone specified
                     let est_offset = FixedOffset::west_opt(5 * 3600)
-                        .ok_or_else(|| Box::<dyn std::error::Error>::from("Invalid EST offset"))?; // UTC-5
+                        .ok_or_else(|| AppError::from("Invalid EST offset"))?; // UTC-5
                     match ndt.and_local_timezone(est_offset) {
                         chrono::LocalResult::Single(dt) => Ok(dt),
                         chrono::LocalResult::Ambiguous(dt1, _) => Ok(dt1), // Choose earliest in case of ambiguity
-                        chrono::LocalResult::None => Err(Box::<dyn std::error::Error>::from(
-                            "Invalid local time for EST",
-                        )),
+                        chrono::LocalResult::None => {
+                            Err(AppError::from("Invalid local time for EST"))
+                        }
                     }
                 })
         })
         .or_else(|_| {
             NaiveDateTime::parse_from_str(date_str, "%a %b %e %H:%M:%S")
-                .map_err(|e| e.into())
+                .map_err(|e| AppError::BadRequest(e.to_string()))
                 .and_then(|ndt| {
                     // Try PST as final fallback (UTC-8)
                     let pst_offset = FixedOffset::west_opt(8 * 3600)
-                        .ok_or_else(|| Box::<dyn std::error::Error>::from("Invalid PST offset"))?; // UTC-8
+                        .ok_or_else(|| AppError::from("Invalid PST offset"))?; // UTC-8
                     match ndt.and_local_timezone(pst_offset) {
                         chrono::LocalResult::Single(dt) => Ok(dt),
                         chrono::LocalResult::Ambiguous(dt1, _) => Ok(dt1), // Choose earliest in case of ambiguity
-                        chrono::LocalResult::None => Err(Box::<dyn std::error::Error>::from(
-                            "Invalid local time for PST",
-                        )),
+                        chrono::LocalResult::None => {
+                            Err(AppError::from("Invalid local time for PST"))
+                        }
                     }
                 })
         })
@@ -992,7 +987,7 @@ fn parse_header_date(header_value: &str) -> Option<DateTime<FixedOffset>> {
         })
 }
 
-fn fix_timezone_abbreviation(date_str: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn fix_timezone_abbreviation(date_str: &str) -> Result<String, AppError> {
     // Common timezone abbreviations and their offsets
     let tz_map = [
         ("BST", "+0100"),     // British Summer Time
@@ -1064,7 +1059,7 @@ fn fix_timezone_abbreviation(date_str: &str) -> Result<String, Box<dyn std::erro
 pub async fn check_for_new_emails(
     pool: &deadpool_postgres::Pool,
     maildir_path: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let mut client = pool.get().await?;
     let maildir: &Path = Path::new(maildir_path);
 
@@ -1123,7 +1118,7 @@ pub async fn vote_spam(
     pool: &Pool,
     message_id: i32,
     user_id: i32,
-) -> Result<(i64, bool), Box<dyn std::error::Error>> {
+) -> Result<(i64, bool), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 

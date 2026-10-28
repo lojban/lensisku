@@ -1,4 +1,5 @@
 //! Hybrid ranking across every public discussion source, with document-level RRF.
+use crate::error::AppError;
 use deadpool_postgres::Pool;
 use pgvector::Vector;
 use serde::Deserialize;
@@ -8,7 +9,7 @@ use super::dto::{WaveRelevance, WaveSearchHit, WavesSearchQuery, WavesSearchResp
 use crate::comments::service::search_comment_hits;
 use crate::utils::embeddings::{embeddings_disabled, get_embedding};
 
-type SearchError = Box<dyn std::error::Error + Send + Sync>;
+type SearchError = AppError;
 
 #[derive(Deserialize)]
 struct RankedHit {

@@ -589,6 +589,6 @@ pub async fn paypal_webhook(
 pub async fn get_balance(pool: web::Data<Pool>, claims: Claims) -> Result<HttpResponse, AppError> {
     match service::get_balance(&pool, claims.sub).await {
         Ok(balance) => Ok(HttpResponse::Ok().json(balance)),
-        Err(e) => Err(AppError::Internal(e.to_string())),
+        Err(e) => Err(AppError::Internal(e.detail())),
     }
 }

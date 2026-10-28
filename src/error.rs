@@ -248,6 +248,89 @@ fn client_error_for_sql_state(state: &tokio_postgres::error::SqlState) -> Option
 // Type alias for convenience
 pub type AppResult<T> = Result<T, AppError>;
 
+/// Ad-hoc message errors (`Err("...")?`, `.ok_or("...")?`, `format!(..)` strings) that
+/// used to become `Box<dyn Error>`. The variant is picked from the text the same way the
+/// migration did; `detail()` returns the message unchanged, so text-matching handlers and
+/// response bodies built from `detail()` keep working.
+pub fn from_message(msg: String) -> AppError {
+    let m = msg.to_lowercase();
+    if m.contains("not found") || m.contains("does not exist") {
+        AppError::NotFound(msg)
+    } else if [
+        "unauthorized",
+        "access denied",
+        "permission",
+        "not allowed",
+        "forbidden",
+        "only delete your own",
+        "only edit your own",
+        "not the owner",
+    ]
+    .iter()
+    .any(|k| m.contains(k))
+    {
+        AppError::Auth(msg)
+    } else if m.starts_with("failed") || m.contains("internal") {
+        AppError::Internal(msg)
+    } else {
+        AppError::BadRequest(msg)
+    }
+}
+
+impl From<String> for AppError {
+    fn from(msg: String) -> Self {
+        from_message(msg)
+    }
+}
+
+impl From<&str> for AppError {
+    fn from(msg: &str) -> Self {
+        from_message(msg.to_string())
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for AppError {
+    fn from(e: Box<dyn std::error::Error>) -> Self {
+        AppError::Internal(e.to_string())
+    }
+}
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for AppError {
+    fn from(e: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        AppError::Internal(e.to_string())
+    }
+}
+
+impl From<tokio::task::JoinError> for AppError {
+    fn from(e: tokio::task::JoinError) -> Self {
+        AppError::Internal(e.to_string())
+    }
+}
+
+impl From<fancy_regex::Error> for AppError {
+    fn from(e: fancy_regex::Error) -> Self {
+        AppError::Internal(e.to_string())
+    }
+}
+
+impl From<mailparse::MailParseError> for AppError {
+    fn from(e: mailparse::MailParseError) -> Self {
+        AppError::BadRequest(e.to_string())
+    }
+}
+
+impl From<std::path::StripPrefixError> for AppError {
+    fn from(e: std::path::StripPrefixError) -> Self {
+        AppError::Internal(e.to_string())
+    }
+}
+
+impl From<crate::language::models::MathJaxValidationError> for AppError {
+    fn from(e: crate::language::models::MathJaxValidationError) -> Self {
+        AppError::Validation(e.to_string())
+    }
+}
+
 // Implementation for VarError
 impl From<std::env::VarError> for AppError {
     fn from(err: std::env::VarError) -> Self {
@@ -268,6 +351,14 @@ impl From<TokioPostgresError> for AppError {
         if let Some(client_error) = err.code().and_then(client_error_for_sql_state) {
             log::info!("database rejected input: {err:?}");
             return client_error;
+        }
+        if err.code() == Some(&tokio_postgres::error::SqlState::NO_DATA_FOUND) {
+            // P0002, raised by our plpgsql lookups when a row is missing.
+            let msg = err
+                .as_db_error()
+                .map(|db| db.message().to_string())
+                .unwrap_or_else(|| err.to_string());
+            return AppError::NotFound(msg);
         }
         match err.as_db_error() {
             Some(db) => AppError::Database(format!("{err}: {}", db.message())),

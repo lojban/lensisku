@@ -37,7 +37,7 @@ pub async fn search_waves(
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": "Failed to search waves",
-            "details": e.to_string()
+            "details": e.detail()
         })),
     }
 }
@@ -69,7 +69,7 @@ pub async fn list_wave_threads(
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": "Failed to list wave threads",
-            "details": e.to_string()
+            "details": e.detail()
         })),
     }
 }

@@ -368,12 +368,12 @@ pub async fn confirm_email(
             "message": "Email confirmed successfully"
         })),
         Err(e) => {
-            if e.to_string().contains("expired") {
+            if e.detail().contains("expired") {
                 HttpResponse::BadRequest().json(json!({
                     "success": false,
                     "error": "Confirmation token has expired"
                 }))
-            } else if e.to_string().contains("Invalid") {
+            } else if e.detail().contains("Invalid") {
                 HttpResponse::BadRequest().json(json!({
                     "success": false,
                     "error": "Invalid confirmation token"

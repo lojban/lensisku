@@ -5,6 +5,7 @@
 //! (per-definition rewrite). Classify outside a DB transaction on a blocking
 //! pool; write in small batches; load rafsi maps once per tick. vlazba 0.9+
 //! uses best_only reconstruct so we no longer expand the full rafsi product.
+use crate::error::AppError;
 
 use crate::language::{classify_lujvo_spelling, load_owned_rafsi_maps, LujvoClassification};
 use deadpool_postgres::Pool;
@@ -41,9 +42,7 @@ pub fn spawn_lujvo_canonical_classification(pool: Pool) {
 }
 
 /// Returns `(updated, non_canonical)`.
-pub async fn classify_unchecked_lujvo_batch(
-    pool: &Pool,
-) -> Result<(usize, usize), Box<dyn std::error::Error + Send + Sync>> {
+pub async fn classify_unchecked_lujvo_batch(pool: &Pool) -> Result<(usize, usize), AppError> {
     // 1) Short read: pending ids + load maps once.
     let (pending, maps) = {
         let mut client = pool.get().await?;
@@ -68,7 +67,7 @@ pub async fn classify_unchecked_lujvo_batch(
             .collect();
         let maps = load_owned_rafsi_maps(&transaction)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.detail())?;
         transaction.commit().await?;
         (pending, maps)
     };
@@ -147,9 +146,7 @@ pub fn spawn_trivial_se_classification(pool: Pool) {
     });
 }
 
-pub async fn classify_trivial_se_batch(
-    pool: &Pool,
-) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn classify_trivial_se_batch(pool: &Pool) -> Result<usize, AppError> {
     let (pending, maps) = {
         let mut client = pool.get().await?;
         let tx = client.transaction().await?;
@@ -166,9 +163,7 @@ pub async fn classify_trivial_se_batch(
             return Ok(0);
         }
         let pending: Vec<(i32, String)> = rows.iter().map(|r| (r.get(0), r.get(1))).collect();
-        let maps = load_owned_rafsi_maps(&tx)
-            .await
-            .map_err(|e| e.to_string())?;
+        let maps = load_owned_rafsi_maps(&tx).await.map_err(|e| e.detail())?;
         tx.commit().await?;
         (pending, maps)
     };

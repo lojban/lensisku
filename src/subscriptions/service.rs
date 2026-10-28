@@ -1,5 +1,6 @@
 use super::dto::{NotificationListResponse, SubscriptionResponse, SubscriptionState};
 use super::models::{Notification, Subscription, SubscriptionTrigger};
+use crate::error::AppError;
 use deadpool_postgres::Pool;
 
 pub async fn subscribe_to_valsi(
@@ -7,7 +8,7 @@ pub async fn subscribe_to_valsi(
     user_id: i32,
     valsi_id: i32,
     trigger_type: SubscriptionTrigger,
-) -> Result<SubscriptionResponse, Box<dyn std::error::Error>> {
+) -> Result<SubscriptionResponse, AppError> {
     let client = pool.get().await?;
 
     // Check if valsi exists
@@ -47,7 +48,7 @@ pub async fn unsubscribe_from_valsi(
     user_id: i32,
     valsi_id: i32,
     trigger_type: SubscriptionTrigger,
-) -> Result<SubscriptionResponse, Box<dyn std::error::Error>> {
+) -> Result<SubscriptionResponse, AppError> {
     let client = pool.get().await?;
 
     let affected_rows = client
@@ -75,7 +76,7 @@ pub async fn unsubscribe_from_valsi(
 pub async fn get_user_subscriptions(
     pool: &Pool,
     user_id: i32,
-) -> Result<Vec<Subscription>, Box<dyn std::error::Error>> {
+) -> Result<Vec<Subscription>, AppError> {
     let client = pool.get().await?;
 
     let rows = client
@@ -96,7 +97,7 @@ pub async fn get_user_notifications(
     page: i64,
     per_page: i64,
     unread_only: bool,
-) -> Result<NotificationListResponse, Box<dyn std::error::Error>> {
+) -> Result<NotificationListResponse, AppError> {
     let client = pool.get().await?;
     let offset = (page - 1) * per_page;
 
@@ -155,7 +156,7 @@ pub async fn mark_notifications_read(
     pool: &Pool,
     user_id: i32,
     notification_ids: Option<Vec<i32>>,
-) -> Result<i64, Box<dyn std::error::Error>> {
+) -> Result<i64, AppError> {
     let client = pool.get().await?;
 
     let query = if let Some(ids) = notification_ids {
@@ -186,7 +187,7 @@ pub async fn get_subscription_state(
     pool: &Pool,
     user_id: i32,
     valsi_id: i32,
-) -> Result<SubscriptionState, Box<dyn std::error::Error>> {
+) -> Result<SubscriptionState, AppError> {
     let client = pool.get().await?;
 
     let rows = client

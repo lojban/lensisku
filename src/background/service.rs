@@ -255,7 +255,7 @@ pub async fn spawn_background_tasks(
         async fn try_refresh(
             pool: &Pool,
             redis: &crate::middleware::cache::RedisCache,
-        ) -> Result<(), Box<dyn std::error::Error>> {
+        ) -> Result<(), AppError> {
             let api_key = match std::env::var("OPENROUTER_API_KEY") {
                 Ok(k) => k,
                 Err(_) => {

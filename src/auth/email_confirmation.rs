@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use chrono::Utc;
 use deadpool_postgres::Pool;
 
@@ -9,7 +10,7 @@ pub async fn confirm_email(
     pool: &Pool,
     token: &str,
     email_limiter: &EmailConfirmationLimiter,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -29,13 +30,17 @@ pub async fn confirm_email(
 
     // Check rate limit
     if !email_limiter.check_rate_limit(&email).await? {
-        return Err("Too many confirmation attempts. Please try again later.".into());
+        return Err(AppError::BadRequest(
+            "Too many confirmation attempts. Please try again later.".into(),
+        ));
     }
 
     // Check token age (24 hour expiry)
     let sent_at: chrono::DateTime<Utc> = user.get("email_confirmation_sent_at");
     if Utc::now().signed_duration_since(sent_at).num_hours() > 24 {
-        return Err("Confirmation token has expired".into());
+        return Err(AppError::BadRequest(
+            "Confirmation token has expired".into(),
+        ));
     }
 
     // Update user

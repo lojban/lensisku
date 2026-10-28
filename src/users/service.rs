@@ -1,4 +1,5 @@
 use crate::comments::models::Comment;
+use crate::error::AppError;
 use crate::middleware::image::ImageProcessor;
 
 use super::dto::{
@@ -9,10 +10,7 @@ use crate::comments::dto::ReactionResponse;
 use crate::jbovlaste::models::row_vote_score_i32;
 use deadpool_postgres::Pool;
 
-pub async fn list_users(
-    pool: &Pool,
-    query: UserListQuery,
-) -> Result<UserListResponse, Box<dyn std::error::Error>> {
+pub async fn list_users(pool: &Pool, query: UserListQuery) -> Result<UserListResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -143,7 +141,7 @@ pub async fn list_users(
 pub async fn get_public_profile(
     pool: &Pool,
     username: &str,
-) -> Result<PublicUserProfile, Box<dyn std::error::Error>> {
+) -> Result<PublicUserProfile, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -209,7 +207,7 @@ pub async fn get_user_votes(
     user_id: i32,
     page: i64,
     per_page: i64,
-) -> Result<ContributionsResponse<Vote>, Box<dyn std::error::Error>> {
+) -> Result<ContributionsResponse<Vote>, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     let offset = (page - 1) * per_page;
@@ -270,7 +268,7 @@ pub async fn get_user_definitions(
     username: &str,
     page: i64,
     per_page: i64,
-) -> Result<ContributionsResponse<Definition>, Box<dyn std::error::Error>> {
+) -> Result<ContributionsResponse<Definition>, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     let offset = (page - 1) * per_page;
@@ -281,7 +279,7 @@ pub async fn get_user_definitions(
 
     let user_id: i32 = match user_row {
         Some(row) => row.get("userid"),
-        None => return Err("User not found".into()),
+        None => return Err(AppError::NotFound("User not found".into())),
     };
 
     // Paginate contribution rows first, then attach card fields the same way search does:
@@ -433,7 +431,7 @@ pub async fn get_user_comments(
     username: &str,
     page: i64,
     per_page: i64,
-) -> Result<ContributionsResponse<Comment>, Box<dyn std::error::Error>> {
+) -> Result<ContributionsResponse<Comment>, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     let offset = (page - 1) * per_page;
@@ -444,7 +442,7 @@ pub async fn get_user_comments(
 
     let user_id: i32 = match user_row {
         Some(row) => row.get("userid"),
-        None => return Err("User not found".into()),
+        None => return Err(AppError::NotFound("User not found".into())),
     };
 
     let rows = transaction
@@ -570,7 +568,7 @@ pub async fn update_profile_image(
     pool: &Pool,
     user_id: i32,
     req: &ProfileImageRequest,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let image_data = validate_profile_image(req)?;
 
     // Compress image
@@ -600,7 +598,7 @@ pub async fn update_profile_image(
 pub async fn get_profile_image(
     pool: &Pool,
     username: &str,
-) -> Result<Option<(Vec<u8>, String)>, Box<dyn std::error::Error>> {
+) -> Result<Option<(Vec<u8>, String)>, AppError> {
     let client = pool.get().await?;
 
     let result = client
@@ -616,10 +614,7 @@ pub async fn get_profile_image(
     Ok(result.map(|row| (row.get("image_data"), row.get("mime_type"))))
 }
 
-pub async fn remove_profile_image(
-    pool: &Pool,
-    user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn remove_profile_image(pool: &Pool, user_id: i32) -> Result<(), AppError> {
     let client = pool.get().await?;
 
     client

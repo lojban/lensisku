@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use crate::search_helpers::{self, DictionarySearchPatterns};
 use crate::utils::remove_html_tags;
 use ammonia::Builder as AmmoniaBuilder;
@@ -105,7 +106,7 @@ fn validate_required_place_span(
     type_id: i16,
     definition: &str,
     has_image: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     if has_image && definition.trim().is_empty() {
         return Ok(());
     }
@@ -222,7 +223,7 @@ async fn lookup_canonical_aliases_for_search(
     transaction: &Transaction<'_>,
     search_term: &str,
     lojban_search_term: &str,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+) -> Result<Vec<String>, AppError> {
     if search_term.trim().is_empty() {
         return Ok(Vec::new());
     }
@@ -289,7 +290,7 @@ pub async fn semantic_search(
     params: SearchDefinitionsParams,
     query_embedding: Vec<f32>,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
-) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionResponse, AppError> {
     semantic_search_with_official_filter(pool, params, query_embedding, parsers, false).await
 }
 
@@ -301,7 +302,7 @@ pub async fn semantic_search_with_official_filter(
     query_embedding: Vec<f32>,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
     official_only: bool,
-) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -645,7 +646,7 @@ fn normalize_semantic_graph_valsi_lookup_key(search_term: &str) -> String {
 pub async fn embedding_for_definition(
     pool: &Pool,
     definition_id: i32,
-) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+) -> Result<Option<Vec<f32>>, AppError> {
     let client = pool.get().await?;
     let row = client
         .query_opt(
@@ -670,7 +671,7 @@ pub async fn embedding_for_definition(
 pub async fn semantic_graph_anchor_embedding_english_valsi(
     pool: &Pool,
     search_term: &str,
-) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+) -> Result<Option<Vec<f32>>, AppError> {
     semantic_graph_valsi_embedding(
         pool,
         search_term,
@@ -685,7 +686,7 @@ pub async fn semantic_graph_valsi_embedding(
     pool: &Pool,
     word: &str,
     prefer_langids: Option<&[i32]>,
-) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+) -> Result<Option<Vec<f32>>, AppError> {
     let key = normalize_semantic_graph_valsi_lookup_key(word);
     if key.is_empty() {
         return Ok(None);
@@ -785,7 +786,7 @@ pub async fn semantic_graph(
     pool: &Pool,
     params: SemanticGraphParams,
     query_embedding: Vec<f32>,
-) -> Result<SemanticGraphResponse, Box<dyn std::error::Error>> {
+) -> Result<SemanticGraphResponse, AppError> {
     let limit = params.limit.clamp(1, SEMANTIC_GRAPH_MAX_LIMIT);
     let k_neighbors = params.k_neighbors.clamp(1, 30);
     let min_sim = params.min_similarity.clamp(0.0, 1.0);
@@ -963,7 +964,7 @@ pub async fn semantic_graph(
 pub async fn semantic_graph_preview(
     pool: &Pool,
     params: SemanticGraphParams,
-) -> Result<SemanticGraphResponse, Box<dyn std::error::Error>> {
+) -> Result<SemanticGraphResponse, AppError> {
     let limit = params.limit.clamp(1, SEMANTIC_GRAPH_MAX_LIMIT);
     let k_neighbors = params.k_neighbors.clamp(1, 30);
     let min_sim = params.min_similarity.clamp(0.0, 1.0);
@@ -1099,7 +1100,7 @@ pub async fn semantic_graph_preview(
                 query_params.len(),
                 param_types
             );
-            return Err(Box::new(e));
+            return Err(e.into());
         }
     };
     transaction.commit().await?;
@@ -1182,7 +1183,7 @@ async fn fetch_keywords(
         HashMap<i32, Vec<KeywordMapping>>, // Gloss keywords
         HashMap<i32, Vec<KeywordMapping>>, // Place keywords
     ),
-    Box<dyn std::error::Error>,
+    AppError,
 > {
     let mut gloss_map: HashMap<i32, Vec<KeywordMapping>> = HashMap::new();
     let mut place_map: HashMap<i32, Vec<KeywordMapping>> = HashMap::new();
@@ -1262,7 +1263,7 @@ pub async fn search_definitions(
     pool: &Pool,
     params: SearchDefinitionsParams,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
-) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1716,7 +1717,7 @@ pub async fn fast_search_definitions(
     pool: &Pool,
     params: SearchDefinitionsParams,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
-) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2035,7 +2036,7 @@ pub async fn search_with_filtered_and_global_groups(
     mode: DictionarySearchMode,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
     expand_collection_item: Option<i32>,
-) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionResponse, AppError> {
     let author_usernames = params.usernames.clone();
     let exclude_usernames = params.exclude_usernames.clone();
     let has_authors = author_usernames.as_ref().is_some_and(|u| !u.is_empty());
@@ -2090,7 +2091,6 @@ pub async fn search_with_filtered_and_global_groups(
         )
         .await
         .map(|r| (r.items, r.total))
-        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
     };
 
     let author_fut = async {
@@ -2157,7 +2157,7 @@ async fn run_dictionary_search(
     params: SearchDefinitionsParams,
     mode: &DictionarySearchMode,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
-) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionResponse, AppError> {
     match mode {
         DictionarySearchMode::Keyword => search_definitions(pool, params, parsers).await,
         DictionarySearchMode::Fast => fast_search_definitions(pool, params, parsers).await,
@@ -2172,7 +2172,7 @@ pub async fn get_source_words(
     word: &str,
     transaction: &tokio_postgres::Transaction<'_>,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+) -> Result<Vec<String>, AppError> {
     // vlazba handles both classical and fu'ivla-rafsi decomposition.
     let parts = parsers
         .and_then(|parsers| parsers.get(&1))
@@ -2287,7 +2287,7 @@ pub async fn get_source_words(
 pub async fn get_valsi_sound(
     pool: &Pool,
     valsi_id: i32,
-) -> Result<Option<(Vec<u8>, String)>, Box<dyn std::error::Error>> {
+) -> Result<Option<(Vec<u8>, String)>, AppError> {
     let client = pool.get().await?;
     let row = client
         .query_opt(
@@ -2305,7 +2305,7 @@ pub async fn get_valsi_sound(
 pub async fn get_valsi_sound_urls_from_db(
     pool: &Pool,
     words: &[String],
-) -> Result<HashMap<String, Option<String>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<String, Option<String>>, AppError> {
     if words.is_empty() {
         return Ok(HashMap::new());
     }
@@ -2355,7 +2355,7 @@ pub async fn get_entry_details(
     pool: &Pool,
     id_or_word: &str,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
-) -> Result<ValsiDetail, Box<dyn std::error::Error>> {
+) -> Result<ValsiDetail, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2477,7 +2477,7 @@ pub async fn get_entry_details(
         }
         None => {
             transaction.commit().await?;
-            Err("Valsi not found".into())
+            Err(AppError::NotFound("Valsi not found".into()))
         }
     }
 }
@@ -2487,7 +2487,7 @@ pub async fn get_wiki_by_word(
     pool: &Pool,
     word: &str,
     user_id: Option<i32>,
-) -> Result<Option<DefinitionDetail>, Box<dyn std::error::Error>> {
+) -> Result<Option<DefinitionDetail>, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2636,22 +2636,21 @@ pub async fn get_wiki_by_word(
 }
 
 /// An empty target restores a regular page; omitted targets preserve redirect metadata.
-fn wiki_redirect_content(
-    word: &str,
-    target: &str,
-) -> Result<(Option<String>, String), Box<dyn std::error::Error>> {
+fn wiki_redirect_content(word: &str, target: &str) -> Result<(Option<String>, String), AppError> {
     let target = target.replace('_', " ").trim().to_string();
     if target.is_empty() {
         return Ok((None, String::new()));
     }
     if target == word.replace('_', " ").trim() {
-        return Err("A wiki page cannot redirect to itself".into());
+        return Err(AppError::BadRequest(
+            "A wiki page cannot redirect to itself".into(),
+        ));
     }
     if target
         .chars()
         .any(|c| c.is_control() || matches!(c, '[' | ']' | '<' | '>' | '|'))
     {
-        return Err("Invalid wiki redirect title".into());
+        return Err(AppError::BadRequest("Invalid wiki redirect title".into()));
     }
     Ok((Some(target.clone()), format!("Redirect to [[{}]].", target)))
 }
@@ -2666,7 +2665,7 @@ async fn set_wiki_redirect(
     transaction: &Transaction<'_>,
     definition_id: i32,
     target: Option<&str>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let metadata = match target {
         Some(target) => serde_json::json!({"is_redirect": true, "redirect_to": target}),
         None => serde_json::json!({"is_redirect": false}),
@@ -2689,7 +2688,7 @@ async fn upsert_wiki_in_transaction(
     claims: &Claims,
     request: &AddDefinitionRequest,
     redis_cache: &RedisCache,
-) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
+) -> Result<(String, i32, Option<String>), AppError> {
     let mut sanitized_definition = sanitize_wiki_markdown(&request.definition);
     let word = normalize_wiki_title(&request.word);
     let source_langid = request.source_langid.unwrap_or(1);
@@ -2745,7 +2744,9 @@ async fn upsert_wiki_in_transaction(
             .iter()
             .any(|permission| permission == "edit_definition")
         {
-            return Err("You don't have permission to edit this wiki page".into());
+            return Err(AppError::Auth(
+                "You don't have permission to edit this wiki page".into(),
+            ));
         }
         let definition_id: i32 = row.get("definitionid");
         let can_edit: bool = transaction
@@ -2756,7 +2757,9 @@ async fn upsert_wiki_in_transaction(
             .await?
             .get(0);
         if !can_edit {
-            return Err("You don't have permission to edit this wiki page".into());
+            return Err(AppError::Auth(
+                "You don't have permission to edit this wiki page".into(),
+            ));
         }
         if let Some(expected_time) = request.expected_time {
             let current_time: i32 = row.get("time");
@@ -2947,7 +2950,7 @@ async fn upsert_wiki_in_transaction(
 pub async fn get_wiki_by_definition_id(
     pool: &Pool,
     definition_id: i32,
-) -> Result<Option<WikiByDefinitionResponse>, Box<dyn std::error::Error>> {
+) -> Result<Option<WikiByDefinitionResponse>, AppError> {
     let client = pool.get().await?;
     let row = client
         .query_opt(
@@ -2995,10 +2998,10 @@ pub async fn rename_wiki_page(
     definition_id: i32,
     request: &RenameWikiRequest,
     redis_cache: &RedisCache,
-) -> Result<RenameWikiResponse, Box<dyn std::error::Error>> {
+) -> Result<RenameWikiResponse, AppError> {
     let new_word = normalize_wiki_title(&request.new_word);
     if new_word.is_empty() {
-        return Err("New title cannot be empty".into());
+        return Err(AppError::BadRequest("New title cannot be empty".into()));
     }
 
     let mut client = pool.get().await?;
@@ -3019,7 +3022,9 @@ pub async fn rename_wiki_page(
 
     let typeid: i16 = current.get("typeid");
     if typeid != 16 {
-        return Err("This definition is not a native wiki page".into());
+        return Err(AppError::BadRequest(
+            "This definition is not a native wiki page".into(),
+        ));
     }
 
     let mut metadata: serde_json::Value = current
@@ -3030,7 +3035,9 @@ pub async fn rename_wiki_page(
 
     let can_edit: bool = current.get("can_edit");
     if !can_edit {
-        return Err("You don't have permission to rename this wiki page".into());
+        return Err(AppError::Auth(
+            "You don't have permission to rename this wiki page".into(),
+        ));
     }
 
     let old_word: String = current.get("word");
@@ -3266,7 +3273,7 @@ pub async fn rename_definition_valsi(
     definition_id: i32,
     request: &RenameDefinitionRequest,
     redis_cache: &RedisCache,
-) -> Result<RenameDefinitionResponse, Box<dyn std::error::Error>> {
+) -> Result<RenameDefinitionResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -3285,7 +3292,7 @@ pub async fn rename_definition_valsi(
     let author_id: i32 = current.get("userid");
     let typeid: i16 = current.get("typeid");
     authorize_definition_reattach(claims.sub, author_id, typeid)
-        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+        .map_err(|e| -> AppError { e.into() })?;
 
     let old_valsi_id: i32 = current.get("valsiid");
     let old_word: String = current.get("word");
@@ -3302,7 +3309,7 @@ pub async fn rename_definition_valsi(
         _ => sanitize_html(request.new_word.trim()),
     };
     if new_word.is_empty() {
-        return Err("New word cannot be empty".into());
+        return Err(AppError::BadRequest("New word cannot be empty".into()));
     }
 
     if new_word == old_word {
@@ -3357,7 +3364,7 @@ pub async fn rename_definition_valsi(
                             .await?
                             .get::<_, i32>("valsiid")
                     } else {
-                        return Err(Box::new(e));
+                        return Err(e.into());
                     }
                 }
             }
@@ -3544,7 +3551,7 @@ pub async fn add_definition(
     request: &AddDefinitionRequest,
     redis_cache: &RedisCache,
     send_notifications: bool,
-) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
+) -> Result<(String, i32, Option<String>), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -3579,13 +3586,15 @@ async fn add_definition_in_transaction(
     request: &AddDefinitionRequest,
     redis_cache: &RedisCache,
     send_notifications: bool,
-) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
+) -> Result<(String, i32, Option<String>), AppError> {
     // Native wiki pages use their own path to enforce one wiki per valsi.
     if request.is_wiki == Some(true) {
         return upsert_wiki_in_transaction(transaction, claims, request, redis_cache).await;
     }
     if request.redirect_to.is_some() {
-        return Err("Only wiki pages can be redirects".into());
+        return Err(AppError::BadRequest(
+            "Only wiki pages can be redirects".into(),
+        ));
     }
 
     let sanitized_definition = sanitize_html(&request.definition);
@@ -3611,7 +3620,7 @@ async fn add_definition_in_transaction(
             // Lojban or Loglan
             validate_mathjax(&combined_text, &options)
                 .await
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+                .map_err(AppError::from)?;
             let res = analyze_word(&parsers, &request.word, source_langid, transaction).await?;
             (res.text, res.word_type)
         }
@@ -3723,7 +3732,7 @@ async fn add_definition_in_transaction(
                     )
                     .into());
                 }
-                return Err(Box::new(e));
+                return Err(e.into());
             }
         },
     };
@@ -4119,7 +4128,7 @@ pub async fn get_definition(
     pool: &Pool,
     definition_id: i32,
     user_id: Option<i32>,
-) -> Result<Option<DefinitionDetail>, Box<dyn std::error::Error>> {
+) -> Result<Option<DefinitionDetail>, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -4294,7 +4303,7 @@ pub async fn update_definition(
     user_id: i32,
     request: &UpdateDefinitionRequest,
     redis_cache: &RedisCache,
-) -> Result<Option<String>, Box<dyn std::error::Error>> {
+) -> Result<Option<String>, AppError> {
     let mut sanitized_definition = if request.is_wiki == Some(true) {
         sanitize_wiki_markdown(&request.definition)
     } else {
@@ -4385,14 +4394,20 @@ pub async fn update_definition(
 
     // Wiki edits must target a valsi of type `wiki`.
     if request.is_wiki == Some(true) && valsi_typeid != 16 {
-        return Err("This definition is not a native wiki page".into());
+        return Err(AppError::BadRequest(
+            "This definition is not a native wiki page".into(),
+        ));
     }
 
     if (valsi_typeid == 16) != (request.is_wiki == Some(true)) {
-        return Err("Dictionary and wiki edits must use their respective entry type".into());
+        return Err(AppError::BadRequest(
+            "Dictionary and wiki edits must use their respective entry type".into(),
+        ));
     }
     if request.redirect_to.is_some() && valsi_typeid != 16 {
-        return Err("Only wiki pages can be redirects".into());
+        return Err(AppError::BadRequest(
+            "Only wiki pages can be redirects".into(),
+        ));
     }
     let redirect = request
         .redirect_to
@@ -4411,7 +4426,7 @@ pub async fn update_definition(
         .await?
         .is_some();
     if !lang_exists {
-        return Err("Invalid target language".into());
+        return Err(AppError::BadRequest("Invalid target language".into()));
     }
 
     let definitionnum = if request.lang_id == current_langid {
@@ -4450,7 +4465,7 @@ pub async fn update_definition(
     if request.is_wiki != Some(true) && (source_langid.is_none() || source_langid == Some(1)) {
         validate_mathjax(&combined_text, &options)
             .await
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+            .map_err(AppError::from)?;
     }
 
     let is_author = current_def.get::<_, i32>("userid") == user_id;
@@ -4828,7 +4843,7 @@ pub async fn list_definitions(
     pool: &Pool,
     query: &ListDefinitionsQuery,
     current_user_id: Option<i32>,
-) -> Result<DefinitionListResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionListResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -5033,7 +5048,7 @@ pub async fn list_definitions(
 pub async fn list_non_lojban_definitions(
     pool: &Pool,
     query: NonLojbanDefinitionsQuery,
-) -> Result<DefinitionListResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionListResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -5223,7 +5238,7 @@ pub async fn update_vote(
     user_id: i32,
     definition_id: i32,
     downvote: bool,
-) -> Result<(bool, String, Option<String>, Option<i32>), Box<dyn std::error::Error>> {
+) -> Result<(bool, String, Option<String>, Option<i32>), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -5340,7 +5355,7 @@ pub async fn get_definitions_by_entry(
     user_id: Option<i32>,
     preferred_langid: Option<i32>,
     preferred_username: Option<String>,
-) -> Result<Vec<DefinitionDetail>, Box<dyn std::error::Error>> {
+) -> Result<Vec<DefinitionDetail>, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -5546,7 +5561,7 @@ async fn fetch_reactions_for_changes(
     transaction: &Transaction<'_>,
     comment_ids: &[i32],
     current_user_id: Option<i32>,
-) -> Result<HashMap<i32, Vec<ReactionResponse>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<i32, Vec<ReactionResponse>>, AppError> {
     let rows = transaction
         .query(
             "SELECT
@@ -5584,7 +5599,7 @@ async fn fetch_comment_bookmarks_for_changes(
     transaction: &Transaction<'_>,
     comment_ids: &[i32],
     user_id: i32,
-) -> Result<HashSet<i32>, Box<dyn std::error::Error>> {
+) -> Result<HashSet<i32>, AppError> {
     if comment_ids.is_empty() {
         return Ok(HashSet::new());
     }
@@ -5615,7 +5630,7 @@ pub async fn get_recent_changes(
     pool: &Pool,
     redis_cache: &RedisCache,
     params: GetRecentChangesParams,
-) -> Result<RecentChangesResponse, Box<dyn std::error::Error>> {
+) -> Result<RecentChangesResponse, AppError> {
     use std::time::Duration as StdDuration;
 
     let GetRecentChangesParams {
@@ -5649,7 +5664,7 @@ pub async fn get_recent_changes(
     let after_cloned = after.clone();
 
     let response = redis_cache
-        .get_or_set::<_, _, _, Box<dyn std::error::Error>>(
+        .get_or_set::<_, _, _, AppError>(
             &cache_key,
             || async move {
                 let mut client = pool.get().await?;
@@ -5886,7 +5901,7 @@ pub async fn get_user_vote(
     pool: &Pool,
     user_id: i32,
     definition_id: i32,
-) -> Result<Option<i32>, Box<dyn std::error::Error>> {
+) -> Result<Option<i32>, AppError> {
     let client = pool.get().await?;
 
     let vote = client
@@ -5904,7 +5919,7 @@ pub async fn get_bulk_user_votes(
     pool: &Pool,
     user_id: i32,
     definition_ids: &[i32],
-) -> Result<std::collections::HashMap<String, Option<i32>>, Box<dyn std::error::Error>> {
+) -> Result<std::collections::HashMap<String, Option<i32>>, AppError> {
     let client = pool.get().await?;
 
     let votes = client
@@ -5931,10 +5946,7 @@ pub async fn get_bulk_user_votes(
     Ok(vote_map)
 }
 
-pub async fn get_sitemap(
-    pool: &Pool,
-    redis_cache: &RedisCache,
-) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn get_sitemap(pool: &Pool, redis_cache: &RedisCache) -> Result<String, AppError> {
     redis_cache
         .get_or_set(
             "sitemap",
@@ -5963,9 +5975,7 @@ pub async fn get_sitemap(
         .await
 }
 
-pub async fn get_all_valsi_words(
-    pool: &Pool,
-) -> Result<Vec<(String, DateTime<Utc>)>, Box<dyn std::error::Error>> {
+pub async fn get_all_valsi_words(pool: &Pool) -> Result<Vec<(String, DateTime<Utc>)>, AppError> {
     let client = pool.get().await?;
     let rows = client
         .query(
@@ -5995,7 +6005,7 @@ pub async fn get_all_valsi_words(
     Ok(words)
 }
 
-pub async fn list_valsi_types(pool: &Pool) -> Result<Vec<ValsiType>, Box<dyn std::error::Error>> {
+pub async fn list_valsi_types(pool: &Pool) -> Result<Vec<ValsiType>, AppError> {
     let client = pool.get().await?;
 
     let types = client
@@ -6021,7 +6031,7 @@ pub async fn bulk_import_definitions(
     broadcaster: &Broadcaster,
     redis_cache: &RedisCache,
     mut cancel_rx: mpsc::Receiver<bool>,
-) -> Result<(usize, usize), Box<dyn std::error::Error>> {
+) -> Result<(usize, usize), AppError> {
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
         .from_reader(params.csv_data.as_bytes());
@@ -6056,7 +6066,7 @@ pub async fn bulk_import_definitions(
         // Check for cancellation before processing each record
         if let Ok(true) = cancel_rx.try_recv() {
             log::info!("Cancellation received for job {}", params.client_id);
-            return Err("Import cancelled by user".into());
+            return Err(AppError::BadRequest("Import cancelled by user".into()));
         }
 
         let record: (String, String, Option<String>, Option<String>) = match result {
@@ -6166,7 +6176,7 @@ pub async fn bulk_import_definitions(
                             "type": "progress",
                             "success": false,
                             "word": gismu,
-                            "error": e.to_string(),
+                            "error": e.detail(),
                             "current": idx + 1,
                             "total": total_records,
                             "success_count": success_count,
@@ -6195,7 +6205,7 @@ pub async fn delete_definition(
     pool: &Pool,
     definition_id: i32,
     user_id: i32,
-) -> Result<DeleteDefinitionResult, Box<dyn std::error::Error>> {
+) -> Result<DeleteDefinitionResult, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -6230,7 +6240,9 @@ pub async fn delete_definition(
         == user_id;
 
     if !is_author {
-        return Err("Only the author can delete their definition".into());
+        return Err(AppError::BadRequest(
+            "Only the author can delete their definition".into(),
+        ));
     }
 
     // Check if definition has any comments
@@ -6382,7 +6394,7 @@ pub async fn add_definition_image(
     user_id: i32,
     image: &ImageData,
     description: Option<&str>,
-) -> Result<i32, Box<dyn std::error::Error>> {
+) -> Result<i32, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -6396,7 +6408,9 @@ pub async fn add_definition_image(
         .get(0);
 
     if !can_edit {
-        return Err("User not authorized to add images to this definition".into());
+        return Err(AppError::BadRequest(
+            "User not authorized to add images to this definition".into(),
+        ));
     }
 
     // Get next display order
@@ -6442,7 +6456,7 @@ pub async fn add_definition_image(
 pub async fn delete_bulk_definitions(
     pool: &Pool,
     client_id: &str,
-) -> Result<(Vec<i32>, Vec<i32>), Box<dyn std::error::Error>> {
+) -> Result<(Vec<i32>, Vec<i32>), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -6498,7 +6512,7 @@ pub async fn get_definition_image(
     pool: &Pool,
     definition_id: i32,
     query: GetImageDefinitionQuery,
-) -> Result<Option<(Vec<u8>, String)>, Box<dyn std::error::Error>> {
+) -> Result<Option<(Vec<u8>, String)>, AppError> {
     let client = pool.get().await?;
 
     let result = if let Some(pos) = query.image_id {
@@ -6544,9 +6558,7 @@ pub fn validate_image(image: &ImageData) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn list_bulk_import_client_groups(
-    pool: &Pool,
-) -> Result<Vec<ClientIdGroup>, Box<dyn std::error::Error>> {
+pub async fn list_bulk_import_client_groups(pool: &Pool) -> Result<Vec<ClientIdGroup>, AppError> {
     let client = pool.get().await?;
     let rows = client
         .query(
@@ -6580,7 +6592,7 @@ pub async fn list_definitions_by_client_id(
     page: i64,
     per_page: i64,
     user_id: Option<i32>, // Needed for can_edit
-) -> Result<DefinitionListResponse, Box<dyn std::error::Error>> {
+) -> Result<DefinitionListResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -6685,7 +6697,7 @@ pub async fn find_rafsi_overlap_for_other_valsi(
     transaction: &Transaction<'_>,
     exclude_valsi_id: Option<i32>,
     rafsi_str: &str,
-) -> Result<Option<(String, String, String)>, Box<dyn std::error::Error>> {
+) -> Result<Option<(String, String, String)>, AppError> {
     let rafsi_str = rafsi_str.trim();
     if rafsi_str.is_empty() {
         return Ok(None);
@@ -6731,7 +6743,7 @@ async fn maybe_append_four_letter_gismu_rafsi(
     type_id: i16,
     word: &str,
     rafsi_str: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<String, AppError> {
     let Some(four) = implicit_four_letter_gismu_rafsi(word) else {
         return Ok(rafsi_str.to_string());
     };
@@ -6773,12 +6785,12 @@ async fn validate_and_update_rafsi(
     rafsi_opt: Option<String>,
     source_langid: i32,
     type_id: i16,
-) -> Result<Option<String>, Box<dyn std::error::Error>> {
+) -> Result<Option<String>, AppError> {
     // Phrases cannot have a rafsi, regardless of source language.
     if type_id == 15 {
         if let Some(rafsi_str) = &rafsi_opt {
             if !rafsi_str.trim().is_empty() {
-                return Err("Phrases cannot have a rafsi".into());
+                return Err(AppError::BadRequest("Phrases cannot have a rafsi".into()));
             }
         }
         if let Some(def_id) = definition_id {
@@ -6802,7 +6814,9 @@ async fn validate_and_update_rafsi(
     if !allowed_rafsi_types.contains(&type_id) {
         if let Some(rafsi_str) = &rafsi_opt {
             if !rafsi_str.trim().is_empty() {
-                return Err("Rafsi are only allowed for gismu and cmavo".into());
+                return Err(AppError::BadRequest(
+                    "Rafsi are only allowed for gismu and cmavo".into(),
+                ));
             }
         }
         return Ok(None);
@@ -6888,7 +6902,7 @@ pub async fn check_rafsi_overlap(
     rafsi: &str,
     word: Option<&str>,
     valsi_id: Option<i32>,
-) -> Result<Option<(String, String, String)>, Box<dyn std::error::Error>> {
+) -> Result<Option<(String, String, String)>, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -6916,9 +6930,11 @@ pub async fn link_definitions(
     definition_id: i32,
     translation_id: i32,
     user_id: i32,
-) -> Result<i32, Box<dyn std::error::Error>> {
+) -> Result<i32, AppError> {
     if definition_id == translation_id {
-        return Err("Cannot link a definition to itself".into());
+        return Err(AppError::BadRequest(
+            "Cannot link a definition to itself".into(),
+        ));
     }
 
     let mut client = pool.get().await?;
@@ -6938,13 +6954,17 @@ pub async fn link_definitions(
         .await?;
 
     if rows.len() != 2 {
-        return Err("One or both definitions do not exist".into());
+        return Err(AppError::BadRequest(
+            "One or both definitions do not exist".into(),
+        ));
     }
 
     for row in rows {
         let typeid: i16 = row.get("typeid");
         if typeid != 15 {
-            return Err("Linking is only allowed for phrases".into());
+            return Err(AppError::BadRequest(
+                "Linking is only allowed for phrases".into(),
+            ));
         }
     }
 
@@ -6983,7 +7003,7 @@ pub async fn unlink_definitions(
     definition_id: i32,
     translation_id: i32,
     user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -7007,7 +7027,7 @@ use super::dto::DefinitionTranslation;
 pub async fn get_definition_translations(
     pool: &Pool,
     definition_id: i32,
-) -> Result<Vec<DefinitionTranslation>, Box<dyn std::error::Error>> {
+) -> Result<Vec<DefinitionTranslation>, AppError> {
     let client = pool.get().await?;
 
     let rows = client
@@ -7042,7 +7062,7 @@ pub async fn export_linked_pairs(
     pool: &Pool,
     from_lang: i32,
     to_lang: i32,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<String, AppError> {
     let client = pool.get().await?;
 
     // Streaming fetching might be better for large exports, but for now we'll fetch all.
@@ -7093,7 +7113,7 @@ pub async fn export_linked_pairs(
 pub async fn get_definition_link(
     pool: &Pool,
     id: i32,
-) -> Result<Option<serde_json::Value>, Box<dyn std::error::Error>> {
+) -> Result<Option<serde_json::Value>, AppError> {
     let client = pool.get().await?;
     let row = client
         .query_opt(
@@ -7573,8 +7593,7 @@ mod activity_feed_tests {
 
     #[tokio::test]
     #[ignore = "requires LENSISKU_NEWS_TEST_DATABASE_URL and LENSISKU_NEWS_TEST_USER_ID (read-only)"]
-    async fn personal_news_paginates_without_duplicates() -> Result<(), Box<dyn std::error::Error>>
-    {
+    async fn personal_news_paginates_without_duplicates() -> Result<(), AppError> {
         let database_url = std::env::var("LENSISKU_NEWS_TEST_DATABASE_URL")?;
         let user_id: i32 = std::env::var("LENSISKU_NEWS_TEST_USER_ID")?.parse()?;
         let (mut client, connection) =
@@ -7627,8 +7646,7 @@ mod activity_feed_tests {
 
     #[tokio::test]
     #[ignore = "requires LENSISKU_FEED_TEST_DATABASE_URL pointing to a disposable PostgreSQL database"]
-    async fn activity_feed_fixtures_paginate_and_filter() -> Result<(), Box<dyn std::error::Error>>
-    {
+    async fn activity_feed_fixtures_paginate_and_filter() -> Result<(), AppError> {
         let database_url =
             crate::test_db_guard::disposable_database_url("LENSISKU_FEED_TEST_DATABASE_URL");
         let (mut client, connection) =
@@ -7728,7 +7746,7 @@ async fn verify_translation_edit_access(
     definition_id: i32,
     translation_id: i32,
     user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AppError> {
     let rows = tx
         .query(
             "SELECT definitionid FROM definitions WHERE definitionid IN ($1, $2) FOR UPDATE",
@@ -7736,7 +7754,9 @@ async fn verify_translation_edit_access(
         )
         .await?;
     if rows.len() != 2 {
-        return Err("One or both definitions do not exist".into());
+        return Err(AppError::BadRequest(
+            "One or both definitions do not exist".into(),
+        ));
     }
     let allowed: bool = tx
         .query_one(
@@ -7746,7 +7766,9 @@ async fn verify_translation_edit_access(
         .await?
         .get(0);
     if !allowed {
-        return Err("You don't have permission to edit these definitions".into());
+        return Err(AppError::Auth(
+            "You don't have permission to edit these definitions".into(),
+        ));
     }
     Ok(())
 }

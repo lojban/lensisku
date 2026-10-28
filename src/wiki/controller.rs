@@ -28,7 +28,7 @@ pub async fn get_wiki_article(pool: web::Data<Pool>, path: web::Path<String>) ->
         Ok(None) => HttpResponse::NotFound().json(json!({"error": "Article not found"})),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": "Failed to fetch wiki article",
-            "details": e.to_string()
+            "details": e.detail()
         })),
     }
 }

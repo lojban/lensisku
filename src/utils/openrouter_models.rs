@@ -342,14 +342,14 @@ pub async fn refresh_openrouter_assistant_models_cache<F, Fut>(
     base_url: &str,
     api_key: &str,
     mut probe: F,
-) -> Result<(), Box<dyn std::error::Error>>
+) -> Result<(), AppError>
 where
     F: FnMut(String, String) -> Fut,
     Fut: std::future::Future<Output = Result<(), AppError>>,
 {
     let catalog = fetch_latest_openrouter_models(base_url, api_key)
         .await
-        .map_err(|e| -> Box<dyn std::error::Error> { format!("{}", e).into() })?;
+        .map_err(|e| -> AppError { format!("{}", e).into() })?;
 
     let mut picked: Vec<(ModelEntry, Duration)> = Vec::new();
     for (id, name) in catalog {

@@ -1,5 +1,6 @@
 //! Read paths over `wiki_articles`. Used by `/waves/search`, `/waves/threads`,
 //! and `GET /wiki/{title}`.
+use crate::error::AppError;
 
 use deadpool_postgres::Pool;
 
@@ -42,7 +43,7 @@ pub async fn search_wiki(
     sort_order: &str,
     page: i64,
     per_page: i64,
-) -> Result<(Vec<WikiSearchHit>, i64), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<WikiSearchHit>, i64), AppError> {
     use std::cmp::Ordering;
 
     let client = pool.get().await.map_err(box_err)?;
@@ -260,7 +261,7 @@ pub async fn list_wiki_threads(
     page: i64,
     per_page: i64,
     sort_order: &str,
-) -> Result<(Vec<WikiThreadSummary>, i64), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(Vec<WikiThreadSummary>, i64), AppError> {
     use std::cmp::Ordering;
 
     let client = pool.get().await.map_err(box_err)?;
@@ -379,7 +380,7 @@ pub async fn list_wiki_threads(
 pub async fn get_article_by_title(
     pool: &Pool,
     title: &str,
-) -> Result<Option<WikiArticleDetail>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Option<WikiArticleDetail>, AppError> {
     let client = pool.get().await.map_err(box_err)?;
     let normalized = title.replace('_', " ");
     let row = client
@@ -464,6 +465,6 @@ fn row_to_native_hit(r: tokio_postgres::Row) -> WikiSearchHit {
     }
 }
 
-fn box_err<E: std::fmt::Display>(e: E) -> Box<dyn std::error::Error + Send + Sync> {
-    Box::new(std::io::Error::other(e.to_string()))
+fn box_err<E: std::fmt::Display>(e: E) -> AppError {
+    AppError::Internal(e.to_string())
 }

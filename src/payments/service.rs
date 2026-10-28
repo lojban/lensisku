@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use bytes::BytesMut;
 use deadpool_postgres::Pool;
 use std::error::Error;
@@ -333,10 +334,7 @@ pub async fn mark_paypal_payment_failed(
         .map_err(|e| PaymentError::Database(e.to_string()))
 }
 
-pub async fn get_balance(
-    pool: &Pool,
-    user_id: i32,
-) -> Result<BalanceResponse, Box<dyn std::error::Error>> {
+pub async fn get_balance(pool: &Pool, user_id: i32) -> Result<BalanceResponse, AppError> {
     let mut client = pool
         .get()
         .await

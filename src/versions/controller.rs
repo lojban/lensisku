@@ -47,10 +47,8 @@ pub async fn get_definition_history(
 
     match service::get_definition_history(&pool, definition_id.into_inner(), page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => match e.downcast_ref::<tokio_postgres::Error>() {
-            Some(db_error) if db_error.code().is_some_and(|c| c.code() == "P0002") => {
-                HttpResponse::NotFound().finish()
-            }
+        Err(e) => match &e {
+            crate::error::AppError::NotFound(_) => HttpResponse::NotFound().finish(),
             _ => HttpResponse::InternalServerError().body(format!("Failed to get history: {}", e)),
         },
     }
@@ -80,10 +78,8 @@ pub async fn get_definition_history(
 pub async fn get_version(pool: web::Data<Pool>, version_id: web::Path<i32>) -> impl Responder {
     match service::get_version(&pool, version_id.into_inner()).await {
         Ok(version) => HttpResponse::Ok().json(version),
-        Err(e) => match e.downcast_ref::<tokio_postgres::Error>() {
-            Some(db_error) if db_error.code().is_some_and(|c| c.code() == "P0002") => {
-                HttpResponse::NotFound().finish()
-            }
+        Err(e) => match &e {
+            crate::error::AppError::NotFound(_) => HttpResponse::NotFound().finish(),
             _ => HttpResponse::InternalServerError().body(format!("Failed to get version: {}", e)),
         },
     }
@@ -150,10 +146,8 @@ pub async fn revert_to_version(
             }
             HttpResponse::Ok().json(new_version)
         }
-        Err(e) => match e.downcast_ref::<tokio_postgres::Error>() {
-            Some(db_error) if db_error.code().is_some_and(|c| c.code() == "P0002") => {
-                HttpResponse::NotFound().finish()
-            }
+        Err(e) => match &e {
+            crate::error::AppError::NotFound(_) => HttpResponse::NotFound().finish(),
             _ => HttpResponse::InternalServerError().body(format!("Failed to revert: {}", e)),
         },
     }
@@ -188,8 +182,8 @@ pub async fn get_version_diff(
 ) -> impl Responder {
     match service::get_diff_with_transaction(&pool, query.from_version, query.to_version).await {
         Ok(diff) => HttpResponse::Ok().json(diff),
-        Err(e) => match e.downcast_ref::<tokio_postgres::Error>() {
-            Some(db_error) if db_error.code().is_some_and(|c| c.code() == "P0002") => {
+        Err(e) => match &e {
+            crate::error::AppError::NotFound(_) => {
                 HttpResponse::NotFound().body("One or both versions not found")
             }
             _ => HttpResponse::InternalServerError().body(format!("Failed to get diff: {}", e)),

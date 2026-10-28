@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -100,7 +101,7 @@ impl OwnedRafsiMaps {
 
 pub async fn load_owned_rafsi_maps(
     transaction: &Transaction<'_>,
-) -> Result<OwnedRafsiMaps, Box<dyn std::error::Error>> {
+) -> Result<OwnedRafsiMaps, AppError> {
     let cmavo = fetch_cmavo_rafsi(transaction).await?;
     let cmavo_exp = fetch_experimental_cmavo_rafsi(transaction).await?;
     let gismu = fetch_gismu_rafsi(transaction).await?;
@@ -160,7 +161,7 @@ pub fn is_decomposable_lujvo_type(type_name: &str) -> bool {
     )
 }
 
-pub async fn get_languages(pool: &Pool) -> Result<Vec<Language>, Box<dyn std::error::Error>> {
+pub async fn get_languages(pool: &Pool) -> Result<Vec<Language>, AppError> {
     let client = pool.get().await?;
 
     let languages = client
@@ -430,7 +431,7 @@ pub async fn analyze_word(
     word: &str,
     source_langid: i32, // Now required
     transaction: &Transaction<'_>,
-) -> Result<AnalyzeWordResponse, Box<dyn std::error::Error>> {
+) -> Result<AnalyzeWordResponse, AppError> {
     // Select the appropriate parser
     let parser = match parsers.get(&source_langid) {
         Some(p) => p,
@@ -843,7 +844,7 @@ fn check_syntax_patterns(text: &str) -> Result<(), MathJaxValidationError> {
 async fn fetch_rafsi_data(
     transaction: &Transaction<'_>,
     type_id: i16,
-) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<String, Vec<String>>, AppError> {
     // Include every valsi of this type (null rafsi → empty list) so reverse
     // lookup / 4-letter resolution can see the word key. Official 4-letter
     // forms are stored by migration; experimental may still be empty here.
@@ -873,7 +874,7 @@ async fn fetch_rafsi_data(
 async fn fetch_experimental_rafsi_data(
     transaction: &Transaction<'_>,
     type_id: i16,
-) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<String, Vec<String>>, AppError> {
     // Proposals belong to definitions, including definitions of standard words.
     // Aggregate them separately from the official word-level assignments.
     let rows = transaction
@@ -901,32 +902,32 @@ async fn fetch_experimental_rafsi_data(
 
 async fn fetch_cmavo_rafsi(
     transaction: &Transaction<'_>,
-) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<String, Vec<String>>, AppError> {
     fetch_rafsi_data(transaction, 2).await // 2 = cmavo type ID
 }
 
 async fn fetch_experimental_cmavo_rafsi(
     transaction: &Transaction<'_>,
-) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<String, Vec<String>>, AppError> {
     fetch_experimental_rafsi_data(transaction, 8).await // 8 = experimental cmavo type ID
 }
 
 async fn fetch_gismu_rafsi(
     transaction: &Transaction<'_>,
-) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<String, Vec<String>>, AppError> {
     fetch_rafsi_data(transaction, 1).await // 1 = gismu type ID
 }
 
 async fn fetch_experimental_gismu_rafsi(
     transaction: &Transaction<'_>,
-) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<String, Vec<String>>, AppError> {
     fetch_experimental_rafsi_data(transaction, 7).await // 7 = experimental gismu type ID
 }
 
 async fn fetch_gismu_data(
     transaction: &Transaction<'_>,
     type_id: i16,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+) -> Result<Vec<String>, AppError> {
     let rows = transaction
         .query("SELECT word FROM valsi WHERE typeid = $1", &[&type_id])
         .await?;
@@ -1049,7 +1050,7 @@ pub async fn analyze_word_in_pool(
     word: &str,
     source_langid: i32,
     pool: &Pool,
-) -> Result<AnalyzeWordResponse, Box<dyn std::error::Error>> {
+) -> Result<AnalyzeWordResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     // Dereference the Arc before passing the reference

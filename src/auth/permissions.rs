@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use deadpool_postgres::Pool;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -21,7 +22,7 @@ impl PermissionCache {
         })
     }
 
-    pub async fn load_permissions(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn load_permissions(&self) -> Result<(), AppError> {
         let client = self.pool.get().await?;
         let rows = client
             .query(

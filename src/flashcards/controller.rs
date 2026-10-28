@@ -555,7 +555,10 @@ pub async fn submit_quiz_answer(
 ) -> impl Responder {
     match service::submit_quiz_answer(&pool, claims.sub, req.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to submit quiz answer"),
+        Err(e) => crate::utils::handle_error(
+            crate::error::AppError::Internal(e.to_string()),
+            "Failed to submit quiz answer",
+        ),
     }
 }
 #[utoipa::path(
@@ -1036,7 +1039,10 @@ pub async fn apply_challenge_mix_level(
 ) -> impl Responder {
     match service::apply_challenge_mix_to_level(&pool, claims.sub, level_id.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to apply challenge mix"),
+        Err(e) => crate::utils::handle_error(
+            crate::error::AppError::Internal(e.to_string()),
+            "Failed to apply challenge mix",
+        ),
     }
 }
 
@@ -1067,7 +1073,10 @@ pub async fn apply_challenge_mix_collection(
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to apply challenge mix"),
+        Err(e) => crate::utils::handle_error(
+            crate::error::AppError::Internal(e.to_string()),
+            "Failed to apply challenge mix",
+        ),
     }
 }
 
@@ -1092,7 +1101,10 @@ pub async fn convert_level_to_auto(
 ) -> impl Responder {
     match service::convert_level_to_auto(&pool, claims.sub, level_id.into_inner()).await {
         Ok(r) => HttpResponse::Ok().json(r),
-        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to convert level to auto"),
+        Err(e) => crate::utils::handle_error(
+            crate::error::AppError::Internal(e.to_string()),
+            "Failed to convert level to auto",
+        ),
     }
 }
 
@@ -1116,7 +1128,10 @@ pub async fn convert_collection_to_auto(
 ) -> impl Responder {
     match service::convert_collection_to_auto(&pool, claims.sub, collection_id.into_inner()).await {
         Ok(r) => HttpResponse::Ok().json(r),
-        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to convert course to auto"),
+        Err(e) => crate::utils::handle_error(
+            crate::error::AppError::Internal(e.to_string()),
+            "Failed to convert course to auto",
+        ),
     }
 }
 
@@ -1174,7 +1189,10 @@ pub async fn update_course_settings(
     match service::update_course_settings(&pool, claims.sub, collection_id.into_inner(), &req).await
     {
         Ok(r) => HttpResponse::Ok().json(r),
-        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to update course settings"),
+        Err(e) => crate::utils::handle_error(
+            crate::error::AppError::Internal(e.to_string()),
+            "Failed to update course settings",
+        ),
     }
 }
 
@@ -1245,6 +1263,9 @@ pub async fn save_course_order(
         Err(FlashcardError::BadRequest(msg)) => {
             HttpResponse::BadRequest().json(json!({ "error": msg }))
         }
-        Err(e) => crate::utils::handle_error(Box::new(e), "Failed to save course order"),
+        Err(e) => crate::utils::handle_error(
+            crate::error::AppError::Internal(e.to_string()),
+            "Failed to save course order",
+        ),
     }
 }

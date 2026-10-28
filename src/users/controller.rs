@@ -61,10 +61,8 @@ pub async fn get_public_profile(
 ) -> impl Responder {
     match service::get_public_profile(&pool, &username).await {
         Ok(profile) => HttpResponse::Ok().json(profile),
-        Err(e) => match e.downcast_ref::<tokio_postgres::Error>() {
-            Some(db_error) if db_error.code().is_some_and(|c| c.code() == "P0002") => {
-                HttpResponse::NotFound().body("User not found")
-            }
+        Err(e) => match &e {
+            crate::error::AppError::NotFound(_) => HttpResponse::NotFound().body("User not found"),
             _ => {
                 HttpResponse::InternalServerError().body(format!("Failed to fetch profile: {}", e))
             }
@@ -103,10 +101,8 @@ pub async fn get_user_definitions(
 
     match service::get_user_definitions(&pool, &username, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) if e.to_string() == "User not found" => {
-            HttpResponse::NotFound().body("User not found")
-        }
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) if e.detail() == "User not found" => HttpResponse::NotFound().body("User not found"),
+        Err(e) => HttpResponse::InternalServerError().body(e.detail()),
     }
 }
 
@@ -141,10 +137,8 @@ pub async fn get_user_comments(
 
     match service::get_user_comments(&pool, &username, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) if e.to_string() == "User not found" => {
-            HttpResponse::NotFound().body("User not found")
-        }
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) if e.detail() == "User not found" => HttpResponse::NotFound().body("User not found"),
+        Err(e) => HttpResponse::InternalServerError().body(e.detail()),
     }
 }
 
@@ -181,7 +175,7 @@ pub async fn get_user_votes(
 
     match service::get_user_votes(&pool, claims.sub, page, per_page).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) => HttpResponse::InternalServerError().body(e.detail()),
     }
 }
 
@@ -213,7 +207,7 @@ pub async fn update_profile_image(
         }),
         Err(e) => HttpResponse::BadRequest().json(ProfileImageResponse {
             success: false,
-            message: e.to_string(),
+            message: e.detail(),
         }),
     }
 }
@@ -251,7 +245,7 @@ pub async fn get_profile_image(
                 .body(image_data)
         }
         Ok(None) => HttpResponse::NotFound().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) => HttpResponse::InternalServerError().body(e.detail()),
     }
 }
 
@@ -277,7 +271,7 @@ pub async fn remove_profile_image(pool: web::Data<Pool>, claims: Claims) -> impl
         }),
         Err(e) => HttpResponse::InternalServerError().json(ProfileImageResponse {
             success: false,
-            message: e.to_string(),
+            message: e.detail(),
         }),
     }
 }

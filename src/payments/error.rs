@@ -26,3 +26,10 @@ impl From<Box<dyn std::error::Error>> for PaymentError {
         PaymentError::Provider(err.to_string())
     }
 }
+
+/// Keeps the old `Box<dyn Error>` text: `detail()` returns this error's `Display`.
+impl From<PaymentError> for crate::error::AppError {
+    fn from(err: PaymentError) -> Self {
+        crate::error::AppError::Internal(err.to_string())
+    }
+}

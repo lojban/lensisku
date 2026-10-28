@@ -41,7 +41,7 @@ pub async fn vote_spam_message(
             user_voted,
         }),
         Err(e) => HttpResponse::InternalServerError()
-            .json(json!({"error": "Failed to record spam vote", "details": e.to_string()})),
+            .json(json!({"error": "Failed to record spam vote", "details": e.detail()})),
     }
 }
 
