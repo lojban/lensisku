@@ -2139,5 +2139,10 @@
       "rateLimited": "Too many audio requests, try again later.",
       "generateFailed": "Audio generation failed."
     }
+  },
+  "apiErrors": {
+    "serverError": "Something went wrong on the server. Please try again later (error id: {id}).",
+    "conflict": "This item conflicts with existing data (it may already exist).",
+    "invalidInput": "Some of the submitted values are invalid."
   }
 }

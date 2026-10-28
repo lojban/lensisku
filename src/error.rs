@@ -44,6 +44,10 @@ pub enum AppError {
     #[error("Validation error: {0}")]
     Validation(String),
 
+    /// The write conflicts with existing data (e.g. a unique constraint).
+    #[error("Conflict: {0}")]
+    Conflict(String),
+
     #[error("Bad request: {0}")]
     BadRequest(String),
 
@@ -83,6 +87,7 @@ impl actix_web::ResponseError for AppError {
                 actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
             }
             AppError::Validation(_) => actix_web::http::StatusCode::BAD_REQUEST,
+            AppError::Conflict(_) => actix_web::http::StatusCode::CONFLICT,
             AppError::BadRequest(_) => actix_web::http::StatusCode::BAD_REQUEST,
             AppError::Unauthorized(_) => actix_web::http::StatusCode::UNAUTHORIZED,
             AppError::Internal(_) => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -94,17 +99,101 @@ impl actix_web::ResponseError for AppError {
     }
 
     fn error_response(&self) -> actix_web::HttpResponse {
+        let status = self.status_code();
+        if status.is_server_error() {
+            // Internal detail (SQL, upstream bodies) goes to the log, never to the client.
+            let error_id = new_error_id();
+            match self {
+                AppError::ExternalServiceWithRaw { raw_response, .. }
+                | AppError::ExternalServiceRetryable { raw_response, .. } => {
+                    log::error!("[{error_id}] {self}; raw response: {raw_response}")
+                }
+                _ => log::error!("[{error_id}] {self}"),
+            }
+            return internal_error_response(status, &error_id);
+        }
         let err_str = self.to_string();
-        let mut body = serde_json::json!({
+        actix_web::HttpResponse::build(status).json(serde_json::json!({
             "error": err_str,
             "message": err_str,
-        });
-        if let AppError::ExternalServiceWithRaw { raw_response, .. }
-        | AppError::ExternalServiceRetryable { raw_response, .. } = self
-        {
-            body["raw_response"] = serde_json::Value::String(raw_response.clone());
+            "code": self.code(),
+        }))
+    }
+}
+
+impl AppError {
+    /// Stable machine-readable code sent to clients alongside the message.
+    pub fn code(&self) -> &'static str {
+        match self {
+            AppError::Auth(_) => "forbidden",
+            AppError::NotFound(_) => "not_found",
+            AppError::Validation(_) | AppError::BadRequest(_) | AppError::Json(_) => "bad_request",
+            AppError::Conflict(_) => "conflict",
+            AppError::Unauthorized(_) | AppError::Jwt(_) => "unauthorized",
+            AppError::Database(_)
+            | AppError::Migration(_)
+            | AppError::Io(_)
+            | AppError::Config(_)
+            | AppError::ExternalService(_)
+            | AppError::ExternalServiceWithRaw { .. }
+            | AppError::ExternalServiceRetryable { .. }
+            | AppError::Internal(_)
+            | AppError::Reqwest(_)
+            | AppError::Redis(_) => "internal_error",
         }
-        actix_web::HttpResponse::build(self.status_code()).json(body)
+    }
+}
+
+/// Message shown to clients for every 5xx response.
+pub const INTERNAL_ERROR_MESSAGE: &str = "Internal server error";
+
+/// Marks a 5xx response whose body is already safe, so
+/// [`crate::middleware::error_sanitizer`] passes it through.
+#[derive(Clone, Copy, Debug)]
+pub struct SanitizedServerError;
+
+/// Short id that ties a client-visible 5xx to its server log line.
+pub fn new_error_id() -> String {
+    let mut id = uuid::Uuid::new_v4().simple().to_string();
+    id.truncate(12);
+    id
+}
+
+/// Generic 5xx body: `{error, message, code: "internal_error", error_id}`.
+pub fn internal_error_response(
+    status: actix_web::http::StatusCode,
+    error_id: &str,
+) -> actix_web::HttpResponse {
+    let mut response = actix_web::HttpResponse::build(status).json(serde_json::json!({
+        "error": INTERNAL_ERROR_MESSAGE,
+        "message": INTERNAL_ERROR_MESSAGE,
+        "code": "internal_error",
+        "error_id": error_id,
+    }));
+    response.extensions_mut().insert(SanitizedServerError);
+    response
+}
+
+/// Client errors that Postgres reports for bad or conflicting input.
+fn client_error_for_sql_state(state: &tokio_postgres::error::SqlState) -> Option<AppError> {
+    use tokio_postgres::error::SqlState;
+    if *state == SqlState::UNIQUE_VIOLATION {
+        Some(AppError::Conflict(
+            "A record with these values already exists".to_string(),
+        ))
+    } else if *state == SqlState::FOREIGN_KEY_VIOLATION {
+        Some(AppError::Conflict(
+            "The referenced record does not exist or is still in use".to_string(),
+        ))
+    } else if *state == SqlState::CHECK_VIOLATION
+        || *state == SqlState::NOT_NULL_VIOLATION
+        || *state == SqlState::INVALID_TEXT_REPRESENTATION
+        || *state == SqlState::STRING_DATA_RIGHT_TRUNCATION
+        || *state == SqlState::NUMERIC_VALUE_OUT_OF_RANGE
+    {
+        Some(AppError::Validation("Invalid input".to_string()))
+    } else {
+        None
     }
 }
 
@@ -128,7 +217,14 @@ impl From<std::num::ParseIntError> for AppError {
 // Implementation for tokio_postgres::Error
 impl From<TokioPostgresError> for AppError {
     fn from(err: TokioPostgresError) -> Self {
-        AppError::Database(err.to_string())
+        if let Some(client_error) = err.code().and_then(client_error_for_sql_state) {
+            log::info!("database rejected input: {err:?}");
+            return client_error;
+        }
+        match err.as_db_error() {
+            Some(db) => AppError::Database(format!("{err}: {}", db.message())),
+            None => AppError::Database(err.to_string()),
+        }
     }
 }
 
@@ -157,5 +253,41 @@ impl From<deadpool::managed::PoolError<deadpool_postgres::ConfigError>> for AppE
 impl From<EmailError> for AppError {
     fn from(err: EmailError) -> Self {
         AppError::ExternalService(format!("Email service error: {}", err))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use actix_web::{body::MessageBody, http::StatusCode, ResponseError};
+    use tokio_postgres::error::SqlState;
+
+    use super::{client_error_for_sql_state, AppError};
+
+    #[test]
+    fn sql_states_for_bad_input_become_client_errors() {
+        let conflict = client_error_for_sql_state(&SqlState::UNIQUE_VIOLATION);
+        assert!(matches!(conflict, Some(AppError::Conflict(_))));
+        let invalid = client_error_for_sql_state(&SqlState::CHECK_VIOLATION);
+        assert!(matches!(invalid, Some(AppError::Validation(_))));
+        assert!(client_error_for_sql_state(&SqlState::UNDEFINED_TABLE).is_none());
+    }
+
+    #[test]
+    fn server_error_body_hides_internal_text() {
+        for error in [
+            AppError::Database("relation \"secret_table\" does not exist".to_string()),
+            AppError::Internal("/srv/secret/path".to_string()),
+            AppError::ExternalServiceWithRaw {
+                message: "upstream".to_string(),
+                raw_response: "secret upstream body".to_string(),
+            },
+        ] {
+            let response = error.error_response();
+            assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+            let bytes = response.into_body().try_into_bytes().unwrap_or_default();
+            let text = String::from_utf8_lossy(&bytes);
+            assert!(!text.contains("secret"), "leaked: {text}");
+            assert!(text.contains("\"code\":\"internal_error\""), "{text}");
+        }
     }
 }

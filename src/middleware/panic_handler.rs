@@ -1,4 +1,4 @@
-//! Catches panics in handlers and returns HTTP 500 with the panic message in the response body.
+//! Catches panics in handlers, logs the panic message and returns a generic HTTP 500.
 //!
 //! Requires `panic = 'unwind'` in Cargo.toml (dev and release). Do not use as a replacement
 //! for proper error handling.
@@ -12,12 +12,14 @@ use actix_web::{
     HttpResponse,
 };
 use futures::FutureExt as _;
-use serde_json::json;
 
-/// Error type that renders as JSON with the panic message.
+use crate::error::{internal_error_response, new_error_id};
+
+/// Error for a caught panic; the message is logged, never sent to the client.
 #[derive(Debug)]
 struct PanicError {
     message: String,
+    error_id: String,
 }
 
 impl std::fmt::Display for PanicError {
@@ -28,12 +30,7 @@ impl std::fmt::Display for PanicError {
 
 impl actix_web::ResponseError for PanicError {
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
-        HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-            .json(json!({
-                "error": "Internal server error",
-                "details": self.message
-            }))
-            .map_into_boxed_body()
+        internal_error_response(StatusCode::INTERNAL_SERVER_ERROR, &self.error_id)
     }
 }
 
@@ -47,7 +44,7 @@ fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
     format!("{:?}", payload)
 }
 
-/// Middleware that catches panics and returns 500 with `{"error": "...", "details": "<panic message>"}`.
+/// Middleware that catches panics and returns the generic 500 body with an `error_id`.
 #[derive(Debug, Clone, Default)]
 pub struct CatchPanicWithMessage;
 
@@ -93,8 +90,9 @@ where
             Ok(Err(e)) => Err(e),
             Err(panic_payload) => {
                 let message = panic_message(panic_payload);
-                log::error!("Handler panicked: {}", message);
-                Err(Error::from(PanicError { message }))
+                let error_id = new_error_id();
+                log::error!("[{error_id}] Handler panicked: {}", message);
+                Err(Error::from(PanicError { message, error_id }))
             }
         }))
     }

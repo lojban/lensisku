@@ -138,6 +138,9 @@ pub async fn start_server(
 
         App::new()
             .wrap(CatchPanicWithMessage)
+            .wrap(actix_web::middleware::from_fn(
+                middleware::error_sanitizer::hide_server_error_details,
+            ))
             .wrap(Logger::default())
             .wrap_fn(|req, service| {
                 let tags = if req.method() == actix_web::http::Method::GET {

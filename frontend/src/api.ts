@@ -1,3 +1,4 @@
+import i18n from '@/i18n'
 import { isValsiRegexQuery } from '@/utils/searchQueryUtils'
 import axios, {
   AxiosHeaders,
@@ -50,11 +51,39 @@ export const api: AxiosInstance = axios.create({
   ],
 })
 
+type ApiErrorBody = { error?: unknown; message?: unknown; code?: unknown; error_id?: unknown }
+
+/** Backend message for Postgres-rejected input (see `client_error_for_sql_state`). */
+const GENERIC_INVALID_INPUT = 'Validation error: Invalid input'
+
+/**
+ * Replace the backend's generic English text for coded errors with a localized message,
+ * so every page that shows `response.data.error` / `.message` stays user friendly.
+ */
+function localizeApiError(error: unknown): void {
+  const data = (error as { response?: { data?: unknown } }).response?.data
+  if (!data || typeof data !== 'object') return
+  const body = data as ApiErrorBody
+  let text: string | null = null
+  if (body.code === 'internal_error') {
+    text = i18n.global.t('apiErrors.serverError', { id: String(body.error_id ?? '') })
+  } else if (body.code === 'conflict') {
+    text = i18n.global.t('apiErrors.conflict')
+  } else if (body.code === 'bad_request' && body.error === GENERIC_INVALID_INPUT) {
+    text = i18n.global.t('apiErrors.invalidInput')
+  }
+  if (text !== null) {
+    body.error = text
+    body.message = text
+  }
+}
+
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     return response
   },
   async (error: unknown) => {
+    localizeApiError(error)
     const err = error as { config?: RetryableRequestConfig; response?: { status?: number } }
     const originalRequest = err.config
     if (!originalRequest) {

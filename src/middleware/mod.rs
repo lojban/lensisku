@@ -4,6 +4,7 @@ use std::time::Duration;
 
 pub mod cache;
 pub mod cloudflare_cache;
+pub mod error_sanitizer;
 pub mod image;
 pub mod limiter;
 pub mod panic_handler;
