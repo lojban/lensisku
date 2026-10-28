@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod chat_import_tests;
 pub mod chat_store;
 pub mod context_compress;
 pub mod controller;

@@ -388,24 +388,33 @@ pub async fn import_sessions(
         .await
         .map_err(|e| AppError::Database(format!("assistant_chats import tx: {}", e)))?;
     reserve_chat_capacity(&tx, user_id, sessions.len() as i64).await?;
-    let mut out = Vec::new();
-    for s in sessions {
-        let row = tx
-            .query_one(
-                "INSERT INTO assistant_chats (user_id, title, messages, primary_model_id, scroll_top) \
-                 VALUES ($1, $2, $3::jsonb, $4, $5) RETURNING id",
-                &[
-                    &user_id,
-                    &s.title,
-                    &s.messages,
-                    &s.primary_model_id,
-                    &s.scroll_top,
-                ],
-            )
+    if sessions.is_empty() {
+        tx.commit()
             .await
-            .map_err(|e| AppError::Database(format!("assistant_chats import insert: {}", e)))?;
-        out.push(ImportResultItem { id: row.get(0) });
+            .map_err(|e| AppError::Database(format!("assistant_chats import commit: {}", e)))?;
+        return Ok(ImportResponse { chats: Vec::new() });
     }
+    // One set-based INSERT. Ids are generated here so the response order matches the
+    // request order without relying on RETURNING order.
+    let ids: Vec<Uuid> = sessions.iter().map(|_| Uuid::new_v4()).collect();
+    let titles: Vec<&str> = sessions.iter().map(|s| s.title.as_str()).collect();
+    let messages: Vec<&Value> = sessions.iter().map(|s| &s.messages).collect();
+    let models: Vec<Option<&str>> = sessions
+        .iter()
+        .map(|s| s.primary_model_id.as_deref())
+        .collect();
+    let scrolls: Vec<f64> = sessions.iter().map(|s| s.scroll_top).collect();
+    tx.execute(
+        "INSERT INTO assistant_chats (id, user_id, title, messages, primary_model_id, scroll_top) \
+         SELECT t.id, $1, t.title, t.messages, t.model, t.scroll \
+         FROM unnest($2::uuid[], $3::text[], $4::jsonb[], $5::text[], $6::float8[]) \
+              WITH ORDINALITY AS t(id, title, messages, model, scroll, ord) \
+         ORDER BY t.ord",
+        &[&user_id, &ids, &titles, &messages, &models, &scrolls],
+    )
+    .await
+    .map_err(|e| AppError::Database(format!("assistant_chats import insert: {}", e)))?;
+    let out = ids.into_iter().map(|id| ImportResultItem { id }).collect();
     tx.commit()
         .await
         .map_err(|e| AppError::Database(format!("assistant_chats import commit: {}", e)))?;
