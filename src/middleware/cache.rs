@@ -1,3 +1,4 @@
+use crate::error::{AppError, AppResult};
 use redis::{AsyncCommands, Client, RedisError};
 use serde::{de::DeserializeOwned, Serialize};
 use std::time::Duration;
@@ -20,12 +21,7 @@ impl RedisCache {
         })
     }
 
-    pub async fn set<T>(
-        &self,
-        key: &str,
-        data: &T,
-        ttl: Option<Duration>,
-    ) -> Result<(), Box<dyn std::error::Error>>
+    pub async fn set<T>(&self, key: &str, data: &T, ttl: Option<Duration>) -> AppResult<()>
     where
         T: Serialize,
     {
@@ -36,7 +32,7 @@ impl RedisCache {
         Ok(())
     }
 
-    pub async fn get<T>(&self, key: &str) -> Result<Option<T>, Box<dyn std::error::Error>>
+    pub async fn get<T>(&self, key: &str) -> AppResult<Option<T>>
     where
         T: DeserializeOwned,
     {
@@ -49,23 +45,26 @@ impl RedisCache {
         Ok(None)
     }
 
-    pub async fn get_or_set<T, F, Fut>(
+    /// Cached value or `fetch_data()`; works with any caller error type that can
+    /// hold an [`AppError`] (so both `AppError` and `Box<dyn Error>` callers).
+    pub async fn get_or_set<T, F, Fut, E>(
         &self,
         key: &str,
         fetch_data: F,
         ttl: Option<Duration>,
-    ) -> Result<T, Box<dyn std::error::Error>>
+    ) -> Result<T, E>
     where
         T: DeserializeOwned + Serialize,
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = Result<T, Box<dyn std::error::Error>>>,
+        Fut: std::future::Future<Output = Result<T, E>>,
+        E: From<AppError>,
     {
         if let Ok(Some(cached)) = self.get::<T>(key).await {
             return Ok(cached);
         }
 
         let data = fetch_data().await?;
-        self.set(key, &data, ttl).await?;
+        self.set(key, &data, ttl).await.map_err(E::from)?;
 
         Ok(data)
     }

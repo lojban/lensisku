@@ -5649,7 +5649,7 @@ pub async fn get_recent_changes(
     let after_cloned = after.clone();
 
     let response = redis_cache
-        .get_or_set(
+        .get_or_set::<_, _, _, Box<dyn std::error::Error>>(
             &cache_key,
             || async move {
                 let mut client = pool.get().await?;
