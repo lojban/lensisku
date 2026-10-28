@@ -1,7 +1,7 @@
 /**
- * Dialogue story files (duostories-plan/stories/*.json): one story object, an array of them,
- * or `{ stories: [...] }`. Each story needs `script` (the dialogue markup) and `translation`
- * (card back); `title`/`notes` are optional.
+ * Dialogue story files: this importer accepts one story object, an array of stories, or `{ stories: [...] }`.
+ * Importable stories need `script` (dialogue markup) and `translation` (card back);
+ * `title`/`notes` are optional. Batch-2 archive entries keep translations per line.
  */
 export interface DialogueStoryDraft {
   title?: string
