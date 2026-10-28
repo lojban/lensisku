@@ -1,6 +1,3 @@
-//TODO: refactor
-#![allow(clippy::expect_used, clippy::unwrap_used)]
-
 use crate::utils::remove_html_tags;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::{Duration, Utc};
@@ -1376,7 +1373,7 @@ pub fn generate_access_token(
 ) -> AppResult<String> {
     let expiration = Utc::now()
         .checked_add_signed(Duration::hours(24))
-        .expect("valid timestamp")
+        .ok_or_else(|| AppError::Internal("access token expiry overflow".to_string()))?
         .timestamp();
 
     let claims = Claims {
@@ -1391,7 +1388,8 @@ pub fn generate_access_token(
         sid: session_id,
     };
 
-    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let secret =
+        env::var("JWT_SECRET").map_err(|e| AppError::Config(vec![format!("JWT_SECRET: {e}")]))?;
     encode(
         // Map JWT error
         &Header::default(),
@@ -1421,7 +1419,8 @@ pub fn generate_refresh_token(user: &User, session_id: Option<Uuid>) -> AppResul
         sid: session_id,
     };
 
-    let secret = env::var("REFRESH_TOKEN_SECRET").expect("REFRESH_TOKEN_SECRET must be set");
+    let secret = env::var("REFRESH_TOKEN_SECRET")
+        .map_err(|e| AppError::Config(vec![format!("REFRESH_TOKEN_SECRET: {e}")]))?;
     encode(
         // Map JWT error
         &Header::default(),
