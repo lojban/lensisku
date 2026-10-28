@@ -1835,8 +1835,7 @@ async function performRequest(
         } else if (event.type === 'error') {
           const errContent = event.error
             ? `_${t('assistantChat.error')}: ${event.error}_`
-            : t('assistantChat.error') +
-              (event.raw_response ? `\n\n**Debug:**\n\`\`\`\n${event.raw_response}\n\`\`\`` : '')
+            : t('assistantChat.error')
           if (modelId) {
             const r = getOrCreateReply(modelId)
             if (r) {

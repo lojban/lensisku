@@ -1136,21 +1136,36 @@ async fn attach_examples_to_definitions(
 const TOOL_MAX_ATTEMPTS: u32 = 3;
 const TOOL_INITIAL_BACKOFF_MS: u64 = 400;
 
-/// Max length of raw_response included in SSE error events (to avoid huge payloads).
+/// Max length of raw_response written to the log for one error.
 const ERROR_RAW_RESPONSE_MAX_LEN: usize = 8000;
 
-/// Builds the JSON payload for an SSE error event, including debugging info (e.g. raw_response when present).
+/// Builds the JSON payload for an SSE error event. Upstream raw bodies are logged
+/// with an id and never sent to (or persisted for) the client.
 fn sse_error_payload(e: &AppError) -> serde_json::Value {
     let mut obj = json!({
         "type": "error",
         "error": format!("{}", e),
     });
+    if let Some(error_id) = log_raw_response(e) {
+        obj["error_id"] = serde_json::Value::String(error_id);
+    }
+    obj
+}
+
+/// Logs the upstream body of an external-service error; returns the log id.
+fn log_raw_response(e: &AppError) -> Option<String> {
     if let AppError::ExternalServiceWithRaw { raw_response, .. }
     | AppError::ExternalServiceRetryable { raw_response, .. } = e
     {
-        obj["raw_response"] = serde_json::Value::String(truncate_error_raw_response(raw_response));
+        let error_id = crate::error::new_error_id();
+        log::error!(
+            "[{error_id}] assistant upstream error: {e}; raw response: {}",
+            truncate_error_raw_response(raw_response)
+        );
+        Some(error_id)
+    } else {
+        None
     }
-    obj
 }
 
 fn truncate_error_raw_response(raw_response: &str) -> String {
@@ -1210,10 +1225,8 @@ fn app_error_debug_object(e: &AppError) -> serde_json::Value {
     let mut o = json!({
         "message": format!("{}", e),
     });
-    if let AppError::ExternalServiceWithRaw { raw_response, .. }
-    | AppError::ExternalServiceRetryable { raw_response, .. } = e
-    {
-        o["raw_response"] = serde_json::Value::String(truncate_error_raw_response(raw_response));
+    if let Some(error_id) = log_raw_response(e) {
+        o["error_id"] = serde_json::Value::String(error_id);
     }
     o
 }
@@ -2460,5 +2473,25 @@ mod chat_message_map_tests {
         assert!(!super::error_indicates_context_limit(
             &AppError::BadRequest("nope".into())
         ));
+    }
+}
+
+#[cfg(test)]
+mod sse_error_tests {
+    #[test]
+    fn sse_error_events_never_carry_raw_upstream_body() {
+        let e = crate::error::AppError::ExternalServiceWithRaw {
+            message: "OpenRouter failed".into(),
+            raw_response: "secret upstream body".into(),
+        };
+        for v in [
+            super::sse_error_payload(&e),
+            super::app_error_debug_object(&e),
+        ] {
+            let text = v.to_string();
+            assert!(!text.contains("secret upstream body"), "{text}");
+            assert!(v.get("raw_response").is_none());
+            assert!(v.get("error_id").is_some());
+        }
     }
 }
