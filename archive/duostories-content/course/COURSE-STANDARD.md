@@ -1,7 +1,7 @@
 # Course standard (lensisku Lojban courses)
 
 Applies to every course built from this folder (`scripts/build_course.py`) and to
-"Simple Lojban in phrases with audio" (`scripts/refactor_simple_phrases.py`).
+"Simple Lojban in phrases with audio" (`../simple-lojban-in-phrases-with-audio by Gleki [928703]/add_level_dialogues.py`, dialogues in `level_dialogues.py`; corrected items are listed in `audio_exclude.json` so their old recordings are not embedded).
 
 ## One level per lesson
 A lesson is exactly **one level**. There are no dialogue-only levels. Cards in a level, in order:
