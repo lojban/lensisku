@@ -72,7 +72,7 @@ def main():
     course = {
         "title": {"en": "Lojban through dialogues", "jbo": "la .lojban. fo lo casnu"},
         "plan": "lojban.pw data/pages/en/books/lojban-through-dialogues/new-dialogue-plan.md",
-        "characters": [{"name": n, "cmevla": C.NAMES[n], "gender": C.SPEAKERS[n]} for n in C.NAMES],
+        "characters": [{"name": n, "jbo": C.NAMES[n], "gender": C.SPEAKERS[n]} for n in C.NAMES],
         "plan_deviations": C.PLAN_DEVIATIONS,
         "lessons": ls,
         "story_courses": [{"file": f"{a}_collection.json", "name": b, "stories": [f"batch2-{k:02d}" for k in n]} for a, b, _, n in C.STORY_COURSES],

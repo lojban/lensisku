@@ -9,15 +9,15 @@ Lesson tuple fields: (title_en, title_jbo, new_words, grammar, phrases, lines[, 
   doubtful: [(where, candidate, note)]   where = 'phrase N' / 'line N'
 """
 
-SPEAKERS = {"Lifri": "F", "Mentu": "M", "Linto": "F", "Newcomer": "M"}
-NAMES = {"Lifri": ".lifris.", "Mentu": ".mentus.", "Linto": ".lintas."}
+SPEAKERS = {"Lifri": "F", "Mentu": "M", "Linto": "F", "Cninos": "M"}  # labels: valid cmevla or brivla (Cninos = "newcomer", from cnino)
+NAMES = {"Lifri": "la lifri", "Mentu": "la mentu", "Linto": "la linto"}  # brivla used as names after la (valid Lojban)
 
 BLOCKS = [(1, 6, "The Meetup"), (7, 13, "Daily Life"), (14, 21, "Getting to Know Each Other"),
           (22, 29, "Deeper Conversation"), (30, 30, "Capstone")]
 
 # Where the plan's Lojban was changed (reported in course.json and the review notes).
 PLAN_DEVIATIONS = [
-    "Names are cmevla .lifris. / .mentus. / .lintas. (lifri, mentu, linto are gismu; a cmevla must end in a consonant).",
+    "Names are the plan's gismu used as names: la lifri / la mentu / la linto (la + brivla is valid; no cmevla needed).",
     "L6: clock formula is `ti'u li N` (the plan's `li cacra bu N` is not needed and `cacra bu` is not a word).",
     "L12: `se jdini` is not a price expression; prices use `se jdima lo meryru'u be li N` (jdima x1 price of x2).",
     "L15: `se panzi re` is ungrammatical; `mi se panzi re da` = I have two children.",
@@ -32,24 +32,24 @@ PLAN_DEVIATIONS = [
 L = []
 
 L.append(("First Meeting", "lo pa moi nu penmi", ["coi", "co'o", "mi'e", "la", "cliva", "do"],
-    "One word is already a full sentence: `coi` (hello), `co'o` (goodbye). `coi do` greets you; `coi .lifris.` greets Lifri by name. `mi'e la .mentus.` = \"I'm Mentu\".",
-    [("coi", "Hello!"), ("co'o", "Goodbye!"), ("coi do", "Hello (to you)!"), ("mi'e la .mentus.", "I'm Mentu."),
-     ("coi .lifris.", "Hi, Lifri!"), ("mi cliva", "I'm leaving."), ("do cliva", "You're leaving.")],
+    "One word is already a full sentence: `coi` (hello), `co'o` (goodbye). `coi do` greets you; `coi la lifri` greets Lifri by name. `mi'e la mentu` = \"I'm Mentu\".",
+    [("coi", "Hello!"), ("co'o", "Goodbye!"), ("coi do", "Hello (to you)!"), ("mi'e la mentu", "I'm Mentu."),
+     ("coi la lifri", "Hi, Lifri!"), ("mi cliva", "I'm leaving."), ("do cliva", "You're leaving.")],
     [("Lifri", "coi do", "Hello!"),
-     ("Mentu", "coi .i mi'e la .mentus.", "Hi! I'm Mentu."),
-     ("Lifri", "mi'e la .lifris.", "I'm Lifri."),
-     (">", ".i la .lintas. cu klama", "Linto arrives."),
-     ("Linto", "coi .lifris. coi .mentus.", "Hi Lifri! Hi Mentu!"),
-     ("Lifri", "coi .lintas.", "Hi, Linto!"),
+     ("Mentu", "coi .i mi'e la mentu", "Hi! I'm Mentu."),
+     ("Lifri", "mi'e la lifri", "I'm Lifri."),
+     (">", ".i la linto cu klama", "Linto arrives."),
+     ("Linto", "coi la lifri coi la mentu", "Hi Lifri! Hi Mentu!"),
+     ("Lifri", "coi la linto", "Hi, Linto!"),
      ("Mentu", ".i mi cliva .i co'o", "I'm leaving. Bye!"),
-     ("Linto", "co'o .mentus.", "Bye, Mentu!")]))
+     ("Linto", "co'o la mentu", "Bye, Mentu!")]))
 
 L.append(("Do You Speak Lojban?", "xu do se bangu la .lojban.", ["xu", "se bangu", "go'i", "na", "milxe", "mi"],
     "`xu` turns a sentence into a yes/no question. Answer `go'i` (yes, it's so) or `na go'i` (no). `milxe` softens: `mi milxe se bangu` = I speak a little.",
     [("xu do se bangu la .lojban.", "Do you speak Lojban?"), ("go'i", "Yes."), ("na go'i", "No."),
      ("mi milxe se bangu la .lojban.", "I speak Lojban a little."), ("mi na se bangu la .lojban.", "I don't speak Lojban."),
      ("xu do se bangu lo glico bangu", "Do you speak English?")],
-    [("Lifri", "coi .mentus. .i xu do se bangu la .lojban.", "Hi Mentu! Do you speak Lojban?"),
+    [("Lifri", "coi la mentu .i xu do se bangu la .lojban.", "Hi Mentu! Do you speak Lojban?"),
      ("Mentu", "go'i .i mi milxe se bangu la .lojban.", "Yes. I speak Lojban a little."),
      ("Linto", ".i xu do se bangu lo glico bangu", "Do you speak English?"),
      ("Mentu", "go'i", "Yes."),
@@ -58,12 +58,12 @@ L.append(("Do You Speak Lojban?", "xu do se bangu la .lojban.", ["xu", "se bangu
      ("Linto", "go'i", "Yes!")]))
 
 L.append(("What's Your Name? What Do You Like?", "ma cmene do", ["ma", "mo", "cmene", "zo", "nelci"],
-    "`ma` asks for a missing noun, `mo` for a missing predicate. `zo` quotes one word: `zo .mentus. cmene mi` = \"Mentu\" is my name. `do mo` = how are you?",
-    [("ma cmene do", "What's your name?"), ("zo .mentus. cmene mi", "My name is Mentu."), ("do nelci ma", "What do you like?"),
+    "`ma` asks for a missing noun, `mo` for a missing predicate. `zo` quotes one word: `zo mentu cmene mi` = \"Mentu\" is my name. `do mo` = how are you?",
+    [("ma cmene do", "What's your name?"), ("zo mentu cmene mi", "My name is Mentu."), ("do nelci ma", "What do you like?"),
      ("mi nelci la .lojban.", "I like Lojban."), ("mi nelci lo ckafi", "I like coffee."), ("do mo", "How are you?")],
     [("Linto", "coi .i ma cmene do", "Hi! What's your name?"),
-     ("Mentu", "zo .mentus. cmene mi .i ma cmene do", "My name is Mentu. What's your name?"),
-     ("Linto", "mi'e la .lintas.", "I'm Linto."),
+     ("Mentu", "zo mentu cmene mi .i ma cmene do", "My name is Mentu. What's your name?"),
+     ("Linto", "mi'e la linto", "I'm Linto."),
      ("Lifri", ".i do nelci ma", "What do you like?"),
      ("Linto", ".i mi nelci lo ckafi", "I like coffee."),
      ("Mentu", ".i mi nelci la .lojban.", "I like Lojban!"),
@@ -73,10 +73,10 @@ L.append(("Thank You — Wrapping Up the Meetup", "ki'e", ["ki'e", "je'e", ".ui"
     "Attitudinals are whole sentences or go before one. `pei` asks how the other person feels: `.ui pei` = are you happy? `.e'u` suggests: `.e'u mi'o ba penmi` = let's meet again.",
     [("ki'e", "Thanks!"), ("je'e", "You're welcome."), (".ui", "Yay!"), (".u'u", "Sorry."),
      (".ui pei", "Are you happy?"), (".e'u mi'o ba penmi", "Let's meet again.")],
-    [("Mentu", "ki'e .lifris.", "Thank you, Lifri!"),
+    [("Mentu", "ki'e la lifri", "Thank you, Lifri!"),
      ("Lifri", "je'e", "You're welcome."),
      ("Linto", ".ui .i mi nelci la .lojban.", "Yay! I like Lojban!"),
-     ("Mentu", ".u'u doi .lintas.", "Sorry, Linto!"),
+     ("Mentu", ".u'u doi la linto", "Sorry, Linto!"),
      ("Linto", "je'e", "It's OK."),
      ("Lifri", ".ui .i .ui pei", "I'm happy! And you?"),
      ("Mentu", ".ui", "Happy!"),
@@ -89,7 +89,7 @@ L.append(("Let's Meet at the Park", "mi klama le panka", ["zvati", "klama", "le"
     "`le` = the (one I have in mind). `klama`: x1 goes to x2 from x3. `ma nuzba` = what's new?",
     [("ma nuzba", "What's new?"), ("do zvati ma", "Where are you?"), ("mi zvati le zdani", "I'm at home."),
      ("do klama ma", "Where are you going?"), ("mi klama le panka", "I'm going to the park.")],
-    [("Lifri", "coi .mentus. .i ma nuzba", "Hi Mentu! What's new?"),
+    [("Lifri", "coi la mentu .i ma nuzba", "Hi Mentu! What's new?"),
      ("Mentu", "no da", "Nothing."),
      ("Lifri", ".i do zvati ma", "Where are you?"),
      ("Mentu", ".i mi zvati le zdani .i do zvati ma", "I'm at home. Where are you?"),
@@ -113,7 +113,7 @@ L.append(("Good Morning", "cerni coi", ["cerni", "vanci", "nicte", "donri", "gle
     [("cerni coi", "Good morning!"), ("donri coi", "Good day!"), ("mi gleki", "I'm happy."),
      ("ca le cerni mi zvati le zdani", "In the morning I'm at home."), ("ca le vanci mi klama le panka", "In the evening I go to the park."),
      ("ca le nicte mi zvati le zdani", "At night I'm at home.")],
-    [("Mentu", "cerni coi .lifris.", "Good morning, Lifri!"),
+    [("Mentu", "cerni coi la lifri", "Good morning, Lifri!"),
      ("Lifri", "cerni coi .i do mo", "Good morning! How are you?"),
      ("Mentu", ".i mi gleki", "I'm happy."),
      ("Linto", "donri coi", "Good day!"),
@@ -162,7 +162,7 @@ L.append(("Ordering at the Café", "vi lo gusta", ["stasu", "cidja", "jisra", "t
     "`pei` again: after an order it means \"and you?\". Chain orders: `.ai mi citka lo stasu .i .ai mi pinxe lo jisra`.",
     [(".ai mi citka lo stasu", "I'm going to have soup."), (".ai mi pinxe lo jisra", "I'll have juice."),
      ("xu do nelci lo titnanba", "Do you like cookies?"), ("le cidja cu kukte", "The food is tasty."), ("lo gusta", "a restaurant")],
-    [(">", ".i la .lifris. .e la .mentus. .e la .lintas. cu zvati lo gusta", "Lifri, Mentu and Linto are at a café."),
+    [(">", ".i la lifri .e la mentu .e la linto cu zvati lo gusta", "Lifri, Mentu and Linto are at a café."),
      ("Lifri", ".ai mi citka lo stasu .i .ai pei", "I'm going to have soup. And you?"),
      ("Mentu", ".ai mi pinxe lo jisra", "I'll have juice."),
      ("Lifri", ".i xu do nelci lo titnanba", "Do you like cookies?"),
@@ -256,14 +256,14 @@ L.append(("I Need to Work", "mi nitcu lo nu gunka", ["sipna", "gunka", "nitcu", 
      ("Linto", ".i lo jibri be do cu mo", "What's your job?"),
      ("Mentu", ".i mi ctuca", "I'm a teacher."),
      ("Mentu", ".i mi gunka ca le cerni .i mi nitcu lo nu sipna", "I work in the morning. I need to sleep."),
-     ("Linto", "co'o .mentus.", "Bye, Mentu!")]))
+     ("Linto", "co'o la mentu", "Bye, Mentu!")]))
 
 L.append(("Travel and Countries", "lo nu litru", ["litru", "gugde", "fi'i", "bangu", "drata"],
     "Names of places take `la`: `la .paris.`, `la .fransis.`. `lo drata gugde` = another country. `fi'i` = welcome!",
     [("fi'i", "Welcome!"), ("xu do pu litru", "Have you travelled?"), ("mi pu klama lo drata gugde", "I went to another country."),
      ("vi ta do se bangu ma", "What language do you speak there?"), ("mi milxe se bangu lo fraso bangu", "I speak a little French."),
      ("xu la .fransis. cu darno", "Is France far?")],
-    [("Lifri", "fi'i .lintas.", "Welcome back, Linto!"),
+    [("Lifri", "fi'i la linto", "Welcome back, Linto!"),
      ("Mentu", ".i xu do pu litru", "Have you been travelling?"),
      ("Linto", "go'i .i mi pu klama lo drata gugde", "Yes, I went to another country."),
      ("Linto", ".i mi pu zvati la .paris.", "I was in Paris."),
@@ -333,7 +333,7 @@ L.append(("How Far? How Many?", "xo prenu", ["xo", "ki'otre", "ro", "so'i"],
      ("Linto", ".i xu le panka cu darno", "Is the park far?"),
      ("Lifri", "na go'i .i ri jibni", "No, it's near."),
      ("Mentu", ".i lo klaji be le mi tcadu cu ki'otre li muno", "The road to my city is fifty kilometres."),
-     ("Lifri", "doi .mentus. .i do se panzi xo da", "Mentu, how many children do you have again?"),
+     ("Lifri", "doi la mentu .i do se panzi xo da", "Mentu, how many children do you have again?"),
      ("Mentu", ".i mi se panzi re da", "Two!")]))
 
 L.append(("Opinions and Preferences", "lo se jinvi", ["jinvi", "simlu", "zmadu", "mleca", "lo du'u"],
@@ -341,7 +341,7 @@ L.append(("Opinions and Preferences", "lo se jinvi", ["jinvi", "simlu", "zmadu",
     [("do jinvi ma", "What do you think?"), ("mi jinvi lo du'u ri zabna", "I think it's nice."),
      ("ta simlu lo ka zabna", "That seems nice."), ("ti zmadu ta lo ka kukte", "This is tastier than that."),
      ("ti mleca ta lo ka kargu", "This is cheaper than that.")],
-    [(">", ".i le ci pendo cu citka lo vanci sanmi vi le zdani be la .lifris.", "The three friends have dinner at Lifri's home."),
+    [(">", ".i le ci pendo cu citka lo vanci sanmi vi le zdani be la lifri", "The three friends have dinner at Lifri's home."),
      ("Lifri", ".i do jinvi ma", "What do you think?"),
      ("Mentu", ".i mi jinvi lo du'u le stasu cu zabna", "I think the soup is great."),
      ("Linto", ".i le nanba ji'a simlu lo ka kukte", "The bread also seems tasty."),
@@ -414,8 +414,8 @@ L.append(("Full Spiral Review — One Year Later", "ba lo nanca be li pa", [],
      ("Linto", "na go'i .i mi nitcu lo nu gunka", "No, I need to work."),
      ("Mentu", ".i mi ca'o jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu", "I still think Lojban is the best language."),
      (">", ".i pa cnino prenu cu klama", "A new person walks up."),
-     ("Newcomer", "coi", "Hi..."),
-     ("Lifri", "coi do .i mi'e la .lifris. .i ma cmene do", "Hello! I'm Lifri. What's your name?"),
+     ("Cninos", "coi", "Hi..."),
+     ("Lifri", "coi do .i mi'e la lifri .i ma cmene do", "Hello! I'm Lifri. What's your name?"),
      ("Mentu", "fi'i", "Welcome!")]))
 
 assert len(L) == 30, len(L)

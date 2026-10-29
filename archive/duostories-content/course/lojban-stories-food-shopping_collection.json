@@ -10,7 +10,7 @@
       "position": 0,
       "collection_note": "batch2-01",
       "free_content_front": "Story 1: lo gusta — The Restaurant",
-      "free_content_back": "#### Before you read\nCharacters: Waitress, Alina\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Selfus, Alinas\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 0,
       "position_in_level": 0,
       "direction": "just_information"
@@ -23,7 +23,11 @@
       "free_content_back": "Ah... Well... Do you like soups?",
       "level_index": 0,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 3,
@@ -33,7 +37,11 @@
       "free_content_back": "Do you have sandwiches?",
       "level_index": 0,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 4,
@@ -43,7 +51,11 @@
       "free_content_back": "We have potato sandwiches!",
       "level_index": 0,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 5,
@@ -53,7 +65,11 @@
       "free_content_back": "No!",
       "level_index": 0,
       "position_in_level": 4,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 6,
@@ -63,24 +79,53 @@
       "free_content_back": "What kind of restaurant is this?!",
       "level_index": 0,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'gusta' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 7,
       "position": 6,
       "collection_note": "batch2-01",
-      "free_content_front": "# lo gusta\n> .i la .alinas. cu zvati lo cnino gusta\n~ Alina is in a new restaurant.\nWaitress(F): coi .i do djica lo nu cpedu ma\n~ Hello! What would you like to order?\nAlina(F): .i .e'o mi djica lo nu do bevri lo kabri be lo djacu be'o .e lo salta\n~ I'd like a glass of water and a salad, please.\nWaitress(F): .i'e .i lo kabri be lo djacu be'o .e lo patlu salta\n~ OK! A glass of water and a potato salad.\nAlina(F): na go'i .i mi na djica lo nu citka lo patlu salta\n~ No, I don't want potato salad.\nWaitress(F): .a'u .i xu do nelci lo stasu\n~ Ah... Well... Do you like soups?\nAlina(F): go'i .i mi mutce nelci lo stasu .i xu do ponse lo tamcystasu\n~ Yes! I love soups! Do you have tomato soup?\nWaitress(F): na go'i .i ku'i mi'a ponse lo patlu stasu\n~ No, but we have potato soup.\nAlina(F): .i xu do ponse lo djasnuji\n~ Do you have sandwiches?\nWaitress(F): .i mi'a ponse lo patlu djasnuji\n~ We have potato sandwiches!\nAlina(F): .i xu do ponse da poi na se pagbu lo patlu\n~ Do you have anything without potatoes?\nWaitress(F): na go'i\n~ No!\nAlina(F): .i ti mo gusta .ui nai\n~ What kind of restaurant is this?!\nWaitress(F): .i lo gusta cu se cmene lu lo patlu li'u\n~ The restaurant is called \"The Potato\".\n---\n? fill: Waitress(F): .i'e .i lo kabri be lo djacu be'o .e lo [patlu] salta\n? choice: .i la .alinas. cu nelci lo stasu xu\n- noroi citka\n+ nelci\n- xebni\n? choice: .i ma fasnu\n- la .alinas. cu citka ro lo patlu cidja\n+ la .alinas. cu klama lo gusta poi sabji lo patlu cidja po'o\n- lo bevri cu gasnu lo nu la .alinas. cu cliva lo gusta",
-      "free_content_back": "The Restaurant.\nAlina is in a new restaurant.\nWaitress: Hello! What would you like to order?\nAlina: I'd like a glass of water and a salad, please.\nWaitress: OK! A glass of water and a potato salad.\nAlina: No, I don't want potato salad.\nWaitress: Ah... Well... Do you like soups?\nAlina: Yes! I love soups! Do you have tomato soup?\nWaitress: No, but we have potato soup.\nAlina: Do you have sandwiches?\nWaitress: We have potato sandwiches!\nAlina: Do you have anything without potatoes?\nWaitress: No!\nAlina: What kind of restaurant is this?!\nWaitress: The restaurant is called \"The Potato\".",
+      "free_content_front": "# lo gusta\n> .i la .alinas. cu zvati lo cnino gusta\n~ Alina is in a new restaurant.\nSelfus(F): coi .i do djica lo nu cpedu ma\n~ Hello! What would you like to order?\nAlinas(F): .i .e'o mi djica lo nu do bevri lo kabri be lo djacu be'o .e lo salta\n~ I'd like a glass of water and a salad, please.\nSelfus(F): .i'e .i lo kabri be lo djacu be'o .e lo patlu salta\n~ OK! A glass of water and a potato salad.\nAlinas(F): na go'i .i mi na djica lo nu citka lo patlu salta\n~ No, I don't want potato salad.\nSelfus(F): .a'u .i xu do nelci lo stasu\n~ Ah... Well... Do you like soups?\nAlinas(F): go'i .i mi mutce nelci lo stasu .i xu do ponse lo tamcystasu\n~ Yes! I love soups! Do you have tomato soup?\nSelfus(F): na go'i .i ku'i mi'a ponse lo patlu stasu\n~ No, but we have potato soup.\nAlinas(F): .i xu do ponse lo djasnuji\n~ Do you have sandwiches?\nSelfus(F): .i mi'a ponse lo patlu djasnuji\n~ We have potato sandwiches!\nAlinas(F): .i xu do ponse da poi na se pagbu lo patlu\n~ Do you have anything without potatoes?\nSelfus(F): na go'i\n~ No!\nAlinas(F): .i ti mo gusta .ui nai\n~ What kind of restaurant is this?!\nSelfus(F): .i lo gusta cu se cmene lu lo patlu li'u\n~ The restaurant is called \"The Potato\".\n---\n? fill: Selfus(F): .i'e .i lo kabri be lo djacu be'o .e lo [patlu] salta\n? choice: .i la .alinas. cu nelci lo stasu xu\n- noroi citka\n+ nelci\n- xebni\n? choice: .i ma fasnu\n- la .alinas. cu citka ro lo patlu cidja\n+ la .alinas. cu klama lo gusta poi sabji lo patlu cidja po'o\n- lo bevri cu gasnu lo nu la .alinas. cu cliva lo gusta",
+      "free_content_back": "The Restaurant.\nAlina is in a new restaurant.\nSelfus: Hello! What would you like to order?\nAlinas: I'd like a glass of water and a salad, please.\nSelfus: OK! A glass of water and a potato salad.\nAlinas: No, I don't want potato salad.\nSelfus: Ah... Well... Do you like soups?\nAlinas: Yes! I love soups! Do you have tomato soup?\nSelfus: No, but we have potato soup.\nAlinas: Do you have sandwiches?\nSelfus: We have potato sandwiches!\nAlinas: Do you have anything without potatoes?\nSelfus: No!\nAlinas: What kind of restaurant is this?!\nSelfus: The restaurant is called \"The Potato\".",
       "level_index": 0,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": "coi .i do djica lo nu cpedu ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'cpedu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 12",
+            "jbo": ".i ti mo gusta .ui nai",
+            "kind": "parser_limitation",
+            "message": "x1 of 'gusta' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 8,
       "position": 7,
       "collection_note": "batch2-05",
       "free_content_front": "Story 2: lo crino taxfu — The Green Dress",
-      "free_content_back": "#### Before you read\nCharacters: Maria, Anna\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Marias, Anas\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 1,
       "position_in_level": 0,
       "direction": "just_information"
@@ -93,7 +138,11 @@
       "free_content_back": "Maria? Where are you?",
       "level_index": 1,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 10,
@@ -103,7 +152,17 @@
       "free_content_back": "I'm in the bathroom, Anna!",
       "level_index": 1,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo lumku'a (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 11,
@@ -113,7 +172,17 @@
       "free_content_back": "I need my dress!",
       "level_index": 1,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 12,
@@ -123,7 +192,11 @@
       "free_content_back": "Your red dress?",
       "level_index": 1,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 13,
@@ -133,17 +206,89 @@
       "free_content_back": "No, my green dress!",
       "level_index": 1,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 14,
       "position": 13,
       "collection_note": "batch2-05",
-      "free_content_front": "# lo crino taxfu\nAnna(F): doi .marias. .i do zvati ma\n~ Maria? Where are you?\nMaria(F): .i mi zvati lo lumku'a doi .anas.\n~ I'm in the bathroom, Anna!\nAnna(F): .i mi nitcu tu'a lo mi taxfu\n~ I need my dress!\nMaria(F): .i xu lo do xunre taxfu\n~ Your red dress?\nAnna(F): na go'i .i lo mi crino taxfu\n~ No, my green dress!\nAnna(F): .i mi klama lo bartu kansa la .djovanis.\n~ I'm going out with Giovanni.\nMaria(F): .i lo xunre taxfu cu melbi\n~ The red dress is pretty.\nAnna(F): .i mi djica tu'a lo crino taxfu\n~ I want the green dress!\nMaria(F): .i xu do djica tu'a lo mi blanu taxfu\n~ Do you want my blue dress?\nAnna(F): .i ku'i ri traji lo ka se nelci do\n~ But it's your favourite dress!\nMaria(F): .i do ji'a traji lo ka mi nelci kei fo lo mi mensi\n~ And you're my favourite sister!\nAnna(F): ki'e doi .marias.\n~ Thanks, Maria!\n> .i la .marias. cu cliva lo lumku'a\n~ Maria comes out of the bathroom.\nMaria(F): .i mapti .i lo blanu taxfu cu ka'e se dasni do .i lo crino cu se dasni mi\n~ Perfect! The blue dress for you and the green one for me!\nAnna(F): doi .marias. .i do dasni lo mi crino taxfu\n~ Maria! You have my green dress!\nMaria(F): .i go'i .i ji'a mi traji lo ka se nelci do kei fo lo do mensi\n~ Yes! And I'm your favourite sister!\n---\n? fill: Anna(F): na go'i .i lo mi [crino] taxfu\n? choice: .i xu la .anas. cu klama lo bartu kansa la .djovanis.\n+ go'i\n- na go'i\n? choice: .i ki'u ma la .anas. cu fengu\n- la .marias. na cliva lo lumku'a\n+ la .marias. cu dasni lo taxfu poi la .anas. cu djica tu'a ke'a\n- la .marias. cu tavla lo pendo be ri",
-      "free_content_back": "The Green Dress.\nAnna: Maria? Where are you?\nMaria: I'm in the bathroom, Anna!\nAnna: I need my dress!\nMaria: Your red dress?\nAnna: No, my green dress!\nAnna: I'm going out with Giovanni.\nMaria: The red dress is pretty.\nAnna: I want the green dress!\nMaria: Do you want my blue dress?\nAnna: But it's your favourite dress!\nMaria: And you're my favourite sister!\nAnna: Thanks, Maria!\nMaria comes out of the bathroom.\nMaria: Perfect! The blue dress for you and the green one for me!\nAnna: Maria! You have my green dress!\nMaria: Yes! And I'm your favourite sister!",
+      "free_content_front": "# lo crino taxfu\nAnas(F): doi .marias. .i do zvati ma\n~ Maria? Where are you?\nMarias(F): .i mi zvati lo lumku'a doi .anas.\n~ I'm in the bathroom, Anna!\nAnas(F): .i mi nitcu tu'a lo mi taxfu\n~ I need my dress!\nMarias(F): .i xu lo do xunre taxfu\n~ Your red dress?\nAnas(F): na go'i .i lo mi crino taxfu\n~ No, my green dress!\nAnas(F): .i mi klama lo bartu kansa la .djovanis.\n~ I'm going out with Giovanni.\nMarias(F): .i lo xunre taxfu cu melbi\n~ The red dress is pretty.\nAnas(F): .i mi djica tu'a lo crino taxfu\n~ I want the green dress!\nMarias(F): .i xu do djica tu'a lo mi blanu taxfu\n~ Do you want my blue dress?\nAnas(F): .i ku'i ri traji lo ka se nelci do\n~ But it's your favourite dress!\nMarias(F): .i do ji'a traji lo ka mi nelci kei fo lo mi mensi\n~ And you're my favourite sister!\nAnas(F): ki'e doi .marias.\n~ Thanks, Maria!\n> .i la .marias. cu cliva lo lumku'a\n~ Maria comes out of the bathroom.\nMarias(F): .i mapti .i lo blanu taxfu cu ka'e se dasni do .i lo crino cu se dasni mi\n~ Perfect! The blue dress for you and the green one for me!\nAnas(F): doi .marias. .i do dasni lo mi crino taxfu\n~ Maria! You have my green dress!\nMarias(F): .i go'i .i ji'a mi traji lo ka se nelci do kei fo lo do mensi\n~ Yes! And I'm your favourite sister!\n---\n? fill: Anas(F): na go'i .i lo mi [crino] taxfu\n? choice: .i xu la .anas. cu klama lo bartu kansa la .djovanis.\n+ go'i\n- na go'i\n? choice: .i ki'u ma la .anas. cu fengu\n- la .marias. na cliva lo lumku'a\n+ la .marias. cu dasni lo taxfu poi la .anas. cu djica tu'a ke'a\n- la .marias. cu tavla lo pendo be ri",
+      "free_content_back": "The Green Dress.\nAnas: Maria? Where are you?\nMarias: I'm in the bathroom, Anna!\nAnas: I need my dress!\nMarias: Your red dress?\nAnas: No, my green dress!\nAnas: I'm going out with Giovanni.\nMarias: The red dress is pretty.\nAnas: I want the green dress!\nMarias: Do you want my blue dress?\nAnas: But it's your favourite dress!\nMarias: And you're my favourite sister!\nAnas: Thanks, Maria!\nMaria comes out of the bathroom.\nMarias: Perfect! The blue dress for you and the green one for me!\nAnas: Maria! You have my green dress!\nMarias: Yes! And I'm your favourite sister!",
       "level_index": 1,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": ".i mi zvati lo lumku'a doi .anas.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo lumku'a (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i mi nitcu tu'a lo mi taxfu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i mi djica tu'a lo crino taxfu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'djica' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i xu do djica tu'a lo mi blanu taxfu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'djica' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 9",
+            "jbo": ".i ku'i ri traji lo ka se nelci do",
+            "kind": "parser_limitation",
+            "message": "x1 of 'traji' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 10",
+            "jbo": ".i do ji'a traji lo ka mi nelci kei fo lo mi mensi",
+            "kind": "parser_limitation",
+            "message": "x4 of 'traji' expects Set<W>, but got lo srana (Entity)",
+            "note": "parser limitation (srana): `le ti X` / `lo mi X` is typed as srana(ti) (Entity) by the checker, losing the type of X"
+          },
+          {
+            "where": "line 15",
+            "jbo": ".i go'i .i ji'a mi traji lo ka se nelci do kei fo lo do mensi",
+            "kind": "parser_limitation",
+            "message": "x4 of 'traji' expects Set<W>, but got lo srana (Entity)",
+            "note": "parser limitation (srana): `le ti X` / `lo mi X` is typed as srana(ti) (Entity) by the checker, losing the type of X"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i ki'u ma la .anas. cu fengu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'krinu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 1",
+            "jbo": "la .marias. cu dasni lo taxfu poi la .anas. cu djica tu'a ke'a",
+            "kind": "parser_limitation",
+            "message": "x2 of 'djica' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 15,
@@ -163,7 +308,11 @@
       "free_content_back": "Do you need help?",
       "level_index": 2,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 17,
@@ -173,7 +322,11 @@
       "free_content_back": "What do you need?",
       "level_index": 2,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 18,
@@ -183,7 +336,11 @@
       "free_content_back": "We have shirts, jackets...",
       "level_index": 2,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 19,
@@ -193,7 +350,17 @@
       "free_content_back": "I need a new jacket.",
       "level_index": 2,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 20,
@@ -203,7 +370,17 @@
       "free_content_back": "I like this jacket!",
       "level_index": 2,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 21,
@@ -213,14 +390,145 @@
       "free_content_back": "The Store.\nClerk: Good morning!\nCustomer: Hi!\nClerk: Do you need help?\nCustomer: Yes, please! I need new clothes.\nClerk: What do you need?\nClerk: We have shirts, jackets...\nCustomer: I need a new jacket.\nCustomer: I like this jacket!\nClerk: Yes, it's very nice.\nCustomer: And I need a new shirt.\nClerk: Perfect! Why do you need new clothes?\nCustomer: For a job interview.\nClerk: Where's the interview?\nCustomer: In my favourite store!\nClerk: Your favourite store?\nCustomer: Yes, this store!",
       "level_index": 2,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": "go'i .e'o .i mi nitcu tu'a lo cnino taxfu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i mi nitcu tu'a lo cnino kosta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i mi nelci le ti kosta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 8",
+            "jbo": "go'i .i ri mutce melbi",
+            "kind": "parser_limitation",
+            "message": "x1 of 'melbi' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 9",
+            "jbo": ".i mi ji'a nitcu tu'a lo cnino creka",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 10",
+            "jbo": ".i mapti .i do nitcu tu'a lo cnino taxfu ki'u ma",
+            "kind": "parser_limitation",
+            "message": "x1 of 'krinu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 10",
+            "jbo": ".i mapti .i do nitcu tu'a lo cnino taxfu ki'u ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i mu'i lo nu mi ba cpedu lo nu gunka",
+            "kind": "parser_limitation",
+            "message": "x2 of 'cpedu' expects Set<V>, but got lo nu (Abstraction: (Event))",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 12",
+            "jbo": ".i ri fasnu vi ma",
+            "kind": "parser_limitation",
+            "message": "x1 of 'fasnu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 15",
+            "jbo": "go'i .i le ti zarci",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i ki'u ma lo nanmu cu nitcu tu'a lo cnino taxfu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'krinu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i ki'u ma lo nanmu cu nitcu tu'a lo cnino taxfu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 0",
+            "jbo": "ri pu cirko lo slabu taxfu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cirko' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 0",
+            "jbo": "ri pu cirko lo slabu taxfu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'cirko' expects Set<T>, but got lo taxfu (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q1 answer 1",
+            "jbo": "ri penmi lo prami",
+            "kind": "parser_limitation",
+            "message": "x1 of 'penmi' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 2",
+            "jbo": "ri cpedu lo nu gunka",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cpedu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 2",
+            "jbo": "ri cpedu lo nu gunka",
+            "kind": "parser_limitation",
+            "message": "x2 of 'cpedu' expects Set<V>, but got lo nu (Abstraction: (Event))",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q2 answer 2",
+            "jbo": "lo zarci poi ri ca'o te vecnu vi ke'a",
+            "kind": "parser_limitation",
+            "message": "x1 of 'vecnu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 22,
       "position": 21,
       "collection_note": "batch2-07",
       "free_content_front": "Story 4: lo birje .e'o — A Beer, Please!",
-      "free_content_back": "#### Before you read\nCharacters: Emilia, Waiter\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Emilias, Selfus\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 3,
       "position_in_level": 0,
       "direction": "just_information"
@@ -233,7 +541,11 @@
       "free_content_back": "Hello, can I help?",
       "level_index": 3,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 24,
@@ -243,7 +555,11 @@
       "free_content_back": "A glass of... milk!",
       "level_index": 3,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 25,
@@ -253,24 +569,96 @@
       "free_content_back": "OK, thanks.",
       "level_index": 3,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 26,
       "position": 25,
       "collection_note": "batch2-07",
-      "free_content_front": "# lo birje .e'o\n> .i la .emilias. cu zvati lo gusta\n~ Emilia is in a restaurant.\nWaiter(M): coi .i xu mi ka'e sidju\n~ Hello, can I help?\nEmilia(F): coi .i .e'o mi djica lo nu pinxe lo birje\n~ Good evening. I'd like a beer, please.\nWaiter(M): .i do nanca li xo\n~ How old are you?\nEmilia(F): .i mi nanca li cimu\n~ I'm thirty-five.\nWaiter(M): .i xu mi ka'e viska lo do se cmene karda .i xu do ponse lo do jaspu\n~ Hmm. Can I see your ID? Do you have your passport?\nEmilia(F): go'i\n~ Yes.\nEmilia(F): .oi .i lo mi jaspu cu zvati lo xotli\n~ Oh no! My passport is at the hotel.\nEmilia(F): .i ku'i mi se cmene zoi gy. Emilia Rossi gy. .i mi nanca li cimu\n~ But my name is Emilia Rossi and I'm thirty-five!\nEmilia(F): .i mi ponse lo mi jdini karda .e lo mi fonxa\n~ I have my credit card and my phone.\nWaiter(M): .u'u\n~ I'm sorry.\nEmilia(F): .i ku'i mi makcu .i mi se jibri gi'e rirni re verba\n~ But I'm an adult! I have a job and two kids!\nWaiter(M): .u'u .i mi nitcu lo nu viska lo do se cmene karda\n~ Sorry, I need your ID.\nEmilia(F): .i do ka'e bevri ma poi se pinxe ku'o mi ca lo nu mi claxu lo karda\n~ What drink can you bring me without ID?\nWaiter(M): .i lo kabri be lo ladru\n~ A glass of... milk!\nEmilia(F): .i'e ki'e\n~ OK, thanks.\n---\n? fill: Emilia(F): coi .i .e'o mi djica lo nu pinxe lo [birje]\n? choice: .i la .emilias. cu nanca li xo\n- li remu\n+ li cimu\n- li pabi\n? choice: .i la .emilias. ka'e pinxe ma po'o ca lo nu ri claxu lo karda\n- lo birje\n+ lo kabri be lo ladru\n- lo kabri be lo vanju",
-      "free_content_back": "A Beer, Please!.\nEmilia is in a restaurant.\nWaiter: Hello, can I help?\nEmilia: Good evening. I'd like a beer, please.\nWaiter: How old are you?\nEmilia: I'm thirty-five.\nWaiter: Hmm. Can I see your ID? Do you have your passport?\nEmilia: Yes.\nEmilia: Oh no! My passport is at the hotel.\nEmilia: But my name is Emilia Rossi and I'm thirty-five!\nEmilia: I have my credit card and my phone.\nWaiter: I'm sorry.\nEmilia: But I'm an adult! I have a job and two kids!\nWaiter: Sorry, I need your ID.\nEmilia: What drink can you bring me without ID?\nWaiter: A glass of... milk!\nEmilia: OK, thanks.",
+      "free_content_front": "# lo birje .e'o\n> .i la .emilias. cu zvati lo gusta\n~ Emilia is in a restaurant.\nSelfus(M): coi .i xu mi ka'e sidju\n~ Hello, can I help?\nEmilias(F): coi .i .e'o mi djica lo nu pinxe lo birje\n~ Good evening. I'd like a beer, please.\nSelfus(M): .i do nanca li xo\n~ How old are you?\nEmilias(F): .i mi nanca li cimu\n~ I'm thirty-five.\nSelfus(M): .i xu mi ka'e viska lo do se cmene karda .i xu do ponse lo do jaspu\n~ Hmm. Can I see your ID? Do you have your passport?\nEmilias(F): go'i\n~ Yes.\nEmilias(F): .oi .i lo mi jaspu cu zvati lo xotli\n~ Oh no! My passport is at the hotel.\nEmilias(F): .i ku'i mi se cmene zoi gy. Emilia Rossi gy. .i mi nanca li cimu\n~ But my name is Emilia Rossi and I'm thirty-five!\nEmilias(F): .i mi ponse lo mi jdini karda .e lo mi fonxa\n~ I have my credit card and my phone.\nSelfus(M): .u'u\n~ I'm sorry.\nEmilias(F): .i ku'i mi makcu .i mi se jibri gi'e rirni re verba\n~ But I'm an adult! I have a job and two kids!\nSelfus(M): .u'u .i mi nitcu lo nu viska lo do se cmene karda\n~ Sorry, I need your ID.\nEmilias(F): .i do ka'e bevri ma poi se pinxe ku'o mi ca lo nu mi claxu lo karda\n~ What drink can you bring me without ID?\nSelfus(M): .i lo kabri be lo ladru\n~ A glass of... milk!\nEmilias(F): .i'e ki'e\n~ OK, thanks.\n---\n? fill: Emilias(F): coi .i .e'o mi djica lo nu pinxe lo [birje]\n? choice: .i la .emilias. cu nanca li xo\n- li remu\n+ li cimu\n- li pabi\n? choice: .i la .emilias. ka'e pinxe ma po'o ca lo nu ri claxu lo karda\n- lo birje\n+ lo kabri be lo ladru\n- lo kabri be lo vanju",
+      "free_content_back": "A Beer, Please!.\nEmilia is in a restaurant.\nSelfus: Hello, can I help?\nEmilias: Good evening. I'd like a beer, please.\nSelfus: How old are you?\nEmilias: I'm thirty-five.\nSelfus: Hmm. Can I see your ID? Do you have your passport?\nEmilias: Yes.\nEmilias: Oh no! My passport is at the hotel.\nEmilias: But my name is Emilia Rossi and I'm thirty-five!\nEmilias: I have my credit card and my phone.\nSelfus: I'm sorry.\nEmilias: But I'm an adult! I have a job and two kids!\nSelfus: Sorry, I need your ID.\nEmilias: What drink can you bring me without ID?\nSelfus: A glass of... milk!\nEmilias: OK, thanks.",
       "level_index": 3,
       "position_in_level": 4,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": ".i do nanca li xo",
+            "kind": "type",
+            "message": "x1 of 'nanca' expects TimeInterval, but got do",
+            "note": "doubtful: kept on the doubtful list with this diagnostic"
+          },
+          {
+            "where": "line 3",
+            "jbo": ".i do nanca li xo",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nanca' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i mi nanca li cimu",
+            "kind": "type",
+            "message": "x1 of 'nanca' expects TimeInterval, but got mi",
+            "note": "doubtful: kept on the doubtful list with this diagnostic"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i ku'i mi se cmene zoi gy. Emilia Rossi gy. .i mi nanca li cimu",
+            "kind": "type",
+            "message": "x1 of 'nanca' expects TimeInterval, but got mi",
+            "note": "doubtful: kept on the doubtful list with this diagnostic"
+          },
+          {
+            "where": "line 13",
+            "jbo": ".i do ka'e bevri ma poi se pinxe ku'o mi ca lo nu mi claxu lo karda",
+            "kind": "parser_limitation",
+            "message": "x2 of 'claxu' expects Set<T>, but got lo karda ((Entity & Entity))",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i la .emilias. cu nanca li xo",
+            "kind": "type",
+            "message": "x1 of 'nanca' expects TimeInterval, but got la emilias",
+            "note": "doubtful: kept on the doubtful list with this diagnostic"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i la .emilias. cu nanca li xo",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nanca' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i la .emilias. ka'e pinxe ma po'o ca lo nu ri claxu lo karda",
+            "kind": "parser_limitation",
+            "message": "x2 of 'pinxe' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i la .emilias. ka'e pinxe ma po'o ca lo nu ri claxu lo karda",
+            "kind": "parser_limitation",
+            "message": "x2 of 'claxu' expects Set<T>, but got lo karda ((Entity & Entity))",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 27,
       "position": 26,
       "collection_note": "batch2-13",
       "free_content_front": "Story 5: lo mi se nelci donri sanmi — My Favourite Lunch",
-      "free_content_back": "#### Before you read\nCharacters: Renata, Adriano\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Renatas, Adriano\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 4,
       "position_in_level": 0,
       "direction": "just_information"
@@ -283,7 +671,11 @@
       "free_content_back": "The hamburgers here are very good!",
       "level_index": 4,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 29,
@@ -293,7 +685,17 @@
       "free_content_back": "What do you want to eat?",
       "level_index": 4,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'citka' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 30,
@@ -303,7 +705,22 @@
       "free_content_back": "And what do you eat every day?",
       "level_index": 4,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'citka' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 31,
@@ -313,7 +730,11 @@
       "free_content_back": "Hmm... just bread?",
       "level_index": 4,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 32,
@@ -323,24 +744,117 @@
       "free_content_back": "Adriano...",
       "level_index": 4,
       "position_in_level": 5,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 33,
       "position": 32,
       "collection_note": "batch2-13",
-      "free_content_front": "# lo mi se nelci donri sanmi\n> .i la .adrianos. .e la .renatas. cu zvati lo gusta\n~ Adriano and Renata are in a restaurant.\nRenata(F): .i mi roroi citka lo donri sanmi vi lo mi jubme\n~ I always eat lunch at my desk...\nRenata(F): .i ku'i le ti cuxste cu vasru so'i xamgu\n~ ...but there are so many good things on this menu!\nAdriano(M): go'i .i mi roroi citka lo donri sanmi vi ti\n~ Yes! I always have lunch here!\nRenata(F): .i mi djica lo nu citka lo burgere .e lo ga'arpatlu\n~ Hmm... I want a hamburger with fries.\nAdriano(M): .i lo burgere vi ti cu mutce xamgu\n~ The hamburgers here are very good!\nRenata(F): .i do djica lo nu citka ma\n~ What do you want to eat?\nAdriano(M): .i lo donri sanmi poi mi citka ke'a ca ro lo djedi\n~ My everyday lunch.\nRenata(F): .i do citka ma ca ro djedi\n~ And what do you eat every day?\nAdriano(M): .i lo burgere poi claxu lo rectu .e lo ga'arpatlu\n~ A hamburger without meat and without fries...\nRenata(F): .i xu lo nanba po'o\n~ Hmm... just bread?\nAdriano(M): na go'i .i mi na nelci lo nanba\n~ No, I don't like bread!\nAdriano(M): .i ku'i mi nelci lo tamca .e lo stagi\n~ But I like tomatoes and vegetables.\nAdriano(M): .i lo donri sanmi poi mi traji nelci ke'a cu burgere\n~ My favourite lunch is a hamburger...\nAdriano(M): .i ri claxu lo rectu .e lo nanba .i ri vasru so'i stagi .e lo tamca\n~ ...without meat, without bread, and with lots of vegetables and tomatoes!\nRenata(F): doi .adrianos.\n~ Adriano...\nAdriano(M): .i mo\n~ Yes?\nRenata(F): .i ta salta\n~ That's a salad!\n---\n? fill: Renata(F): .i mi djica lo nu citka lo [burgere] .e lo ga'arpatlu\n? choice: .i xu la .renatas. cu so'iroi citka lo donri sanmi vi lo zdani\n- go'i\n+ na go'i\n? choice: .i lo donri sanmi poi la .adrianos. cu traji nelci ke'a cu mo\n+ salta\n- vasru so'i sakta\n- vasru lo rectu",
-      "free_content_back": "My Favourite Lunch.\nAdriano and Renata are in a restaurant.\nRenata: I always eat lunch at my desk...\nRenata: ...but there are so many good things on this menu!\nAdriano: Yes! I always have lunch here!\nRenata: Hmm... I want a hamburger with fries.\nAdriano: The hamburgers here are very good!\nRenata: What do you want to eat?\nAdriano: My everyday lunch.\nRenata: And what do you eat every day?\nAdriano: A hamburger without meat and without fries...\nRenata: Hmm... just bread?\nAdriano: No, I don't like bread!\nAdriano: But I like tomatoes and vegetables.\nAdriano: My favourite lunch is a hamburger...\nAdriano: ...without meat, without bread, and with lots of vegetables and tomatoes!\nRenata: Adriano...\nAdriano: Yes?\nRenata: That's a salad!",
+      "free_content_front": "# lo mi se nelci donri sanmi\n> .i la .adrianos. .e la .renatas. cu zvati lo gusta\n~ Adriano and Renata are in a restaurant.\nRenatas(F): .i mi roroi citka lo donri sanmi vi lo mi jubme\n~ I always eat lunch at my desk...\nRenatas(F): .i ku'i le ti cuxste cu vasru so'i xamgu\n~ ...but there are so many good things on this menu!\nAdriano(M): go'i .i mi roroi citka lo donri sanmi vi ti\n~ Yes! I always have lunch here!\nRenatas(F): .i mi djica lo nu citka lo burgere .e lo ga'arpatlu\n~ Hmm... I want a hamburger with fries.\nAdriano(M): .i lo burgere vi ti cu mutce xamgu\n~ The hamburgers here are very good!\nRenatas(F): .i do djica lo nu citka ma\n~ What do you want to eat?\nAdriano(M): .i lo donri sanmi poi mi citka ke'a ca ro lo djedi\n~ My everyday lunch.\nRenatas(F): .i do citka ma ca ro djedi\n~ And what do you eat every day?\nAdriano(M): .i lo burgere poi claxu lo rectu .e lo ga'arpatlu\n~ A hamburger without meat and without fries...\nRenatas(F): .i xu lo nanba po'o\n~ Hmm... just bread?\nAdriano(M): na go'i .i mi na nelci lo nanba\n~ No, I don't like bread!\nAdriano(M): .i ku'i mi nelci lo tamca .e lo stagi\n~ But I like tomatoes and vegetables.\nAdriano(M): .i lo donri sanmi poi mi traji nelci ke'a cu burgere\n~ My favourite lunch is a hamburger...\nAdriano(M): .i ri claxu lo rectu .e lo nanba .i ri vasru so'i stagi .e lo tamca\n~ ...without meat, without bread, and with lots of vegetables and tomatoes!\nRenatas(F): doi .adrianos.\n~ Adriano...\nAdriano(M): .i mo\n~ Yes?\nRenatas(F): .i ta salta\n~ That's a salad!\n---\n? fill: Renatas(F): .i mi djica lo nu citka lo [burgere] .e lo ga'arpatlu\n? choice: .i xu la .renatas. cu so'iroi citka lo donri sanmi vi lo zdani\n- go'i\n+ na go'i\n? choice: .i lo donri sanmi poi la .adrianos. cu traji nelci ke'a cu mo\n+ salta\n- vasru so'i sakta\n- vasru lo rectu",
+      "free_content_back": "My Favourite Lunch.\nAdriano and Renata are in a restaurant.\nRenatas: I always eat lunch at my desk...\nRenatas: ...but there are so many good things on this menu!\nAdriano: Yes! I always have lunch here!\nRenatas: Hmm... I want a hamburger with fries.\nAdriano: The hamburgers here are very good!\nRenatas: What do you want to eat?\nAdriano: My everyday lunch.\nRenatas: And what do you eat every day?\nAdriano: A hamburger without meat and without fries...\nRenatas: Hmm... just bread?\nAdriano: No, I don't like bread!\nAdriano: But I like tomatoes and vegetables.\nAdriano: My favourite lunch is a hamburger...\nAdriano: ...without meat, without bread, and with lots of vegetables and tomatoes!\nRenatas: Adriano...\nAdriano: Yes?\nRenatas: That's a salad!",
       "level_index": 4,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 2",
+            "jbo": ".i ku'i le ti cuxste cu vasru so'i xamgu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i do djica lo nu citka ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'citka' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i lo donri sanmi poi mi citka ke'a ca ro lo djedi",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i do citka ma ca ro djedi",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i do citka ma ca ro djedi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'citka' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 9",
+            "jbo": ".i lo burgere poi claxu lo rectu .e lo ga'arpatlu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'claxu' expects Set<T>, but got lo rectu (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 9",
+            "jbo": ".i lo burgere poi claxu lo rectu .e lo ga'arpatlu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'claxu' expects Set<T>, but got lo ga'arpatlu (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".i ri claxu lo rectu .e lo nanba .i ri vasru so'i stagi .e lo tamca",
+            "kind": "parser_limitation",
+            "message": "x1 of 'claxu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".i ri claxu lo rectu .e lo nanba .i ri vasru so'i stagi .e lo tamca",
+            "kind": "parser_limitation",
+            "message": "x2 of 'claxu' expects Set<T>, but got lo rectu (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".i ri claxu lo rectu .e lo nanba .i ri vasru so'i stagi .e lo tamca",
+            "kind": "parser_limitation",
+            "message": "x1 of 'claxu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".i ri claxu lo rectu .e lo nanba .i ri vasru so'i stagi .e lo tamca",
+            "kind": "parser_limitation",
+            "message": "x2 of 'claxu' expects Set<T>, but got lo nanba (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 17",
+            "jbo": ".i ta salta",
+            "kind": "parser_limitation",
+            "message": "x1 of 'salta' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 34,
       "position": 33,
       "collection_note": "batch2-21",
       "free_content_front": "Story 6: lo cerni sanmi — Breakfast",
-      "free_content_back": "#### Before you read\nCharacters: Samanta, Marcello\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Samantas, Martcelos\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 5,
       "position_in_level": 0,
       "direction": "just_information"
@@ -353,7 +867,11 @@
       "free_content_back": "Samanta!",
       "level_index": 5,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 36,
@@ -363,7 +881,11 @@
       "free_content_back": "It's a surprise! Let's go to the kitchen!",
       "level_index": 5,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 37,
@@ -373,7 +895,11 @@
       "free_content_back": "OK, let's go!",
       "level_index": 5,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 38,
@@ -383,7 +909,17 @@
       "free_content_back": "Oh, Marcello. How sweet!",
       "level_index": 5,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'xendo' expects T, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 39,
@@ -393,24 +929,117 @@
       "free_content_back": "Thanks a lot.",
       "level_index": 5,
       "position_in_level": 5,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 40,
       "position": 39,
       "collection_note": "batch2-21",
-      "free_content_front": "# lo cerni sanmi\nMarcello(M): doi .samantas.\n~ Samanta!\nSamanta(F): .i mo doi .martcelos. .i mi ba te cipra ca lo cabdei .i lo cipra cu vajni\n~ What is it, Marcello? I have an exam today! An important one!\nSamanta(F): .i ti'u li xa .i ki'u ma do na sipna\n~ It's six in the morning! Why are you awake?\nMarcello(M): .i spaji .i .e'u mi'o klama lo jupku'a\n~ It's a surprise! Let's go to the kitchen!\nSamanta(F): .i'e .i .e'u klama\n~ OK, let's go!\nSamanta(F): doi .martcelos. .i xu do jukpa le ti cerni sanmi va'u mi\n~ Marcello... is this breakfast for me?\nMarcello(M): .i spaji\n~ Surprise!\nMarcello(M): .i mi djuno lo du'u do ba te cipra ca lo cabdei\n~ I know you have an exam today...\nMarcello(M): .i do nitcu lo nu citka lo xamgu cerni sanmi poi vasru lo gurni .e lo ladru .e lo nanba .e lo jisra\n~ ...and you need a good breakfast with cereal, milk, bread and juice!\nSamanta(F): .ua doi .martcelos. .i do xendo\n~ Oh, Marcello. How sweet!\nSamanta(F): .i ki'e sai\n~ Thanks a lot.\nSamanta(F): .i ku'i mi na ka'e citka ca lo cabna .i .ei mi cliva\n~ But I can't eat now! I have to go!\nSamanta(F): .i mi djica lo nu pinxe lo ckafi po'o\n~ I just want some coffee.\nMarcello(M): .u'u\n~ Ah... sorry.\nSamanta(F): .i ma\n~ What?!\nMarcello(M): .i no ckafi cu stali .i ku'i mi ka'e zbasu lo ckafi\n~ There's no more coffee, but I can make some!\nSamanta(F): doi .martcelos. .i mi nitcu tu'a lo mi ckafi\n~ Marcello! I need my coffee!\nMarcello(M): .i ca lo mutce cerni\n~ Well, it's very early for me...\nMarcello(M): .i mi ji'a nitcu tu'a lo ckafi\n~ ...I need coffee too!\n---\n? fill: Marcello(M): .i do nitcu lo nu citka lo xamgu cerni sanmi poi vasru lo gurni .e lo [ladru] .e lo nanba .e lo jisra\n? choice: .i lo spaji poi la .martcelos. cu gasnu ke'a cu mo\n+ lo nu ri jukpa lo cerni sanmi va'u la .samantas.\n- lo nu ri djuno lo du'u ma kau danfu lo cipra\n- lo nu ri cnino zbasu lo jupku'a\n? choice: .i la .martcelos. pu mutce cerni cikna .i se ki'u bo ri mo\n- tadni\n- sipna vi lo jupku'a\n+ pinxe ro lo ckafi",
-      "free_content_back": "Breakfast.\nMarcello: Samanta!\nSamanta: What is it, Marcello? I have an exam today! An important one!\nSamanta: It's six in the morning! Why are you awake?\nMarcello: It's a surprise! Let's go to the kitchen!\nSamanta: OK, let's go!\nSamanta: Marcello... is this breakfast for me?\nMarcello: Surprise!\nMarcello: I know you have an exam today...\nMarcello: ...and you need a good breakfast with cereal, milk, bread and juice!\nSamanta: Oh, Marcello. How sweet!\nSamanta: Thanks a lot.\nSamanta: But I can't eat now! I have to go!\nSamanta: I just want some coffee.\nMarcello: Ah... sorry.\nSamanta: What?!\nMarcello: There's no more coffee, but I can make some!\nSamanta: Marcello! I need my coffee!\nMarcello: Well, it's very early for me...\nMarcello: ...I need coffee too!",
+      "free_content_front": "# lo cerni sanmi\nMartcelos(M): doi .samantas.\n~ Samanta!\nSamantas(F): .i mo doi .martcelos. .i mi ba te cipra ca lo cabdei .i lo cipra cu vajni\n~ What is it, Marcello? I have an exam today! An important one!\nSamantas(F): .i ti'u li xa .i ki'u ma do na sipna\n~ It's six in the morning! Why are you awake?\nMartcelos(M): .i spaji .i .e'u mi'o klama lo jupku'a\n~ It's a surprise! Let's go to the kitchen!\nSamantas(F): .i'e .i .e'u klama\n~ OK, let's go!\nSamantas(F): doi .martcelos. .i xu do jukpa le ti cerni sanmi va'u mi\n~ Marcello... is this breakfast for me?\nMartcelos(M): .i spaji\n~ Surprise!\nMartcelos(M): .i mi djuno lo du'u do ba te cipra ca lo cabdei\n~ I know you have an exam today...\nMartcelos(M): .i do nitcu lo nu citka lo xamgu cerni sanmi poi vasru lo gurni .e lo ladru .e lo nanba .e lo jisra\n~ ...and you need a good breakfast with cereal, milk, bread and juice!\nSamantas(F): .ua doi .martcelos. .i do xendo\n~ Oh, Marcello. How sweet!\nSamantas(F): .i ki'e sai\n~ Thanks a lot.\nSamantas(F): .i ku'i mi na ka'e citka ca lo cabna .i .ei mi cliva\n~ But I can't eat now! I have to go!\nSamantas(F): .i mi djica lo nu pinxe lo ckafi po'o\n~ I just want some coffee.\nMartcelos(M): .u'u\n~ Ah... sorry.\nSamantas(F): .i ma\n~ What?!\nMartcelos(M): .i no ckafi cu stali .i ku'i mi ka'e zbasu lo ckafi\n~ There's no more coffee, but I can make some!\nSamantas(F): doi .martcelos. .i mi nitcu tu'a lo mi ckafi\n~ Marcello! I need my coffee!\nMartcelos(M): .i ca lo mutce cerni\n~ Well, it's very early for me...\nMartcelos(M): .i mi ji'a nitcu tu'a lo ckafi\n~ ...I need coffee too!\n---\n? fill: Martcelos(M): .i do nitcu lo nu citka lo xamgu cerni sanmi poi vasru lo gurni .e lo [ladru] .e lo nanba .e lo jisra\n? choice: .i lo spaji poi la .martcelos. cu gasnu ke'a cu mo\n+ lo nu ri jukpa lo cerni sanmi va'u la .samantas.\n- lo nu ri djuno lo du'u ma kau danfu lo cipra\n- lo nu ri cnino zbasu lo jupku'a\n? choice: .i la .martcelos. pu mutce cerni cikna .i se ki'u bo ri mo\n- tadni\n- sipna vi lo jupku'a\n+ pinxe ro lo ckafi",
+      "free_content_back": "Breakfast.\nMartcelos: Samanta!\nSamantas: What is it, Marcello? I have an exam today! An important one!\nSamantas: It's six in the morning! Why are you awake?\nMartcelos: It's a surprise! Let's go to the kitchen!\nSamantas: OK, let's go!\nSamantas: Marcello... is this breakfast for me?\nMartcelos: Surprise!\nMartcelos: I know you have an exam today...\nMartcelos: ...and you need a good breakfast with cereal, milk, bread and juice!\nSamantas: Oh, Marcello. How sweet!\nSamantas: Thanks a lot.\nSamantas: But I can't eat now! I have to go!\nSamantas: I just want some coffee.\nMartcelos: Ah... sorry.\nSamantas: What?!\nMartcelos: There's no more coffee, but I can make some!\nSamantas: Marcello! I need my coffee!\nMartcelos: Well, it's very early for me...\nMartcelos: ...I need coffee too!",
       "level_index": 5,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": ".i mo doi .martcelos. .i mi ba te cipra ca lo cabdei .i lo cipra cu vajni",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cipra' expects Set<T>, but got mi",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i ti'u li xa .i ki'u ma do na sipna",
+            "kind": "parser_limitation",
+            "message": "x1 of 'tcika' expects Entity, but got a mathematical value",
+            "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i ti'u li xa .i ki'u ma do na sipna",
+            "kind": "parser_limitation",
+            "message": "x1 of 'krinu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 5",
+            "jbo": "doi .martcelos. .i xu do jukpa le ti cerni sanmi va'u mi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i mi djuno lo du'u do ba te cipra ca lo cabdei",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cipra' expects Set<T>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "where": "line 9",
+            "jbo": ".ua doi .martcelos. .i do xendo",
+            "kind": "parser_limitation",
+            "message": "x1 of 'xendo' expects T, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "where": "line 16",
+            "jbo": "doi .martcelos. .i mi nitcu tu'a lo mi ckafi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 18",
+            "jbo": ".i mi ji'a nitcu tu'a lo ckafi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 0",
+            "jbo": "lo nu ri jukpa lo cerni sanmi va'u la .samantas.",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jukpa' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 1",
+            "jbo": "lo nu ri djuno lo du'u ma kau danfu lo cipra",
+            "kind": "parser_limitation",
+            "message": "x1 of 'djuno' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 1",
+            "jbo": "lo nu ri djuno lo du'u ma kau danfu lo cipra",
+            "kind": "parser_limitation",
+            "message": "x2 of 'danfu' expects T, but got lo cipra (Event | Process)",
+            "note": "parser limitation (typevar): the place has a bare type variable (T extends Entity/Organism); the description's brivla is typed only Entity in formal-gismu although its referent is of the right sort (e.g. bersa -> Organism)"
+          },
+          {
+            "where": "q1 answer 2",
+            "jbo": "lo nu ri cnino zbasu lo jupku'a",
+            "kind": "parser_limitation",
+            "message": "x1 of 'zbasu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 41,
       "position": 40,
       "collection_note": "batch2-24",
       "free_content_front": "Story 7: lo xunre kosta — The Red Jacket",
-      "free_content_back": "#### Before you read\nCharacters: Lili, Zari\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Lilis, Zaris\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 6,
       "position_in_level": 0,
       "direction": "just_information"
@@ -423,7 +1052,22 @@
       "free_content_back": "This shop is very expensive.",
       "level_index": 6,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo srana (Entity)",
+            "note": "parser limitation (srana): `le ti X` / `lo mi X` is typed as srana(ti) (Entity) by the checker, losing the type of X"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 43,
@@ -433,7 +1077,17 @@
       "free_content_back": "This red jacket is perfect!",
       "level_index": 6,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 44,
@@ -443,7 +1097,11 @@
       "free_content_back": "Hmm, Zari...",
       "level_index": 6,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 45,
@@ -453,7 +1111,17 @@
       "free_content_back": "I love this colour!",
       "level_index": 6,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 46,
@@ -463,24 +1131,124 @@
       "free_content_back": "What!?",
       "level_index": 6,
       "position_in_level": 5,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 47,
       "position": 46,
       "collection_note": "batch2-24",
-      "free_content_front": "# lo xunre kosta\n> .i la .lilis. cu zvati lo taxfu zarci fi'o kansa lo ri pendo po'u la .zaris.\n~ Lili is in a clothes shop with her friend, Zari.\nLili(F): .i le ti zarci cu mutce kargu\n~ This shop is very expensive.\nZari(F): go'i\n~ Yes...\nZari(F): .ue\n~ Wow!\nZari(F): .i le ti xunre kosta cu mapti\n~ This red jacket is perfect!\nLili(F): doi .zaris.\n~ Hmm, Zari...\nZari(F): .i mi mutce nelci le ti skari\n~ I love this colour!\nLili(F): doi .zaris.\n~ Zari?\nZari(F): .i mi djica lo nu te vecnu le ti kosta\n~ I want to buy this jacket!\nLili(F): doi .zaris.\n~ Zari!\nZari(F): .i mo\n~ What?\nLili(F): .i lo kosta cu se jdima lo meryru'u be li munono\n~ The jacket costs five hundred dollars.\nZari(F): .i ma .ue\n~ What!?\nLili(F): doi .zaris. .i do na nitcu tu'a lo cnino kosta\n~ Zari, you don't need a new jacket.\nZari(F): .i ku'i doi .lilis. lo cabdei cu jbedetri mi\n~ But... Lili, today is my birthday...\nLili(F): .ue .i je'u xu\n~ Oh, really?\nZari(F): .i do mi traji pendo\n~ And you're my best friend!\nLili(F): go'i .i mo\n~ Yes... and?\nZari(F): .i lo mi mapti seldu'a cu mo\n~ And the perfect gift for me is...?\nLili(F): .i lo kosta poi tolkargu\n~ A cheap jacket!\n---\n? fill: Zari(F): .i le ti [xunre] kosta cu mapti\n? choice: .i lo kosta cu se jdima lo meryru'u be li xo\n- li mu\n+ li munono\n- li mu ki'o ki'o\n? choice: .i la .lilis. ba dunda ma la .zaris.\n- lo kargu xunre kosta\n- lo so'i jdini\n+ lo kosta poi tolkargu",
-      "free_content_back": "The Red Jacket.\nLili is in a clothes shop with her friend, Zari.\nLili: This shop is very expensive.\nZari: Yes...\nZari: Wow!\nZari: This red jacket is perfect!\nLili: Hmm, Zari...\nZari: I love this colour!\nLili: Zari?\nZari: I want to buy this jacket!\nLili: Zari!\nZari: What?\nLili: The jacket costs five hundred dollars.\nZari: What!?\nLili: Zari, you don't need a new jacket.\nZari: But... Lili, today is my birthday...\nLili: Oh, really?\nZari: And you're my best friend!\nLili: Yes... and?\nZari: And the perfect gift for me is...?\nLili: A cheap jacket!",
+      "free_content_front": "# lo xunre kosta\n> .i la .lilis. cu zvati lo taxfu zarci fi'o kansa lo ri pendo po'u la .zaris.\n~ Lili is in a clothes shop with her friend, Zari.\nLilis(F): .i le ti zarci cu mutce kargu\n~ This shop is very expensive.\nZaris(F): go'i\n~ Yes...\nZaris(F): .ue\n~ Wow!\nZaris(F): .i le ti xunre kosta cu mapti\n~ This red jacket is perfect!\nLilis(F): doi .zaris.\n~ Hmm, Zari...\nZaris(F): .i mi mutce nelci le ti skari\n~ I love this colour!\nLilis(F): doi .zaris.\n~ Zari?\nZaris(F): .i mi djica lo nu te vecnu le ti kosta\n~ I want to buy this jacket!\nLilis(F): doi .zaris.\n~ Zari!\nZaris(F): .i mo\n~ What?\nLilis(F): .i lo kosta cu se jdima lo meryru'u be li munono\n~ The jacket costs five hundred dollars.\nZaris(F): .i ma .ue\n~ What!?\nLilis(F): doi .zaris. .i do na nitcu tu'a lo cnino kosta\n~ Zari, you don't need a new jacket.\nZaris(F): .i ku'i doi .lilis. lo cabdei cu jbedetri mi\n~ But... Lili, today is my birthday...\nLilis(F): .ue .i je'u xu\n~ Oh, really?\nZaris(F): .i do mi traji pendo\n~ And you're my best friend!\nLilis(F): go'i .i mo\n~ Yes... and?\nZaris(F): .i lo mi mapti seldu'a cu mo\n~ And the perfect gift for me is...?\nLilis(F): .i lo kosta poi tolkargu\n~ A cheap jacket!\n---\n? fill: Zaris(F): .i le ti [xunre] kosta cu mapti\n? choice: .i lo kosta cu se jdima lo meryru'u be li xo\n- li mu\n+ li munono\n- li mu ki'o ki'o\n? choice: .i la .lilis. ba dunda ma la .zaris.\n- lo kargu xunre kosta\n- lo so'i jdini\n+ lo kosta poi tolkargu",
+      "free_content_back": "The Red Jacket.\nLili is in a clothes shop with her friend, Zari.\nLilis: This shop is very expensive.\nZaris: Yes...\nZaris: Wow!\nZaris: This red jacket is perfect!\nLilis: Hmm, Zari...\nZaris: I love this colour!\nLilis: Zari?\nZaris: I want to buy this jacket!\nLilis: Zari!\nZaris: What?\nLilis: The jacket costs five hundred dollars.\nZaris: What!?\nLilis: Zari, you don't need a new jacket.\nZaris: But... Lili, today is my birthday...\nLilis: Oh, really?\nZaris: And you're my best friend!\nLilis: Yes... and?\nZaris: And the perfect gift for me is...?\nLilis: A cheap jacket!",
       "level_index": 6,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": ".i le ti zarci cu mutce kargu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo srana (Entity)",
+            "note": "parser limitation (srana): `le ti X` / `lo mi X` is typed as srana(ti) (Entity) by the checker, losing the type of X"
+          },
+          {
+            "where": "line 1",
+            "jbo": ".i le ti zarci cu mutce kargu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i le ti xunre kosta cu mapti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i mi mutce nelci le ti skari",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i mi djica lo nu te vecnu le ti kosta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo srana (Entity)",
+            "note": "parser limitation (srana): `le ti X` / `lo mi X` is typed as srana(ti) (Entity) by the checker, losing the type of X"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i mi djica lo nu te vecnu le ti kosta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i lo kosta cu se jdima lo meryru'u be li munono",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jdima' expects Set<W>, but got lo kosta (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i lo kosta cu se jdima lo meryru'u be li munono",
+            "kind": "parser_limitation",
+            "message": "x2 of 'jdima' expects Set<T>, but got lo meryru'u (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 13",
+            "jbo": "doi .zaris. .i do na nitcu tu'a lo cnino kosta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i le ti xunre kosta cu mapti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i lo kosta cu se jdima lo meryru'u be li xo",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jdima' expects Set<W>, but got lo kosta (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i lo kosta cu se jdima lo meryru'u be li xo",
+            "kind": "parser_limitation",
+            "message": "x2 of 'jdima' expects Set<T>, but got lo meryru'u (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i la .lilis. ba dunda ma la .zaris.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'dunda' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 48,
       "position": 47,
       "collection_note": "batch2-30",
       "free_content_front": "Story 8: lo xavdei vanci — Saturday Night",
-      "free_content_back": "#### Before you read\nCharacters: Paolo, Vittoria\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Paulos, Vitorias\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 7,
       "position_in_level": 0,
       "direction": "just_information"
@@ -493,7 +1261,11 @@
       "free_content_back": "Hi Paolo!",
       "level_index": 7,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 50,
@@ -503,7 +1275,17 @@
       "free_content_back": "Do you have plans for the weekend?",
       "level_index": 7,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zukte' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 51,
@@ -513,7 +1295,11 @@
       "free_content_back": "Yes! A soccer game on Saturday.",
       "level_index": 7,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 52,
@@ -523,7 +1309,11 @@
       "free_content_back": "Enjoy the game!",
       "level_index": 7,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 53,
@@ -533,24 +1323,54 @@
       "free_content_back": "The girl with the guitar...",
       "level_index": 7,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 54,
       "position": 53,
       "collection_note": "batch2-30",
-      "free_content_front": "# lo xavdei vanci\n> .i la .vitorias. cu tavla lo ri pendo po'u la .paulos. vi lo briju\n~ Vittoria talks with her friend Paolo at work.\nVittoria(F): coi .paulos.\n~ Hi Paolo!\nVittoria(F): .i xu do ba zukte da ca lo jefyfa'o\n~ Do you have plans for the weekend?\nPaolo(M): .i mi ponse pa pikta be fi lo nu zgike ca lo xavdei\n~ I have a ticket for a concert on Saturday.\nPaolo(M): .i lo zgigri cu cnino .i ri se cmene lu lo mensi li'u\n~ It's a new band, \"The Sisters\".\nPaolo(M): .i xu do djica lo nu klama kansa mi\n~ Do you want to go with me?\nVittoria(F): .i .y.\n~ Ahh...\nPaolo(M): .i do ba zukte ma ca lo jefyfa'o\n~ Do you have plans for the weekend?\nVittoria(F): .i .y.\n~ Ahh...\nVittoria(F): go'i .i pa boltipterjvi ca lo xavdei\n~ Yes! A soccer game on Saturday.\nPaolo(M): .ui\n~ How nice!\nPaolo(M): .i .a'o lo boltipterjvi cu zdile do\n~ Enjoy the game!\n> .i ca lo xavdei vanci la .paulos. cu zvati lo nu zgike\n~ On Saturday night, Paolo is at the concert.\n> .i lo nu zgike cu cfari\n~ The concert begins.\nPaolo(M): .i lo nixli poi ponse lo jgita\n~ The girl with the guitar...\nPaolo(M): .i xu ta du la .vitorias.\n~ Is that... Vittoria?\n> .i ba lo nu zgike ku la .paulos. cu tavla la .vitorias.\n~ After the concert, Paolo talks with Vittoria.\nPaolo(M): .i boltipterjvi .ianai\n~ A soccer game, huh?\nVittoria(F): .i spaji\n~ Surprise!\nPaolo(M): .i do mutce certu lo ka zgipli lo jgita\n~ You're very good at the guitar!\n---\n? fill: Paolo(M): .i lo nixli poi ponse lo [jgita]\n? choice: .i la .paulos. cu retsku ma\n- lu xu do nelci lo zgike li'u\n+ lu xu do djica lo nu klama lo nu zgike li'u\n- lu xu do gunka ca lo xavdei li'u\n? choice: .i ki'u ma la .paulos. cu se cfipu\n- la .vitorias. cu fonta'a ri\n- lo nu zgike na pu cfari\n+ la .vitorias. cu zgipli lo jgita ca lo nu zgike",
-      "free_content_back": "Saturday Night.\nVittoria talks with her friend Paolo at work.\nVittoria: Hi Paolo!\nVittoria: Do you have plans for the weekend?\nPaolo: I have a ticket for a concert on Saturday.\nPaolo: It's a new band, \"The Sisters\".\nPaolo: Do you want to go with me?\nVittoria: Ahh...\nPaolo: Do you have plans for the weekend?\nVittoria: Ahh...\nVittoria: Yes! A soccer game on Saturday.\nPaolo: How nice!\nPaolo: Enjoy the game!\nOn Saturday night, Paolo is at the concert.\nThe concert begins.\nPaolo: The girl with the guitar...\nPaolo: Is that... Vittoria?\nAfter the concert, Paolo talks with Vittoria.\nPaolo: A soccer game, huh?\nVittoria: Surprise!\nPaolo: You're very good at the guitar!",
+      "free_content_front": "# lo xavdei vanci\n> .i la .vitorias. cu tavla lo ri pendo po'u la .paulos. vi lo briju\n~ Vittoria talks with her friend Paolo at work.\nVitorias(F): coi .paulos.\n~ Hi Paolo!\nVitorias(F): .i xu do ba zukte da ca lo jefyfa'o\n~ Do you have plans for the weekend?\nPaulos(M): .i mi ponse pa pikta be fi lo nu zgike ca lo xavdei\n~ I have a ticket for a concert on Saturday.\nPaulos(M): .i lo zgigri cu cnino .i ri se cmene zo .mensis.\n~ It's a new band, \"The Sisters\".\nPaulos(M): .i xu do djica lo nu klama kansa mi\n~ Do you want to go with me?\nVitorias(F): .i .y.\n~ Ahh...\nPaulos(M): .i do ba zukte ma ca lo jefyfa'o\n~ Do you have plans for the weekend?\nVitorias(F): .i .y.\n~ Ahh...\nVitorias(F): go'i .i pa boltipterjvi ca lo xavdei\n~ Yes! A soccer game on Saturday.\nPaulos(M): .ui\n~ How nice!\nPaulos(M): .i .a'o lo boltipterjvi cu zdile do\n~ Enjoy the game!\n> .i ca lo xavdei vanci la .paulos. cu zvati lo nu zgike\n~ On Saturday night, Paolo is at the concert.\n> .i lo nu zgike cu cfari\n~ The concert begins.\nPaulos(M): .i lo nixli poi ponse lo jgita\n~ The girl with the guitar...\nPaulos(M): .i xu ta du la .vitorias.\n~ Is that... Vittoria?\n> .i ba lo nu zgike ku la .paulos. cu tavla la .vitorias.\n~ After the concert, Paolo talks with Vittoria.\nPaulos(M): .i boltipterjvi .ianai\n~ A soccer game, huh?\nVitorias(F): .i spaji\n~ Surprise!\nPaulos(M): .i do mutce certu lo ka zgipli lo jgita\n~ You're very good at the guitar!\n---\n? fill: Paulos(M): .i lo nixli poi ponse lo [jgita]\n? choice: .i la .paulos. cu retsku ma\n- lu xu do nelci lo zgike li'u\n+ lu xu do djica lo nu klama lo nu zgike li'u\n- lu xu do gunka ca lo xavdei li'u\n? choice: .i ki'u ma la .paulos. cu se cfipu\n- la .vitorias. cu fonta'a ri\n- lo nu zgike na pu cfari\n+ la .vitorias. cu zgipli lo jgita ca lo nu zgike",
+      "free_content_back": "Saturday Night.\nVittoria talks with her friend Paolo at work.\nVitorias: Hi Paolo!\nVitorias: Do you have plans for the weekend?\nPaulos: I have a ticket for a concert on Saturday.\nPaulos: It's a new band, \"The Sisters\".\nPaulos: Do you want to go with me?\nVitorias: Ahh...\nPaulos: Do you have plans for the weekend?\nVitorias: Ahh...\nVitorias: Yes! A soccer game on Saturday.\nPaulos: How nice!\nPaulos: Enjoy the game!\nOn Saturday night, Paolo is at the concert.\nThe concert begins.\nPaulos: The girl with the guitar...\nPaulos: Is that... Vittoria?\nAfter the concert, Paolo talks with Vittoria.\nPaulos: A soccer game, huh?\nVitorias: Surprise!\nPaulos: You're very good at the guitar!",
       "level_index": 7,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 2",
+            "jbo": ".i xu do ba zukte da ca lo jefyfa'o",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zukte' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i do ba zukte ma ca lo jefyfa'o",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zukte' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i ki'u ma la .paulos. cu se cfipu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'krinu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 55,
       "position": 54,
       "collection_note": "batch2-36",
       "free_content_front": "Story 9: so'u jdini — A Little Money",
-      "free_content_back": "#### Before you read\nCharacters: Mom, Giovanni\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Mom, Djovanis\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 8,
       "position_in_level": 0,
       "direction": "just_information"
@@ -563,7 +1383,17 @@
       "free_content_back": "Mom, I need money.",
       "level_index": 8,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 57,
@@ -573,7 +1403,11 @@
       "free_content_back": "What for?",
       "level_index": 8,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 58,
@@ -583,7 +1417,11 @@
       "free_content_back": "To go to the cinema.",
       "level_index": 8,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 59,
@@ -593,7 +1431,11 @@
       "free_content_back": "Mom!",
       "level_index": 8,
       "position_in_level": 4,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 60,
@@ -603,24 +1445,109 @@
       "free_content_back": "Mom, I need more money...",
       "level_index": 8,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 61,
       "position": 60,
       "collection_note": "batch2-36",
-      "free_content_front": "# so'u jdini\nGiovanni(M): .i mi nitcu tu'a lo jdini\n~ Mom, I need money.\nMom(F): .i mu'i ma\n~ What for?\nGiovanni(M): .i mu'i lo nu klama lo kindi'u\n~ To go to the cinema.\nMom(F): .i .ei do tadni mu'i lo nu do ba te cipra\n~ You need to study for your exam.\nGiovanni(M): .oi\n~ Oh no!\nMom(F): .i .ei do ji'a te vecnu lo cidja be lo gerku\n~ And you need to buy food for the dog.\nGiovanni(M): doi mamta\n~ Mom!\nGiovanni(M): .e'o\n~ Please!\n> .i lo mamta be la .djovanis. cu lebna so'u jdini lo ri dakli\n~ Giovanni's mother takes some money out of her bag.\nMom(F): .i ti\n~ Here you go.\nGiovanni(M): .i mi nitcu tu'a lo drata jdini\n~ Mom, I need more money...\nMom(F): .i ri banzu lo nu do klama lo ckusro sepi'o lo sorprekarce\n~ It's enough for the bus to the library.\nGiovanni(M): .i ku'i doi mamta .i lo skina\n~ But Mom, the film...\nMom(F): .i .i'e\n~ Oh, all right...\nMom(F): .i ti mu'i lo nu do te vecnu lo cidja be lo gerku\n~ This is for the dog food.\nGiovanni(M): ki'e doi mamta\n~ Thanks, Mom...\nGiovanni(M): .i .y.\n~ Ahh...\nGiovanni(M): .i xu mi ka'e pilno lo do karce\n~ Can I use your car?\nMom(F): na go'i .i mi nitcu lo nu pilno lo mi karce\n~ No, I need my car.\nGiovanni(M): .i ki'u ma\n~ Why?\nMom(F): .i mu'i lo nu klama lo kindi'u\n~ To go to the cinema!\n---\n? fill: Giovanni(M): .i mi nitcu tu'a lo [jdini]\n? choice: .i lo mamta cu cusku ma\n- lo se du'u ri djica lo nu klama lo ckusro\n+ lo se du'u lo jdini cu banzu lo nu klama lo ckusro sepi'o lo sorprekarce\n- lo se du'u lo jdini cu banzu lo nu klama lo kindi'u\n? choice: .i ki'u ma la .djovanis. na ka'e pilno lo karce\n- ri se cikre\n+ lo mamta cu pilno ri lo nu klama lo kindi'u\n- lo mamta cu klama lo ckusro",
-      "free_content_back": "A Little Money.\nGiovanni: Mom, I need money.\nMom: What for?\nGiovanni: To go to the cinema.\nMom: You need to study for your exam.\nGiovanni: Oh no!\nMom: And you need to buy food for the dog.\nGiovanni: Mom!\nGiovanni: Please!\nGiovanni's mother takes some money out of her bag.\nMom: Here you go.\nGiovanni: Mom, I need more money...\nMom: It's enough for the bus to the library.\nGiovanni: But Mom, the film...\nMom: Oh, all right...\nMom: This is for the dog food.\nGiovanni: Thanks, Mom...\nGiovanni: Ahh...\nGiovanni: Can I use your car?\nMom: No, I need my car.\nGiovanni: Why?\nMom: To go to the cinema!",
+      "free_content_front": "# so'u jdini\nDjovanis(M): .i mi nitcu tu'a lo jdini\n~ Mom, I need money.\nMom(F): .i mu'i ma\n~ What for?\nDjovanis(M): .i mu'i lo nu klama lo kindi'u\n~ To go to the cinema.\nMom(F): .i .ei do tadni mu'i lo nu do ba te cipra\n~ You need to study for your exam.\nDjovanis(M): .oi\n~ Oh no!\nMom(F): .i .ei do ji'a te vecnu lo cidja be lo gerku\n~ And you need to buy food for the dog.\nDjovanis(M): doi mamta\n~ Mom!\nDjovanis(M): .e'o\n~ Please!\n> .i lo mamta be la .djovanis. cu lebna so'u jdini lo ri dakli\n~ Giovanni's mother takes some money out of her bag.\nMom(F): .i ti\n~ Here you go.\nDjovanis(M): .i mi nitcu tu'a lo drata jdini\n~ Mom, I need more money...\nMom(F): .i ri banzu lo nu do klama lo ckusro sepi'o lo sorprekarce\n~ It's enough for the bus to the library.\nDjovanis(M): .i ku'i doi mamta .i lo skina\n~ But Mom, the film...\nMom(F): .i .i'e\n~ Oh, all right...\nMom(F): .i ti mu'i lo nu do te vecnu lo cidja be lo gerku\n~ This is for the dog food.\nDjovanis(M): ki'e doi mamta\n~ Thanks, Mom...\nDjovanis(M): .i .y.\n~ Ahh...\nDjovanis(M): .i xu mi ka'e pilno lo do karce\n~ Can I use your car?\nMom(F): na go'i .i mi nitcu lo nu pilno lo mi karce\n~ No, I need my car.\nDjovanis(M): .i ki'u ma\n~ Why?\nMom(F): .i mu'i lo nu klama lo kindi'u\n~ To go to the cinema!\n---\n? fill: Djovanis(M): .i mi nitcu tu'a lo [jdini]\n? choice: .i lo mamta cu cusku ma\n- lo se du'u ri djica lo nu klama lo ckusro\n+ lo se du'u lo jdini cu banzu lo nu klama lo ckusro sepi'o lo sorprekarce\n- lo se du'u lo jdini cu banzu lo nu klama lo kindi'u\n? choice: .i ki'u ma la .djovanis. na ka'e pilno lo karce\n- ri se cikre\n+ lo mamta cu pilno ri lo nu klama lo kindi'u\n- lo mamta cu klama lo ckusro",
+      "free_content_back": "A Little Money.\nDjovanis: Mom, I need money.\nMom: What for?\nDjovanis: To go to the cinema.\nMom: You need to study for your exam.\nDjovanis: Oh no!\nMom: And you need to buy food for the dog.\nDjovanis: Mom!\nDjovanis: Please!\nGiovanni's mother takes some money out of her bag.\nMom: Here you go.\nDjovanis: Mom, I need more money...\nMom: It's enough for the bus to the library.\nDjovanis: But Mom, the film...\nMom: Oh, all right...\nMom: This is for the dog food.\nDjovanis: Thanks, Mom...\nDjovanis: Ahh...\nDjovanis: Can I use your car?\nMom: No, I need my car.\nDjovanis: Why?\nMom: To go to the cinema!",
       "level_index": 8,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".i mi nitcu tu'a lo jdini",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": ".i .ei do tadni mu'i lo nu do ba te cipra",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cipra' expects Set<T>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i .ei do ji'a te vecnu lo cidja be lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo cidja (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i lo mamta be la .djovanis. cu lebna so'u jdini lo ri dakli",
+            "kind": "parser_limitation",
+            "message": "x2 of 'lebna' expects Set<T>, but got bound var x-1",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          },
+          {
+            "where": "line 10",
+            "jbo": ".i mi nitcu tu'a lo drata jdini",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i ri banzu lo nu do klama lo ckusro sepi'o lo sorprekarce",
+            "kind": "parser_limitation",
+            "message": "x1 of 'banzu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".i ti mu'i lo nu do te vecnu lo cidja be lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo cidja (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i mi nitcu tu'a lo jdini",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i ki'u ma la .djovanis. na ka'e pilno lo karce",
+            "kind": "parser_limitation",
+            "message": "x1 of 'krinu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 0",
+            "jbo": "ri se cikre",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cikre' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 62,
       "position": 61,
       "collection_note": "batch2-38",
       "free_content_front": "Story 10: lo cnino barda zarci — The New Mall",
-      "free_content_back": "#### Before you read\nCharacters: Liza, Friend\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Lizas, Friend\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 9,
       "position_in_level": 0,
       "direction": "just_information"
@@ -633,7 +1560,11 @@
       "free_content_back": "Yeah?",
       "level_index": 9,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 64,
@@ -643,7 +1574,17 @@
       "free_content_back": "Yes, and it has a cinema!",
       "level_index": 9,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'vasru' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 65,
@@ -653,7 +1594,11 @@
       "free_content_back": "And the Italian restaurant you like!",
       "level_index": 9,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 66,
@@ -663,7 +1608,22 @@
       "free_content_back": "Where is it?",
       "level_index": 9,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: compatible union pairings do not all determine T",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 67,
@@ -673,17 +1633,102 @@
       "free_content_back": "Hmm... On Mayakovsky Street.",
       "level_index": 9,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'klaji' expects Location, but got la maiakofskis",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          }
+        ]
+      }
     },
     {
       "item_id": 68,
       "position": 67,
       "collection_note": "batch2-38",
-      "free_content_front": "# lo cnino barda zarci\n> .i la .lizas. cu tcidu lo karni vi lo sorprekarce\n~ Liza is reading a magazine on the bus.\nLiza(F): .ui\n~ Super!\nFriend(M): .i ma\n~ What?\nLiza(F): .i pa cnino barda zarci pu co'a kalri vi lo tcadu\n~ A new mall has opened in town.\nFriend(M): .i je'u xu\n~ Yeah?\nLiza(F): go'i .i ri ji'a vasru lo kindi'u\n~ Yes, and it has a cinema!\nLiza(F): .i ji'a lo itlo gusta poi do nelci\n~ And the Italian restaurant you like!\nFriend(M): .ui\n~ Cool!\nFriend(M): .i ri zvati ma\n~ Where is it?\nLiza(F): .i .y. lo klaji be la .maiakofskis.\n~ Hmm... On Mayakovsky Street.\nFriend(M): .i xu lo klaji be la .maiakofskis.\n~ On Mayakovsky Street?\nFriend(M): .i ko dunda lo karni mi\n~ Give me the magazine.\nLiza(F): .i ti\n~ Here.\nFriend(M): doi .lizas.\n~ Liza...\nFriend(M): .i ti na cnino barda zarci\n~ This isn't a new mall.\nFriend(M): .i ri du lo slabu\n~ It's the very same one...\nFriend(M): .i ku'i ri se cmene lo drata cmene\n~ ...just with a different name!\nLiza(F): .i .a'u mi jimpe\n~ Ah, I get it.\nLiza(F): .i xu do djica lo nu klama lo cnino .ianai barda zarci\n~ Do you want to go to the \"new\" mall?\nLiza(F): .i lo nu catlu lo skina gi'e citka lo kukte pitnanba\n~ To watch a film and eat a tasty pizza?\nFriend(M): go'i\n~ Yes!\n---\n? fill: > .i la .lizas. cu tcidu lo [karni] vi lo sorprekarce\n? choice: .i lo barda zarci cu mo\n+ du lo slabu gi'e se cmene lo cnino cmene\n- ba co'a ganlo\n- cnino gi'e zvati lo drata tcadu\n? choice: .i le re prenu ba mo\n- klama lo barda zarci vi la .italias.\n+ catlu lo skina gi'e citka lo itlo cidja\n- stali lo zdani",
-      "free_content_back": "The New Mall.\nLiza is reading a magazine on the bus.\nLiza: Super!\nFriend: What?\nLiza: A new mall has opened in town.\nFriend: Yeah?\nLiza: Yes, and it has a cinema!\nLiza: And the Italian restaurant you like!\nFriend: Cool!\nFriend: Where is it?\nLiza: Hmm... On Mayakovsky Street.\nFriend: On Mayakovsky Street?\nFriend: Give me the magazine.\nLiza: Here.\nFriend: Liza...\nFriend: This isn't a new mall.\nFriend: It's the very same one...\nFriend: ...just with a different name!\nLiza: Ah, I get it.\nLiza: Do you want to go to the \"new\" mall?\nLiza: To watch a film and eat a tasty pizza?\nFriend: Yes!",
+      "free_content_front": "# lo cnino barda zarci\n> .i la .lizas. cu tcidu lo karni vi lo sorprekarce\n~ Liza is reading a magazine on the bus.\nLizas(F): .ui\n~ Super!\nFriend(M): .i ma\n~ What?\nLizas(F): .i pa cnino barda zarci pu co'a kalri vi lo tcadu\n~ A new mall has opened in town.\nFriend(M): .i je'u xu\n~ Yeah?\nLizas(F): go'i .i ri ji'a vasru lo kindi'u\n~ Yes, and it has a cinema!\nLizas(F): .i ji'a lo itlo gusta poi do nelci\n~ And the Italian restaurant you like!\nFriend(M): .ui\n~ Cool!\nFriend(M): .i ri zvati ma\n~ Where is it?\nLizas(F): .i .y. lo klaji be la .maiakofskis.\n~ Hmm... On Mayakovsky Street.\nFriend(M): .i xu lo klaji be la .maiakofskis.\n~ On Mayakovsky Street?\nFriend(M): .i ko dunda lo karni mi\n~ Give me the magazine.\nLizas(F): .i ti\n~ Here.\nFriend(M): doi .lizas.\n~ Liza...\nFriend(M): .i ti na cnino barda zarci\n~ This isn't a new mall.\nFriend(M): .i ri du lo slabu\n~ It's the very same one...\nFriend(M): .i ku'i ri se cmene lo drata cmene\n~ ...just with a different name!\nLizas(F): .i .a'u mi jimpe\n~ Ah, I get it.\nLizas(F): .i xu do djica lo nu klama lo cnino .ianai barda zarci\n~ Do you want to go to the \"new\" mall?\nLizas(F): .i lo nu catlu lo skina gi'e citka lo kukte pitnanba\n~ To watch a film and eat a tasty pizza?\nFriend(M): go'i\n~ Yes!\n---\n? fill: > .i la .lizas. cu tcidu lo [karni] vi lo sorprekarce\n? choice: .i lo barda zarci cu mo\n+ du lo slabu gi'e se cmene lo cnino cmene\n- ba co'a ganlo\n- cnino gi'e zvati lo drata tcadu\n? choice: .i le re prenu ba mo\n- klama lo barda zarci vi la .italias.\n+ catlu lo skina gi'e citka lo itlo cidja\n- stali lo zdani",
+      "free_content_back": "The New Mall.\nLiza is reading a magazine on the bus.\nLizas: Super!\nFriend: What?\nLizas: A new mall has opened in town.\nFriend: Yeah?\nLizas: Yes, and it has a cinema!\nLizas: And the Italian restaurant you like!\nFriend: Cool!\nFriend: Where is it?\nLizas: Hmm... On Mayakovsky Street.\nFriend: On Mayakovsky Street?\nFriend: Give me the magazine.\nLizas: Here.\nFriend: Liza...\nFriend: This isn't a new mall.\nFriend: It's the very same one...\nFriend: ...just with a different name!\nLizas: Ah, I get it.\nLizas: Do you want to go to the \"new\" mall?\nLizas: To watch a film and eat a tasty pizza?\nFriend: Yes!",
       "level_index": 9,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".i la .lizas. cu tcidu lo karni vi lo sorprekarce",
+            "kind": "parser_limitation",
+            "message": "x2 of 'tcidu' expects Text | Symbol, but got lo karni (Entity)",
+            "note": "parser limitation (document): document-like brivla (xatra, cukta, karni ...) are typed Entity in formal-gismu but carry text"
+          },
+          {
+            "where": "line 5",
+            "jbo": "go'i .i ri ji'a vasru lo kindi'u",
+            "kind": "parser_limitation",
+            "message": "x1 of 'vasru' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i ri zvati ma",
+            "kind": "parser_limitation",
+            "message": "x1 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i ri zvati ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: compatible union pairings do not all determine T",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 9",
+            "jbo": ".i .y. lo klaji be la .maiakofskis.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'klaji' expects Location, but got la maiakofskis",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "line 10",
+            "jbo": ".i xu lo klaji be la .maiakofskis.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'klaji' expects Location, but got la maiakofskis",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i ko dunda lo karni mi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'dunda' expects Set<W>, but got lo karni (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".i ti na cnino barda zarci",
+            "kind": "parser_limitation",
+            "message": "x1 of 'zarci' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 16",
+            "jbo": ".i ku'i ri se cmene lo drata cmene",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cmene' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i la .lizas. cu tcidu lo karni vi lo sorprekarce",
+            "kind": "parser_limitation",
+            "message": "x2 of 'tcidu' expects Text | Symbol, but got lo karni (Entity)",
+            "note": "parser limitation (document): document-like brivla (xatra, cukta, karni ...) are typed Entity in formal-gismu but carry text"
+          }
+        ]
+      }
     }
   ],
   "levels": [

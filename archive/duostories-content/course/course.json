@@ -7,22 +7,22 @@
   "characters": [
     {
       "name": "Lifri",
-      "cmevla": ".lifris.",
+      "jbo": "la lifri",
       "gender": "F"
     },
     {
       "name": "Mentu",
-      "cmevla": ".mentus.",
+      "jbo": "la mentu",
       "gender": "M"
     },
     {
       "name": "Linto",
-      "cmevla": ".lintas.",
+      "jbo": "la linto",
       "gender": "F"
     }
   ],
   "plan_deviations": [
-    "Names are cmevla .lifris. / .mentus. / .lintas. (lifri, mentu, linto are gismu; a cmevla must end in a consonant).",
+    "Names are the plan's gismu used as names: la lifri / la mentu / la linto (la + brivla is valid; no cmevla needed).",
     "L6: clock formula is `ti'u li N` (the plan's `li cacra bu N` is not needed and `cacra bu` is not a word).",
     "L12: `se jdini` is not a price expression; prices use `se jdima lo meryru'u be li N` (jdima x1 price of x2).",
     "L15: `se panzi re` is ungrammatical; `mi se panzi re da` = I have two children.",
@@ -50,48 +50,80 @@
         "cliva",
         "do"
       ],
-      "grammar": "One word is already a full sentence: `coi` (hello), `co'o` (goodbye). `coi do` greets you; `coi .lifris.` greets Lifri by name. `mi'e la .mentus.` = \"I'm Mentu\".",
+      "grammar": "One word is already a full sentence: `coi` (hello), `co'o` (goodbye). `coi do` greets you; `coi la lifri` greets Lifri by name. `mi'e la mentu` = \"I'm Mentu\".",
       "phrases": [
         {
           "jbo": "coi",
           "en": "Hello!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "co'o",
           "en": "Goodbye!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "coi do",
           "en": "Hello (to you)!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
-          "jbo": "mi'e la .mentus.",
+          "jbo": "mi'e la mentu",
           "en": "I'm Mentu.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
-          "jbo": "coi .lifris.",
+          "jbo": "coi la lifri",
           "en": "Hi, Lifri!",
-          "direction": "quiz_direct"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi cliva",
           "en": "I'm leaving.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "do cliva",
           "en": "You're leaving.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "First Meeting",
-          "jbo": "lo pa moi nu penmi"
+          "jbo": "lo pa moi nu penmi",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -111,42 +143,74 @@
           {
             "speaker": "Lifri",
             "jbo": "coi do",
-            "en": "Hello!"
+            "en": "Hello!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
-            "jbo": "coi .i mi'e la .mentus.",
-            "en": "Hi! I'm Mentu."
+            "jbo": "coi .i mi'e la mentu",
+            "en": "Hi! I'm Mentu.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
-            "jbo": "mi'e la .lifris.",
-            "en": "I'm Lifri."
+            "jbo": "mi'e la lifri",
+            "en": "I'm Lifri.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": ">",
-            "jbo": ".i la .lintas. cu klama",
-            "en": "Linto arrives."
+            "jbo": ".i la linto cu klama",
+            "en": "Linto arrives.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
-            "jbo": "coi .lifris. coi .mentus.",
-            "en": "Hi Lifri! Hi Mentu!"
+            "jbo": "coi la lifri coi la mentu",
+            "en": "Hi Lifri! Hi Mentu!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
-            "jbo": "coi .lintas.",
-            "en": "Hi, Linto!"
+            "jbo": "coi la linto",
+            "en": "Hi, Linto!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi cliva .i co'o",
-            "en": "I'm leaving. Bye!"
+            "en": "I'm leaving. Bye!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
-            "jbo": "co'o .mentus.",
-            "en": "Bye, Mentu!"
+            "jbo": "co'o la mentu",
+            "en": "Bye, Mentu!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -174,38 +238,66 @@
         {
           "jbo": "xu do se bangu la .lojban.",
           "en": "Do you speak Lojban?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "go'i",
           "en": "Yes.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "na go'i",
           "en": "No.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi milxe se bangu la .lojban.",
           "en": "I speak Lojban a little.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi na se bangu la .lojban.",
           "en": "I don't speak Lojban.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do se bangu lo glico bangu",
           "en": "Do you speak English?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Do You Speak Lojban?",
-          "jbo": "xu do se bangu la .lojban."
+          "jbo": "xu do se bangu la .lojban.",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -224,38 +316,66 @@
         "lines": [
           {
             "speaker": "Lifri",
-            "jbo": "coi .mentus. .i xu do se bangu la .lojban.",
-            "en": "Hi Mentu! Do you speak Lojban?"
+            "jbo": "coi la mentu .i xu do se bangu la .lojban.",
+            "en": "Hi Mentu! Do you speak Lojban?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i mi milxe se bangu la .lojban.",
-            "en": "Yes. I speak Lojban a little."
+            "en": "Yes. I speak Lojban a little.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu do se bangu lo glico bangu",
-            "en": "Do you speak English?"
+            "en": "Do you speak English?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i",
-            "en": "Yes."
+            "en": "Yes.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi na se bangu lo glico bangu",
-            "en": "I don't speak English."
+            "en": "I don't speak English.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i ku'i do se bangu la .lojban.",
-            "en": "But you speak Lojban."
+            "en": "But you speak Lojban.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "go'i",
-            "en": "Yes!"
+            "en": "Yes!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -277,43 +397,71 @@
         "zo",
         "nelci"
       ],
-      "grammar": "`ma` asks for a missing noun, `mo` for a missing predicate. `zo` quotes one word: `zo .mentus. cmene mi` = \"Mentu\" is my name. `do mo` = how are you?",
+      "grammar": "`ma` asks for a missing noun, `mo` for a missing predicate. `zo` quotes one word: `zo mentu cmene mi` = \"Mentu\" is my name. `do mo` = how are you?",
       "phrases": [
         {
           "jbo": "ma cmene do",
           "en": "What's your name?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
-          "jbo": "zo .mentus. cmene mi",
+          "jbo": "zo mentu cmene mi",
           "en": "My name is Mentu.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "do nelci ma",
           "en": "What do you like?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi nelci la .lojban.",
           "en": "I like Lojban.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi nelci lo ckafi",
           "en": "I like coffee.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "do mo",
           "en": "How are you?",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "What's Your Name? What Do You Like?",
-          "jbo": "ma cmene do"
+          "jbo": "ma cmene do",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -333,37 +481,65 @@
           {
             "speaker": "Linto",
             "jbo": "coi .i ma cmene do",
-            "en": "Hi! What's your name?"
+            "en": "Hi! What's your name?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
-            "jbo": "zo .mentus. cmene mi .i ma cmene do",
-            "en": "My name is Mentu. What's your name?"
+            "jbo": "zo mentu cmene mi .i ma cmene do",
+            "en": "My name is Mentu. What's your name?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
-            "jbo": "mi'e la .lintas.",
-            "en": "I'm Linto."
+            "jbo": "mi'e la linto",
+            "en": "I'm Linto.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i do nelci ma",
-            "en": "What do you like?"
+            "en": "What do you like?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi nelci lo ckafi",
-            "en": "I like coffee."
+            "en": "I like coffee.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi nelci la .lojban.",
-            "en": "I like Lojban!"
+            "en": "I like Lojban!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".ui",
-            "en": "Great!"
+            "en": "Great!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -391,39 +567,67 @@
         {
           "jbo": "ki'e",
           "en": "Thanks!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "je'e",
           "en": "You're welcome.",
           "direction": "quiz_direct",
-          "doubtful": "je'e (\"roger\") as the answer to ki'e follows common usage; CLL gives no dedicated \"you're welcome\""
+          "doubtful": "je'e (\"roger\") as the answer to ki'e follows common usage; CLL gives no dedicated \"you're welcome\"",
+          "validation": {
+            "status": "doubtful",
+            "warnings": []
+          }
         },
         {
           "jbo": ".ui",
           "en": "Yay!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".u'u",
           "en": "Sorry.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".ui pei",
           "en": "Are you happy?",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".e'u mi'o ba penmi",
           "en": "Let's meet again.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Thank You — Wrapping Up the Meetup",
-          "jbo": "ki'e"
+          "jbo": "ki'e",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -442,49 +646,85 @@
         "lines": [
           {
             "speaker": "Mentu",
-            "jbo": "ki'e .lifris.",
-            "en": "Thank you, Lifri!"
+            "jbo": "ki'e la lifri",
+            "en": "Thank you, Lifri!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": "je'e",
             "en": "You're welcome.",
-            "doubtful": "same je'e usage"
+            "doubtful": "same je'e usage",
+            "validation": {
+              "status": "doubtful",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".ui .i mi nelci la .lojban.",
-            "en": "Yay! I like Lojban!"
+            "en": "Yay! I like Lojban!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
-            "jbo": ".u'u doi .lintas.",
-            "en": "Sorry, Linto!"
+            "jbo": ".u'u doi la linto",
+            "en": "Sorry, Linto!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "je'e",
-            "en": "It's OK."
+            "en": "It's OK.",
+            "validation": {
+              "status": "doubtful",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".ui .i .ui pei",
-            "en": "I'm happy! And you?"
+            "en": "I'm happy! And you?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".ui",
-            "en": "Happy!"
+            "en": "Happy!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".e'u mi'o ba penmi",
-            "en": "Let's meet again!"
+            "en": "Let's meet again!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".ie .i co'o",
-            "en": "Yes! Bye!"
+            "en": "Yes! Bye!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -524,33 +764,63 @@
         {
           "jbo": "ma nuzba",
           "en": "What's new?",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "do zvati ma",
           "en": "Where are you?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi zvati le zdani",
           "en": "I'm at home.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "do klama ma",
           "en": "Where are you going?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi klama le panka",
           "en": "I'm going to the park.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Let's Meet at the Park",
-          "jbo": "mi klama le panka"
+          "jbo": "mi klama le panka",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -565,38 +835,72 @@
         "lines": [
           {
             "speaker": "Lifri",
-            "jbo": "coi .mentus. .i ma nuzba",
-            "en": "Hi Mentu! What's new?"
+            "jbo": "coi la mentu .i ma nuzba",
+            "en": "Hi Mentu! What's new?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "no da",
-            "en": "Nothing."
+            "en": "Nothing.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i do zvati ma",
-            "en": "Where are you?"
+            "en": "Where are you?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi zvati le zdani .i do zvati ma",
-            "en": "I'm at home. Where are you?"
+            "en": "I'm at home. Where are you?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i mi zvati le panka",
-            "en": "I'm at the park."
+            "en": "I'm at the park.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".ui .i mi klama le panka",
-            "en": "Great! I'm coming to the park."
+            "en": "Great! I'm coming to the park.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".ui",
-            "en": "Great!"
+            "en": "Great!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -631,48 +935,90 @@
         {
           "jbo": "li pa",
           "en": "one",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "li re",
           "en": "two",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "li ci",
           "en": "three",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "li ze",
           "en": "seven",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "li pano",
           "en": "ten",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ma tcika",
           "en": "What time is it?",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ti'u li xa",
           "en": "(It's) six o'clock.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi'o penmi ti'u li ze",
           "en": "We meet at seven.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'tcika' expects Entity, but got a mathematical value",
+                "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+              }
+            ]
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "What Time? Let's Say Seven",
-          "jbo": "ti'u li ze"
+          "jbo": "ti'u li ze",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -688,32 +1034,68 @@
           {
             "speaker": "Mentu",
             "jbo": ".i ma tcika",
-            "en": "What time is it?"
+            "en": "What time is it?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": "ti'u li xa",
-            "en": "It's six."
+            "en": "It's six.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i xu mi'o penmi ti'u li ze",
-            "en": "Shall we meet at seven?"
+            "en": "Shall we meet at seven?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'tcika' expects Entity, but got a mathematical value",
+                  "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": "go'i .i ti'u li ze",
-            "en": "Yes, at seven."
+            "en": "Yes, at seven.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi klama le panka ti'u li ze",
-            "en": "I'm going to the park at seven."
+            "en": "I'm going to the park at seven.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'tcika' expects Entity, but got a mathematical value",
+                  "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".ui .i co'o",
-            "en": "Great! Bye!"
+            "en": "Great! Bye!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -741,38 +1123,78 @@
         {
           "jbo": "cerni coi",
           "en": "Good morning!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "donri coi",
           "en": "Good day!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi gleki",
           "en": "I'm happy.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ca le cerni mi zvati le zdani",
           "en": "In the morning I'm at home.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "ca le vanci mi klama le panka",
           "en": "In the evening I go to the park.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ca le nicte mi zvati le zdani",
           "en": "At night I'm at home.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Good Morning",
-          "jbo": "cerni coi"
+          "jbo": "cerni coi",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -791,38 +1213,72 @@
         "lines": [
           {
             "speaker": "Mentu",
-            "jbo": "cerni coi .lifris.",
-            "en": "Good morning, Lifri!"
+            "jbo": "cerni coi la lifri",
+            "en": "Good morning, Lifri!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": "cerni coi .i do mo",
-            "en": "Good morning! How are you?"
+            "en": "Good morning! How are you?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi gleki",
-            "en": "I'm happy."
+            "en": "I'm happy.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "donri coi",
-            "en": "Good day!"
+            "en": "Good day!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i ca le cerni mi zvati le zdani",
-            "en": "In the morning I'm at home."
+            "en": "In the morning I'm at home.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i ca le vanci mi klama le panka",
-            "en": "In the evening I go to the park."
+            "en": "In the evening I go to the park.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".ui",
-            "en": "Great!"
+            "en": "Great!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -852,38 +1308,72 @@
         {
           "jbo": "ko masno tavla",
           "en": "Speak slowly!",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi na jimpe",
           "en": "I don't understand.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "do sutra tavla",
           "en": "You speak fast.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi na djuno",
           "en": "I don't know.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do jimpe",
           "en": "Do you understand?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ponse pa preti",
           "en": "I have a question.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'ponse' expects Entity, but got bound var x-1",
+                "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+              }
+            ]
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Speak Slowly! I Don't Understand",
-          "jbo": "ko masno tavla"
+          "jbo": "ko masno tavla",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -903,42 +1393,80 @@
           {
             "speaker": "Lifri",
             "jbo": ".i do mo .i ma nuzba .i xu do zvati le panka ca le cerni",
-            "en": "How are you? What's new? Are you at the park in the mornings?"
+            "en": "How are you? What's new? Are you at the park in the mornings?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".u'u .i mi na jimpe .i ko masno tavla",
-            "en": "Sorry! I don't understand. Speak slowly!"
+            "en": "Sorry! I don't understand. Speak slowly!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i do sutra tavla",
-            "en": "You speak fast."
+            "en": "You speak fast.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".u'u .i xu do jimpe",
-            "en": "Sorry. Do you understand now?"
+            "en": "Sorry. Do you understand now?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i mi jimpe .i ki'e",
-            "en": "Yes, I understand. Thanks!"
+            "en": "Yes, I understand. Thanks!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi ponse pa preti .i ma tcika",
-            "en": "I have a question. What time is it?"
+            "en": "I have a question. What time is it?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'ponse' expects Entity, but got bound var x-1",
+                  "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi na djuno",
-            "en": "I don't know."
+            "en": "I don't know.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": "ti'u li ze",
-            "en": "Seven o'clock."
+            "en": "Seven o'clock.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -967,33 +1495,63 @@
         {
           "jbo": "xu do pu klama le panka",
           "en": "Did you go to the park?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "go'i .i mi pu klama",
           "en": "Yes, I went.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ca le bavlamdei mi ba klama le zdani",
           "en": "Tomorrow I'll go home.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".i ku'i ca le cabdei mi zvati ti",
           "en": "But today I'm here.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "le panka cu melbi",
           "en": "The park is beautiful.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Yesterday and Tomorrow",
-          "jbo": "ca le prulamdei"
+          "jbo": "ca le prulamdei",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1013,32 +1571,62 @@
           {
             "speaker": "Lifri",
             "jbo": ".i xu do pu klama le panka ca le prulamdei",
-            "en": "Did you go to the park yesterday?"
+            "en": "Did you go to the park yesterday?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i mi pu klama",
-            "en": "Yes, I went."
+            "en": "Yes, I went.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i ca le bavlamdei mi ba klama le zdani",
-            "en": "Tomorrow I'll go home."
+            "en": "Tomorrow I'll go home.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i ku'i ca le cabdei mi zvati ti",
-            "en": "But today I'm here."
+            "en": "But today I'm here.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i le panka cu melbi",
-            "en": "The park is beautiful."
+            "en": "The park is beautiful.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i",
-            "en": "Yes!"
+            "en": "Yes!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -1067,33 +1655,57 @@
         {
           "jbo": ".au mi citka",
           "en": "I want to eat.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".au mi pinxe lo djacu",
           "en": "I'd like to drink water.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".ai mi citka lo nanba",
           "en": "I'm going to eat bread.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".e'u mi'o klama lo gusta",
           "en": "Let's go to a restaurant.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ji'a citka",
           "en": "I eat too.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "I Want to Eat",
-          "jbo": "mi djica lo nu citka"
+          "jbo": "mi djica lo nu citka",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1113,32 +1725,56 @@
           {
             "speaker": "Mentu",
             "jbo": ".au mi citka",
-            "en": "I want to eat!"
+            "en": "I want to eat!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".au mi pinxe lo djacu",
-            "en": "I want to drink water."
+            "en": "I want to drink water.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".au mi ji'a citka",
-            "en": "I want to eat too."
+            "en": "I want to eat too.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".e'u mi'o klama lo gusta",
-            "en": "Let's go to a restaurant!"
+            "en": "Let's go to a restaurant!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".ie",
-            "en": "Yes!"
+            "en": "Yes!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".ai mi citka lo nanba",
-            "en": "I'm going to eat bread."
+            "en": "I'm going to eat bread.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -1165,33 +1801,57 @@
         {
           "jbo": ".ai mi citka lo stasu",
           "en": "I'm going to have soup.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".ai mi pinxe lo jisra",
           "en": "I'll have juice.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do nelci lo titnanba",
           "en": "Do you like cookies?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "le cidja cu kukte",
           "en": "The food is tasty.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo gusta",
           "en": "a restaurant",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Ordering at the Café",
-          "jbo": "vi lo gusta"
+          "jbo": "vi lo gusta",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1210,33 +1870,57 @@
         "lines": [
           {
             "speaker": ">",
-            "jbo": ".i la .lifris. .e la .mentus. .e la .lintas. cu zvati lo gusta",
-            "en": "Lifri, Mentu and Linto are at a café."
+            "jbo": ".i la lifri .e la mentu .e la linto cu zvati lo gusta",
+            "en": "Lifri, Mentu and Linto are at a café.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".ai mi citka lo stasu .i .ai pei",
-            "en": "I'm going to have soup. And you?"
+            "en": "I'm going to have soup. And you?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".ai mi pinxe lo jisra",
-            "en": "I'll have juice."
+            "en": "I'll have juice.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i xu do nelci lo titnanba",
-            "en": "Do you like cookies?"
+            "en": "Do you like cookies?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "go'i .i .ai mi citka lo titnanba .e lo nanba",
-            "en": "Yes! I'll have cookies and bread."
+            "en": "Yes! I'll have cookies and bread.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i le cidja cu kukte",
-            "en": "The food is tasty!"
+            "en": "The food is tasty!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -1267,38 +1951,95 @@
         {
           "jbo": "xu ri kargu",
           "en": "Is it expensive?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "lo nanba cu se jdima lo meryru'u be li paci",
           "en": "The bread costs 13 dollars.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'jdima' expects Set<W>, but got lo nanba (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'jdima' expects Set<T>, but got lo meryru'u (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "ti tolkargu",
           "en": "This is cheap.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do ponse lo jdini",
           "en": "Do you have money?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ba pleji",
           "en": "I'll pay.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi te vecnu lo stasu",
           "en": "I buy soup.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'vecnu' expects Set<W>, but got lo stasu (Group<Entity>)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "How Much? Is It Expensive?",
-          "jbo": "xu ri kargu"
+          "jbo": "xu ri kargu",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         "speakers": [
           {
@@ -1318,37 +2059,99 @@
           {
             "speaker": "Mentu",
             "jbo": ".i xu lo stasu cu kargu",
-            "en": "Is the soup expensive?"
+            "en": "Is the soup expensive?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'kargu' expects Set<W>, but got lo stasu (Group<Entity>)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i lo nanba cu se jdima lo meryru'u be li paci",
-            "en": "The bread costs 13 dollars."
+            "en": "The bread costs 13 dollars.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'jdima' expects Set<W>, but got lo nanba (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                },
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'jdima' expects Set<T>, but got lo meryru'u (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".ue .i ri kargu",
-            "en": "Wow, that's expensive!"
+            "en": "Wow, that's expensive!",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i lo stasu cu se jdima lo meryru'u be li reno",
-            "en": "The soup costs 20."
+            "en": "The soup costs 20.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'jdima' expects Set<W>, but got lo stasu (Group<Entity>)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                },
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'jdima' expects Set<T>, but got lo meryru'u (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i xu do ponse lo jdini",
-            "en": "Do you have money?"
+            "en": "Do you have money?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi ba pleji",
-            "en": "I'll pay."
+            "en": "I'll pay.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "ki'e",
-            "en": "Thanks!"
+            "en": "Thanks!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -1374,33 +2177,86 @@
         {
           "jbo": "mi klama lo zarci",
           "en": "I'm going to a shop.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ba te vecnu lo titnanba .e lo jisra",
           "en": "I'll buy cookies and juice.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'vecnu' expects Set<W>, but got lo titnanba (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'vecnu' expects Set<W>, but got lo jisra (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "xu lo jisra cu kargu",
           "en": "Is the juice expensive?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'kargu' expects Set<W>, but got lo jisra (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "ri na kargu .i ri tolkargu",
           "en": "It's not expensive, it's cheap.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "lo cidja cu mutce kargu",
           "en": "Food is very expensive.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'kargu' expects Set<W>, but got lo cidja (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Buying Things",
-          "jbo": "lo zarci"
+          "jbo": "lo zarci",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1416,32 +2272,85 @@
           {
             "speaker": "Mentu",
             "jbo": ".i mi klama lo zarci",
-            "en": "I'm going to a shop."
+            "en": "I'm going to a shop.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi ba te vecnu lo titnanba .e lo jisra",
-            "en": "I'll buy cookies and juice."
+            "en": "I'll buy cookies and juice.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'vecnu' expects Set<W>, but got lo titnanba (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                },
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'vecnu' expects Set<W>, but got lo jisra (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu lo jisra cu kargu",
-            "en": "Is the juice expensive?"
+            "en": "Is the juice expensive?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'kargu' expects Set<W>, but got lo jisra (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "na go'i .i ri tolkargu",
-            "en": "No, it's cheap."
+            "en": "No, it's cheap.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i ku'i lo cidja cu mutce kargu",
-            "en": "But the food is very expensive."
+            "en": "But the food is very expensive.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'kargu' expects Set<W>, but got lo cidja (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i mi ba te vecnu lo drata jisra",
-            "en": "Yes. I'll buy a different juice."
+            "en": "Yes. I'll buy a different juice.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'vecnu' expects Set<W>, but got lo jisra (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           }
         ]
       },
@@ -1471,38 +2380,78 @@
         {
           "jbo": "ca le cabdei mi zvati le zdani",
           "en": "Today I'm at home.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "ca le bavlamdei mi ba klama le panka",
           "en": "Tomorrow I'll go to the park.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi birti",
           "en": "I'm sure.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ca ro jeftu mi'o penmi",
           "en": "Every week we meet.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+                "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+              }
+            ]
+          }
         },
         {
           "jbo": "lo jeftu be li pa",
           "en": "a one-week period",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ca ro detma'i",
           "en": "every month",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Planning the Week",
-          "jbo": "ca ro jeftu"
+          "jbo": "ca ro jeftu",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1522,37 +2471,83 @@
           {
             "speaker": "Lifri",
             "jbo": ".i xu mi'o penmi ca ro jeftu",
-            "en": "Shall we meet every week?"
+            "en": "Shall we meet every week?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+                  "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i mi birti",
-            "en": "Yes, I'm sure."
+            "en": "Yes, I'm sure.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i ca le cabdei mi zvati le zdani",
-            "en": "Today I'm at home."
+            "en": "Today I'm at home.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i ku'i ca le bavlamdei mi ba klama le panka",
-            "en": "But tomorrow I'll go to the park."
+            "en": "But tomorrow I'll go to the park.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i xu do birti",
-            "en": "Are you sure?"
+            "en": "Are you sure?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "go'i .i mi birti",
-            "en": "Yes, I'm sure."
+            "en": "Yes, I'm sure.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i ca ro detma'i mi'o klama lo gusta",
-            "en": "And every month we go to a restaurant."
+            "en": "And every month we go to a restaurant.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+                  "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+                }
+              ]
+            }
           }
         ]
       },
@@ -1579,38 +2574,84 @@
         {
           "jbo": "xu do speni",
           "en": "Are you married?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "le speni be mi cu gleki",
           "en": "My spouse is happy.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do se panzi",
           "en": "Do you have children?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              }
+            ]
+          }
         },
         {
           "jbo": "do se panzi xo da",
           "en": "How many children do you have?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              }
+            ]
+          }
         },
         {
           "jbo": "mi se panzi re da",
           "en": "I have two children.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              }
+            ]
+          }
         },
         {
           "jbo": "le lanzu be mi cu gleki",
           "en": "My family is happy.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "My Family",
-          "jbo": "le lanzu be mi"
+          "jbo": "le lanzu be mi",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1626,37 +2667,83 @@
           {
             "speaker": "Linto",
             "jbo": ".i xu do speni",
-            "en": "Are you married?"
+            "en": "Are you married?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i le speni be mi cu gleki",
-            "en": "Yes. My spouse is happy."
+            "en": "Yes. My spouse is happy.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu do se panzi",
-            "en": "Do you have children?"
+            "en": "Do you have children?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+                  "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i",
-            "en": "Yes."
+            "en": "Yes.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i do se panzi xo da",
-            "en": "How many?"
+            "en": "How many?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+                  "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi se panzi re da",
-            "en": "Two."
+            "en": "Two.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+                  "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i le lanzu be mi cu gleki",
-            "en": "My family is happy."
+            "en": "My family is happy.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -1684,38 +2771,104 @@
         {
           "jbo": "le bersa be mi cu gleki",
           "en": "My son is happy.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "le tixnu be mi cu zvati le zdani",
           "en": "My daughter is at home.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'tixnu' expects Group<Organism>, but got mi",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              }
+            ]
+          }
         },
         {
           "jbo": "mi se panzi pa nanla .e pa nixli",
           "en": "I have a boy and a girl.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'panzi' expects Organism, but got bound var x-1",
+                "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'panzi' expects Organism, but got bound var x-1",
+                "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+              }
+            ]
+          }
         },
         {
           "jbo": "le tixnu be do cu tavla mi",
           "en": "Your daughter talks to me.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'tixnu' expects Group<Organism>, but got do",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              }
+            ]
+          }
         },
         {
           "jbo": "xu do se bruna",
           "en": "Do you have a brother?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi se mensi",
           "en": "I have a sister.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Son, Daughter, Siblings",
-          "jbo": "le bersa be mi"
+          "jbo": "le bersa be mi",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1735,32 +2888,73 @@
           {
             "speaker": "Mentu",
             "jbo": ".i le bersa be mi cu gleki",
-            "en": "My son is happy."
+            "en": "My son is happy.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i le tixnu be mi cu zvati le zdani",
-            "en": "My daughter is at home."
+            "en": "My daughter is at home.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                },
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'tixnu' expects Group<Organism>, but got mi",
+                  "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu do se bruna",
-            "en": "Do you have a brother?"
+            "en": "Do you have a brother?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "na go'i .i ku'i mi se mensi",
-            "en": "No, but I have a sister."
+            "en": "No, but I have a sister.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i le tixnu be do pu tavla mi",
-            "en": "Your daughter talked to me."
+            "en": "Your daughter talked to me.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'tixnu' expects Group<Organism>, but got do",
+                  "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".ui",
-            "en": "Oh, nice!"
+            "en": "Oh, nice!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -1788,33 +2982,57 @@
         {
           "jbo": "do xabju ma",
           "en": "Where do you live?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi xabju lo barda tcadu",
           "en": "I live in a big city.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "le zdani be mi cu cmalu",
           "en": "My home is small.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu le tcadu cu darno",
           "en": "Is the city far?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "le panka cu jibni",
           "en": "The park is near.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Where Do You Live?",
-          "jbo": "do xabju ma"
+          "jbo": "do xabju ma",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1834,37 +3052,82 @@
           {
             "speaker": "Lifri",
             "jbo": ".i do xabju ma",
-            "en": "Where do you live?"
+            "en": "Where do you live?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi xabju lo barda tcadu",
-            "en": "I live in a big city."
+            "en": "I live in a big city.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i ku'i le zdani be mi cu cmalu",
-            "en": "But my home is small."
+            "en": "But my home is small.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i xu le tcadu cu darno",
-            "en": "Is the city far?"
+            "en": "Is the city far?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "na go'i .i ri jibni",
-            "en": "No, it's near."
+            "en": "No, it's near.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'jibni' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu le panzi be do cu xabju le zdani be do",
-            "en": "Do your children live with you?"
+            "en": "Do your children live with you?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'xabju' expects Location, but got lo zdani (Entity)",
+                  "note": "parser limitation (location): any object can be a location (CLL 10.2: `vi` + any sumti; `zvati lo zdani`); formal-gismu has no Entity/Organism -> Location coercion"
+                },
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'panzi' expects Group<Organism>, but got do",
+                  "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i",
-            "en": "Yes."
+            "en": "Yes.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -1892,38 +3155,66 @@
         {
           "jbo": ".i lerci",
           "en": "It's late.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ba sipna",
           "en": "I'm going to sleep.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi nitcu lo nu mi gunka",
           "en": "I need to work.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo jibri be do cu mo",
           "en": "What is your job?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi gunka ca le cerni",
           "en": "I work in the morning.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi nitcu lo nu sipna",
           "en": "I need to sleep.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "I Need to Work",
-          "jbo": "mi nitcu lo nu gunka"
+          "jbo": "mi nitcu lo nu gunka",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -1939,37 +3230,65 @@
           {
             "speaker": "Mentu",
             "jbo": ".i lerci .i mi ba sipna",
-            "en": "It's late. I'm going to sleep."
+            "en": "It's late. I'm going to sleep.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu ca",
-            "en": "Now?"
+            "en": "Now?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i ca le bavlamdei mi nitcu lo nu mi gunka",
-            "en": "Yes. Tomorrow I need to work."
+            "en": "Yes. Tomorrow I need to work.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i lo jibri be do cu mo",
-            "en": "What's your job?"
+            "en": "What's your job?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi ctuca",
-            "en": "I'm a teacher."
+            "en": "I'm a teacher.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi gunka ca le cerni .i mi nitcu lo nu sipna",
-            "en": "I work in the morning. I need to sleep."
+            "en": "I work in the morning. I need to sleep.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
-            "jbo": "co'o .mentus.",
-            "en": "Bye, Mentu!"
+            "jbo": "co'o la mentu",
+            "en": "Bye, Mentu!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -1996,38 +3315,72 @@
         {
           "jbo": "fi'i",
           "en": "Welcome!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do pu litru",
           "en": "Have you travelled?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi pu klama lo drata gugde",
           "en": "I went to another country.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "vi ta do se bangu ma",
           "en": "What language do you speak there?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'bangu' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "mi milxe se bangu lo fraso bangu",
           "en": "I speak a little French.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu la .fransis. cu darno",
           "en": "Is France far?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Travel and Countries",
-          "jbo": "lo nu litru"
+          "jbo": "lo nu litru",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2046,43 +3399,87 @@
         "lines": [
           {
             "speaker": "Lifri",
-            "jbo": "fi'i .lintas.",
-            "en": "Welcome back, Linto!"
+            "jbo": "fi'i la linto",
+            "en": "Welcome back, Linto!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i xu do pu litru",
-            "en": "Have you been travelling?"
+            "en": "Have you been travelling?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "go'i .i mi pu klama lo drata gugde",
-            "en": "Yes, I went to another country."
+            "en": "Yes, I went to another country.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi pu zvati la .paris.",
-            "en": "I was in Paris."
+            "en": "I was in Paris.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got la paris",
+                  "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i vi ta do se bangu ma",
-            "en": "What language do you speak there?"
+            "en": "What language do you speak there?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'bangu' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi milxe se bangu lo fraso bangu",
-            "en": "I speak a little French."
+            "en": "I speak a little French.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i xu la .paris. cu darno",
-            "en": "Is Paris far?"
+            "en": "Is Paris far?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "go'i",
-            "en": "Yes."
+            "en": "Yes.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -2110,38 +3507,66 @@
         {
           "jbo": "mi tatpi",
           "en": "I'm tired.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi taske",
           "en": "I'm thirsty.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo nu cadzu pu pluka mi",
           "en": "The walk was pleasant.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi kufra",
           "en": "I feel comfortable.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo bavlamdei ba zabna",
           "en": "Tomorrow will be nice.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi cinmo lo ka gleki",
           "en": "I feel happy.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "I'm Tired — How Do You Feel?",
-          "jbo": "mi tatpi"
+          "jbo": "mi tatpi",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2161,37 +3586,65 @@
           {
             "speaker": "Lifri",
             "jbo": ".i do mo",
-            "en": "How are you?"
+            "en": "How are you?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi tatpi",
-            "en": "I'm tired."
+            "en": "I'm tired.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi taske .i .au mi pinxe lo djacu",
-            "en": "I'm thirsty. I want to drink water."
+            "en": "I'm thirsty. I want to drink water.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i ku'i lo nu cadzu pu pluka mi",
-            "en": "But the walk was pleasant."
+            "en": "But the walk was pleasant.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i mi ca kufra",
-            "en": "Yes. Now I feel comfortable."
+            "en": "Yes. Now I feel comfortable.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i lo bavlamdei ba zabna",
-            "en": "Tomorrow will be nice."
+            "en": "Tomorrow will be nice.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".e'u mi'o tavla ca le vanci",
-            "en": "Let's talk in the evening."
+            "en": "Let's talk in the evening.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -2218,38 +3671,72 @@
         {
           "jbo": ".e'u mi'o casnu",
           "en": "Let's discuss.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'casnu' expects Group<Entity>, but got mi'o",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              }
+            ]
+          }
         },
         {
           "jbo": "xu mi'o kansa klama",
           "en": "Shall we go together?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi jo'u le speni be mi ba klama",
           "en": "My spouse and I will go.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi tadni la .lojban.",
           "en": "I study Lojban.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi prami do",
           "en": "I love you.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "do pendo mi",
           "en": "You're my friend.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Let's Go Together",
-          "jbo": "mi'o kansa klama"
+          "jbo": "mi'o kansa klama",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2269,37 +3756,71 @@
           {
             "speaker": "Lifri",
             "jbo": ".e'u mi'o casnu lo nu litru",
-            "en": "Let's discuss the trip."
+            "en": "Let's discuss the trip.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'casnu' expects Group<Entity>, but got mi'o",
+                  "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i xu mi'o kansa klama le mi tcadu",
-            "en": "Shall we go to my city together?"
+            "en": "Shall we go to my city together?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i mi jo'u le speni be mi ba klama",
-            "en": "Yes! My spouse and I will go."
+            "en": "Yes! My spouse and I will go.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi ji'a ba klama",
-            "en": "I'll go too."
+            "en": "I'll go too.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi tadni la .lojban. .i mi mutce nelci ri",
-            "en": "I study Lojban. I really like it!"
+            "en": "I study Lojban. I really like it!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "doi pendo .i mi prami do",
-            "en": "Friends, I love you!"
+            "en": "Friends, I love you!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".e'u mi'o klama ca le vanci",
-            "en": "Let's go in the evening."
+            "en": "Let's go in the evening.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -2326,33 +3847,57 @@
         {
           "jbo": "mi ba stali ze'a lo jeftu be li pa",
           "en": "I'll stay for a week.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ba ze'i gunka",
           "en": "I'll work for a short while.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ba stali ze'a lo djedi be li ci",
           "en": "I'll stay for three days.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do ba ze'u stali",
           "en": "Will you stay long?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "na go'i .i mi ba ze'i stali",
           "en": "No, I'll stay a short time.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "How Long Will You Stay?",
-          "jbo": "ze'a ma"
+          "jbo": "ze'a ma",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2372,32 +3917,56 @@
           {
             "speaker": "Mentu",
             "jbo": ".i mi'o ba stali ze'a ma",
-            "en": "How long will we stay?"
+            "en": "How long will we stay?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i mi'o ba stali ze'a lo jeftu be li pa",
-            "en": "We'll stay for a week."
+            "en": "We'll stay for a week.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i ku'i mi ba stali ze'a lo djedi be li ci",
-            "en": "But I'll only stay three days."
+            "en": "But I'll only stay three days.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi nitcu lo nu gunka",
-            "en": "I need to work."
+            "en": "I need to work.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i xu do ba ze'u stali",
-            "en": "So you won't stay long?"
+            "en": "So you won't stay long?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "na go'i .i mi ba ze'i stali",
-            "en": "No, I'll stay a short time."
+            "en": "No, I'll stay a short time.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -2426,44 +3995,88 @@
         {
           "jbo": "fi'i do",
           "en": "Welcome!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ko nerkla",
           "en": "Come in!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo nu litru pu mo",
           "en": "How was the trip?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi'o klama fu lo karce",
           "en": "We came by car.",
           "direction": "wordbank",
-          "doubtful": "the plan has `taksi`, but taksi is only an experimental gismu; the course uses lo karce (car)"
+          "doubtful": "the plan has `taksi`, but taksi is only an experimental gismu; the course uses lo karce (car)",
+          "validation": {
+            "status": "doubtful",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x5 of 'klama' expects Set<T>, but got lo karce (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "ti zdani mi",
           "en": "This is my home.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'zdani' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": ".ue",
           "en": "Oh, what a surprise!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi vitke do",
           "en": "I'm your guest.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Visiting — Welcome!",
-          "jbo": "fi'i"
+          "jbo": "fi'i",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2483,37 +4096,77 @@
           {
             "speaker": "Lifri",
             "jbo": "fi'i .i ko nerkla",
-            "en": "Welcome! Come in!"
+            "en": "Welcome! Come in!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "ki'e .i ti melbi zdani",
-            "en": "Thanks! This is a beautiful home."
+            "en": "Thanks! This is a beautiful home.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'zdani' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i lo nu litru pu mo",
-            "en": "How was the trip?"
+            "en": "How was the trip?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi'o klama fu lo karce",
-            "en": "We came by car."
+            "en": "We came by car.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x5 of 'klama' expects Set<T>, but got lo karce (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i xu lo klaji pu clani",
-            "en": "Was the road long?"
+            "en": "Was the road long?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i lo klaji cu ki'otre li muno",
-            "en": "Yes, the road is fifty kilometres."
+            "en": "Yes, the road is fifty kilometres.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".ue",
-            "en": "Wow!"
+            "en": "Wow!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -2546,38 +4199,84 @@
         {
           "jbo": "xo prenu cu zvati ti",
           "en": "How many people are here?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "xu le panka cu darno",
           "en": "Is the park far?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo klaji be le tcadu cu ki'otre li muno",
           "en": "The road to the city is 50 km long.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "so'i zarci cu zvati ti",
           "en": "There are many shops here.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "ro zarci cu cmalu",
           "en": "Every shop is small.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "do se panzi xo da",
           "en": "How many children do you have?",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+                "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+              }
+            ]
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "How Far? How Many?",
-          "jbo": "xo prenu"
+          "jbo": "xo prenu",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2597,37 +4296,89 @@
           {
             "speaker": "Mentu",
             "jbo": ".i xo prenu cu xabju le tcadu",
-            "en": "How many people live in the city?"
+            "en": "How many people live in the city?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": "so'i prenu",
-            "en": "Many people."
+            "en": "Many people.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu le panka cu darno",
-            "en": "Is the park far?"
+            "en": "Is the park far?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": "na go'i .i ri jibni",
-            "en": "No, it's near."
+            "en": "No, it's near.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'jibni' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i lo klaji be le mi tcadu cu ki'otre li muno",
-            "en": "The road to my city is fifty kilometres."
+            "en": "The road to my city is fifty kilometres.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'klaji' expects Location, but got lo srana (Entity)",
+                  "note": "parser limitation (srana): `le ti X` / `lo mi X` is typed as srana(ti) (Entity) by the checker, losing the type of X"
+                }
+              ]
+            }
           },
           {
             "speaker": "Lifri",
-            "jbo": "doi .mentus. .i do se panzi xo da",
-            "en": "Mentu, how many children do you have again?"
+            "jbo": "doi la mentu .i do se panzi xo da",
+            "en": "Mentu, how many children do you have again?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'panzi' expects Group<Organism>, but got a named predicate",
+                  "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi se panzi re da",
-            "en": "Two!"
+            "en": "Two!",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+                  "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+                }
+              ]
+            }
           }
         ]
       },
@@ -2654,33 +4405,91 @@
         {
           "jbo": "do jinvi ma",
           "en": "What do you think?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi jinvi lo du'u ri zabna",
           "en": "I think it's nice.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'zabna' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "ta simlu lo ka zabna",
           "en": "That seems nice.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'simlu' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "ti zmadu ta lo ka kukte",
           "en": "This is tastier than that.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'zmadu' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'zmadu' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "ti mleca ta lo ka kargu",
           "en": "This is cheaper than that.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'mleca' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'mleca' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Opinions and Preferences",
-          "jbo": "lo se jinvi"
+          "jbo": "lo se jinvi",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2699,43 +4508,75 @@
         "lines": [
           {
             "speaker": ">",
-            "jbo": ".i le ci pendo cu citka lo vanci sanmi vi le zdani be la .lifris.",
-            "en": "The three friends have dinner at Lifri's home."
+            "jbo": ".i le ci pendo cu citka lo vanci sanmi vi le zdani be la lifri",
+            "en": "The three friends have dinner at Lifri's home.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i do jinvi ma",
-            "en": "What do you think?"
+            "en": "What do you think?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi jinvi lo du'u le stasu cu zabna",
-            "en": "I think the soup is great."
+            "en": "I think the soup is great.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i le nanba ji'a simlu lo ka kukte",
-            "en": "The bread also seems tasty."
+            "en": "The bread also seems tasty.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i le stasu ji le nanba cu zmadu fi lo ka kukte",
-            "en": "Which is tastier, the soup or the bread?"
+            "en": "Which is tastier, the soup or the bread?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i le stasu",
-            "en": "The soup."
+            "en": "The soup.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu",
-            "en": "In my opinion, Lojban is the best language."
+            "en": "In my opinion, Lojban is the best language.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".ie",
-            "en": "Agreed!"
+            "en": "Agreed!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -2762,38 +4603,72 @@
         {
           "jbo": "coi ro do",
           "en": "Hello, everyone!",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ba le nu vitke kei mi ba klama le zdani",
           "en": "After the visit I'll go home.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do ba klama fu le karce pe do",
           "en": "Will you go in your car?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x5 of 'klama' expects Set<T>, but got lo karce (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "mi ba di'a gunka",
           "en": "I'll get back to work.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ca le nu do xruti kei ko fonta'a mi",
           "en": "When you get back, call me.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "co'o ro do",
           "en": "Goodbye, everyone!",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Coming Back",
-          "jbo": "mi di'a klama"
+          "jbo": "mi di'a klama",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2813,37 +4688,77 @@
           {
             "speaker": "Mentu",
             "jbo": "coi ro do",
-            "en": "Good morning, everyone!"
+            "en": "Good morning, everyone!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i xu do ba klama fu le karce pe do",
-            "en": "Will you go in your car?"
+            "en": "Will you go in your car?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x5 of 'klama' expects Set<T>, but got lo karce (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i ba le nu vitke kei mi ba klama le zdani",
-            "en": "Yes. After the visit I'll go home."
+            "en": "Yes. After the visit I'll go home.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi ba di'a gunka",
-            "en": "I'll get back to work."
+            "en": "I'll get back to work.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i ca le nu do xruti kei ko fonta'a mi",
-            "en": "When you get back, call me!"
+            "en": "When you get back, call me!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i'e .i mi ba zi xruti ti",
-            "en": "OK! I'll come back here soon."
+            "en": "OK! I'll come back here soon.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'xruti' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "co'o ro do",
-            "en": "Goodbye, everyone!"
+            "en": "Goodbye, everyone!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -2869,38 +4784,89 @@
         {
           "jbo": "xu lo dikca cu kargu",
           "en": "Is electricity expensive?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'kargu' expects Set<W>, but got lo dikca (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "mi na djuno .i mi na pleji",
           "en": "I don't know, I don't pay.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "xu do pleji fi lo kagni",
           "en": "Do you pay the company?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ca ro detma'i mi pleji lo meryru'u be li reno",
           "en": "Every month I pay 20 dollars.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+                "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+              },
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'pleji' expects Set<T>, but got lo meryru'u (Entity)",
+                "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+              }
+            ]
+          }
         },
         {
           "jbo": "vi ti lo dikca cu tolkargu",
           "en": "Electricity is cheap here.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ro zdani cu nitcu tu'a lo dikca",
           "en": "Every home needs electricity.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Paying Bills — Monthly Life",
-          "jbo": "ca ro detma'i"
+          "jbo": "ca ro detma'i",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -2916,32 +4882,90 @@
           {
             "speaker": "Linto",
             "jbo": ".i xu lo dikca cu kargu",
-            "en": "Is electricity expensive?"
+            "en": "Is electricity expensive?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'kargu' expects Set<W>, but got lo dikca (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi na djuno .i le speni be mi cu pleji",
-            "en": "I don't know. My spouse pays."
+            "en": "I don't know. My spouse pays.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu ri pleji fi lo kagni",
-            "en": "Does she pay the company?"
+            "en": "Does she pay the company?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'pleji' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i ca ro detma'i ri pleji lo meryru'u be li reno",
-            "en": "Yes, every month she pays 20 dollars."
+            "en": "Yes, every month she pays 20 dollars.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+                  "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+                },
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'pleji' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                },
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'pleji' expects Set<T>, but got lo meryru'u (Entity)",
+                  "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".ue .i vi ti lo dikca cu tolkargu",
-            "en": "Wow, electricity is cheap here."
+            "en": "Wow, electricity is cheap here.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i ku'i ro zdani cu nitcu tu'a lo dikca",
-            "en": "But every home needs electricity."
+            "en": "But every home needs electricity.",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           }
         ]
       },
@@ -2968,33 +4992,57 @@
         {
           "jbo": "mi klama le zdani ki'u le nu mi nitcu lo nu sipna",
           "en": "I'm going home because I need to sleep.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": ".ei mi sipna",
           "en": "I should sleep.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ba zi co'a sipna",
           "en": "I'll fall asleep soon.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "pu'o nicte",
           "en": "Night is coming.",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo nu tavla do kei pu pluka mi",
           "en": "Talking to you was a pleasure.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Because and Should",
-          "jbo": "ki'u ma"
+          "jbo": "ki'u ma",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -3014,32 +5062,56 @@
           {
             "speaker": "Mentu",
             "jbo": ".u'u .i mi klama le zdani ki'u le nu mi nitcu lo nu sipna",
-            "en": "Sorry, I'm going home because I need to sleep."
+            "en": "Sorry, I'm going home because I need to sleep.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i xu ca",
-            "en": "Already?"
+            "en": "Already?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "go'i .i .ei mi sipna .i pu'o nicte",
-            "en": "Yes. I should sleep. Night is coming."
+            "en": "Yes. I should sleep. Night is coming.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i lo nu tavla do kei pu pluka mi",
-            "en": "Talking to you was a pleasure."
+            "en": "Talking to you was a pleasure.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi ji'a gleki",
-            "en": "I'm glad too."
+            "en": "I'm glad too.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "co'o .i mi ba zi co'a sipna",
-            "en": "Goodbye! I'll be asleep soon."
+            "en": "Goodbye! I'll be asleep soon.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -3066,38 +5138,72 @@
         {
           "jbo": "mi pacna lo nu mi sutra tavla bau la .lojban.",
           "en": "I hope to speak Lojban fluently.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo nu mi ba litru cu cumki",
           "en": "Maybe I'll travel.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi pacna lo nu ro do gleki",
           "en": "I wish you all happiness.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo tcini be mi cu xamgu",
           "en": "My situation is good.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "lo nu litru ca ro djedi cu fenki",
           "en": "Travelling every day is crazy.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+                "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+              }
+            ]
+          }
         },
         {
           "jbo": "mi prami le vi bangu",
           "en": "I love this language.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Future Hopes",
-          "jbo": "mi pacna"
+          "jbo": "mi pacna",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -3117,37 +5223,71 @@
           {
             "speaker": "Linto",
             "jbo": ".i mi pacna lo nu mi sutra tavla bau la .lojban.",
-            "en": "I hope to speak Lojban fluently."
+            "en": "I hope to speak Lojban fluently.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i lo nu go'i cu cumki",
-            "en": "That's possible!"
+            "en": "That's possible!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i lo nu mi ba litru cu cumki",
-            "en": "Maybe I'll travel."
+            "en": "Maybe I'll travel.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i lo nu litru ca ro djedi cu fenki",
-            "en": "Travelling every day is crazy!"
+            "en": "Travelling every day is crazy!",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+                  "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi pacna lo nu ro do gleki",
-            "en": "I wish you all happiness."
+            "en": "I wish you all happiness.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".e'u mi'o ba penmi",
-            "en": "Let's meet again."
+            "en": "Let's meet again.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi prami le vi bangu",
-            "en": "I love this language!"
+            "en": "I love this language!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },
@@ -3168,38 +5308,72 @@
         {
           "jbo": "coi ro do .i ma nuzba",
           "en": "Hi everyone! What's new?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "warning",
+            "warnings": [
+              {
+                "kind": "parser_limitation",
+                "message": "x1 of 'nuzba' is unverified: argument type information is unavailable",
+                "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+              }
+            ]
+          }
         },
         {
           "jbo": "mi ca se bangu la .lojban.",
           "en": "Now I speak Lojban.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "ma cmene do",
           "en": "What's your name?",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "fi'i",
           "en": "Welcome!",
-          "direction": "quiz_direct"
+          "direction": "quiz_direct",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "mi ca'o jinvi lo du'u la .lojban. cu xamgu",
           "en": "I still think Lojban is great.",
-          "direction": "wordbank_reverse"
+          "direction": "wordbank_reverse",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         {
           "jbo": "pa cnino prenu cu klama",
           "en": "A new person is coming.",
-          "direction": "wordbank"
+          "direction": "wordbank",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         }
       ],
       "dialogue": {
         "title": {
           "en": "Full Spiral Review — One Year Later",
-          "jbo": "ba lo nanca be li pa"
+          "jbo": "ba lo nanca be li pa",
+          "validation": {
+            "status": "ok",
+            "warnings": []
+          }
         },
         "speakers": [
           {
@@ -3215,7 +5389,7 @@
             "gender": "F"
           },
           {
-            "name": "Newcomer",
+            "name": "Cninos",
             "gender": "M"
           }
         ],
@@ -3223,57 +5397,113 @@
           {
             "speaker": ">",
             "jbo": ".i ba lo nanca be li pa le ci pendo cu penmi vi le panka",
-            "en": "One year later, the three friends meet at the park."
+            "en": "One year later, the three friends meet at the park.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": "coi ro do .i ma nuzba",
-            "en": "Hi everyone! What's new?"
+            "en": "Hi everyone! What's new?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x1 of 'nuzba' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".ui .i mi ca se bangu la .lojban.",
-            "en": "I speak Lojban now!"
+            "en": "I speak Lojban now!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Linto",
             "jbo": ".i mi pu di'a klama la .paris.",
-            "en": "I went to Paris again."
+            "en": "I went to Paris again.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
             "jbo": ".i xu do ba stali ti ze'a lo jeftu be li re",
-            "en": "Will you stay here for two weeks?"
+            "en": "Will you stay here for two weeks?",
+            "validation": {
+              "status": "warning",
+              "warnings": [
+                {
+                  "kind": "parser_limitation",
+                  "message": "x2 of 'stali' is unverified: argument type information is unavailable",
+                  "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+                }
+              ]
+            }
           },
           {
             "speaker": "Linto",
             "jbo": "na go'i .i mi nitcu lo nu gunka",
-            "en": "No, I need to work."
+            "en": "No, I need to work.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": ".i mi ca'o jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu",
-            "en": "I still think Lojban is the best language."
+            "en": "I still think Lojban is the best language.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": ">",
             "jbo": ".i pa cnino prenu cu klama",
-            "en": "A new person walks up."
+            "en": "A new person walks up.",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
-            "speaker": "Newcomer",
+            "speaker": "Cninos",
             "jbo": "coi",
-            "en": "Hi..."
+            "en": "Hi...",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Lifri",
-            "jbo": "coi do .i mi'e la .lifris. .i ma cmene do",
-            "en": "Hello! I'm Lifri. What's your name?"
+            "jbo": "coi do .i mi'e la lifri .i ma cmene do",
+            "en": "Hello! I'm Lifri. What's your name?",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           },
           {
             "speaker": "Mentu",
             "jbo": "fi'i",
-            "en": "Welcome!"
+            "en": "Welcome!",
+            "validation": {
+              "status": "ok",
+              "warnings": []
+            }
           }
         ]
       },

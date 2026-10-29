@@ -18,17 +18,15 @@ FIXES = {
     157: ("mi mutce nelci le nu mi tavla do", "mi mutce gleki le nu mi ca tavla do", "I'm very glad that I'm speaking to you now.",
           "nelci x2 is Entity|State; gleki x2 takes the event"),
     243: ("do se voksa le melbi", "le do voksa cu melbi", None, "voksa x2 is the speaker, x1 the voice (Sound); possessive form (le voksa be do + melbi trips the type checker)"),
-    321: ("mi xabju la barda plise", "mi xabju la .nuiork.", "I live in New York.",
-          "la barda plise ('Big Apple') is a calque; cmevla .nuiork. as in level 23"),
     328: (".e'ei do cusku su'o da", ".e'e do cusku su'o da", "Go on, say something!", ".e'ei is not a valid word; .e'e = encouragement"),
     334: ("mi se panzi le pa nanla .e le pa nixli", "mi se panzi pa nanla .e pa nixli", "I have a son and a daughter.",
           "panzi x2 is an Organism; quantified pa nanla"),
     335: ("le tixnu be mi ca tadni le saske be lo ka skami", "le tixnu be mi ca tadni le saske be lo skami", None,
           "saske x2 is an Entity (the subject), not lo ka"),
-    345: ("le tixnu be mi ca zabju la barda plise", "le tixnu be mi ca xabju la .nuiork.", "My daughter now lives in New York.",
-          "zabju is a typo of xabju; Big Apple -> .nuiork."),
-    362: ("mi xabju la bersi trutca", "mi xabju la .sanktpeterburg.", "I live in Saint Petersburg (the Northern Capital).",
-          "bersi is not a word; cmevla for the city"),
+    345: ("le tixnu be mi ca zabju la barda plise", "le tixnu be mi ca xabju la barda plise", None,
+          "zabju is a typo of xabju (la barda plise = brivla name, kept)"),
+    362: ("mi xabju la bersi trutca", "mi xabju la berti trutca", None,
+          "bersi is not a word: berti (north); brivla name la berti trutca kept"),
     384: ("lo ka finti lo proga cu jibri mi", "lo ka sampla cu jibri mi", None,
           "proga is an experimental gismu; sampla (lujvo.tsv) = write a computer program"),
     385: (".ai mi te vecnu su'o da ca le cerni be le bavlamdei", ".ai mi te vecnu su'o da ca le bavlamdei cerni", None,
@@ -44,6 +42,9 @@ FIXES = {
           "kanpe is an experimental gismu"),
     424: ("do pu klama ma ca le cerni be le cabdei", "do pu klama ma ca le cabdei cerni", None, "tanru cabdei cerni"),
     425: ("do ba klama ma ca le vanci be le cabdei", "do ba klama ma ca le cabdei vanci", None, "tanru cabdei vanci"),
+    248: ("lo ka ca tavla do cu kufra mi", "lo nu mi ca tavla do cu se kufra mi", None,
+          "kufra x1 is the one comforted, x2 the conditions: se kufra mi; lo nu for the event"),
+    251: ("ie kufra mi", "ie se kufra mi", None, "kufra mi put mi in x2 (conditions); se kufra mi = comfortable for me"),
 }
 # English-only corrections (front and audio unchanged).
 BACK_FIXES = {
@@ -51,9 +52,6 @@ BACK_FIXES = {
 }
 
 DOUBTFUL = {
-    82: "la lensisku: brand name, not in lujvo.tsv; candidate cmevla la .lensiskus.",
-    83: "la lensisku: brand name, not in lujvo.tsv; candidate cmevla la .lensiskus.",
-    84: "la lensisku: brand name, not in lujvo.tsv; candidate cmevla la .lensiskus.",
     389: "taksi is only an experimental gismu; candidate: fu le karce (by car)",
     401: "taksi is only an experimental gismu; candidate: fu le karce (by car)",
 }
@@ -156,7 +154,7 @@ DIALOGUES = [
      (D, ".i'a .i ti'u ma", "I accept. At what time?"), (A, "ti'u li cacra bu mu veti'u la .nuiork.", "At 5 o'clock New York time."),
      (D, "u'u tu'a li cacra bu mu na'e se kufra mi .i xu tu'a li cacra bu xa cu se kufra do",
       "I'm sorry, 5 o'clock is not convenient for me. Is 6 o'clock convenient for you?"),
-     (A, "ie kufra mi", "Yes, it's convenient for me."), (D, "ja'o .ai tavla ti'u li cacra bu xa", "So let's talk at 6 o'clock.")],
+     (A, "ie se kufra mi", "Yes, it's convenient for me."), (D, "ja'o .ai tavla ti'u li cacra bu xa", "So let's talk at 6 o'clock.")],
     [(A, "xu do djica lo nu do tavla mi ti'u li cacra bu ze", "Do you want to talk to me at 7 o'clock?"),
      (D, ".u'u tu'a li cacra bu ze milxe na'e se kufra mi", "Sorry, 7 o'clock is a bit inconvenient for me."),
      (A, "pei ca le cabdei", "How about today?"), (D, "ca le xu cabdei .i mi na birti", "Today? I'm not sure."),
@@ -189,8 +187,8 @@ DIALOGUES = [
      (A, "mi ji'a se esporte .i mi se cuntu la .soker.", "I'm a sportsperson too. I play soccer.")],
     [(A, "xu do se panzi su'o da", "Do you have children?"), (D, "go'i .i mi se panzi ci da", "Yes, I have three children."),
      (A, "xu le bersa be do cu makcu", "Is your son grown-up?"), (D, "le bersa be mi ca cifnu", "My son is a baby."),
-     (D, ".i ku'i le tixnu be mi ca makcu .i le tixnu be mi ca xabju la .nuiork.",
-      "But my daughter is grown-up. My daughter now lives in New York.")],
+     (D, ".i ku'i le tixnu be mi ca makcu .i le tixnu be mi ca xabju la barda plise",
+      "But my daughter is grown-up. My daughter now lives in the Big Apple.")],
     [(A, "le bersa be do ca zvati ma", "Where is your son now?"),
      (D, "le bersa be mi ca zvati la .moskov.", "My son is now in Moscow."), (A, ".ue", "Oh, what a surprise!"),
      (D, ".i mi ponse le pa cmalu karce .i .ai mi klama le tcadu ca le bavlamdei",
@@ -198,7 +196,7 @@ DIALOGUES = [
      (A, "xu le tcadu cu darno", "Is the city far away?"),
      (D, "go'i .i le tcadu cu sepli mi le ki'otre be li mu no", "Yes, the city is 50 kilometers away from me.")],
     [(A, "do xabju ma", "Where do you live?"),
-     (D, "mi xabju la .sanktpeterburg.", "I live in Saint Petersburg (the Northern Capital)."),
+     (D, "mi xabju la berti trutca", "I live in the Northern Capital."),
      (A, "xu do se panzi", "Do you have children?"), (D, "mi se panzi xa da", "I have 6 children."),
      (A, "le lanzu be do cu barda", "Your family is big."),
      (D, "go'i .i le panzi be mi ca xabju le zdani be mi", "Yes. My children live in my home.")],
@@ -236,4 +234,4 @@ DIALOGUES = [
      (A, "xu do nelci le titnanba", "Do you like the cookies?"), (D, "mi nelci .i ie mi nelci", "I like them. Yes, I like them."),
      (A, "do ba klama ma ca le cabdei vanci", "Where will you go this evening?"), (D, "mi na djuno", "I don't know.")],
 ]
-DOUBTFUL_DIALOGUES = {8: "uses la lensisku (brand name, not in lujvo.tsv); candidate la .lensiskus."}
+DOUBTFUL_DIALOGUES = {}  # la lensisku is valid (la + brivla)

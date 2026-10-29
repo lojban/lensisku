@@ -1,19 +1,21 @@
 # Validation report
 
 - sentences: 4011
-- doubtful: 64
+- doubtful: 56
 - parse: 0
 - morph: 0
 - unknown: 0
 - name: 0
 - type: 0
-- type_checker: 469
+- parser_limitation: 1045
 - doubtful_parse: 0
 - doubtful_morph: 0
-- doubtful_unknown: 8
+- doubtful_unknown: 2
 - doubtful_name: 0
 - doubtful_type: 10
-- doubtful_type_checker: 8
+- doubtful_parser_limitation: 20
+- speaker_labels: 86
+- invalid_speaker_labels: 0
 - failing_sentences: 0
 - unique_unknown_words: 0
 - unique_invalid_names: 0
@@ -23,55 +25,65 @@
 
 ## Doubtful with issues
 
-- `item 82` phrase: `mi pilno la lensisku le nu mi tadni la .lojban.`
-  - unknown: lensisku: lujvo not in lujvo.tsv
-- `item 83` phrase: `xu le nu do pilno la lensisku cu xamgu do`
-  - unknown: lensisku: lujvo not in lujvo.tsv
-- `item 84` phrase: `mi tatpi le nu mi pilno la lensisku`
-  - unknown: lensisku: lujvo not in lujvo.tsv
-- `item 389` phrase: `.ai mi klama le tcadu fu tu'a le taksi`
-  - unknown: taksi: experimental gismu
-- `item 401` phrase: `na go'i .i mi ba klama fu tu'a le taksi`
-  - unknown: taksi: experimental gismu
-- `item 473` line 0: `mi pilno la lensisku le nu mi tadni la .lojban.`
-  - unknown: lensisku: lujvo not in lujvo.tsv
-- `item 473` line 1: `.i xu le nu do pilno la lensisku cu xamgu do`
-  - unknown: lensisku: lujvo not in lujvo.tsv
-- `item 473` line 3: `.i ku'i mi tatpi le nu mi pilno la lensisku`
-  - unknown: lensisku: lujvo not in lujvo.tsv
 - `batch2-03` line 9: `.i la .lilianas. cu lebna lo bolci gi'e renro ri fi lo kelci vorme`
-  - type_checker: x2 of 'lebna' expects Set<T>, but got lo bolci (Entity)
+  - parser_limitation: x2 of 'lebna' expects Set<T>, but got lo bolci (Entity)
 - `batch2-06` line 11: `.i mu'i lo nu mi ba cpedu lo nu gunka`
-  - type_checker: x2 of 'cpedu' expects Set<V>, but got lo nu (Abstraction: (Event))
+  - parser_limitation: x2 of 'cpedu' expects Set<V>, but got lo nu (Abstraction: (Event))
 - `batch2-07` line 3: `.i do nanca li xo`
   - type: x1 of 'nanca' expects TimeInterval, but got do
+  - parser_limitation: x2 of 'nanca' is unverified: argument type information is unavailable
 - `batch2-07` line 4: `.i mi nanca li cimu`
   - type: x1 of 'nanca' expects TimeInterval, but got mi
 - `batch2-07` line 8: `.i ku'i mi se cmene zoi gy. Emilia Rossi gy. .i mi nanca li cimu`
   - type: x1 of 'nanca' expects TimeInterval, but got mi
 - `batch2-07` q1 choice: `.i la .emilias. cu nanca li xo`
   - type: x1 of 'nanca' expects TimeInterval, but got la emilias
-- `batch2-19` line 8: `.i mi dukse lo ka terpa`
-  - type_checker: x2 of 'dukse' expects T, but got lo ka (Abstraction: (Set<Entity>))
+  - parser_limitation: x2 of 'nanca' is unverified: argument type information is unavailable
+- `batch2-10` line 5: `.ua .i ri nenri lo karce`
+  - parser_limitation: x1 of 'nenri' is unverified: argument type information is unavailable
+- `batch2-29` line 7: `.i ri se bangu lo bangu pe la .turkias. .e lo dotco bangu .e lo glico bangu`
+  - parser_limitation: x1 of 'bangu' is unverified: argument type information is unavailable
+  - parser_limitation: x1 of 'bangu' is unverified: argument type information is unavailable
+  - parser_limitation: x1 of 'bangu' is unverified: argument type information is unavailable
+- `batch2-31` line 19: `.ua .i ri mutce stati fonxa .i ki'e`
+  - parser_limitation: x1 of 'fonxa' is unverified: argument type information is unavailable
+- `batch2-37` line 5: `.i do djica lo nu pa moi zukte ma`
+  - parser_limitation: x2 of 'zukte' is unverified: argument type information is unavailable
 - `batch2-39` line 4: `.i ja'o mi na ba nanca li cino`
   - type: x1 of 'nanca' expects TimeInterval, but got mi
 - `lesson-23` phrase 3: `mi'o klama fu lo karce`
-  - type_checker: x5 of 'klama' expects Set<T>, but got lo karce (Entity)
+  - parser_limitation: x5 of 'klama' expects Set<T>, but got lo karce (Entity)
+- `item 42` line 19: `.ua .i ri mutce stati fonxa .i ki'e`
+  - parser_limitation: x1 of 'fonxa' is unverified: argument type information is unavailable
 - `item 63` line 4: `.i ja'o mi na ba nanca li cino`
   - type: x1 of 'nanca' expects TimeInterval, but got mi
 - `item 21` line 11: `.i mu'i lo nu mi ba cpedu lo nu gunka`
-  - type_checker: x2 of 'cpedu' expects Set<V>, but got lo nu (Abstraction: (Event))
+  - parser_limitation: x2 of 'cpedu' expects Set<V>, but got lo nu (Abstraction: (Event))
 - `item 26` line 3: `.i do nanca li xo`
   - type: x1 of 'nanca' expects TimeInterval, but got do
+  - parser_limitation: x2 of 'nanca' is unverified: argument type information is unavailable
 - `item 26` line 4: `.i mi nanca li cimu`
   - type: x1 of 'nanca' expects TimeInterval, but got mi
 - `item 26` line 8: `.i ku'i mi se cmene zoi gy. Emilia Rossi gy. .i mi nanca li cimu`
   - type: x1 of 'nanca' expects TimeInterval, but got mi
 - `item 26` q1 choice: `.i la .emilias. cu nanca li xo`
   - type: x1 of 'nanca' expects TimeInterval, but got la emilias
+  - parser_limitation: x2 of 'nanca' is unverified: argument type information is unavailable
 - `item 14` line 9: `.i la .lilianas. cu lebna lo bolci gi'e renro ri fi lo kelci vorme`
-  - type_checker: x2 of 'lebna' expects Set<T>, but got lo bolci (Entity)
-- `item 42` line 8: `.i mi dukse lo ka terpa`
-  - type_checker: x2 of 'dukse' expects T, but got lo ka (Abstraction: (Set<Entity>))
+  - parser_limitation: x2 of 'lebna' expects Set<T>, but got lo bolci (Entity)
+- `item 28` line 5: `.ua .i ri nenri lo karce`
+  - parser_limitation: x1 of 'nenri' is unverified: argument type information is unavailable
+- `item 70` line 5: `.i do djica lo nu pa moi zukte ma`
+  - parser_limitation: x2 of 'zukte' is unverified: argument type information is unavailable
+- `item 70` line 7: `.i ri se bangu lo bangu pe la .turkias. .e lo dotco bangu .e lo glico bangu`
+  - parser_limitation: x1 of 'bangu' is unverified: argument type information is unavailable
+  - parser_limitation: x1 of 'bangu' is unverified: argument type information is unavailable
+  - parser_limitation: x1 of 'bangu' is unverified: argument type information is unavailable
 - `item 205` phrase: `mi'o klama fu lo karce`
-  - type_checker: x5 of 'klama' expects Set<T>, but got lo karce (Entity)
+  - parser_limitation: x5 of 'klama' expects Set<T>, but got lo karce (Entity)
+- `item 389` phrase: `.ai mi klama le tcadu fu tu'a le taksi`
+  - unknown: taksi: experimental gismu
+  - parser_limitation: x5 of 'klama' is unverified: "tu'a (CLL §11.10)": raised sumti has an unspecified abstraction; its semantic type is unresolved
+- `item 401` phrase: `na go'i .i mi ba klama fu tu'a le taksi`
+  - unknown: taksi: experimental gismu
+  - parser_limitation: x5 of 'klama' is unverified: "tu'a (CLL §11.10)": raised sumti has an unspecified abstraction; its semantic type is unresolved

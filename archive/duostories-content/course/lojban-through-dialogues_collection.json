@@ -10,7 +10,7 @@
       "position": 0,
       "collection_note": "",
       "free_content_front": "Lesson 1: First Meeting — lo pa moi nu penmi",
-      "free_content_back": "#### New words\n{coi}, {co'o}, {mi'e}, {la}, {cliva}, {do}\n\n#### Grammar\nOne word is already a full sentence: `coi` (hello), `co'o` (goodbye). `coi do` greets you; `coi .lifris.` greets Lifri by name. `mi'e la .mentus.` = \"I'm Mentu\".",
+      "free_content_back": "#### New words\n{coi}, {co'o}, {mi'e}, {la}, {cliva}, {do}\n\n#### Grammar\nOne word is already a full sentence: `coi` (hello), `co'o` (goodbye). `coi do` greets you; `coi la lifri` greets Lifri by name. `mi'e la mentu` = \"I'm Mentu\".",
       "level_index": 0,
       "position_in_level": 0,
       "direction": "just_information"
@@ -23,7 +23,11 @@
       "free_content_back": "Hello!",
       "level_index": 0,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 3,
@@ -33,7 +37,11 @@
       "free_content_back": "Goodbye!",
       "level_index": 0,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 4,
@@ -43,27 +51,39 @@
       "free_content_back": "Hello (to you)!",
       "level_index": 0,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 5,
       "position": 4,
       "collection_note": "",
-      "free_content_front": "mi'e la .mentus.",
+      "free_content_front": "mi'e la mentu",
       "free_content_back": "I'm Mentu.",
       "level_index": 0,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 6,
       "position": 5,
       "collection_note": "",
-      "free_content_front": "coi .lifris.",
+      "free_content_front": "coi la lifri",
       "free_content_back": "Hi, Lifri!",
       "level_index": 0,
       "position_in_level": 5,
-      "direction": "quiz_direct"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 7,
@@ -73,7 +93,11 @@
       "free_content_back": "I'm leaving.",
       "level_index": 0,
       "position_in_level": 6,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 8,
@@ -83,17 +107,25 @@
       "free_content_back": "You're leaving.",
       "level_index": 0,
       "position_in_level": 7,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 9,
       "position": 8,
       "collection_note": "lesson-01",
-      "free_content_front": "# lo pa moi nu penmi\nLifri(F): coi do\n~ Hello!\nMentu(M): coi .i mi'e la .mentus.\n~ Hi! I'm Mentu.\nLifri(F): mi'e la .lifris.\n~ I'm Lifri.\n> .i la .lintas. cu klama\n~ Linto arrives.\nLinto(F): coi .lifris. coi .mentus.\n~ Hi Lifri! Hi Mentu!\nLifri(F): coi .lintas.\n~ Hi, Linto!\nMentu(M): .i mi cliva .i co'o\n~ I'm leaving. Bye!\nLinto(F): co'o .mentus.\n~ Bye, Mentu!",
+      "free_content_front": "# lo pa moi nu penmi\nLifri(F): coi do\n~ Hello!\nMentu(M): coi .i mi'e la mentu\n~ Hi! I'm Mentu.\nLifri(F): mi'e la lifri\n~ I'm Lifri.\n> .i la linto cu klama\n~ Linto arrives.\nLinto(F): coi la lifri coi la mentu\n~ Hi Lifri! Hi Mentu!\nLifri(F): coi la linto\n~ Hi, Linto!\nMentu(M): .i mi cliva .i co'o\n~ I'm leaving. Bye!\nLinto(F): co'o la mentu\n~ Bye, Mentu!",
       "free_content_back": "First Meeting.\nLifri: Hello!\nMentu: Hi! I'm Mentu.\nLifri: I'm Lifri.\nLinto arrives.\nLinto: Hi Lifri! Hi Mentu!\nLifri: Hi, Linto!\nMentu: I'm leaving. Bye!\nLinto: Bye, Mentu!",
       "level_index": 0,
       "position_in_level": 8,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 10,
@@ -113,7 +145,11 @@
       "free_content_back": "Do you speak Lojban?",
       "level_index": 1,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 12,
@@ -123,7 +159,11 @@
       "free_content_back": "Yes.",
       "level_index": 1,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 13,
@@ -133,7 +173,11 @@
       "free_content_back": "No.",
       "level_index": 1,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 14,
@@ -143,7 +187,11 @@
       "free_content_back": "I speak Lojban a little.",
       "level_index": 1,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 15,
@@ -153,7 +201,11 @@
       "free_content_back": "I don't speak Lojban.",
       "level_index": 1,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 16,
@@ -163,24 +215,32 @@
       "free_content_back": "Do you speak English?",
       "level_index": 1,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 17,
       "position": 16,
       "collection_note": "lesson-02",
-      "free_content_front": "# xu do se bangu la .lojban.\nLifri(F): coi .mentus. .i xu do se bangu la .lojban.\n~ Hi Mentu! Do you speak Lojban?\nMentu(M): go'i .i mi milxe se bangu la .lojban.\n~ Yes. I speak Lojban a little.\nLinto(F): .i xu do se bangu lo glico bangu\n~ Do you speak English?\nMentu(M): go'i\n~ Yes.\nLinto(F): .i mi na se bangu lo glico bangu\n~ I don't speak English.\nLifri(F): .i ku'i do se bangu la .lojban.\n~ But you speak Lojban.\nLinto(F): go'i\n~ Yes!",
+      "free_content_front": "# xu do se bangu la .lojban.\nLifri(F): coi la mentu .i xu do se bangu la .lojban.\n~ Hi Mentu! Do you speak Lojban?\nMentu(M): go'i .i mi milxe se bangu la .lojban.\n~ Yes. I speak Lojban a little.\nLinto(F): .i xu do se bangu lo glico bangu\n~ Do you speak English?\nMentu(M): go'i\n~ Yes.\nLinto(F): .i mi na se bangu lo glico bangu\n~ I don't speak English.\nLifri(F): .i ku'i do se bangu la .lojban.\n~ But you speak Lojban.\nLinto(F): go'i\n~ Yes!",
       "free_content_back": "Do You Speak Lojban?.\nLifri: Hi Mentu! Do you speak Lojban?\nMentu: Yes. I speak Lojban a little.\nLinto: Do you speak English?\nMentu: Yes.\nLinto: I don't speak English.\nLifri: But you speak Lojban.\nLinto: Yes!",
       "level_index": 1,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 18,
       "position": 17,
       "collection_note": "",
       "free_content_front": "Lesson 3: What's Your Name? What Do You Like? — ma cmene do",
-      "free_content_back": "#### New words\n{ma}, {mo}, {cmene}, {zo}, {nelci}\n\n#### Grammar\n`ma` asks for a missing noun, `mo` for a missing predicate. `zo` quotes one word: `zo .mentus. cmene mi` = \"Mentu\" is my name. `do mo` = how are you?",
+      "free_content_back": "#### New words\n{ma}, {mo}, {cmene}, {zo}, {nelci}\n\n#### Grammar\n`ma` asks for a missing noun, `mo` for a missing predicate. `zo` quotes one word: `zo mentu cmene mi` = \"Mentu\" is my name. `do mo` = how are you?",
       "level_index": 2,
       "position_in_level": 0,
       "direction": "just_information"
@@ -193,17 +253,25 @@
       "free_content_back": "What's your name?",
       "level_index": 2,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 20,
       "position": 19,
       "collection_note": "",
-      "free_content_front": "zo .mentus. cmene mi",
+      "free_content_front": "zo mentu cmene mi",
       "free_content_back": "My name is Mentu.",
       "level_index": 2,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 21,
@@ -213,7 +281,11 @@
       "free_content_back": "What do you like?",
       "level_index": 2,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 22,
@@ -223,7 +295,11 @@
       "free_content_back": "I like Lojban.",
       "level_index": 2,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 23,
@@ -233,7 +309,11 @@
       "free_content_back": "I like coffee.",
       "level_index": 2,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 24,
@@ -243,17 +323,25 @@
       "free_content_back": "How are you?",
       "level_index": 2,
       "position_in_level": 6,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 25,
       "position": 24,
       "collection_note": "lesson-03",
-      "free_content_front": "# ma cmene do\nLinto(F): coi .i ma cmene do\n~ Hi! What's your name?\nMentu(M): zo .mentus. cmene mi .i ma cmene do\n~ My name is Mentu. What's your name?\nLinto(F): mi'e la .lintas.\n~ I'm Linto.\nLifri(F): .i do nelci ma\n~ What do you like?\nLinto(F): .i mi nelci lo ckafi\n~ I like coffee.\nMentu(M): .i mi nelci la .lojban.\n~ I like Lojban!\nLifri(F): .ui\n~ Great!",
+      "free_content_front": "# ma cmene do\nLinto(F): coi .i ma cmene do\n~ Hi! What's your name?\nMentu(M): zo mentu cmene mi .i ma cmene do\n~ My name is Mentu. What's your name?\nLinto(F): mi'e la linto\n~ I'm Linto.\nLifri(F): .i do nelci ma\n~ What do you like?\nLinto(F): .i mi nelci lo ckafi\n~ I like coffee.\nMentu(M): .i mi nelci la .lojban.\n~ I like Lojban!\nLifri(F): .ui\n~ Great!",
       "free_content_back": "What's Your Name? What Do You Like?.\nLinto: Hi! What's your name?\nMentu: My name is Mentu. What's your name?\nLinto: I'm Linto.\nLifri: What do you like?\nLinto: I like coffee.\nMentu: I like Lojban!\nLifri: Great!",
       "level_index": 2,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 26,
@@ -273,7 +361,11 @@
       "free_content_back": "Thanks!",
       "level_index": 3,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 28,
@@ -283,7 +375,11 @@
       "free_content_back": "You're welcome.",
       "level_index": 3,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "doubtful",
+        "warnings": []
+      }
     },
     {
       "item_id": 29,
@@ -293,7 +389,11 @@
       "free_content_back": "Yay!",
       "level_index": 3,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 30,
@@ -303,7 +403,11 @@
       "free_content_back": "Sorry.",
       "level_index": 3,
       "position_in_level": 4,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 31,
@@ -313,7 +417,11 @@
       "free_content_back": "Are you happy?",
       "level_index": 3,
       "position_in_level": 5,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 32,
@@ -323,17 +431,25 @@
       "free_content_back": "Let's meet again.",
       "level_index": 3,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 33,
       "position": 32,
       "collection_note": "lesson-04",
-      "free_content_front": "# ki'e\nMentu(M): ki'e .lifris.\n~ Thank you, Lifri!\nLifri(F): je'e\n~ You're welcome.\nLinto(F): .ui .i mi nelci la .lojban.\n~ Yay! I like Lojban!\nMentu(M): .u'u doi .lintas.\n~ Sorry, Linto!\nLinto(F): je'e\n~ It's OK.\nLifri(F): .ui .i .ui pei\n~ I'm happy! And you?\nMentu(M): .ui\n~ Happy!\nLinto(F): .e'u mi'o ba penmi\n~ Let's meet again!\nLifri(F): .ie .i co'o\n~ Yes! Bye!",
+      "free_content_front": "# ki'e\nMentu(M): ki'e la lifri\n~ Thank you, Lifri!\nLifri(F): je'e\n~ You're welcome.\nLinto(F): .ui .i mi nelci la .lojban.\n~ Yay! I like Lojban!\nMentu(M): .u'u doi la linto\n~ Sorry, Linto!\nLinto(F): je'e\n~ It's OK.\nLifri(F): .ui .i .ui pei\n~ I'm happy! And you?\nMentu(M): .ui\n~ Happy!\nLinto(F): .e'u mi'o ba penmi\n~ Let's meet again!\nLifri(F): .ie .i co'o\n~ Yes! Bye!",
       "free_content_back": "Thank You — Wrapping Up the Meetup.\nMentu: Thank you, Lifri!\nLifri: You're welcome.\nLinto: Yay! I like Lojban!\nMentu: Sorry, Linto!\nLinto: It's OK.\nLifri: I'm happy! And you?\nMentu: Happy!\nLinto: Let's meet again!\nLifri: Yes! Bye!",
       "level_index": 3,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": []
+      }
     },
     {
       "item_id": 34,
@@ -353,7 +469,11 @@
       "free_content_back": "What's new?",
       "level_index": 4,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 36,
@@ -363,7 +483,11 @@
       "free_content_back": "Where are you?",
       "level_index": 4,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 37,
@@ -373,7 +497,17 @@
       "free_content_back": "I'm at home.",
       "level_index": 4,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 38,
@@ -383,7 +517,11 @@
       "free_content_back": "Where are you going?",
       "level_index": 4,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 39,
@@ -393,17 +531,33 @@
       "free_content_back": "I'm going to the park.",
       "level_index": 4,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 40,
       "position": 39,
       "collection_note": "lesson-05",
-      "free_content_front": "# mi klama le panka\nLifri(F): coi .mentus. .i ma nuzba\n~ Hi Mentu! What's new?\nMentu(M): no da\n~ Nothing.\nLifri(F): .i do zvati ma\n~ Where are you?\nMentu(M): .i mi zvati le zdani .i do zvati ma\n~ I'm at home. Where are you?\nLifri(F): .i mi zvati le panka\n~ I'm at the park.\nMentu(M): .ui .i mi klama le panka\n~ Great! I'm coming to the park.\nLifri(F): .ui\n~ Great!",
+      "free_content_front": "# mi klama le panka\nLifri(F): coi la mentu .i ma nuzba\n~ Hi Mentu! What's new?\nMentu(M): no da\n~ Nothing.\nLifri(F): .i do zvati ma\n~ Where are you?\nMentu(M): .i mi zvati le zdani .i do zvati ma\n~ I'm at home. Where are you?\nLifri(F): .i mi zvati le panka\n~ I'm at the park.\nMentu(M): .ui .i mi klama le panka\n~ Great! I'm coming to the park.\nLifri(F): .ui\n~ Great!",
       "free_content_back": "Let's Meet at the Park.\nLifri: Hi Mentu! What's new?\nMentu: Nothing.\nLifri: Where are you?\nMentu: I'm at home. Where are you?\nLifri: I'm at the park.\nMentu: Great! I'm coming to the park.\nLifri: Great!",
       "level_index": 4,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": ".i mi zvati le zdani .i do zvati ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 41,
@@ -423,7 +577,11 @@
       "free_content_back": "one",
       "level_index": 5,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 43,
@@ -433,7 +591,11 @@
       "free_content_back": "two",
       "level_index": 5,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 44,
@@ -443,7 +605,11 @@
       "free_content_back": "three",
       "level_index": 5,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 45,
@@ -453,7 +619,11 @@
       "free_content_back": "seven",
       "level_index": 5,
       "position_in_level": 4,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 46,
@@ -463,7 +633,11 @@
       "free_content_back": "ten",
       "level_index": 5,
       "position_in_level": 5,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 47,
@@ -473,7 +647,11 @@
       "free_content_back": "What time is it?",
       "level_index": 5,
       "position_in_level": 6,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 48,
@@ -483,7 +661,11 @@
       "free_content_back": "(It's) six o'clock.",
       "level_index": 5,
       "position_in_level": 7,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 49,
@@ -493,7 +675,17 @@
       "free_content_back": "We meet at seven.",
       "level_index": 5,
       "position_in_level": 8,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'tcika' expects Entity, but got a mathematical value",
+            "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+          }
+        ]
+      }
     },
     {
       "item_id": 50,
@@ -503,7 +695,26 @@
       "free_content_back": "What Time? Let's Say Seven.\nMentu: What time is it?\nLifri: It's six.\nMentu: Shall we meet at seven?\nLifri: Yes, at seven.\nMentu: I'm going to the park at seven.\nLifri: Great! Bye!",
       "level_index": 5,
       "position_in_level": 9,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 2",
+            "jbo": ".i xu mi'o penmi ti'u li ze",
+            "kind": "parser_limitation",
+            "message": "x1 of 'tcika' expects Entity, but got a mathematical value",
+            "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i mi klama le panka ti'u li ze",
+            "kind": "parser_limitation",
+            "message": "x1 of 'tcika' expects Entity, but got a mathematical value",
+            "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+          }
+        ]
+      }
     },
     {
       "item_id": 51,
@@ -523,7 +734,11 @@
       "free_content_back": "Good morning!",
       "level_index": 6,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 53,
@@ -533,7 +748,11 @@
       "free_content_back": "Good day!",
       "level_index": 6,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 54,
@@ -543,7 +762,11 @@
       "free_content_back": "I'm happy.",
       "level_index": 6,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 55,
@@ -553,7 +776,17 @@
       "free_content_back": "In the morning I'm at home.",
       "level_index": 6,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 56,
@@ -563,7 +796,11 @@
       "free_content_back": "In the evening I go to the park.",
       "level_index": 6,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 57,
@@ -573,17 +810,39 @@
       "free_content_back": "At night I'm at home.",
       "level_index": 6,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 58,
       "position": 57,
       "collection_note": "lesson-07",
-      "free_content_front": "# cerni coi\nMentu(M): cerni coi .lifris.\n~ Good morning, Lifri!\nLifri(F): cerni coi .i do mo\n~ Good morning! How are you?\nMentu(M): .i mi gleki\n~ I'm happy.\nLinto(F): donri coi\n~ Good day!\nLifri(F): .i ca le cerni mi zvati le zdani\n~ In the morning I'm at home.\nLifri(F): .i ca le vanci mi klama le panka\n~ In the evening I go to the park.\nLinto(F): .ui\n~ Great!",
+      "free_content_front": "# cerni coi\nMentu(M): cerni coi la lifri\n~ Good morning, Lifri!\nLifri(F): cerni coi .i do mo\n~ Good morning! How are you?\nMentu(M): .i mi gleki\n~ I'm happy.\nLinto(F): donri coi\n~ Good day!\nLifri(F): .i ca le cerni mi zvati le zdani\n~ In the morning I'm at home.\nLifri(F): .i ca le vanci mi klama le panka\n~ In the evening I go to the park.\nLinto(F): .ui\n~ Great!",
       "free_content_back": "Good Morning.\nMentu: Good morning, Lifri!\nLifri: Good morning! How are you?\nMentu: I'm happy.\nLinto: Good day!\nLifri: In the morning I'm at home.\nLifri: In the evening I go to the park.\nLinto: Great!",
       "level_index": 6,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 4",
+            "jbo": ".i ca le cerni mi zvati le zdani",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 59,
@@ -603,7 +862,11 @@
       "free_content_back": "Good morning, Marian!",
       "level_index": 7,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 61,
@@ -613,7 +876,11 @@
       "free_content_back": "Hi, John.",
       "level_index": 7,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 62,
@@ -623,7 +890,11 @@
       "free_content_back": "Where is my key?",
       "level_index": 7,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 63,
@@ -633,7 +904,11 @@
       "free_content_back": "Your key is on the table.",
       "level_index": 7,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 64,
@@ -643,7 +918,11 @@
       "free_content_back": "Sorry, I'm tired.",
       "level_index": 7,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 65,
@@ -653,7 +932,26 @@
       "free_content_back": "Good Morning.\nJohn and Marian are at home.\nDjan: Good morning, Marian!\nMarian: Hi, John.\nMarian: Where is my key?\nDjan: Your key is on the table.\nMarian: Sorry, I'm tired.\nDjan: Do you want (to drink) coffee?\nMarian: Yes, thanks.",
       "level_index": 7,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".i la .djan. .e la .marian. cu zvati lo zdani",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 0",
+            "jbo": ".i la .djan. .e la .marian. cu zvati lo zdani",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 66,
@@ -673,7 +971,11 @@
       "free_content_back": "Speak slowly!",
       "level_index": 8,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 68,
@@ -683,7 +985,11 @@
       "free_content_back": "I don't understand.",
       "level_index": 8,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 69,
@@ -693,7 +999,11 @@
       "free_content_back": "You speak fast.",
       "level_index": 8,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 70,
@@ -703,7 +1013,11 @@
       "free_content_back": "I don't know.",
       "level_index": 8,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 71,
@@ -713,7 +1027,11 @@
       "free_content_back": "Do you understand?",
       "level_index": 8,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 72,
@@ -723,7 +1041,17 @@
       "free_content_back": "I have a question.",
       "level_index": 8,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'ponse' expects Entity, but got bound var x-1",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          }
+        ]
+      }
     },
     {
       "item_id": 73,
@@ -733,7 +1061,19 @@
       "free_content_back": "Speak Slowly! I Don't Understand.\nLifri: How are you? What's new? Are you at the park in the mornings?\nMentu: Sorry! I don't understand. Speak slowly!\nLinto: You speak fast.\nLifri: Sorry. Do you understand now?\nMentu: Yes, I understand. Thanks!\nLinto: I have a question. What time is it?\nMentu: I don't know.\nLifri: Seven o'clock.",
       "level_index": 8,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 5",
+            "jbo": ".i mi ponse pa preti .i ma tcika",
+            "kind": "parser_limitation",
+            "message": "x2 of 'ponse' expects Entity, but got bound var x-1",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          }
+        ]
+      }
     },
     {
       "item_id": 74,
@@ -753,7 +1093,11 @@
       "free_content_back": "Did you go to the park?",
       "level_index": 9,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 76,
@@ -763,7 +1107,11 @@
       "free_content_back": "Yes, I went.",
       "level_index": 9,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 77,
@@ -773,7 +1121,11 @@
       "free_content_back": "Tomorrow I'll go home.",
       "level_index": 9,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 78,
@@ -783,7 +1135,17 @@
       "free_content_back": "But today I'm here.",
       "level_index": 9,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 79,
@@ -793,7 +1155,11 @@
       "free_content_back": "The park is beautiful.",
       "level_index": 9,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 80,
@@ -803,7 +1169,19 @@
       "free_content_back": "Yesterday and Tomorrow.\nLifri: Did you go to the park yesterday?\nMentu: Yes, I went.\nLinto: Tomorrow I'll go home.\nLinto: But today I'm here.\nLifri: The park is beautiful.\nMentu: Yes!",
       "level_index": 9,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": ".i ku'i ca le cabdei mi zvati ti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 81,
@@ -823,7 +1201,11 @@
       "free_content_back": "I want to eat.",
       "level_index": 10,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 83,
@@ -833,7 +1215,11 @@
       "free_content_back": "I'd like to drink water.",
       "level_index": 10,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 84,
@@ -843,7 +1229,11 @@
       "free_content_back": "I'm going to eat bread.",
       "level_index": 10,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 85,
@@ -853,7 +1243,11 @@
       "free_content_back": "Let's go to a restaurant.",
       "level_index": 10,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 86,
@@ -863,7 +1257,11 @@
       "free_content_back": "I eat too.",
       "level_index": 10,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 87,
@@ -873,7 +1271,11 @@
       "free_content_back": "I Want to Eat.\nMentu: I want to eat!\nLinto: I want to drink water.\nLifri: I want to eat too.\nMentu: Let's go to a restaurant!\nLinto: Yes!\nMentu: I'm going to eat bread.",
       "level_index": 10,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 88,
@@ -893,7 +1295,11 @@
       "free_content_back": "I'm going to have soup.",
       "level_index": 11,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 90,
@@ -903,7 +1309,11 @@
       "free_content_back": "I'll have juice.",
       "level_index": 11,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 91,
@@ -913,7 +1323,11 @@
       "free_content_back": "Do you like cookies?",
       "level_index": 11,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 92,
@@ -923,7 +1337,11 @@
       "free_content_back": "The food is tasty.",
       "level_index": 11,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 93,
@@ -933,17 +1351,25 @@
       "free_content_back": "a restaurant",
       "level_index": 11,
       "position_in_level": 5,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 94,
       "position": 93,
       "collection_note": "lesson-11",
-      "free_content_front": "# vi lo gusta\n> .i la .lifris. .e la .mentus. .e la .lintas. cu zvati lo gusta\n~ Lifri, Mentu and Linto are at a café.\nLifri(F): .ai mi citka lo stasu .i .ai pei\n~ I'm going to have soup. And you?\nMentu(M): .ai mi pinxe lo jisra\n~ I'll have juice.\nLifri(F): .i xu do nelci lo titnanba\n~ Do you like cookies?\nLinto(F): go'i .i .ai mi citka lo titnanba .e lo nanba\n~ Yes! I'll have cookies and bread.\nMentu(M): .i le cidja cu kukte\n~ The food is tasty!",
+      "free_content_front": "# vi lo gusta\n> .i la lifri .e la mentu .e la linto cu zvati lo gusta\n~ Lifri, Mentu and Linto are at a café.\nLifri(F): .ai mi citka lo stasu .i .ai pei\n~ I'm going to have soup. And you?\nMentu(M): .ai mi pinxe lo jisra\n~ I'll have juice.\nLifri(F): .i xu do nelci lo titnanba\n~ Do you like cookies?\nLinto(F): go'i .i .ai mi citka lo titnanba .e lo nanba\n~ Yes! I'll have cookies and bread.\nMentu(M): .i le cidja cu kukte\n~ The food is tasty!",
       "free_content_back": "Ordering at the Café.\nLifri, Mentu and Linto are at a café.\nLifri: I'm going to have soup. And you?\nMentu: I'll have juice.\nLifri: Do you like cookies?\nLinto: Yes! I'll have cookies and bread.\nMentu: The food is tasty!",
       "level_index": 11,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 95,
@@ -963,7 +1389,11 @@
       "free_content_back": "What's wrong?",
       "level_index": 12,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 97,
@@ -973,7 +1403,22 @@
       "free_content_back": "This isn't sugar, it's salt!",
       "level_index": 12,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'sakta' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'silna' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 98,
@@ -983,7 +1428,11 @@
       "free_content_back": "Wow, you're very tired.",
       "level_index": 12,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 99,
@@ -993,14 +1442,47 @@
       "free_content_back": "Sugar and Salt.\nMarian is drinking coffee.\nMarian: Oh!\nDjan: What's wrong?\nMarian: This isn't sugar, it's salt!\nDjan: Wow, you're very tired.",
       "level_index": 12,
       "position_in_level": 4,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": ".i ti na sakta .i ti silna",
+            "kind": "parser_limitation",
+            "message": "x1 of 'sakta' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": ".i ti na sakta .i ti silna",
+            "kind": "parser_limitation",
+            "message": "x1 of 'silna' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i ti na sakta .i ti silna",
+            "kind": "parser_limitation",
+            "message": "x1 of 'sakta' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i ti na sakta .i ti silna",
+            "kind": "parser_limitation",
+            "message": "x1 of 'silna' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 100,
       "position": 99,
       "collection_note": "03-lo-gusta",
       "free_content_front": "Story 3: lo gusta — The Restaurant",
-      "free_content_back": "#### Before you read\nCharacters: Bea, Pedro\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Beas, Pedros\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 13,
       "position_in_level": 0,
       "direction": "just_information"
@@ -1013,7 +1495,11 @@
       "free_content_back": "I'm well.",
       "level_index": 13,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 102,
@@ -1023,7 +1509,17 @@
       "free_content_back": "What do you want to eat?",
       "level_index": 13,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'citka' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 103,
@@ -1033,7 +1529,11 @@
       "free_content_back": "A salad.",
       "level_index": 13,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 104,
@@ -1043,17 +1543,40 @@
       "free_content_back": "I want to eat bread.",
       "level_index": 13,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 105,
       "position": 104,
       "collection_note": "03-lo-gusta",
-      "free_content_front": "# lo gusta\n> .i la .beas. cu zvati lo gusta\n~ Bea is at a restaurant.\nBea(F): coi .i xu do kanro\n~ Hi, are you well?\nPedro(M): .i mi kanro\n~ I'm well.\nPedro(M): .i do djica lo nu citka ma\n~ What do you want to eat?\nBea(F): lo salta\n~ A salad.\nPedro(M): .i mi djica lo nu citka lo nanba\n~ I want to eat bread.\n---\n? fill: Bea(F): lo [salta]\n? choice: .i la .beas. cu djica lo nu citka ma\n+ lo salta\n- lo nanba\n- lo ckafi",
-      "free_content_back": "The Restaurant.\nBea is at a restaurant.\nBea: Hi, are you well?\nPedro: I'm well.\nPedro: What do you want to eat?\nBea: A salad.\nPedro: I want to eat bread.",
+      "free_content_front": "# lo gusta\n> .i la .beas. cu zvati lo gusta\n~ Bea is at a restaurant.\nBeas(F): coi .i xu do kanro\n~ Hi, are you well?\nPedros(M): .i mi kanro\n~ I'm well.\nPedros(M): .i do djica lo nu citka ma\n~ What do you want to eat?\nBeas(F): lo salta\n~ A salad.\nPedros(M): .i mi djica lo nu citka lo nanba\n~ I want to eat bread.\n---\n? fill: Beas(F): lo [salta]\n? choice: .i la .beas. cu djica lo nu citka ma\n+ lo salta\n- lo nanba\n- lo ckafi",
+      "free_content_back": "The Restaurant.\nBea is at a restaurant.\nBeas: Hi, are you well?\nPedros: I'm well.\nPedros: What do you want to eat?\nBeas: A salad.\nPedros: I want to eat bread.",
       "level_index": 13,
       "position_in_level": 5,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": ".i do djica lo nu citka ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'citka' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i la .beas. cu djica lo nu citka ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'citka' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 106,
@@ -1073,7 +1596,17 @@
       "free_content_back": "Is it expensive?",
       "level_index": 14,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 108,
@@ -1083,7 +1616,22 @@
       "free_content_back": "The bread costs 13 dollars.",
       "level_index": 14,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'jdima' expects Set<W>, but got lo nanba (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'jdima' expects Set<T>, but got lo meryru'u (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 109,
@@ -1093,7 +1641,11 @@
       "free_content_back": "This is cheap.",
       "level_index": 14,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 110,
@@ -1103,7 +1655,11 @@
       "free_content_back": "Do you have money?",
       "level_index": 14,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 111,
@@ -1113,7 +1669,11 @@
       "free_content_back": "I'll pay.",
       "level_index": 14,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 112,
@@ -1123,7 +1683,17 @@
       "free_content_back": "I buy soup.",
       "level_index": 14,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo stasu (Group<Entity>)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 113,
@@ -1133,7 +1703,54 @@
       "free_content_back": "How Much? Is It Expensive?.\nMentu: Is the soup expensive?\nLifri: The bread costs 13 dollars.\nLinto: Wow, that's expensive!\nLifri: The soup costs 20.\nMentu: Do you have money?\nLinto: I'll pay.\nMentu: Thanks!",
       "level_index": 14,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".i xu lo stasu cu kargu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo stasu (Group<Entity>)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 1",
+            "jbo": ".i lo nanba cu se jdima lo meryru'u be li paci",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jdima' expects Set<W>, but got lo nanba (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 1",
+            "jbo": ".i lo nanba cu se jdima lo meryru'u be li paci",
+            "kind": "parser_limitation",
+            "message": "x2 of 'jdima' expects Set<T>, but got lo meryru'u (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".ue .i ri kargu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": ".i lo stasu cu se jdima lo meryru'u be li reno",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jdima' expects Set<W>, but got lo stasu (Group<Entity>)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 3",
+            "jbo": ".i lo stasu cu se jdima lo meryru'u be li reno",
+            "kind": "parser_limitation",
+            "message": "x2 of 'jdima' expects Set<T>, but got lo meryru'u (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 114,
@@ -1153,7 +1770,11 @@
       "free_content_back": "I'm going to a shop.",
       "level_index": 15,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 116,
@@ -1163,7 +1784,22 @@
       "free_content_back": "I'll buy cookies and juice.",
       "level_index": 15,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo titnanba (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo jisra (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 117,
@@ -1173,7 +1809,17 @@
       "free_content_back": "Is the juice expensive?",
       "level_index": 15,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo jisra (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 118,
@@ -1183,7 +1829,17 @@
       "free_content_back": "It's not expensive, it's cheap.",
       "level_index": 15,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 119,
@@ -1193,7 +1849,17 @@
       "free_content_back": "Food is very expensive.",
       "level_index": 15,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo cidja (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 120,
@@ -1203,7 +1869,47 @@
       "free_content_back": "Buying Things.\nMentu: I'm going to a shop.\nMentu: I'll buy cookies and juice.\nLinto: Is the juice expensive?\nMentu: No, it's cheap.\nLinto: But the food is very expensive.\nMentu: Yes. I'll buy a different juice.",
       "level_index": 15,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": ".i mi ba te vecnu lo titnanba .e lo jisra",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo titnanba (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 1",
+            "jbo": ".i mi ba te vecnu lo titnanba .e lo jisra",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo jisra (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i xu lo jisra cu kargu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo jisra (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i ku'i lo cidja cu mutce kargu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo cidja (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 5",
+            "jbo": "go'i .i mi ba te vecnu lo drata jisra",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo jisra (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 121,
@@ -1223,7 +1929,22 @@
       "free_content_back": "The coat costs five.",
       "level_index": 16,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'jdima' expects Set<W>, but got lo kosta (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'jdima' expects Set<T>, but got a mathematical value",
+            "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+          }
+        ]
+      }
     },
     {
       "item_id": 123,
@@ -1233,7 +1954,17 @@
       "free_content_back": "Great, I'll buy it.",
       "level_index": 16,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 124,
@@ -1243,7 +1974,61 @@
       "free_content_back": "The Red Coat.\nF: Hi, I want to buy this red coat.\nM: The coat costs five.\nF: Great, I'll buy it.\nM: Thanks.\nF: You're welcome.",
       "level_index": 16,
       "position_in_level": 3,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": "coi .i mi djica lo nu te vecnu le vi xunre kosta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo kosta (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 1",
+            "jbo": ".i lo kosta cu se jdima li mu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jdima' expects Set<W>, but got lo kosta (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 1",
+            "jbo": ".i lo kosta cu se jdima li mu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'jdima' expects Set<T>, but got a mathematical value",
+            "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".ui .i mi te vecnu ri",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i lo kosta cu se jdima li mu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jdima' expects Set<W>, but got lo kosta (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i lo kosta cu se jdima li mu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'jdima' expects Set<T>, but got a mathematical value",
+            "note": "parser limitation (number): li-sumti (ti'u li N, se jdima li N) are typed opaquely as 'a mathematical value'"
+          },
+          {
+            "where": "q1 bank",
+            "jbo": "coi .i mi djica lo nu te vecnu le vi xunre kosta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo kosta (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 125,
@@ -1263,7 +2048,11 @@
       "free_content_back": "Hi, where is the shop?",
       "level_index": 17,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 127,
@@ -1273,7 +2062,11 @@
       "free_content_back": "The shop is near the school.",
       "level_index": 17,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 128,
@@ -1283,7 +2076,11 @@
       "free_content_back": "Is the shop far?",
       "level_index": 17,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 129,
@@ -1293,7 +2090,17 @@
       "free_content_back": "No, it's near.",
       "level_index": 17,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'jibni' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 130,
@@ -1303,7 +2110,33 @@
       "free_content_back": "Where Is the Shop?.\nM: Hi, where is the shop?\nF: The shop is near the school.\nM: Is the shop far?\nF: No, it's near.\nM: Thanks.",
       "level_index": 17,
       "position_in_level": 5,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": "na go'i .i ri jibni",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jibni' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 0",
+            "jbo": "na go'i .i ri jibni",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jibni' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 1",
+            "jbo": "go'i .i ri darno",
+            "kind": "parser_limitation",
+            "message": "x1 of 'darno' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 131,
@@ -1323,7 +2156,17 @@
       "free_content_back": "Today I'm at home.",
       "level_index": 18,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 133,
@@ -1333,7 +2176,11 @@
       "free_content_back": "Tomorrow I'll go to the park.",
       "level_index": 18,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 134,
@@ -1343,7 +2190,11 @@
       "free_content_back": "I'm sure.",
       "level_index": 18,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 135,
@@ -1353,7 +2204,17 @@
       "free_content_back": "Every week we meet.",
       "level_index": 18,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          }
+        ]
+      }
     },
     {
       "item_id": 136,
@@ -1363,7 +2224,11 @@
       "free_content_back": "a one-week period",
       "level_index": 18,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 137,
@@ -1373,7 +2238,11 @@
       "free_content_back": "every month",
       "level_index": 18,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 138,
@@ -1383,7 +2252,33 @@
       "free_content_back": "Planning the Week.\nLifri: Shall we meet every week?\nMentu: Yes, I'm sure.\nLinto: Today I'm at home.\nLinto: But tomorrow I'll go to the park.\nLifri: Are you sure?\nLinto: Yes, I'm sure.\nMentu: And every month we go to a restaurant.",
       "level_index": 18,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".i xu mi'o penmi ca ro jeftu",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i ca le cabdei mi zvati le zdani",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i ca ro detma'i mi'o klama lo gusta",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          }
+        ]
+      }
     },
     {
       "item_id": 139,
@@ -1403,7 +2298,11 @@
       "free_content_back": "Are you married?",
       "level_index": 19,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 141,
@@ -1413,7 +2312,11 @@
       "free_content_back": "My spouse is happy.",
       "level_index": 19,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 142,
@@ -1423,7 +2326,17 @@
       "free_content_back": "Do you have children?",
       "level_index": 19,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 143,
@@ -1433,7 +2346,17 @@
       "free_content_back": "How many children do you have?",
       "level_index": 19,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 144,
@@ -1443,7 +2366,17 @@
       "free_content_back": "I have two children.",
       "level_index": 19,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 145,
@@ -1453,7 +2386,11 @@
       "free_content_back": "My family is happy.",
       "level_index": 19,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 146,
@@ -1463,7 +2400,33 @@
       "free_content_back": "My Family.\nLinto: Are you married?\nMentu: Yes. My spouse is happy.\nLinto: Do you have children?\nMentu: Yes.\nLinto: How many?\nMentu: Two.\nMentu: My family is happy.",
       "level_index": 19,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 2",
+            "jbo": ".i xu do se panzi",
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i do se panzi xo da",
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i mi se panzi re da",
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 147,
@@ -1483,7 +2446,11 @@
       "free_content_back": "My son is happy.",
       "level_index": 20,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 149,
@@ -1493,7 +2460,22 @@
       "free_content_back": "My daughter is at home.",
       "level_index": 20,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'tixnu' expects Group<Organism>, but got mi",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 150,
@@ -1503,7 +2485,32 @@
       "free_content_back": "I have a boy and a girl.",
       "level_index": 20,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'panzi' expects Organism, but got bound var x-1",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'panzi' expects Organism, but got bound var x-1",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          }
+        ]
+      }
     },
     {
       "item_id": 151,
@@ -1513,7 +2520,17 @@
       "free_content_back": "Your daughter talks to me.",
       "level_index": 20,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'tixnu' expects Group<Organism>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 152,
@@ -1523,7 +2540,11 @@
       "free_content_back": "Do you have a brother?",
       "level_index": 20,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 153,
@@ -1533,7 +2554,11 @@
       "free_content_back": "I have a sister.",
       "level_index": 20,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 154,
@@ -1543,7 +2568,33 @@
       "free_content_back": "Son, Daughter, Siblings.\nMentu: My son is happy.\nMentu: My daughter is at home.\nLinto: Do you have a brother?\nMentu: No, but I have a sister.\nLifri: Your daughter talked to me.\nMentu: Oh, nice!",
       "level_index": 20,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": ".i le tixnu be mi cu zvati le zdani",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo zdani (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 1",
+            "jbo": ".i le tixnu be mi cu zvati le zdani",
+            "kind": "parser_limitation",
+            "message": "x2 of 'tixnu' expects Group<Organism>, but got mi",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i le tixnu be do pu tavla mi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'tixnu' expects Group<Organism>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 155,
@@ -1563,7 +2614,11 @@
       "free_content_back": "Where do you live?",
       "level_index": 21,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 157,
@@ -1573,7 +2628,11 @@
       "free_content_back": "I live in a big city.",
       "level_index": 21,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 158,
@@ -1583,7 +2642,11 @@
       "free_content_back": "My home is small.",
       "level_index": 21,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 159,
@@ -1593,7 +2656,11 @@
       "free_content_back": "Is the city far?",
       "level_index": 21,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 160,
@@ -1603,7 +2670,11 @@
       "free_content_back": "The park is near.",
       "level_index": 21,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 161,
@@ -1613,7 +2684,33 @@
       "free_content_back": "Where Do You Live?.\nLifri: Where do you live?\nMentu: I live in a big city.\nMentu: But my home is small.\nLifri: Is the city far?\nMentu: No, it's near.\nLinto: Do your children live with you?\nMentu: Yes.",
       "level_index": 21,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 4",
+            "jbo": "na go'i .i ri jibni",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jibni' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i xu le panzi be do cu xabju le zdani be do",
+            "kind": "parser_limitation",
+            "message": "x2 of 'xabju' expects Location, but got lo zdani (Entity)",
+            "note": "parser limitation (location): any object can be a location (CLL 10.2: `vi` + any sumti; `zvati lo zdani`); formal-gismu has no Entity/Organism -> Location coercion"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i xu le panzi be do cu xabju le zdani be do",
+            "kind": "parser_limitation",
+            "message": "x2 of 'panzi' expects Group<Organism>, but got do",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 162,
@@ -1633,7 +2730,11 @@
       "free_content_back": "It's late.",
       "level_index": 22,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 164,
@@ -1643,7 +2744,11 @@
       "free_content_back": "I'm going to sleep.",
       "level_index": 22,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 165,
@@ -1653,7 +2758,11 @@
       "free_content_back": "I need to work.",
       "level_index": 22,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 166,
@@ -1663,7 +2772,11 @@
       "free_content_back": "What is your job?",
       "level_index": 22,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 167,
@@ -1673,7 +2786,11 @@
       "free_content_back": "I work in the morning.",
       "level_index": 22,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 168,
@@ -1683,17 +2800,25 @@
       "free_content_back": "I need to sleep.",
       "level_index": 22,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 169,
       "position": 168,
       "collection_note": "lesson-18",
-      "free_content_front": "# mi nitcu lo nu gunka\nMentu(M): .i lerci .i mi ba sipna\n~ It's late. I'm going to sleep.\nLinto(F): .i xu ca\n~ Now?\nMentu(M): go'i .i ca le bavlamdei mi nitcu lo nu mi gunka\n~ Yes. Tomorrow I need to work.\nLinto(F): .i lo jibri be do cu mo\n~ What's your job?\nMentu(M): .i mi ctuca\n~ I'm a teacher.\nMentu(M): .i mi gunka ca le cerni .i mi nitcu lo nu sipna\n~ I work in the morning. I need to sleep.\nLinto(F): co'o .mentus.\n~ Bye, Mentu!",
+      "free_content_front": "# mi nitcu lo nu gunka\nMentu(M): .i lerci .i mi ba sipna\n~ It's late. I'm going to sleep.\nLinto(F): .i xu ca\n~ Now?\nMentu(M): go'i .i ca le bavlamdei mi nitcu lo nu mi gunka\n~ Yes. Tomorrow I need to work.\nLinto(F): .i lo jibri be do cu mo\n~ What's your job?\nMentu(M): .i mi ctuca\n~ I'm a teacher.\nMentu(M): .i mi gunka ca le cerni .i mi nitcu lo nu sipna\n~ I work in the morning. I need to sleep.\nLinto(F): co'o la mentu\n~ Bye, Mentu!",
       "free_content_back": "I Need to Work.\nMentu: It's late. I'm going to sleep.\nLinto: Now?\nMentu: Yes. Tomorrow I need to work.\nLinto: What's your job?\nMentu: I'm a teacher.\nMentu: I work in the morning. I need to sleep.\nLinto: Bye, Mentu!",
       "level_index": 22,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 170,
@@ -1713,7 +2838,11 @@
       "free_content_back": "Welcome!",
       "level_index": 23,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 172,
@@ -1723,7 +2852,11 @@
       "free_content_back": "Have you travelled?",
       "level_index": 23,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 173,
@@ -1733,7 +2866,11 @@
       "free_content_back": "I went to another country.",
       "level_index": 23,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 174,
@@ -1743,7 +2880,17 @@
       "free_content_back": "What language do you speak there?",
       "level_index": 23,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'bangu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 175,
@@ -1753,7 +2900,11 @@
       "free_content_back": "I speak a little French.",
       "level_index": 23,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 176,
@@ -1763,17 +2914,40 @@
       "free_content_back": "Is France far?",
       "level_index": 23,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 177,
       "position": 176,
       "collection_note": "lesson-19",
-      "free_content_front": "# lo nu litru\nLifri(F): fi'i .lintas.\n~ Welcome back, Linto!\nMentu(M): .i xu do pu litru\n~ Have you been travelling?\nLinto(F): go'i .i mi pu klama lo drata gugde\n~ Yes, I went to another country.\nLinto(F): .i mi pu zvati la .paris.\n~ I was in Paris.\nMentu(M): .i vi ta do se bangu ma\n~ What language do you speak there?\nLinto(F): .i mi milxe se bangu lo fraso bangu\n~ I speak a little French.\nLifri(F): .i xu la .paris. cu darno\n~ Is Paris far?\nLinto(F): go'i\n~ Yes.",
+      "free_content_front": "# lo nu litru\nLifri(F): fi'i la linto\n~ Welcome back, Linto!\nMentu(M): .i xu do pu litru\n~ Have you been travelling?\nLinto(F): go'i .i mi pu klama lo drata gugde\n~ Yes, I went to another country.\nLinto(F): .i mi pu zvati la .paris.\n~ I was in Paris.\nMentu(M): .i vi ta do se bangu ma\n~ What language do you speak there?\nLinto(F): .i mi milxe se bangu lo fraso bangu\n~ I speak a little French.\nLifri(F): .i xu la .paris. cu darno\n~ Is Paris far?\nLinto(F): go'i\n~ Yes.",
       "free_content_back": "Travel and Countries.\nLifri: Welcome back, Linto!\nMentu: Have you been travelling?\nLinto: Yes, I went to another country.\nLinto: I was in Paris.\nMentu: What language do you speak there?\nLinto: I speak a little French.\nLifri: Is Paris far?\nLinto: Yes.",
       "level_index": 23,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": ".i mi pu zvati la .paris.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got la paris",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i vi ta do se bangu ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'bangu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 178,
@@ -1793,7 +2967,11 @@
       "free_content_back": "I'm tired.",
       "level_index": 24,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 180,
@@ -1803,7 +2981,11 @@
       "free_content_back": "I'm thirsty.",
       "level_index": 24,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 181,
@@ -1813,7 +2995,11 @@
       "free_content_back": "The walk was pleasant.",
       "level_index": 24,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 182,
@@ -1823,7 +3009,11 @@
       "free_content_back": "I feel comfortable.",
       "level_index": 24,
       "position_in_level": 4,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 183,
@@ -1833,7 +3023,11 @@
       "free_content_back": "Tomorrow will be nice.",
       "level_index": 24,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 184,
@@ -1843,7 +3037,11 @@
       "free_content_back": "I feel happy.",
       "level_index": 24,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 185,
@@ -1853,7 +3051,11 @@
       "free_content_back": "I'm Tired — How Do You Feel?.\nLifri: How are you?\nMentu: I'm tired.\nLinto: I'm thirsty. I want to drink water.\nLifri: But the walk was pleasant.\nMentu: Yes. Now I feel comfortable.\nLinto: Tomorrow will be nice.\nLifri: Let's talk in the evening.",
       "level_index": 24,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 186,
@@ -1873,7 +3075,17 @@
       "free_content_back": "Let's discuss.",
       "level_index": 25,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'casnu' expects Group<Entity>, but got mi'o",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 188,
@@ -1883,7 +3095,11 @@
       "free_content_back": "Shall we go together?",
       "level_index": 25,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 189,
@@ -1893,7 +3109,11 @@
       "free_content_back": "My spouse and I will go.",
       "level_index": 25,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 190,
@@ -1903,7 +3123,11 @@
       "free_content_back": "I study Lojban.",
       "level_index": 25,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 191,
@@ -1913,7 +3137,11 @@
       "free_content_back": "I love you.",
       "level_index": 25,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 192,
@@ -1923,7 +3151,11 @@
       "free_content_back": "You're my friend.",
       "level_index": 25,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 193,
@@ -1933,7 +3165,19 @@
       "free_content_back": "Let's Go Together.\nLifri: Let's discuss the trip.\nLifri: Shall we go to my city together?\nMentu: Yes! My spouse and I will go.\nLinto: I'll go too.\nLinto: I study Lojban. I really like it!\nMentu: Friends, I love you!\nLifri: Let's go in the evening.",
       "level_index": 25,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".e'u mi'o casnu lo nu litru",
+            "kind": "parser_limitation",
+            "message": "x1 of 'casnu' expects Group<Entity>, but got mi'o",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 194,
@@ -1953,7 +3197,11 @@
       "free_content_back": "I'll stay for a week.",
       "level_index": 26,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 196,
@@ -1963,7 +3211,11 @@
       "free_content_back": "I'll work for a short while.",
       "level_index": 26,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 197,
@@ -1973,7 +3225,11 @@
       "free_content_back": "I'll stay for three days.",
       "level_index": 26,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 198,
@@ -1983,7 +3239,11 @@
       "free_content_back": "Will you stay long?",
       "level_index": 26,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 199,
@@ -1993,7 +3253,11 @@
       "free_content_back": "No, I'll stay a short time.",
       "level_index": 26,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 200,
@@ -2003,7 +3267,11 @@
       "free_content_back": "How Long Will You Stay?.\nMentu: How long will we stay?\nLifri: We'll stay for a week.\nLinto: But I'll only stay three days.\nLinto: I need to work.\nMentu: So you won't stay long?\nLinto: No, I'll stay a short time.",
       "level_index": 26,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 201,
@@ -2023,7 +3291,11 @@
       "free_content_back": "Welcome!",
       "level_index": 27,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 203,
@@ -2033,7 +3305,11 @@
       "free_content_back": "Come in!",
       "level_index": 27,
       "position_in_level": 2,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 204,
@@ -2043,7 +3319,11 @@
       "free_content_back": "How was the trip?",
       "level_index": 27,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 205,
@@ -2053,7 +3333,17 @@
       "free_content_back": "We came by car.",
       "level_index": 27,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x5 of 'klama' expects Set<T>, but got lo karce (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 206,
@@ -2063,7 +3353,17 @@
       "free_content_back": "This is my home.",
       "level_index": 27,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'zdani' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 207,
@@ -2073,7 +3373,11 @@
       "free_content_back": "Oh, what a surprise!",
       "level_index": 27,
       "position_in_level": 6,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 208,
@@ -2083,7 +3387,11 @@
       "free_content_back": "I'm your guest.",
       "level_index": 27,
       "position_in_level": 7,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 209,
@@ -2093,7 +3401,26 @@
       "free_content_back": "Visiting — Welcome!.\nLifri: Welcome! Come in!\nMentu: Thanks! This is a beautiful home.\nLifri: How was the trip?\nLinto: We came by car.\nLifri: Was the road long?\nMentu: Yes, the road is fifty kilometres.\nLifri: Wow!",
       "level_index": 27,
       "position_in_level": 8,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": "ki'e .i ti melbi zdani",
+            "kind": "parser_limitation",
+            "message": "x1 of 'zdani' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": ".i mi'o klama fu lo karce",
+            "kind": "parser_limitation",
+            "message": "x5 of 'klama' expects Set<T>, but got lo karce (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 210,
@@ -2113,7 +3440,17 @@
       "free_content_back": "How many people are here?",
       "level_index": 28,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 212,
@@ -2123,7 +3460,11 @@
       "free_content_back": "Is the park far?",
       "level_index": 28,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 213,
@@ -2133,7 +3474,11 @@
       "free_content_back": "The road to the city is 50 km long.",
       "level_index": 28,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 214,
@@ -2143,7 +3488,17 @@
       "free_content_back": "There are many shops here.",
       "level_index": 28,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 215,
@@ -2153,17 +3508,54 @@
       "free_content_back": "Every shop is small.",
       "level_index": 28,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 216,
       "position": 215,
       "collection_note": "lesson-24",
-      "free_content_front": "# xo prenu\nMentu(M): .i xo prenu cu xabju le tcadu\n~ How many people live in the city?\nLifri(F): so'i prenu\n~ Many people.\nLinto(F): .i xu le panka cu darno\n~ Is the park far?\nLifri(F): na go'i .i ri jibni\n~ No, it's near.\nMentu(M): .i lo klaji be le mi tcadu cu ki'otre li muno\n~ The road to my city is fifty kilometres.\nLifri(F): doi .mentus. .i do se panzi xo da\n~ Mentu, how many children do you have again?\nMentu(M): .i mi se panzi re da\n~ Two!",
+      "free_content_front": "# xo prenu\nMentu(M): .i xo prenu cu xabju le tcadu\n~ How many people live in the city?\nLifri(F): so'i prenu\n~ Many people.\nLinto(F): .i xu le panka cu darno\n~ Is the park far?\nLifri(F): na go'i .i ri jibni\n~ No, it's near.\nMentu(M): .i lo klaji be le mi tcadu cu ki'otre li muno\n~ The road to my city is fifty kilometres.\nLifri(F): doi la mentu .i do se panzi xo da\n~ Mentu, how many children do you have again?\nMentu(M): .i mi se panzi re da\n~ Two!",
       "free_content_back": "How Far? How Many?.\nMentu: How many people live in the city?\nLifri: Many people.\nLinto: Is the park far?\nLifri: No, it's near.\nMentu: The road to my city is fifty kilometres.\nLifri: Mentu, how many children do you have again?\nMentu: Two!",
       "level_index": 28,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": "na go'i .i ri jibni",
+            "kind": "parser_limitation",
+            "message": "x1 of 'jibni' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i lo klaji be le mi tcadu cu ki'otre li muno",
+            "kind": "parser_limitation",
+            "message": "x2 of 'klaji' expects Location, but got lo srana (Entity)",
+            "note": "parser limitation (srana): `le ti X` / `lo mi X` is typed as srana(ti) (Entity) by the checker, losing the type of X"
+          },
+          {
+            "where": "line 5",
+            "jbo": "doi la mentu .i do se panzi xo da",
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got a named predicate",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i mi se panzi re da",
+            "kind": "parser_limitation",
+            "message": "x1 of 'panzi' expects Group<Organism>, but got mi",
+            "note": "parser limitation (pronoun): pronouns (mi, do, ri ...) are untyped terms for the checker; their referents (people, things) fit the expected Entity/Organism/Person/Location/Group sort"
+          }
+        ]
+      }
     },
     {
       "item_id": 217,
@@ -2183,7 +3575,11 @@
       "free_content_back": "What do you think?",
       "level_index": 29,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 219,
@@ -2193,7 +3589,17 @@
       "free_content_back": "I think it's nice.",
       "level_index": 29,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'zabna' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 220,
@@ -2203,7 +3609,17 @@
       "free_content_back": "That seems nice.",
       "level_index": 29,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'simlu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 221,
@@ -2213,7 +3629,22 @@
       "free_content_back": "This is tastier than that.",
       "level_index": 29,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'zmadu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zmadu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 222,
@@ -2223,17 +3654,36 @@
       "free_content_back": "This is cheaper than that.",
       "level_index": 29,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'mleca' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'mleca' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 223,
       "position": 222,
       "collection_note": "lesson-25",
-      "free_content_front": "# lo se jinvi\n> .i le ci pendo cu citka lo vanci sanmi vi le zdani be la .lifris.\n~ The three friends have dinner at Lifri's home.\nLifri(F): .i do jinvi ma\n~ What do you think?\nMentu(M): .i mi jinvi lo du'u le stasu cu zabna\n~ I think the soup is great.\nLinto(F): .i le nanba ji'a simlu lo ka kukte\n~ The bread also seems tasty.\nLifri(F): .i le stasu ji le nanba cu zmadu fi lo ka kukte\n~ Which is tastier, the soup or the bread?\nMentu(M): .i le stasu\n~ The soup.\nLinto(F): .i mi jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu\n~ In my opinion, Lojban is the best language.\nLifri(F): .ie\n~ Agreed!",
+      "free_content_front": "# lo se jinvi\n> .i le ci pendo cu citka lo vanci sanmi vi le zdani be la lifri\n~ The three friends have dinner at Lifri's home.\nLifri(F): .i do jinvi ma\n~ What do you think?\nMentu(M): .i mi jinvi lo du'u le stasu cu zabna\n~ I think the soup is great.\nLinto(F): .i le nanba ji'a simlu lo ka kukte\n~ The bread also seems tasty.\nLifri(F): .i le stasu ji le nanba cu zmadu fi lo ka kukte\n~ Which is tastier, the soup or the bread?\nMentu(M): .i le stasu\n~ The soup.\nLinto(F): .i mi jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu\n~ In my opinion, Lojban is the best language.\nLifri(F): .ie\n~ Agreed!",
       "free_content_back": "Opinions and Preferences.\nThe three friends have dinner at Lifri's home.\nLifri: What do you think?\nMentu: I think the soup is great.\nLinto: The bread also seems tasty.\nLifri: Which is tastier, the soup or the bread?\nMentu: The soup.\nLinto: In my opinion, Lojban is the best language.\nLifri: Agreed!",
       "level_index": 29,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 224,
@@ -2253,7 +3703,11 @@
       "free_content_back": "Hello, everyone!",
       "level_index": 30,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 226,
@@ -2263,7 +3717,11 @@
       "free_content_back": "After the visit I'll go home.",
       "level_index": 30,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 227,
@@ -2273,7 +3731,17 @@
       "free_content_back": "Will you go in your car?",
       "level_index": 30,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x5 of 'klama' expects Set<T>, but got lo karce (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 228,
@@ -2283,7 +3751,11 @@
       "free_content_back": "I'll get back to work.",
       "level_index": 30,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 229,
@@ -2293,7 +3765,11 @@
       "free_content_back": "When you get back, call me.",
       "level_index": 30,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 230,
@@ -2303,7 +3779,11 @@
       "free_content_back": "Goodbye, everyone!",
       "level_index": 30,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 231,
@@ -2313,7 +3793,26 @@
       "free_content_back": "Coming Back.\nMentu: Good morning, everyone!\nLifri: Will you go in your car?\nMentu: Yes. After the visit I'll go home.\nLinto: I'll get back to work.\nLifri: When you get back, call me!\nMentu: OK! I'll come back here soon.\nLinto: Goodbye, everyone!",
       "level_index": 30,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": ".i xu do ba klama fu le karce pe do",
+            "kind": "parser_limitation",
+            "message": "x5 of 'klama' expects Set<T>, but got lo karce (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i'e .i mi ba zi xruti ti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'xruti' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 232,
@@ -2333,7 +3832,17 @@
       "free_content_back": "Is electricity expensive?",
       "level_index": 31,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo dikca (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 234,
@@ -2343,7 +3852,11 @@
       "free_content_back": "I don't know, I don't pay.",
       "level_index": 31,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 235,
@@ -2353,7 +3866,11 @@
       "free_content_back": "Do you pay the company?",
       "level_index": 31,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 236,
@@ -2363,7 +3880,22 @@
       "free_content_back": "Every month I pay 20 dollars.",
       "level_index": 31,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'pleji' expects Set<T>, but got lo meryru'u (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 237,
@@ -2373,7 +3905,11 @@
       "free_content_back": "Electricity is cheap here.",
       "level_index": 31,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 238,
@@ -2383,7 +3919,17 @@
       "free_content_back": "Every home needs electricity.",
       "level_index": 31,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 239,
@@ -2393,7 +3939,54 @@
       "free_content_back": "Paying Bills — Monthly Life.\nLinto: Is electricity expensive?\nMentu: I don't know. My spouse pays.\nLinto: Does she pay the company?\nMentu: Yes, every month she pays 20 dollars.\nLinto: Wow, electricity is cheap here.\nMentu: But every home needs electricity.",
       "level_index": 31,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".i xu lo dikca cu kargu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' expects Set<W>, but got lo dikca (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i xu ri pleji fi lo kagni",
+            "kind": "parser_limitation",
+            "message": "x1 of 'pleji' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": "go'i .i ca ro detma'i ri pleji lo meryru'u be li reno",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "where": "line 3",
+            "jbo": "go'i .i ca ro detma'i ri pleji lo meryru'u be li reno",
+            "kind": "parser_limitation",
+            "message": "x1 of 'pleji' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": "go'i .i ca ro detma'i ri pleji lo meryru'u be li reno",
+            "kind": "parser_limitation",
+            "message": "x2 of 'pleji' expects Set<T>, but got lo meryru'u (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i ku'i ro zdani cu nitcu tu'a lo dikca",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 240,
@@ -2413,7 +4006,11 @@
       "free_content_back": "I'm going home because I need to sleep.",
       "level_index": 32,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 242,
@@ -2423,7 +4020,11 @@
       "free_content_back": "I should sleep.",
       "level_index": 32,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 243,
@@ -2433,7 +4034,11 @@
       "free_content_back": "I'll fall asleep soon.",
       "level_index": 32,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 244,
@@ -2443,7 +4048,11 @@
       "free_content_back": "Night is coming.",
       "level_index": 32,
       "position_in_level": 4,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 245,
@@ -2453,7 +4062,11 @@
       "free_content_back": "Talking to you was a pleasure.",
       "level_index": 32,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 246,
@@ -2463,7 +4076,11 @@
       "free_content_back": "Because and Should.\nMentu: Sorry, I'm going home because I need to sleep.\nLinto: Already?\nMentu: Yes. I should sleep. Night is coming.\nLifri: Talking to you was a pleasure.\nMentu: I'm glad too.\nMentu: Goodbye! I'll be asleep soon.",
       "level_index": 32,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 247,
@@ -2483,7 +4100,11 @@
       "free_content_back": "I hope to speak Lojban fluently.",
       "level_index": 33,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 249,
@@ -2493,7 +4114,11 @@
       "free_content_back": "Maybe I'll travel.",
       "level_index": 33,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 250,
@@ -2503,7 +4128,11 @@
       "free_content_back": "I wish you all happiness.",
       "level_index": 33,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 251,
@@ -2513,7 +4142,11 @@
       "free_content_back": "My situation is good.",
       "level_index": 33,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 252,
@@ -2523,7 +4156,17 @@
       "free_content_back": "Travelling every day is crazy.",
       "level_index": 33,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          }
+        ]
+      }
     },
     {
       "item_id": 253,
@@ -2533,7 +4176,11 @@
       "free_content_back": "I love this language.",
       "level_index": 33,
       "position_in_level": 6,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 254,
@@ -2543,7 +4190,19 @@
       "free_content_back": "Future Hopes.\nLinto: I hope to speak Lojban fluently.\nLifri: That's possible!\nMentu: Maybe I'll travel.\nLinto: Travelling every day is crazy!\nMentu: I wish you all happiness.\nLifri: Let's meet again.\nLinto: I love this language!",
       "level_index": 33,
       "position_in_level": 7,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 3",
+            "jbo": ".i lo nu litru ca ro djedi cu fenki",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          }
+        ]
+      }
     },
     {
       "item_id": 255,
@@ -2563,7 +4222,17 @@
       "free_content_back": "Hi everyone! What's new?",
       "level_index": 34,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'nuzba' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 257,
@@ -2573,7 +4242,11 @@
       "free_content_back": "Now I speak Lojban.",
       "level_index": 34,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 258,
@@ -2583,7 +4256,11 @@
       "free_content_back": "I still think Lojban is great.",
       "level_index": 34,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 259,
@@ -2593,17 +4270,40 @@
       "free_content_back": "A new person is coming.",
       "level_index": 34,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 260,
       "position": 259,
       "collection_note": "lesson-30",
-      "free_content_front": "# ba lo nanca be li pa\n> .i ba lo nanca be li pa le ci pendo cu penmi vi le panka\n~ One year later, the three friends meet at the park.\nLifri(F): coi ro do .i ma nuzba\n~ Hi everyone! What's new?\nMentu(M): .ui .i mi ca se bangu la .lojban.\n~ I speak Lojban now!\nLinto(F): .i mi pu di'a klama la .paris.\n~ I went to Paris again.\nLifri(F): .i xu do ba stali ti ze'a lo jeftu be li re\n~ Will you stay here for two weeks?\nLinto(F): na go'i .i mi nitcu lo nu gunka\n~ No, I need to work.\nMentu(M): .i mi ca'o jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu\n~ I still think Lojban is the best language.\n> .i pa cnino prenu cu klama\n~ A new person walks up.\nNewcomer(M): coi\n~ Hi...\nLifri(F): coi do .i mi'e la .lifris. .i ma cmene do\n~ Hello! I'm Lifri. What's your name?\nMentu(M): fi'i\n~ Welcome!",
-      "free_content_back": "Full Spiral Review — One Year Later.\nOne year later, the three friends meet at the park.\nLifri: Hi everyone! What's new?\nMentu: I speak Lojban now!\nLinto: I went to Paris again.\nLifri: Will you stay here for two weeks?\nLinto: No, I need to work.\nMentu: I still think Lojban is the best language.\nA new person walks up.\nNewcomer: Hi...\nLifri: Hello! I'm Lifri. What's your name?\nMentu: Welcome!",
+      "free_content_front": "# ba lo nanca be li pa\n> .i ba lo nanca be li pa le ci pendo cu penmi vi le panka\n~ One year later, the three friends meet at the park.\nLifri(F): coi ro do .i ma nuzba\n~ Hi everyone! What's new?\nMentu(M): .ui .i mi ca se bangu la .lojban.\n~ I speak Lojban now!\nLinto(F): .i mi pu di'a klama la .paris.\n~ I went to Paris again.\nLifri(F): .i xu do ba stali ti ze'a lo jeftu be li re\n~ Will you stay here for two weeks?\nLinto(F): na go'i .i mi nitcu lo nu gunka\n~ No, I need to work.\nMentu(M): .i mi ca'o jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu\n~ I still think Lojban is the best language.\n> .i pa cnino prenu cu klama\n~ A new person walks up.\nCninos(M): coi\n~ Hi...\nLifri(F): coi do .i mi'e la lifri .i ma cmene do\n~ Hello! I'm Lifri. What's your name?\nMentu(M): fi'i\n~ Welcome!",
+      "free_content_back": "Full Spiral Review — One Year Later.\nOne year later, the three friends meet at the park.\nLifri: Hi everyone! What's new?\nMentu: I speak Lojban now!\nLinto: I went to Paris again.\nLifri: Will you stay here for two weeks?\nLinto: No, I need to work.\nMentu: I still think Lojban is the best language.\nA new person walks up.\nCninos: Hi...\nLifri: Hello! I'm Lifri. What's your name?\nMentu: Welcome!",
       "level_index": 34,
       "position_in_level": 5,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": "coi ro do .i ma nuzba",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nuzba' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i xu do ba stali ti ze'a lo jeftu be li re",
+            "kind": "parser_limitation",
+            "message": "x2 of 'stali' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     }
   ],
   "levels": [

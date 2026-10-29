@@ -406,9 +406,8 @@ FIXES["batch2-15"] = dict(
 )
 
 FIXES["batch2-16"] = dict(
-    SUBS=[(r"\.frantcesk\.", ".frantceskas.")],
     L={
-        0: ".i la .frantceskas. cu zvati lo zdani fi'o kansa lo ri bruna po'u la .pietros.",
+        0: ".i la .frantcesk. cu zvati lo zdani fi'o kansa lo ri bruna po'u la .pietros.",
         3: ("go'i .i mi djica lo nu citka lo nanba .e lo mi cirla", "Yes, I want some bread with my cheese."),
         4: ".i xu do ka'e te vecnu pa dacti va'u mi",
         7: (".i mi pilno ri lo nu zbasu lo mi salta", "I'll use it for my salad."),
@@ -421,7 +420,7 @@ FIXES["batch2-16"] = dict(
             {"en": "if he can buy something for Francesca", "jbo": "xu mi ka'e te vecnu da va'u do", "correct": False},
             {"en": "if Francesca can buy one thing for him", "jbo": "xu do ka'e te vecnu pa dacti va'u mi", "correct": True},
             {"en": "if they will eat cheese together", "jbo": "xu mi'o kansa citka lo cirla", "correct": False}]},
-       2: {"type": "choice", "en": "Francesca decided to...", "jbo": ".i la .frantceskas. cu jdice ma", "answers": [
+       2: {"type": "choice", "en": "Francesca decided to...", "jbo": ".i la .frantcesk. cu jdice ma", "answers": [
             {"en": "make a cheese sandwich for Pietro", "jbo": "zbasu lo cirla djasnuji va'u la .pietros.", "correct": False},
             {"en": "stay home and send Pietro for bread", "jbo": "stali lo zdani gi'e rinka lo nu la .pietros. cu te vecnu lo nanba", "correct": True},
             {"en": "buy three croissants", "jbo": "te vecnu ci lurnanba", "correct": False}]}},
@@ -439,7 +438,7 @@ FIXES["batch2-17"] = dict(
     },
     Q={1: {"type": "choice", "en": "Why is Kenta confused?", "jbo": ".i ki'u ma la .kentas. cu se cfipu", "answers": [
             {"en": "His mom didn't come.", "jbo": "lo mamta na klama", "correct": False},
-            {"en": "His mom asked for a table for three.", "jbo": "lo mamta cu cpedu lo jubme be ci prenu", "correct": True},
+            {"en": "His mom asked for a table for three.", "jbo": "lo mamta cu cpedu lo jubme pe ci prenu", "correct": True},
             {"en": "His mom asked for three tables.", "jbo": "lo mamta cu cpedu ci jubme", "correct": False}]},
        2: {"type": "choice", "en": "Why is Kenta's mom surprised?", "jbo": ".i ki'u ma lo mamta cu se spaji", "answers": [
             {"en": "She didn't know Kenta was married.", "jbo": "ri na djuno lo du'u la .kentas. speni", "correct": True},
@@ -449,19 +448,19 @@ FIXES["batch2-17"] = dict(
 )
 
 FIXES["batch2-18"] = dict(
-    SUBS=[(r"\.frantcesk\.", ".frantceskos.")],
     L={
         3: "go'i .e'o .i .ei mi te vecnu da mu'i lo nu jukpa lo vanci sanmi",
         6: ".i .ei mi jukpa lo mapti vanci sanmi mu'i lo jbedetnunsla",
         7: ".i mi nelci lo jbedetnunsla",
-        8: ".i lo cabdei cu jbedetri la .frantceskos.",
-        14: ".i la .frantceskos. cu nanmu .i ri mutce se funca lo xamgu",
-        18: ".i .uizo'o .i la .frantceskos. cu mlatu .i ri mutce se funca lo xamgu",
+        8: ".i lo cabdei cu jbedetri la .frantcesk.",
+        14: ".i la .frantcesk. cu nanmu .i ri mutce se funca lo xamgu",
+        18: ".i .uizo'o .i la .frantcesk. cu mlatu .i ri mutce se funca lo xamgu",
+        17: ".i la .frantcesk. cu me lo mi mlatu",  # mlatu x2 is the species, not the owner
     },
     Q={1: {"type": "choice", "en": "Why is Michela buying salmon?", "jbo": ".i ki'u ma la .mikelys. cu te vecnu lo salmone", "answers": [
         {"en": "It's cheap.", "jbo": "ri tolkargu", "correct": False},
-        {"en": "Francesco never eats meat.", "jbo": "la .frantceskos. noroi citka lo rectu", "correct": False},
-        {"en": "Francesco loves fish.", "jbo": "la .frantceskos. cu mutce nelci lo finpe", "correct": True}]}},
+        {"en": "Francesco never eats meat.", "jbo": "la .frantcesk. noroi citka lo rectu", "correct": False},
+        {"en": "Francesco loves fish.", "jbo": "la .frantcesk. cu mutce nelci lo finpe", "correct": True}]}},
     D=[("line 1", ".i .u'u doi nanmu", "\"sir\" has no polite equivalent; \"doi nanmu\" (O man) is blunt but grammatical")],
 )
 
@@ -479,7 +478,7 @@ FIXES["batch2-19"] = dict(
         5: (".i tu du lo lankyboijvi poi do traji nelci", "That's your favourite basketball player!"),
         6: (".i na go'i", "No, it isn't!"),
         7: (".i go'i .i ko tavla tu", "Yes, it is! Talk to him!"),
-        8: ".i mi dukse lo ka terpa",
+        8: ".i mi dukse terpa",  # dukse x1/x2 share a type: tanru, not dukse lo ka
         10: ".i lo lankyboijvi cu catlu la .rodolfos. .e la .barbaras.",
     },
     Q={1: {"type": "choice", "en": "Barbara says the player is coming towards them.", "jbo": ".i xu la .barbaras. cu cusku lo se du'u lo lankyboijvi cu klama ri", "answers": [
@@ -489,7 +488,7 @@ FIXES["batch2-19"] = dict(
             {"en": "he likes Rodolfo's shoes", "jbo": "lo se du'u ri nelci lo cutci pe la .rodolfos.", "correct": True},
             {"en": "they shouldn't stare", "jbo": "lo se du'u .ei ri na catlu", "correct": False},
             {"en": "he could sign an autograph", "jbo": "lo se du'u ri ka'e ciska lo cmene", "correct": False}]}},
-    D=[("line 8", ".i mi dukse lo ka terpa", "\"nervous\" rendered as \"too afraid\"; no exact gismu")],
+    D=[("line 8", ".i mi dukse terpa", "\"nervous\" rendered as \"too afraid\"; no exact gismu")],
 )
 
 FIXES["batch2-20"] = dict(
@@ -538,6 +537,7 @@ FIXES["batch2-22"] = dict(
     L={
         4: (".i lo rirni be lo mi rirni cu ponse ri", "They're my grandparents'."),
         8: ".i lu mi zgipli lo jgita gi'e pensi do li'u",
+        17: ".i ku'i do noroi ciska lo prami xatra be mi",  # ciska x3 is the medium: "ciska ... mi" = writes ON me
         18: (".i ki'u lo nu mi'o ca ponse lo samxa'a", "Because now we have email!"),
     },
     Q={1: {"type": "choice", "en": "In the letter, Rosanna's grandfather says he...", "jbo": ".i lo rirpa'u be la .rozanas. cu mo", "answers": [
@@ -547,7 +547,7 @@ FIXES["batch2-22"] = dict(
        2: {"type": "choice", "en": "Why doesn't Armando write love letters?", "jbo": ".i ki'u ma la .armandos. na ciska lo prami xatra", "answers": [
             {"en": "He doesn't love her.", "jbo": "ri na prami", "correct": False},
             {"en": "He can send email instead.", "jbo": "ri ka'e samymri", "correct": True},
-            {"en": "He's too busy playing guitar.", "jbo": "ri dukse lo ka zgipli lo jgita", "correct": False}]}},
+            {"en": "He's too busy playing guitar.", "jbo": "ri dukse zgipli lo jgita", "correct": False}]}},
     D=[],
 )
 
@@ -706,7 +706,7 @@ FIXES["batch2-30"] = dict(
     L={
         2: ".i xu do ba zukte da ca lo jefyfa'o",
         3: ".i mi ponse pa pikta be fi lo nu zgike ca lo xavdei",
-        4: (".i lo zgigri cu cnino .i ri se cmene lu lo mensi li'u", "It's a new band, \"The Sisters\"."),
+        4: (".i lo zgigri cu cnino .i ri se cmene zo .mensis.", "It's a new band, \"The Sisters\"."),
         7: ".i do ba zukte ma ca lo jefyfa'o",
         9: "go'i .i pa boltipterjvi ca lo xavdei",
         11: ".i .a'o lo boltipterjvi cu zdile do",
@@ -798,7 +798,7 @@ FIXES["batch2-34"] = dict(
     },
     Q={1: ch(".i ki'u ma la .margaritas. cu xebni lo barda zarci", "Why does Margarita hate the mall?", [
             ("ri roroi ganlo", "It's always closed.", False),
-            ("ri dukse lo ka darno", "It's too far.", False),
+            ("ri dukse darno", "It's too far.", False),
             ("so'i prenu cu zvati ri .i la'e di'u dukse", "There are too many people.", True)]),
        2: ch(".i ki'u ma la .sfetas. cu jinvi lo du'u la .margaritas. cu xamgu pendo", "Why does Sveta think Margarita is a good friend?", [
             ("ri na nelci lo prenu", "She doesn't like people.", False),
@@ -944,3 +944,23 @@ FIXES["batch2-18"].setdefault("L", {})[6] = ".i .ei mi jukpa lo mapti vanci sanm
 FIXES["batch2-12"].setdefault("L", {})[13] = ".i mi ponse re pikta be fi lo nu zgike ca lo cabycte"
 FIXES["batch2-13"].setdefault("Q", {})[0] = {"type": "fill", "line_index": 4, "speaker": "Renata", "answer": "burgere", "jbo": "", "en": ""}
 FIXES["batch2-32"].setdefault("Q", {})[0] = {"type": "fill", "line_index": 3, "speaker": "Fabio", "answer": "nunsla", "jbo": "", "en": ""}
+
+
+# Speaker labels must be names too: a valid cmevla or a valid brivla (la + brivla is valid Lojban;
+# a gismu shape must be a real gismu).  Only labels that are neither are renamed (checked by
+# validate_dialogues.py): named characters get the cmevla the story text already uses for them,
+# role labels a cmevla from the matching gismu + "s".  Valid labels (Mom, Clerk, Grandma, Adriano...) stay.
+SPEAKER_RENAMES = {
+    "Bea": "Beas", "Pedro": "Pedros", "Alina": "Alinas", "Linda": "Lindas", "Teresa": "Terezas",
+    "Carlo": "Karlos", "Liliana": "Lilianas", "Marina": "Marinas", "Maria": "Marias", "Anna": "Anas",
+    "Emilia": "Emilias", "Lorena": "Lorenas", "Roma": "Roman", "Olya": "Olias", "Sveta": "Sfetas",
+    "Luca": "Lukas", "Selena": "Selenas", "Renata": "Renatas", "Ada": "Adas", "Rebecca": "Rebekas",
+    "Eva": "Evas", "Francesca": "Frantcesk", "Hiroko": "Xirokos", "Kenta": "Kentas", "Michela": "Mikelys",
+    "Rodolfo": "Rodolfos", "Samuele": "Samuel", "Dario": "Darios", "Samanta": "Samantas", "Marcello": "Martcelos",
+    "Rosanna": "Rozanas", "Lili": "Lilis", "Lily": "Lilis", "Zari": "Zaris", "Eddy": "Edis",
+    "Marco": "Markos", "Lorenzo": "Lorentsos", "Tommaso": "Tomasos", "Gioele": "Djoeles", "Rita": "Ritas",
+    "Anatoliy": "Anatolis", "Mete": "Metes", "Paolo": "Paulos", "Vittoria": "Vitorias", "Roberto": "Robertos",
+    "Fabio": "Fabios", "Sasha": "Sacas", "Giovanni": "Djovanis", "Diego": "Diegos", "Liza": "Lizas",
+    "Anya": "Anias", "Dima": "Dimas", "Grandpa": "Dzenas", "Waitress": "Selfus", "Waiter": "Selfus",
+    "Teacher": "Ctucas", "Boss": "Jatnas", "Woman": "Ninmus",
+}

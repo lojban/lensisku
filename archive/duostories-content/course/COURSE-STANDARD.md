@@ -29,13 +29,16 @@ duplicate free-content fronts. A repeated phrase is shown only the first time.
 - `course/lojban-stories-*_collection.json`: the 40 batch-2 stories as four themed story courses
   (10 stories each, in difficulty order). See `STORY_COURSES` in `scripts/course_data.py`.
 
-## Names (cmevla)
-- Every name is a valid cmevla: it ends in a consonant and is written with pauses, as in `.lifris.`, `.mentus.`, `.lintas.`.
-- It must not contain `la`, `doi`, `lai` or `la'i` unless it is preceded by a consonant.
-- A foreign name is respelled phonetically (Sveta → `.sfetas.`, Francesca → `.frantceskas.`).
-- A gismu is never a name on its own: lifri → `.lifris.`.
-- Names are introduced with `la` (`mi'e la .lifris.`) or with a vocative (`coi .lifris.`, `doi .lintas.`).
-- An attitudinal is never followed directly by a bare name. Use `doi`: `.u'u doi .lintas.`.
+## Names
+- A name is either a valid cmevla (consonant-final, written with pauses, e.g. `la .djan.`) or a valid brivla
+  (gismu/lujvo/fu'ivla) used after `la`/`doi`, e.g. `la lifri`, `la mentu`, `la linto`, `la rozgu`, `la lensisku`.
+  Brivla names need `cu` before the main selbri. Only names that are neither are renamed (e.g. `.bea.` → `.beas.`).
+- Speaker labels follow the same rule (checked by `validate_dialogues.py`).
+- A cmevla must not contain `la`, `doi`, `lai` or `la'i` unless it is preceded by a consonant.
+- A foreign name is respelled phonetically (Sveta → `.sfetas.`, Michela → `.mikelys.`).
+- A gismu name is used after `la` or a vocative + `la` (`la lifri`), never bare.
+- Names are introduced with `la` (`mi'e la mentu`) or with a vocative (`coi la lifri`, `doi la linto`).
+- An attitudinal is never followed directly by a bare name. Use `doi`: `.u'u doi la linto`.
 
 ## Words
 Use only words from `korpora2/dictionaries/formal-gismu.tsv`, `lujvo.tsv` or `fuhivla.tsv`, with
@@ -51,5 +54,13 @@ question prompts and choice answers.
 
 The required result is **0 failing non-doubtful sentences**. When you are unsure of a fix, do not guess. Record
 it as doubtful: in a `doubtful` entry with where / original / candidate / note in the source, or with a
-`collection_note` starting `doubtful:` on the card. Some warnings are known type-checker limitations
-(see `checker_limitation` in the validator) and are not failures.
+`collection_note` starting `doubtful:` on the card.
+
+Type checking is part of validation: every egglog `typeWarnings` entry (formal place types) is a **failure**
+unless it matches a reviewed parser-limitation class in `LIMITATION_RULES` (each with its evidence). Examples
+are "unverified" places, names, pronouns, bound variables, Set/Group vs individual, and Location vs object.
+A sentence that is wrong by type gets fixed, or it goes on the doubtful list with the type error shown.
+
+The validator writes a `validation` field on every checked line or card, and a re-run refreshes it:
+`{"status": "ok|warning|doubtful|error", "warnings": [{"kind": "type|parse|parser_limitation|name|dictionary|morphology", "message": "<exact egglog output>", "note": "<classification>"}]}`.
+On collection cards, the dialogue warnings also carry `where` and `jbo`. The importer ignores the extra field. Use `--no-write` to skip writing.

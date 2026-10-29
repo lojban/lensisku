@@ -10,7 +10,7 @@
       "position": 0,
       "collection_note": "batch2-02",
       "free_content_front": "Story 1: lo cange — The Farm",
-      "free_content_back": "#### Before you read\nCharacters: Linda, Teresa\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Lindas, Terezas\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 0,
       "position_in_level": 0,
       "direction": "just_information"
@@ -23,7 +23,17 @@
       "free_content_back": "Is that a... horse?",
       "level_index": 0,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'xirma' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 3,
@@ -33,7 +43,17 @@
       "free_content_back": "Yes! This is a farm!",
       "level_index": 0,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'cange' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 4,
@@ -43,7 +63,17 @@
       "free_content_back": "This place is very different from the city.",
       "level_index": 0,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'frica' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 5,
@@ -53,7 +83,17 @@
       "free_content_back": "What's that noise from?",
       "level_index": 0,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'sance' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 6,
@@ -63,24 +103,110 @@
       "free_content_back": "Do you want to eat something?",
       "level_index": 0,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 7,
       "position": 6,
       "collection_note": "batch2-02",
-      "free_content_front": "# lo cange\n> .i la .lindas. cu vitke lo cange po lo mensi be ri po'u la .terezas.\n~ Linda visits her sister Teresa's farm.\nTeresa(F): coi .lindas. .i mi mutce gleki lo nu viska do\n~ Hi, Linda! I'm very happy to see you!\nLinda(F): doi .terezas. .i do xabju lo darno be lo tcadu\n~ Teresa! You live very far from the city.\nTeresa(F): .i se ki'u bo mi nelci lo nu xabju ti\n~ That's why I like living here!\nLinda(F): .i xu ta xirma\n~ Is that a... horse?\nTeresa(F): go'i .i ti cange\n~ Yes! This is a farm!\nLinda(F): .i ti mutce frica lo tcadu\n~ This place is very different from the city.\nTeresa(F): .ie .i so'i savru cu zvati lo tcadu\n~ Oh yes! In the city there's a lot of noise.\nLinda(F): .i ta sance ma\n~ What's that noise from?\nTeresa(F): .i lo mi danlu .i mi ji'a ponse ci gerku .e mu jipci\n~ My animals! I also have three dogs and five chickens.\nLinda(F): .i mi na nelci lo panci be lo do danlu\n~ I don't like the smell of your animals!\nTeresa(F): .i xu do djica lo nu citka da\n~ Do you want to eat something?\nTeresa(F): .i mi ponse su'o djasnuji vi lo jupku'a\n~ I have some sandwiches in the kitchen.\nLinda(F): na go'i .i ki'e\n~ No, thanks.\nLinda(F): .i .e'o mi djica lo nu lo karce cu bevri mi lo tcadu\n~ I want a taxi back to the city, please!\n---\n? fill: Linda(F): doi .terezas. .i do xabju lo darno be lo [tcadu]\n? choice: .i la .lindas. cu vitke lo cange po lo tunba be lo patfu xu\n+ na go'i\n- go'i\n? choice: .i so'i savru cu zvati ma\n- lo cange\n- lo stedu be la .terezas.\n+ lo tcadu\n? choice: .i la .lindas. cu mo\n+ djica lo nu cliva lo cange gi'e klama lo tcadu\n- djica lo nu xabju lo nurma\n- djica lo nu citka lo djasnuji",
-      "free_content_back": "The Farm.\nLinda visits her sister Teresa's farm.\nTeresa: Hi, Linda! I'm very happy to see you!\nLinda: Teresa! You live very far from the city.\nTeresa: That's why I like living here!\nLinda: Is that a... horse?\nTeresa: Yes! This is a farm!\nLinda: This place is very different from the city.\nTeresa: Oh yes! In the city there's a lot of noise.\nLinda: What's that noise from?\nTeresa: My animals! I also have three dogs and five chickens.\nLinda: I don't like the smell of your animals!\nTeresa: Do you want to eat something?\nTeresa: I have some sandwiches in the kitchen.\nLinda: No, thanks.\nLinda: I want a taxi back to the city, please!",
+      "free_content_front": "# lo cange\n> .i la .lindas. cu vitke lo cange po lo mensi be ri po'u la .terezas.\n~ Linda visits her sister Teresa's farm.\nTerezas(F): coi .lindas. .i mi mutce gleki lo nu viska do\n~ Hi, Linda! I'm very happy to see you!\nLindas(F): doi .terezas. .i do xabju lo darno be lo tcadu\n~ Teresa! You live very far from the city.\nTerezas(F): .i se ki'u bo mi nelci lo nu xabju ti\n~ That's why I like living here!\nLindas(F): .i xu ta xirma\n~ Is that a... horse?\nTerezas(F): go'i .i ti cange\n~ Yes! This is a farm!\nLindas(F): .i ti mutce frica lo tcadu\n~ This place is very different from the city.\nTerezas(F): .ie .i so'i savru cu zvati lo tcadu\n~ Oh yes! In the city there's a lot of noise.\nLindas(F): .i ta sance ma\n~ What's that noise from?\nTerezas(F): .i lo mi danlu .i mi ji'a ponse ci gerku .e mu jipci\n~ My animals! I also have three dogs and five chickens.\nLindas(F): .i mi na nelci lo panci be lo do danlu\n~ I don't like the smell of your animals!\nTerezas(F): .i xu do djica lo nu citka da\n~ Do you want to eat something?\nTerezas(F): .i mi ponse su'o djasnuji vi lo jupku'a\n~ I have some sandwiches in the kitchen.\nLindas(F): na go'i .i ki'e\n~ No, thanks.\nLindas(F): .i .e'o mi djica lo nu lo karce cu bevri mi lo tcadu\n~ I want a taxi back to the city, please!\n---\n? fill: Lindas(F): doi .terezas. .i do xabju lo darno be lo [tcadu]\n? choice: .i la .lindas. cu vitke lo cange po lo tunba be lo patfu xu\n+ na go'i\n- go'i\n? choice: .i so'i savru cu zvati ma\n- lo cange\n- lo stedu be la .terezas.\n+ lo tcadu\n? choice: .i la .lindas. cu mo\n+ djica lo nu cliva lo cange gi'e klama lo tcadu\n- djica lo nu xabju lo nurma\n- djica lo nu citka lo djasnuji",
+      "free_content_back": "The Farm.\nLinda visits her sister Teresa's farm.\nTerezas: Hi, Linda! I'm very happy to see you!\nLindas: Teresa! You live very far from the city.\nTerezas: That's why I like living here!\nLindas: Is that a... horse?\nTerezas: Yes! This is a farm!\nLindas: This place is very different from the city.\nTerezas: Oh yes! In the city there's a lot of noise.\nLindas: What's that noise from?\nTerezas: My animals! I also have three dogs and five chickens.\nLindas: I don't like the smell of your animals!\nTerezas: Do you want to eat something?\nTerezas: I have some sandwiches in the kitchen.\nLindas: No, thanks.\nLindas: I want a taxi back to the city, please!",
       "level_index": 0,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 2",
+            "jbo": "doi .terezas. .i do xabju lo darno be lo tcadu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'xabju' expects Location, but got lo darno (Entity)",
+            "note": "parser limitation (location): any object can be a location (CLL 10.2: `vi` + any sumti; `zvati lo zdani`); formal-gismu has no Entity/Organism -> Location coercion"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i xu ta xirma",
+            "kind": "parser_limitation",
+            "message": "x1 of 'xirma' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 5",
+            "jbo": "go'i .i ti cange",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cange' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i ti mutce frica lo tcadu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'frica' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".ie .i so'i savru cu zvati lo tcadu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'zvati' expects T, but got bound var x-1",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i ta sance ma",
+            "kind": "parser_limitation",
+            "message": "x1 of 'sance' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 12",
+            "jbo": ".i mi ponse su'o djasnuji vi lo jupku'a",
+            "kind": "parser_limitation",
+            "message": "x2 of 'ponse' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": "doi .terezas. .i do xabju lo darno be lo tcadu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'xabju' expects Location, but got lo darno (Entity)",
+            "note": "parser limitation (location): any object can be a location (CLL 10.2: `vi` + any sumti; `zvati lo zdani`); formal-gismu has no Entity/Organism -> Location coercion"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i so'i savru cu zvati ma",
+            "kind": "parser_limitation",
+            "message": "x1 of 'zvati' expects T, but got bound var x-2",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i so'i savru cu zvati ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 1",
+            "jbo": "lo stedu be la .terezas.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'stedu' expects Organism, but got la terezas",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          }
+        ]
+      }
     },
     {
       "item_id": 8,
       "position": 7,
       "collection_note": "batch2-03",
       "free_content_front": "Story 2: lo boltipyjvi cutci — The Soccer Shoes",
-      "free_content_back": "#### Before you read\nCharacters: Carlo, Liliana\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Karlos, Lilianas\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 1,
       "position_in_level": 0,
       "direction": "just_information"
@@ -93,7 +219,11 @@
       "free_content_back": "And I always win!",
       "level_index": 1,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 10,
@@ -103,7 +233,11 @@
       "free_content_back": "But today is different...",
       "level_index": 1,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 11,
@@ -113,7 +247,17 @@
       "free_content_back": "Are they expensive?",
       "level_index": 1,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 12,
@@ -123,7 +267,17 @@
       "free_content_back": "They're very expensive!",
       "level_index": 1,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 13,
@@ -133,24 +287,96 @@
       "free_content_back": "And now you're good at soccer?",
       "level_index": 1,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 14,
       "position": 13,
       "collection_note": "batch2-03",
-      "free_content_front": "# lo boltipyjvi cutci\n> .i la .karlos. .e la .lilianas. cu boltipyjvi\n~ Carlo and Liliana are playing soccer.\nCarlo(M): doi .lilianas. .i mi'a boltipyjvi ca ro lo djedi\n~ Liliana! We play soccer every day...\nLiliana(F): .i mi roroi jinga\n~ And I always win!\nCarlo(M): .i ku'i ca lo cabdei cu frica\n~ But today is different...\nCarlo(M): .i ki'u lo nu mi dasni lo mi cnino cutci\n~ ...because I'm wearing my new soccer shoes!\nLiliana(F): .i xu ri kargu\n~ Are they expensive?\nCarlo(M): .i ri mutce kargu\n~ They're very expensive!\nLiliana(F): .i xu do ca certu lo ka boltipyjvi\n~ And now you're good at soccer?\nCarlo(M): .i sepi'o le ti cutci mi mutce certu lo ka kelci\n~ With these shoes, I'm very good at playing!\n> .i la .lilianas. cu lebna lo bolci gi'e renro ri fi lo kelci vorme\n~ Liliana takes the ball and scores a goal.\nLiliana(F): .ui .i jinga\n~ Yes! Goal!\nCarlo(M): .ue .i ku'i mi dasni lo mi cnino cutci\n~ What?! But... I'm wearing my new shoes!\nLiliana(F): .i mi na nitcu lo nu dasni lo kargu cutci doi .karlos. .i ki'u bo mi boltipyjvi so'iroi\n~ I don't need expensive shoes, Carlo... because I play a lot!\nCarlo(M): .i mi na nelci lo mi cnino cutci\n~ I don't like my new shoes...\nLiliana(F): .a'o .i xu do dunda ri mi\n~ Ah! Will you give them to me?\n---\n? fill: Carlo(M): .i ki'u lo nu mi dasni lo mi cnino [cutci]\n? choice: .i xu la .karlos. .e la .lilianas. cu lankyboijvi\n- go'i\n+ na go'i\n? choice: .i ki'u ma la .lilianas. cu jinga\n- ri ponse lo kargu cutci\n+ ri boltipyjvi so'iroi\n- lo patfu be ri cu certu lo ka boltipyjvi",
-      "free_content_back": "The Soccer Shoes.\nCarlo and Liliana are playing soccer.\nCarlo: Liliana! We play soccer every day...\nLiliana: And I always win!\nCarlo: But today is different...\nCarlo: ...because I'm wearing my new soccer shoes!\nLiliana: Are they expensive?\nCarlo: They're very expensive!\nLiliana: And now you're good at soccer?\nCarlo: With these shoes, I'm very good at playing!\nLiliana takes the ball and scores a goal.\nLiliana: Yes! Goal!\nCarlo: What?! But... I'm wearing my new shoes!\nLiliana: I don't need expensive shoes, Carlo... because I play a lot!\nCarlo: I don't like my new shoes...\nLiliana: Ah! Will you give them to me?",
+      "free_content_front": "# lo boltipyjvi cutci\n> .i la .karlos. .e la .lilianas. cu boltipyjvi\n~ Carlo and Liliana are playing soccer.\nKarlos(M): doi .lilianas. .i mi'a boltipyjvi ca ro lo djedi\n~ Liliana! We play soccer every day...\nLilianas(F): .i mi roroi jinga\n~ And I always win!\nKarlos(M): .i ku'i ca lo cabdei cu frica\n~ But today is different...\nKarlos(M): .i ki'u lo nu mi dasni lo mi cnino cutci\n~ ...because I'm wearing my new soccer shoes!\nLilianas(F): .i xu ri kargu\n~ Are they expensive?\nKarlos(M): .i ri mutce kargu\n~ They're very expensive!\nLilianas(F): .i xu do ca certu lo ka boltipyjvi\n~ And now you're good at soccer?\nKarlos(M): .i sepi'o le ti cutci mi mutce certu lo ka kelci\n~ With these shoes, I'm very good at playing!\n> .i la .lilianas. cu lebna lo bolci gi'e renro ri fi lo kelci vorme\n~ Liliana takes the ball and scores a goal.\nLilianas(F): .ui .i jinga\n~ Yes! Goal!\nKarlos(M): .ue .i ku'i mi dasni lo mi cnino cutci\n~ What?! But... I'm wearing my new shoes!\nLilianas(F): .i mi na nitcu lo nu dasni lo kargu cutci doi .karlos. .i ki'u bo mi boltipyjvi so'iroi\n~ I don't need expensive shoes, Carlo... because I play a lot!\nKarlos(M): .i mi na nelci lo mi cnino cutci\n~ I don't like my new shoes...\nLilianas(F): .a'o .i xu do dunda ri mi\n~ Ah! Will you give them to me?\n---\n? fill: Karlos(M): .i ki'u lo nu mi dasni lo mi cnino [cutci]\n? choice: .i xu la .karlos. .e la .lilianas. cu lankyboijvi\n- go'i\n+ na go'i\n? choice: .i ki'u ma la .lilianas. cu jinga\n- ri ponse lo kargu cutci\n+ ri boltipyjvi so'iroi\n- lo patfu be ri cu certu lo ka boltipyjvi",
+      "free_content_back": "The Soccer Shoes.\nCarlo and Liliana are playing soccer.\nKarlos: Liliana! We play soccer every day...\nLilianas: And I always win!\nKarlos: But today is different...\nKarlos: ...because I'm wearing my new soccer shoes!\nLilianas: Are they expensive?\nKarlos: They're very expensive!\nLilianas: And now you're good at soccer?\nKarlos: With these shoes, I'm very good at playing!\nLiliana takes the ball and scores a goal.\nLilianas: Yes! Goal!\nKarlos: What?! But... I'm wearing my new shoes!\nLilianas: I don't need expensive shoes, Carlo... because I play a lot!\nKarlos: I don't like my new shoes...\nLilianas: Ah! Will you give them to me?",
       "level_index": 1,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": "doi .lilianas. .i mi'a boltipyjvi ca ro lo djedi",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i xu ri kargu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i ri mutce kargu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'kargu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i sepi'o le ti cutci mi mutce certu lo ka kelci",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 9",
+            "jbo": ".i la .lilianas. cu lebna lo bolci gi'e renro ri fi lo kelci vorme",
+            "kind": "parser_limitation",
+            "message": "x2 of 'lebna' expects Set<T>, but got lo bolci (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".a'o .i xu do dunda ri mi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'dunda' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i ki'u ma la .lilianas. cu jinga",
+            "kind": "parser_limitation",
+            "message": "x1 of 'krinu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 0",
+            "jbo": "ri ponse lo kargu cutci",
+            "kind": "parser_limitation",
+            "message": "x1 of 'ponse' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 2",
+            "jbo": "lo patfu be ri cu certu lo ka boltipyjvi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'patfu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 15,
       "position": 14,
       "collection_note": "batch2-04",
       "free_content_front": "Story 3: lo muzga — At the Museum",
-      "free_content_back": "#### Before you read\nCharacters: Grandpa, Marina\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Dzenas, Marinas\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 2,
       "position_in_level": 0,
       "direction": "just_information"
@@ -163,7 +389,17 @@
       "free_content_back": "It's very interesting!",
       "level_index": 2,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'cinri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 17,
@@ -173,7 +409,11 @@
       "free_content_back": "There are some old photos.",
       "level_index": 2,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 18,
@@ -183,7 +423,17 @@
       "free_content_back": "Yes, this is Montreal.",
       "level_index": 2,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'pixra' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 19,
@@ -193,7 +443,11 @@
       "free_content_back": "There are no cars!",
       "level_index": 2,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 20,
@@ -203,17 +457,95 @@
       "free_content_back": "There's a woman in the photo.",
       "level_index": 2,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo pixra (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 21,
       "position": 20,
       "collection_note": "batch2-04",
-      "free_content_front": "# lo muzga\n> .i la .marinas. cu zvati lo muzga fi'o kansa lo rirpa'u be ri\n~ Marina is at the museum with her grandfather.\nMarina(F): .i ti mutce cinri\n~ It's very interesting!\nMarina(F): .i su'o pixra cu zvati .i ri slabu\n~ There are some old photos.\nGrandpa(M): go'i .i ti pixra la .montreal.\n~ Yes, this is Montreal.\nMarina(F): .i no karce cu zvati\n~ There are no cars!\nMarina(F): .i ko catlu .i ti pixra lo mikce tadni\n~ Look! A photo of medical students.\nGrandpa(M): go'i .i ri zvati lo balcu'e be la .montreal.\n~ Yes, it's the University of Montreal.\nMarina(F): .i pa ninmu cu zvati lo pixra\n~ There's a woman in the photo.\nMarina(F): .i pa ninmu po'o\n~ Only one woman!\n> .i lo rirpa'u be la .marinas. cu catlu lo pixra gi'e smaji\n~ Marina's grandfather looks at the photo in silence.\nMarina(F): doi dzena\n~ Grandpa?\nGrandpa(M): .i ri mutce melbi\n~ She's very pretty.\nMarina(F): go'i .i mutce melbi\n~ Yes, very pretty.\nGrandpa(M): .i ri rirmamta mi\n~ She's my grandmother.\nMarina(F): .ue .i je'u xu\n~ Oh, really?\nGrandpa(M): .i tu'a lo mi lanzu cu mutce cinri\n~ I have a very interesting family!\n---\n? fill: Marina(F): .i no [karce] cu zvati\n? choice: .i xu lo muzga cu vasru lo slabu pixra\n- na go'i\n+ go'i\n? choice: .i la .marinas. cu viska ma vi lo pixra\n- ro lo karce cu cnino\n+ no karce\n- lo pixra cu cnino",
-      "free_content_back": "At the Museum.\nMarina is at the museum with her grandfather.\nMarina: It's very interesting!\nMarina: There are some old photos.\nGrandpa: Yes, this is Montreal.\nMarina: There are no cars!\nMarina: Look! A photo of medical students.\nGrandpa: Yes, it's the University of Montreal.\nMarina: There's a woman in the photo.\nMarina: Only one woman!\nMarina's grandfather looks at the photo in silence.\nMarina: Grandpa?\nGrandpa: She's very pretty.\nMarina: Yes, very pretty.\nGrandpa: She's my grandmother.\nMarina: Oh, really?\nGrandpa: I have a very interesting family!",
+      "free_content_front": "# lo muzga\n> .i la .marinas. cu zvati lo muzga fi'o kansa lo rirpa'u be ri\n~ Marina is at the museum with her grandfather.\nMarinas(F): .i ti mutce cinri\n~ It's very interesting!\nMarinas(F): .i su'o pixra cu zvati .i ri slabu\n~ There are some old photos.\nDzenas(M): go'i .i ti pixra la .montreal.\n~ Yes, this is Montreal.\nMarinas(F): .i no karce cu zvati\n~ There are no cars!\nMarinas(F): .i ko catlu .i ti pixra lo mikce tadni\n~ Look! A photo of medical students.\nDzenas(M): go'i .i ri zvati lo balcu'e be la .montreal.\n~ Yes, it's the University of Montreal.\nMarinas(F): .i pa ninmu cu zvati lo pixra\n~ There's a woman in the photo.\nMarinas(F): .i pa ninmu po'o\n~ Only one woman!\n> .i lo rirpa'u be la .marinas. cu catlu lo pixra gi'e smaji\n~ Marina's grandfather looks at the photo in silence.\nMarinas(F): doi dzena\n~ Grandpa?\nDzenas(M): .i ri mutce melbi\n~ She's very pretty.\nMarinas(F): go'i .i mutce melbi\n~ Yes, very pretty.\nDzenas(M): .i ri rirmamta mi\n~ She's my grandmother.\nMarinas(F): .ue .i je'u xu\n~ Oh, really?\nDzenas(M): .i tu'a lo mi lanzu cu mutce cinri\n~ I have a very interesting family!\n---\n? fill: Marinas(F): .i no [karce] cu zvati\n? choice: .i xu lo muzga cu vasru lo slabu pixra\n- na go'i\n+ go'i\n? choice: .i la .marinas. cu viska ma vi lo pixra\n- ro lo karce cu cnino\n+ no karce\n- lo pixra cu cnino",
+      "free_content_back": "At the Museum.\nMarina is at the museum with her grandfather.\nMarinas: It's very interesting!\nMarinas: There are some old photos.\nDzenas: Yes, this is Montreal.\nMarinas: There are no cars!\nMarinas: Look! A photo of medical students.\nDzenas: Yes, it's the University of Montreal.\nMarinas: There's a woman in the photo.\nMarinas: Only one woman!\nMarina's grandfather looks at the photo in silence.\nMarinas: Grandpa?\nDzenas: She's very pretty.\nMarinas: Yes, very pretty.\nDzenas: She's my grandmother.\nMarinas: Oh, really?\nDzenas: I have a very interesting family!",
       "level_index": 2,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": ".i ti mutce cinri",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cinri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": "go'i .i ti pixra la .montreal.",
+            "kind": "parser_limitation",
+            "message": "x1 of 'pixra' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i ko catlu .i ti pixra lo mikce tadni",
+            "kind": "parser_limitation",
+            "message": "x1 of 'pixra' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": "go'i .i ri zvati lo balcu'e be la .montreal.",
+            "kind": "parser_limitation",
+            "message": "x1 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": "go'i .i ri zvati lo balcu'e be la .montreal.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo balcu'e (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i pa ninmu cu zvati lo pixra",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo pixra (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i ri mutce melbi",
+            "kind": "parser_limitation",
+            "message": "x1 of 'melbi' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 15",
+            "jbo": ".i tu'a lo mi lanzu cu mutce cinri",
+            "kind": "parser_limitation",
+            "message": "x1 of 'cinri' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i la .marinas. cu viska ma vi lo pixra",
+            "kind": "parser_limitation",
+            "message": "x2 of 'viska' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 22,
@@ -233,7 +565,11 @@
       "free_content_back": "Where's my passport?",
       "level_index": 3,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 24,
@@ -243,7 +579,22 @@
       "free_content_back": "It's nowhere!",
       "level_index": 3,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: compatible union pairings do not all determine T",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 25,
@@ -253,7 +604,17 @@
       "free_content_back": "It's not in my bag.",
       "level_index": 3,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'nenri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 26,
@@ -263,7 +624,17 @@
       "free_content_back": "And it's not in my jacket either.",
       "level_index": 3,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'nenri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 27,
@@ -273,7 +644,11 @@
       "free_content_back": "Wait! Don't drive away!",
       "level_index": 3,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 28,
@@ -283,14 +658,124 @@
       "free_content_back": "The Passport.\nVladimir is at the airport.\nVladimir: Where's my passport?\nVladimir: It's nowhere!\nVladimir: It's not in my bag.\nVladimir: And it's not in my jacket either.\nVladimir: Ah! It's in the taxi (the car)!\nVladimir looks for the car.\nHe sees the driver.\nVladimir: Wait! Don't drive away!\nDriver: What happened? Are you OK?\nVladimir: My passport!\nVladimir: It's in your car!\nDriver: Your passport isn't in my car.\nVladimir: No! It can't be!\nDriver: Look, the passport is in your hand!\nVladimir: Right!\nVladimir: Thank you very much!\nDriver: Have a good trip!",
       "level_index": 3,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".i la .vladimir. cu zvati lo vijytcana",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo vijytcana (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i ri zvati no da",
+            "kind": "parser_limitation",
+            "message": "x1 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i ri zvati no da",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: compatible union pairings do not all determine T",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": ".i ri na nenri lo mi dakli",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nenri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 4",
+            "jbo": ".i ri ji'a na nenri lo mi kosta",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nenri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".ua .i ri nenri lo karce",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nenri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i la .vladimir. cu sisku lo karce",
+            "kind": "parser_limitation",
+            "message": "x2 of 'sisku' expects Set<T>, but got lo karce (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i ri viska lo jitro be lo karce",
+            "kind": "parser_limitation",
+            "message": "x1 of 'viska' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i ri nenri lo do karce",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nenri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".i ko catlu .i lo jaspu cu zvati lo do xance",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got lo srana (Entity)",
+            "note": "parser limitation (srana): `le ti X` / `lo mi X` is typed as srana(ti) (Entity) by the checker, losing the type of X"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i ri na nenri lo mi dakli",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nenri' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i la .vladimir. cu sisku lo karce .i ri mo",
+            "kind": "parser_limitation",
+            "message": "x2 of 'sisku' expects Set<T>, but got lo karce (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i lo jaspu be la .vladimir. pu zvati ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 0",
+            "jbo": "lo ri xance",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 1",
+            "jbo": "lo ri zdani",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 29,
       "position": 28,
       "collection_note": "batch2-14",
       "free_content_front": "Story 5: lo xamgu gerku — The Good Dog",
-      "free_content_back": "#### Before you read\nCharacters: Ada, Braulio\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Adas, Braulio\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 4,
       "position_in_level": 0,
       "direction": "just_information"
@@ -303,7 +788,11 @@
       "free_content_back": "Thanks! Look!",
       "level_index": 4,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 31,
@@ -313,7 +802,11 @@
       "free_content_back": "Max! Sit!",
       "level_index": 4,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 32,
@@ -323,7 +816,22 @@
       "free_content_back": "Teaching a dog something is hard.",
       "level_index": 4,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'nandu' expects Set<T>, but got lo nu (Abstraction: (Event))",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'ctuca' expects Group<Entity>, but got lo gerku (Organism)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 33,
@@ -333,7 +841,11 @@
       "free_content_back": "How do you do it?",
       "level_index": 4,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 34,
@@ -343,24 +855,156 @@
       "free_content_back": "Well, I teach him something new...",
       "level_index": 4,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'ctuca' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "kind": "parser_limitation",
+            "message": "x3 of 'ctuca' expects Proposition, but got bound var x-1",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          }
+        ]
+      }
     },
     {
       "item_id": 35,
       "position": 34,
       "collection_note": "batch2-14",
-      "free_content_front": "# lo xamgu gerku\n> .i la .braulios. cu zvati lo panka fi'o kansa la .adas. .e lo ri gerku\n~ Braulio is in a park with Ada and her dog.\nBraulio(M): doi .adas. .i mi nelci lo do gerku\n~ Ada, I like your dog!\nAda(F): ki'e .i ko catlu\n~ Thanks! Look!\nAda(F): doi .maks. .i ko zutse\n~ Max! Sit!\nBraulio(M): .i xu lo do gerku cu roroi tinbe do\n~ Ah! Does your dog always listen to you?\nAda(F): .i ri so'iroi tinbe mi .i ku'i ri na roroi tinbe mi\n~ He usually listens to me, but not always!\nAda(F): .i lo nu ctuca lo gerku cu nandu\n~ Teaching a dog something is hard.\nBraulio(M): .i do zukte ma\n~ How do you do it?\nAda(F): .i mi ctuca ri fi da poi cnino\n~ Well, I teach him something new...\nAda(F): .i ba bo mi dunda lo cidja ri\n~ ...and then I give him something to eat!\nBraulio(M): .i ca bo mi djica lo nu citka\n~ Now I want something to eat!\nAda(F): .i xu do djica lo nu citka lo do djasnuji\n~ Ah, do you want your sandwich?\nBraulio(M): go'i .i .e'o\n~ Yes, please!\nAda(F): doi .maks. .i ko na zukte ta\n~ Max! No!\nBraulio(M): .i ma fasnu\n~ What happened?\nAda(F): .i ri citka lo do djasnuji\n~ He's eating your sandwich.\nAda(F): .u'u sai\n~ I'm so sorry.\nBraulio(M): .i ri so'iroi tinbe do .i ku'i ri na roroi tinbe do\n~ Well, he usually listens to you... but not always!\n---\n? fill: > .i la .braulios. cu zvati lo panka fi'o kansa la .adas. .e lo ri [gerku]\n? choice: .i la .adas. cu mo ba lo nu ri ctuca lo gerku\n+ dunda lo cidja lo gerku\n- dunda lo zilkei lo gerku\n- dunda lo djacu lo gerku\n? choice: .i ma fasnu\n- la .braulios. cu te vecnu lo zilkei\n+ lo gerku cu citka lo djasnuji pe la .braulios.\n- la .braulios. cu ji'a te vecnu lo gerku",
-      "free_content_back": "The Good Dog.\nBraulio is in a park with Ada and her dog.\nBraulio: Ada, I like your dog!\nAda: Thanks! Look!\nAda: Max! Sit!\nBraulio: Ah! Does your dog always listen to you?\nAda: He usually listens to me, but not always!\nAda: Teaching a dog something is hard.\nBraulio: How do you do it?\nAda: Well, I teach him something new...\nAda: ...and then I give him something to eat!\nBraulio: Now I want something to eat!\nAda: Ah, do you want your sandwich?\nBraulio: Yes, please!\nAda: Max! No!\nBraulio: What happened?\nAda: He's eating your sandwich.\nAda: I'm so sorry.\nBraulio: Well, he usually listens to you... but not always!",
+      "free_content_front": "# lo xamgu gerku\n> .i la .braulios. cu zvati lo panka fi'o kansa la .adas. .e lo ri gerku\n~ Braulio is in a park with Ada and her dog.\nBraulio(M): doi .adas. .i mi nelci lo do gerku\n~ Ada, I like your dog!\nAdas(F): ki'e .i ko catlu\n~ Thanks! Look!\nAdas(F): doi .maks. .i ko zutse\n~ Max! Sit!\nBraulio(M): .i xu lo do gerku cu roroi tinbe do\n~ Ah! Does your dog always listen to you?\nAdas(F): .i ri so'iroi tinbe mi .i ku'i ri na roroi tinbe mi\n~ He usually listens to me, but not always!\nAdas(F): .i lo nu ctuca lo gerku cu nandu\n~ Teaching a dog something is hard.\nBraulio(M): .i do zukte ma\n~ How do you do it?\nAdas(F): .i mi ctuca ri fi da poi cnino\n~ Well, I teach him something new...\nAdas(F): .i ba bo mi dunda lo cidja ri\n~ ...and then I give him something to eat!\nBraulio(M): .i ca bo mi djica lo nu citka\n~ Now I want something to eat!\nAdas(F): .i xu do djica lo nu citka lo do djasnuji\n~ Ah, do you want your sandwich?\nBraulio(M): go'i .i .e'o\n~ Yes, please!\nAdas(F): doi .maks. .i ko na zukte ta\n~ Max! No!\nBraulio(M): .i ma fasnu\n~ What happened?\nAdas(F): .i ri citka lo do djasnuji\n~ He's eating your sandwich.\nAdas(F): .u'u sai\n~ I'm so sorry.\nBraulio(M): .i ri so'iroi tinbe do .i ku'i ri na roroi tinbe do\n~ Well, he usually listens to you... but not always!\n---\n? fill: > .i la .braulios. cu zvati lo panka fi'o kansa la .adas. .e lo ri [gerku]\n? choice: .i la .adas. cu mo ba lo nu ri ctuca lo gerku\n+ dunda lo cidja lo gerku\n- dunda lo zilkei lo gerku\n- dunda lo djacu lo gerku\n? choice: .i ma fasnu\n- la .braulios. cu te vecnu lo zilkei\n+ lo gerku cu citka lo djasnuji pe la .braulios.\n- la .braulios. cu ji'a te vecnu lo gerku",
+      "free_content_back": "The Good Dog.\nBraulio is in a park with Ada and her dog.\nBraulio: Ada, I like your dog!\nAdas: Thanks! Look!\nAdas: Max! Sit!\nBraulio: Ah! Does your dog always listen to you?\nAdas: He usually listens to me, but not always!\nAdas: Teaching a dog something is hard.\nBraulio: How do you do it?\nAdas: Well, I teach him something new...\nAdas: ...and then I give him something to eat!\nBraulio: Now I want something to eat!\nAdas: Ah, do you want your sandwich?\nBraulio: Yes, please!\nAdas: Max! No!\nBraulio: What happened?\nAdas: He's eating your sandwich.\nAdas: I'm so sorry.\nBraulio: Well, he usually listens to you... but not always!",
       "level_index": 4,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 5",
+            "jbo": ".i ri so'iroi tinbe mi .i ku'i ri na roroi tinbe mi",
+            "kind": "parser_limitation",
+            "message": "x1 of 'tinbe' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i ri so'iroi tinbe mi .i ku'i ri na roroi tinbe mi",
+            "kind": "parser_limitation",
+            "message": "x1 of 'tinbe' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i lo nu ctuca lo gerku cu nandu",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nandu' expects Set<T>, but got lo nu (Abstraction: (Event))",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 6",
+            "jbo": ".i lo nu ctuca lo gerku cu nandu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'ctuca' expects Group<Entity>, but got lo gerku (Organism)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i mi ctuca ri fi da poi cnino",
+            "kind": "parser_limitation",
+            "message": "x2 of 'ctuca' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i mi ctuca ri fi da poi cnino",
+            "kind": "parser_limitation",
+            "message": "x3 of 'ctuca' expects Proposition, but got bound var x-1",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          },
+          {
+            "where": "line 13",
+            "jbo": "doi .maks. .i ko na zukte ta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zukte' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 15",
+            "jbo": ".i ri citka lo do djasnuji",
+            "kind": "parser_limitation",
+            "message": "x1 of 'citka' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 17",
+            "jbo": ".i ri so'iroi tinbe do .i ku'i ri na roroi tinbe do",
+            "kind": "parser_limitation",
+            "message": "x1 of 'tinbe' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 17",
+            "jbo": ".i ri so'iroi tinbe do .i ku'i ri na roroi tinbe do",
+            "kind": "parser_limitation",
+            "message": "x1 of 'tinbe' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 choice",
+            "jbo": ".i la .adas. cu mo ba lo nu ri ctuca lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'ctuca' expects Group<Entity>, but got lo gerku (Organism)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q1 answer 0",
+            "jbo": "dunda lo cidja lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'dunda' expects Set<W>, but got lo cidja (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q1 answer 1",
+            "jbo": "dunda lo zilkei lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'dunda' expects Set<W>, but got lo zilkei (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q1 answer 2",
+            "jbo": "dunda lo djacu lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'dunda' expects Set<W>, but got lo djacu (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q2 answer 0",
+            "jbo": "la .braulios. cu te vecnu lo zilkei",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo zilkei (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q2 answer 2",
+            "jbo": "la .braulios. cu ji'a te vecnu lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo gerku (Organism)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 36,
       "position": 35,
       "collection_note": "batch2-19",
       "free_content_front": "Story 6: lo lankyboijvi — The Basketball Player",
-      "free_content_back": "#### Before you read\nCharacters: Barbara, Rodolfo, Player\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Barbara, Rodolfos, Player\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 5,
       "position_in_level": 0,
       "direction": "just_information"
@@ -373,7 +1017,17 @@
       "free_content_back": "What do we need to buy at the supermarket?",
       "level_index": 5,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 38,
@@ -383,7 +1037,17 @@
       "free_content_back": "Rodolfo! Look over there!",
       "level_index": 5,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'catlu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 39,
@@ -393,7 +1057,11 @@
       "free_content_back": "Where? Who?",
       "level_index": 5,
       "position_in_level": 3,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 40,
@@ -403,7 +1071,11 @@
       "free_content_back": "No, it isn't!",
       "level_index": 5,
       "position_in_level": 4,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 41,
@@ -413,24 +1085,137 @@
       "free_content_back": "Yes, it is! Talk to him!",
       "level_index": 5,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'tavla' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 42,
       "position": 41,
       "collection_note": "batch2-19",
-      "free_content_front": "# lo lankyboijvi\n> .i la .rodolfos. .e la .barbaras. cu klama lo zarci\n~ Rodolfo and Barbara go shopping.\nBarbara(F): .i mi'o nitcu lo nu te vecnu ma\n~ What do we need to buy at the supermarket?\nRodolfo(M): .i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi\n~ We need milk, rice, beans...\nBarbara(F): doi .rodolfos. .i ko catlu tu\n~ Rodolfo! Look over there!\nRodolfo(M): .i ma .i ma\n~ Where? Who?\nBarbara(F): .i tu du lo lankyboijvi poi do traji nelci\n~ That's your favourite basketball player!\nRodolfo(M): .i na go'i\n~ No, it isn't!\nBarbara(F): .i go'i .i ko tavla tu\n~ Yes, it is! Talk to him!\nRodolfo(M): .i mi dukse lo ka terpa\n~ No, I'm too nervous!\nBarbara(F): .i ku'i doi .rodolfos. ko catlu .i do .e ri dasni lo mintu cutci\n~ But Rodolfo... look! You have the same shoes!\n> .i lo lankyboijvi cu catlu la .rodolfos. .e la .barbaras.\n~ The basketball player looks at Rodolfo and Barbara.\nRodolfo(M): .i xu mi .e ri dasni lo mintu cutci\n~ We have the same shoes?\nBarbara(F): go'i .i ri ji'a ca'o klama ti\n~ Yes! And he's coming over here!\nRodolfo(M): .i mi zukte ma\n~ What do I do?!\nBarbara(F): .i ko tavla ri\n~ Talk to him!\nRodolfo(M): .i .ei mi cliva\n~ I have to go!\nPlayer(M): ju'i\n~ Hey!\nRodolfo(M): .i mo\n~ Yes?\nPlayer(M): .i mi nelci lo do cutci\n~ I like your shoes.\n---\n? fill: Rodolfo(M): .i mi'o nitcu lo nu te vecnu lo [ladru] .e lo rismi .e lo dembi\n? choice: .i xu la .barbaras. cu cusku lo se du'u lo lankyboijvi cu klama ri\n- na go'i\n+ go'i\n? choice: .i lo lankyboijvi cu djica lo nu cusku ma\n+ lo se du'u ri nelci lo cutci pe la .rodolfos.\n- lo se du'u .ei ri na catlu\n- lo se du'u ri ka'e ciska lo cmene",
-      "free_content_back": "The Basketball Player.\nRodolfo and Barbara go shopping.\nBarbara: What do we need to buy at the supermarket?\nRodolfo: We need milk, rice, beans...\nBarbara: Rodolfo! Look over there!\nRodolfo: Where? Who?\nBarbara: That's your favourite basketball player!\nRodolfo: No, it isn't!\nBarbara: Yes, it is! Talk to him!\nRodolfo: No, I'm too nervous!\nBarbara: But Rodolfo... look! You have the same shoes!\nThe basketball player looks at Rodolfo and Barbara.\nRodolfo: We have the same shoes?\nBarbara: Yes! And he's coming over here!\nRodolfo: What do I do?!\nBarbara: Talk to him!\nRodolfo: I have to go!\nPlayer: Hey!\nRodolfo: Yes?\nPlayer: I like your shoes.",
+      "free_content_front": "# lo lankyboijvi\n> .i la .rodolfos. .e la .barbaras. cu klama lo zarci\n~ Rodolfo and Barbara go shopping.\nBarbara(F): .i mi'o nitcu lo nu te vecnu ma\n~ What do we need to buy at the supermarket?\nRodolfos(M): .i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi\n~ We need milk, rice, beans...\nBarbara(F): doi .rodolfos. .i ko catlu tu\n~ Rodolfo! Look over there!\nRodolfos(M): .i ma .i ma\n~ Where? Who?\nBarbara(F): .i tu du lo lankyboijvi poi do traji nelci\n~ That's your favourite basketball player!\nRodolfos(M): .i na go'i\n~ No, it isn't!\nBarbara(F): .i go'i .i ko tavla tu\n~ Yes, it is! Talk to him!\nRodolfos(M): .i mi dukse terpa\n~ No, I'm too nervous!\nBarbara(F): .i ku'i doi .rodolfos. ko catlu .i do .e ri dasni lo mintu cutci\n~ But Rodolfo... look! You have the same shoes!\n> .i lo lankyboijvi cu catlu la .rodolfos. .e la .barbaras.\n~ The basketball player looks at Rodolfo and Barbara.\nRodolfos(M): .i xu mi .e ri dasni lo mintu cutci\n~ We have the same shoes?\nBarbara(F): go'i .i ri ji'a ca'o klama ti\n~ Yes! And he's coming over here!\nRodolfos(M): .i mi zukte ma\n~ What do I do?!\nBarbara(F): .i ko tavla ri\n~ Talk to him!\nRodolfos(M): .i .ei mi cliva\n~ I have to go!\nPlayer(M): ju'i\n~ Hey!\nRodolfos(M): .i mo\n~ Yes?\nPlayer(M): .i mi nelci lo do cutci\n~ I like your shoes.\n---\n? fill: Rodolfos(M): .i mi'o nitcu lo nu te vecnu lo [ladru] .e lo rismi .e lo dembi\n? choice: .i xu la .barbaras. cu cusku lo se du'u lo lankyboijvi cu klama ri\n- na go'i\n+ go'i\n? choice: .i lo lankyboijvi cu djica lo nu cusku ma\n+ lo se du'u ri nelci lo cutci pe la .rodolfos.\n- lo se du'u .ei ri na catlu\n- lo se du'u ri ka'e ciska lo cmene",
+      "free_content_back": "The Basketball Player.\nRodolfo and Barbara go shopping.\nBarbara: What do we need to buy at the supermarket?\nRodolfos: We need milk, rice, beans...\nBarbara: Rodolfo! Look over there!\nRodolfos: Where? Who?\nBarbara: That's your favourite basketball player!\nRodolfos: No, it isn't!\nBarbara: Yes, it is! Talk to him!\nRodolfos: No, I'm too nervous!\nBarbara: But Rodolfo... look! You have the same shoes!\nThe basketball player looks at Rodolfo and Barbara.\nRodolfos: We have the same shoes?\nBarbara: Yes! And he's coming over here!\nRodolfos: What do I do?!\nBarbara: Talk to him!\nRodolfos: I have to go!\nPlayer: Hey!\nRodolfos: Yes?\nPlayer: I like your shoes.",
       "level_index": 5,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 1",
+            "jbo": ".i mi'o nitcu lo nu te vecnu ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo ladru (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo rismi (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo dembi (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "line 3",
+            "jbo": "doi .rodolfos. .i ko catlu tu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'catlu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i go'i .i ko tavla tu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'tavla' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i xu mi .e ri dasni lo mintu cutci",
+            "kind": "parser_limitation",
+            "message": "x1 of 'dasni' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 12",
+            "jbo": "go'i .i ri ji'a ca'o klama ti",
+            "kind": "parser_limitation",
+            "message": "x1 of 'klama' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 12",
+            "jbo": "go'i .i ri ji'a ca'o klama ti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'klama' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 14",
+            "jbo": ".i ko tavla ri",
+            "kind": "parser_limitation",
+            "message": "x2 of 'tavla' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo ladru (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo rismi (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo dembi (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i lo lankyboijvi cu djica lo nu cusku ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'cusku' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 43,
       "position": 42,
       "collection_note": "batch2-20",
       "free_content_front": "Story 7: lo nunkei poi mi traji nelci — My Favourite Game",
-      "free_content_back": "#### Before you read\nCharacters: Samuele, Dario\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Samuel, Darios\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 6,
       "position_in_level": 0,
       "direction": "just_information"
@@ -443,7 +1228,11 @@
       "free_content_back": "Hi, brother!",
       "level_index": 6,
       "position_in_level": 1,
-      "direction": "quiz_direct"
+      "direction": "quiz_direct",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 45,
@@ -453,7 +1242,11 @@
       "free_content_back": "Hi, Dario. What do you want?",
       "level_index": 6,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 46,
@@ -463,7 +1256,11 @@
       "free_content_back": "I want to play with you!",
       "level_index": 6,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 47,
@@ -473,7 +1270,11 @@
       "free_content_back": "Dario, I'm very busy today!",
       "level_index": 6,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 48,
@@ -483,24 +1284,54 @@
       "free_content_back": "I have to clean my room!",
       "level_index": 6,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 49,
       "position": 48,
       "collection_note": "batch2-20",
-      "free_content_front": "# lo nunkei poi mi traji nelci\n> .i la .samuel. cu ca'o lumci lo ri kumfa\n~ Samuele is cleaning his room.\nDario(M): coi bruna\n~ Hi, brother!\nSamuele(M): coi .darios. .i do djica ma\n~ Hi, Dario. What do you want?\nDario(M): .i mi djica lo nu kelci kansa do\n~ I want to play with you!\nSamuele(M): .i mi mutce zukcfu ca lo cabdei\n~ Dario, I'm very busy today!\nSamuele(M): .i .ei mi lumci lo mi kumfa\n~ I have to clean my room!\nDario(M): go'i .i lo do kumfa cu mutce na'e lumci\n~ Yes, your room is very dirty!\nSamuele(M): .i mi djuno doi .darios.\n~ I know, Dario!\nDario(M): .i ku'i mi djica lo nu kelci\n~ But I want to play!\nSamuele(M): .i do djica lo nu kelci ma doi .darios.\n~ What do you want to play, Dario?\nDario(M): .i mi na djuno\n~ I don't know!\nSamuele(M): .i'e .i mi se slabu pa mutce zdile nunkei\n~ OK. I know a really fun game!\nDario(M): .ue .i ma nunkei\n~ Oh yeah?! What game?\nSamuele(M): .i ri traji lo ka se nelci mi\n~ It's my favourite game!\nDario(M): .ui\n~ Yes!\nSamuele(M): .i le ti nunkei cu sampu\n~ This game is simple...\nSamuele(M): .i .ei do sidju mi lo nu lumci lo mi kumfa\n~ ...you have to help me clean my room!\nDario(M): .i ku'i .ei mi cliva .i mi mutce zukcfu ca lo cabdei\n~ Actually... I have to go. I'm very busy today.\nSamuele(M): .i ku'i doi .darios. .i do klama ma\n~ But... Dario! Where are you going?!\n---\n? fill: > .i la .samuel. cu ca'o lumci lo ri [kumfa]\n? choice: .i xu la .samuel. cu lumci lo jupku'a\n+ na go'i\n- go'i\n? choice: .i la .samuel. cu traji nelci ma\n+ lo nu lo bruna cu sidju fi lo nu lumci lo kumfa\n- lo nu mipri sisku\n- lo nu kelci vi lo bartu",
-      "free_content_back": "My Favourite Game.\nSamuele is cleaning his room.\nDario: Hi, brother!\nSamuele: Hi, Dario. What do you want?\nDario: I want to play with you!\nSamuele: Dario, I'm very busy today!\nSamuele: I have to clean my room!\nDario: Yes, your room is very dirty!\nSamuele: I know, Dario!\nDario: But I want to play!\nSamuele: What do you want to play, Dario?\nDario: I don't know!\nSamuele: OK. I know a really fun game!\nDario: Oh yeah?! What game?\nSamuele: It's my favourite game!\nDario: Yes!\nSamuele: This game is simple...\nSamuele: ...you have to help me clean my room!\nDario: Actually... I have to go. I'm very busy today.\nSamuele: But... Dario! Where are you going?!",
+      "free_content_front": "# lo nunkei poi mi traji nelci\n> .i la .samuel. cu ca'o lumci lo ri kumfa\n~ Samuele is cleaning his room.\nDarios(M): coi bruna\n~ Hi, brother!\nSamuel(M): coi .darios. .i do djica ma\n~ Hi, Dario. What do you want?\nDarios(M): .i mi djica lo nu kelci kansa do\n~ I want to play with you!\nSamuel(M): .i mi mutce zukcfu ca lo cabdei\n~ Dario, I'm very busy today!\nSamuel(M): .i .ei mi lumci lo mi kumfa\n~ I have to clean my room!\nDarios(M): go'i .i lo do kumfa cu mutce na'e lumci\n~ Yes, your room is very dirty!\nSamuel(M): .i mi djuno doi .darios.\n~ I know, Dario!\nDarios(M): .i ku'i mi djica lo nu kelci\n~ But I want to play!\nSamuel(M): .i do djica lo nu kelci ma doi .darios.\n~ What do you want to play, Dario?\nDarios(M): .i mi na djuno\n~ I don't know!\nSamuel(M): .i'e .i mi se slabu pa mutce zdile nunkei\n~ OK. I know a really fun game!\nDarios(M): .ue .i ma nunkei\n~ Oh yeah?! What game?\nSamuel(M): .i ri traji lo ka se nelci mi\n~ It's my favourite game!\nDarios(M): .ui\n~ Yes!\nSamuel(M): .i le ti nunkei cu sampu\n~ This game is simple...\nSamuel(M): .i .ei do sidju mi lo nu lumci lo mi kumfa\n~ ...you have to help me clean my room!\nDarios(M): .i ku'i .ei mi cliva .i mi mutce zukcfu ca lo cabdei\n~ Actually... I have to go. I'm very busy today.\nSamuel(M): .i ku'i doi .darios. .i do klama ma\n~ But... Dario! Where are you going?!\n---\n? fill: > .i la .samuel. cu ca'o lumci lo ri [kumfa]\n? choice: .i xu la .samuel. cu lumci lo jupku'a\n+ na go'i\n- go'i\n? choice: .i la .samuel. cu traji nelci ma\n+ lo nu lo bruna cu sidju fi lo nu lumci lo kumfa\n- lo nu mipri sisku\n- lo nu kelci vi lo bartu",
+      "free_content_back": "My Favourite Game.\nSamuele is cleaning his room.\nDarios: Hi, brother!\nSamuel: Hi, Dario. What do you want?\nDarios: I want to play with you!\nSamuel: Dario, I'm very busy today!\nSamuel: I have to clean my room!\nDarios: Yes, your room is very dirty!\nSamuel: I know, Dario!\nDarios: But I want to play!\nSamuel: What do you want to play, Dario?\nDarios: I don't know!\nSamuel: OK. I know a really fun game!\nDarios: Oh yeah?! What game?\nSamuel: It's my favourite game!\nDarios: Yes!\nSamuel: This game is simple...\nSamuel: ...you have to help me clean my room!\nDarios: Actually... I have to go. I'm very busy today.\nSamuel: But... Dario! Where are you going?!",
       "level_index": 6,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 9",
+            "jbo": ".i do djica lo nu kelci ma doi .darios.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'kelci' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 13",
+            "jbo": ".i ri traji lo ka se nelci mi",
+            "kind": "parser_limitation",
+            "message": "x1 of 'traji' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 15",
+            "jbo": ".i le ti nunkei cu sampu",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 50,
       "position": 49,
       "collection_note": "batch2-33",
       "free_content_front": "Story 8: mi djica tu'a lo gerku — I Want a Dog",
-      "free_content_back": "#### Before you read\nCharacters: Mom, Sasha\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Mom, Sacas\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 7,
       "position_in_level": 0,
       "direction": "just_information"
@@ -513,7 +1344,11 @@
       "free_content_back": "Mom! Mom!",
       "level_index": 7,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 52,
@@ -523,7 +1358,11 @@
       "free_content_back": "Yes, Sasha?",
       "level_index": 7,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 53,
@@ -533,7 +1372,17 @@
       "free_content_back": "I want a dog.",
       "level_index": 7,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'djica' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 54,
@@ -543,7 +1392,11 @@
       "free_content_back": "Mom, please!",
       "level_index": 7,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 55,
@@ -553,17 +1406,96 @@
       "free_content_back": "...and the dishes...",
       "level_index": 7,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 56,
       "position": 55,
       "collection_note": "batch2-33",
-      "free_content_front": "# mi djica tu'a lo gerku\nSasha(M): doi mamta doi mamta\n~ Mom! Mom!\nMom(F): .i mo doi .sacas.\n~ Yes, Sasha?\nSasha(M): .i mi djica tu'a lo gerku\n~ I want a dog.\nMom(F): .i xu lo gerku .i la'e di'u nitcu lo nu mutce gunka\n~ A dog? That's a lot of work.\nSasha(M): doi mamta .i .e'o\n~ Mom, please!\nMom(F): .i'e\n~ OK.\nSasha(M): .ui\n~ Yes!\nMom(F): .i ku'i pu bo .ei do lumci lo karce\n~ But first you have to wash the car...\nMom(F): .i ji'a lo palta\n~ ...and the dishes...\nSasha(M): go'i\n~ Yes...\nMom(F): .i ji'a lo canko\n~ ...and the windows too!\n> .i la .sacas. cu co'u lumci ro da\n~ Sasha finishes washing everything.\nSasha(M): doi mamta .i ko catlu\n~ Mom! Look!\nMom(F): .i xamgu gunka .i do mutce fuzme lo nu lumci\n~ Good job! You're very responsible.\nMom(F): .i ca bo mi'a ka'e te vecnu lo gerku va'u do\n~ Now we can buy you a dog.\nSasha(M): na go'i .i ki'e\n~ No, thanks!\nSasha(M): .i mi na djica tu'a lo gerku\n~ I don't want a dog.\nMom(F): .i ku'i mi na jimpe\n~ But... I don't understand.\nSasha(M): .i mi na djica lo nu fuzme .i mi tatpi\n~ I don't want to be responsible. I'm tired!\n---\n? fill: Sasha(M): .i mi djica tu'a lo [gerku]\n? choice: .i pu lo nu la .sacas. cu ponse lo gerku kei .ei ri mo\n- lumci lo kumfa .e lo jupku'a\n- dunda lo djacu lo spati gi'e jukpa\n+ lumci lo karce .e lo palta .e lo canko\n? choice: .i ki'u ma la .sacas. na djica tu'a lo gerku\n+ ri tatpi gi'e na djica lo nu fuzme\n- ri ponse vo gerku\n- lo nu ponse lo gerku na cinri",
-      "free_content_back": "I Want a Dog.\nSasha: Mom! Mom!\nMom: Yes, Sasha?\nSasha: I want a dog.\nMom: A dog? That's a lot of work.\nSasha: Mom, please!\nMom: OK.\nSasha: Yes!\nMom: But first you have to wash the car...\nMom: ...and the dishes...\nSasha: Yes...\nMom: ...and the windows too!\nSasha finishes washing everything.\nSasha: Mom! Look!\nMom: Good job! You're very responsible.\nMom: Now we can buy you a dog.\nSasha: No, thanks!\nSasha: I don't want a dog.\nMom: But... I don't understand.\nSasha: I don't want to be responsible. I'm tired!",
+      "free_content_front": "# mi djica tu'a lo gerku\nSacas(M): doi mamta doi mamta\n~ Mom! Mom!\nMom(F): .i mo doi .sacas.\n~ Yes, Sasha?\nSacas(M): .i mi djica tu'a lo gerku\n~ I want a dog.\nMom(F): .i xu lo gerku .i la'e di'u nitcu lo nu mutce gunka\n~ A dog? That's a lot of work.\nSacas(M): doi mamta .i .e'o\n~ Mom, please!\nMom(F): .i'e\n~ OK.\nSacas(M): .ui\n~ Yes!\nMom(F): .i ku'i pu bo .ei do lumci lo karce\n~ But first you have to wash the car...\nMom(F): .i ji'a lo palta\n~ ...and the dishes...\nSacas(M): go'i\n~ Yes...\nMom(F): .i ji'a lo canko\n~ ...and the windows too!\n> .i la .sacas. cu co'u lumci ro da\n~ Sasha finishes washing everything.\nSacas(M): doi mamta .i ko catlu\n~ Mom! Look!\nMom(F): .i xamgu gunka .i do mutce fuzme lo nu lumci\n~ Good job! You're very responsible.\nMom(F): .i ca bo mi'a ka'e te vecnu lo gerku va'u do\n~ Now we can buy you a dog.\nSacas(M): na go'i .i ki'e\n~ No, thanks!\nSacas(M): .i mi na djica tu'a lo gerku\n~ I don't want a dog.\nMom(F): .i ku'i mi na jimpe\n~ But... I don't understand.\nSacas(M): .i mi na djica lo nu fuzme .i mi tatpi\n~ I don't want to be responsible. I'm tired!\n---\n? fill: Sacas(M): .i mi djica tu'a lo [gerku]\n? choice: .i pu lo nu la .sacas. cu ponse lo gerku kei .ei ri mo\n- lumci lo kumfa .e lo jupku'a\n- dunda lo djacu lo spati gi'e jukpa\n+ lumci lo karce .e lo palta .e lo canko\n? choice: .i ki'u ma la .sacas. na djica tu'a lo gerku\n+ ri tatpi gi'e na djica lo nu fuzme\n- ri ponse vo gerku\n- lo nu ponse lo gerku na cinri",
+      "free_content_back": "I Want a Dog.\nSacas: Mom! Mom!\nMom: Yes, Sasha?\nSacas: I want a dog.\nMom: A dog? That's a lot of work.\nSacas: Mom, please!\nMom: OK.\nSacas: Yes!\nMom: But first you have to wash the car...\nMom: ...and the dishes...\nSacas: Yes...\nMom: ...and the windows too!\nSasha finishes washing everything.\nSacas: Mom! Look!\nMom: Good job! You're very responsible.\nMom: Now we can buy you a dog.\nSacas: No, thanks!\nSacas: I don't want a dog.\nMom: But... I don't understand.\nSacas: I don't want to be responsible. I'm tired!",
       "level_index": 7,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "where": "line 2",
+            "jbo": ".i mi djica tu'a lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'djica' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": ".i xu lo gerku .i la'e di'u nitcu lo nu mutce gunka",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nitcu' expects Entity, but got a qualified term",
+            "note": "parser limitation (variable): bound variables (da, su'o da, quantified descriptions), la'e di'u, joi-masses and zoi quotes are opaque terms for the checker"
+          },
+          {
+            "where": "line 16",
+            "jbo": ".i mi na djica tu'a lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'djica' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": ".i mi djica tu'a lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'djica' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q1 answer 1",
+            "jbo": "dunda lo djacu lo spati gi'e jukpa",
+            "kind": "parser_limitation",
+            "message": "x2 of 'dunda' expects Set<W>, but got lo djacu (Entity)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i ki'u ma la .sacas. na djica tu'a lo gerku",
+            "kind": "parser_limitation",
+            "message": "x1 of 'krinu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 choice",
+            "jbo": ".i ki'u ma la .sacas. na djica tu'a lo gerku",
+            "kind": "parser_limitation",
+            "message": "x2 of 'djica' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 0",
+            "jbo": "ri tatpi gi'e na djica lo nu fuzme",
+            "kind": "parser_limitation",
+            "message": "x1 of 'tatpi' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 0",
+            "jbo": "ri tatpi gi'e na djica lo nu fuzme",
+            "kind": "parser_limitation",
+            "message": "x1 of 'djica' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 1",
+            "jbo": "ri ponse vo gerku",
+            "kind": "parser_limitation",
+            "message": "x1 of 'ponse' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 57,
@@ -583,7 +1515,17 @@
       "free_content_back": "I want to stay here!",
       "level_index": 8,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'stali' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 59,
@@ -593,7 +1535,17 @@
       "free_content_back": "I want to stay here too...",
       "level_index": 8,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'stali' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 60,
@@ -603,7 +1555,11 @@
       "free_content_back": "I really like Paris!",
       "level_index": 8,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 61,
@@ -613,7 +1569,11 @@
       "free_content_back": "There are lots of interesting places here.",
       "level_index": 8,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 62,
@@ -623,7 +1583,11 @@
       "free_content_back": "And I really like the parks!",
       "level_index": 8,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 63,
@@ -633,14 +1597,124 @@
       "free_content_back": "A Trip to Paris.\nPavel and Kristina are in Paris on holiday.\nPavel: I want to stay here!\nKristina: I want to stay here too...\nPavel: I really like Paris!\nPavel: There are lots of interesting places here.\nKristina: Yes.\nKristina: I love the cafés and terraces.\nPavel: And I really like the parks!\nKristina: I want to eat croissants every day!\nPavel: It's time for us to go to the airport...\nPavel: Kristina, I have an idea...\nPavel: Do you want to live in Paris?\nKristina: What about the house? Work?\nPavel: We can work and live here!\nKristina: Are you sure?\nPavel: My friend has a restaurant here...\nPavel: And he needs waiters!\nKristina: Super!\nKristina: We'll live in Paris!\nPavel: Great!",
       "level_index": 8,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 0",
+            "jbo": ".i la .pavel. .e la .kristinas. cu zvati la paris. ca lo nalgundei",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got la paris",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "line 0",
+            "jbo": ".i la .pavel. .e la .kristinas. cu zvati la paris. ca lo nalgundei",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' expects Set<T> | Event | Location, but got la paris",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "line 1",
+            "jbo": ".i mi djica lo nu stali ti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'stali' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 2",
+            "jbo": ".i mi ji'a djica lo nu stali ti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'stali' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 8",
+            "jbo": ".i mi djica lo nu citka lo lurnanba ca ro lo djedi",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "where": "line 11",
+            "jbo": ".i xu do djica lo nu xabju la paris.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'xabju' expects Location, but got la paris",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "line 16",
+            "jbo": ".i ri nitcu tu'a lo djabei",
+            "kind": "parser_limitation",
+            "message": "x1 of 'nitcu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 16",
+            "jbo": ".i ri nitcu tu'a lo djabei",
+            "kind": "parser_limitation",
+            "message": "x2 of 'nitcu' is unverified: \"tu'a (CLL §11.10)\": raised sumti has an unspecified abstraction; its semantic type is unresolved",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 18",
+            "jbo": ".i mi'o ba xabju la paris.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'xabju' expects Location, but got la paris",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "q2 answer 0",
+            "jbo": "lo du'u ri ba klama la paris. ca ro lo nalgundei",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ca' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "where": "q2 answer 0",
+            "jbo": "lo du'u ri ba klama la paris. ca ro lo nalgundei",
+            "kind": "parser_limitation",
+            "message": "x1 of 'klama' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 1",
+            "jbo": "lo du'u ri ba xabju la paris.",
+            "kind": "parser_limitation",
+            "message": "x1 of 'xabju' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 1",
+            "jbo": "lo du'u ri ba xabju la paris.",
+            "kind": "parser_limitation",
+            "message": "x2 of 'xabju' expects Location, but got la paris",
+            "note": "parser limitation (name): names (la + cmevla or la + brivla) are untyped for the checker; the same frame with a typed description of the same referent passes (e.g. `mi xabju la .moskov.` vs `mi xabju lo tcadu`)"
+          },
+          {
+            "where": "q2 answer 2",
+            "jbo": "lo du'u ri ba te vecnu lo gusta",
+            "kind": "parser_limitation",
+            "message": "x1 of 'vecnu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q2 answer 2",
+            "jbo": "lo du'u ri ba te vecnu lo gusta",
+            "kind": "parser_limitation",
+            "message": "x2 of 'vecnu' expects Set<W>, but got lo gusta (Location)",
+            "note": "parser limitation (set): formal-gismu types the place as Set<>/Group<>/Sequence<> but xorlo lo-descriptions and pronouns denote pluralities/individuals; the checker has no individual->Set coercion (CLL/xorlo: `mi te vecnu lo cidja` is standard; not flagged in korpora2 dwe.tsv type_discrepancy)"
+          }
+        ]
+      }
     },
     {
       "item_id": 64,
       "position": 63,
       "collection_note": "batch2-37",
       "free_content_front": "Story 10: lo mapti surla — The Perfect Holiday",
-      "free_content_back": "#### Before you read\nCharacters: Diego, Claudia\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "free_content_back": "#### Before you read\nCharacters: Diegos, Claudia\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
       "level_index": 9,
       "position_in_level": 0,
       "direction": "just_information"
@@ -653,7 +1727,11 @@
       "free_content_back": "This is our hotel!",
       "level_index": 9,
       "position_in_level": 1,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 66,
@@ -663,7 +1741,17 @@
       "free_content_back": "I'm so excited to be here!",
       "level_index": 9,
       "position_in_level": 2,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 67,
@@ -673,7 +1761,17 @@
       "free_content_back": "Yes, it's very beautiful.",
       "level_index": 9,
       "position_in_level": 3,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "warning",
+        "warnings": [
+          {
+            "kind": "parser_limitation",
+            "message": "x1 of 'melbi' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     },
     {
       "item_id": 68,
@@ -683,7 +1781,11 @@
       "free_content_back": "Me too... but tomorrow.",
       "level_index": 9,
       "position_in_level": 4,
-      "direction": "wordbank"
+      "direction": "wordbank",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 69,
@@ -693,17 +1795,75 @@
       "free_content_back": "Or do you want to go swimming?",
       "level_index": 9,
       "position_in_level": 5,
-      "direction": "wordbank_reverse"
+      "direction": "wordbank_reverse",
+      "validation": {
+        "status": "ok",
+        "warnings": []
+      }
     },
     {
       "item_id": 70,
       "position": 69,
       "collection_note": "batch2-37",
-      "free_content_front": "# lo mapti surla\n> .i la .klaudias. .e la .diegos. cu zvati lo gugde panka\n~ Claudia and Diego are in a national park.\nClaudia(F): .i ti du lo mi'o xotli\n~ This is our hotel!\nDiego(M): .i mi mutce gleki lo nu zvati ti\n~ I'm so excited to be here!\nClaudia(F): go'i .i ti mutce melbi\n~ Yes, it's very beautiful.\nDiego(M): .i ku'i mi mutce tatpi ba lo ca clani djedi\n~ But I'm very tired after this long day...\nClaudia(F): .i do djica lo nu pa moi zukte ma\n~ What do you want to do first?\nDiego(M): .i .y.\n~ Ahh...\nClaudia(F): .i mi djica lo nu cadzu gi'e catlu ti\n~ I want to walk around and see this place!\nClaudia(F): .i mi ji'a djica lo nu klama sepi'o lo xirma\n~ And I want to go horse riding!\nDiego(M): .i mi ji'a .i ku'i ca lo bavlamdei\n~ Me too... but tomorrow.\nClaudia(F): .i xu do djica lo nu limna\n~ Or do you want to go swimming?\nClaudia(F): .i mi'o jibni lo xamsi korbi\n~ We're near a beach.\nClaudia(F): .i ku'i\n~ But...\nClaudia(F): .i mi ji'a mutce tatpi\n~ ...I'm very tired too.\nClaudia(F): .i mi'o ka'e go'i ca lo bavlamdei\n~ We can do it tomorrow.\nDiego(M): .i xamgu sidbo\n~ Good idea!\nDiego(M): .i ca lo cabdei .e'u mi'o limna\n~ Today, let's go swimming...\nDiego(M): .i vi lo brabaktu pe lo xotli\n~ ...in the hotel pool.\nClaudia(F): go'i .i ba bo mi'o catlu lo skina vi lo mi'o kumfa\n~ Yes, and then a film in our room!\nDiego(M): .i ba bo .e'u mi'o sipna\n~ And then, let's go to sleep!\nDiego(M): .i ku'i ca lo bavlamdei le ti melbi stuzi ba zdile mi'o\n~ But tomorrow we'll enjoy this beautiful place!\n---\n? fill: Claudia(F): go'i .i ti mutce [melbi]\n? choice: .i la .klaudias. cu djica ma\n- lo nu xruti lo zdani\n+ lo nu cadzu gi'e catlu\n- lo nu klama lo drata xotli\n? choice: .i la .diegos. .e la .klaudias. ca ba mo\n- pinxe lo vlipa se pinxe\n+ surla ca lo vanci gi'e catlu ca lo bavlamdei\n- limna lo xamsi gi'e cpare",
-      "free_content_back": "The Perfect Holiday.\nClaudia and Diego are in a national park.\nClaudia: This is our hotel!\nDiego: I'm so excited to be here!\nClaudia: Yes, it's very beautiful.\nDiego: But I'm very tired after this long day...\nClaudia: What do you want to do first?\nDiego: Ahh...\nClaudia: I want to walk around and see this place!\nClaudia: And I want to go horse riding!\nDiego: Me too... but tomorrow.\nClaudia: Or do you want to go swimming?\nClaudia: We're near a beach.\nClaudia: But...\nClaudia: ...I'm very tired too.\nClaudia: We can do it tomorrow.\nDiego: Good idea!\nDiego: Today, let's go swimming...\nDiego: ...in the hotel pool.\nClaudia: Yes, and then a film in our room!\nDiego: And then, let's go to sleep!\nDiego: But tomorrow we'll enjoy this beautiful place!",
+      "free_content_front": "# lo mapti surla\n> .i la .klaudias. .e la .diegos. cu zvati lo gugde panka\n~ Claudia and Diego are in a national park.\nClaudia(F): .i ti du lo mi'o xotli\n~ This is our hotel!\nDiegos(M): .i mi mutce gleki lo nu zvati ti\n~ I'm so excited to be here!\nClaudia(F): go'i .i ti mutce melbi\n~ Yes, it's very beautiful.\nDiegos(M): .i ku'i mi mutce tatpi ba lo ca clani djedi\n~ But I'm very tired after this long day...\nClaudia(F): .i do djica lo nu pa moi zukte ma\n~ What do you want to do first?\nDiegos(M): .i .y.\n~ Ahh...\nClaudia(F): .i mi djica lo nu cadzu gi'e catlu ti\n~ I want to walk around and see this place!\nClaudia(F): .i mi ji'a djica lo nu klama sepi'o lo xirma\n~ And I want to go horse riding!\nDiegos(M): .i mi ji'a .i ku'i ca lo bavlamdei\n~ Me too... but tomorrow.\nClaudia(F): .i xu do djica lo nu limna\n~ Or do you want to go swimming?\nClaudia(F): .i mi'o jibni lo xamsi korbi\n~ We're near a beach.\nClaudia(F): .i ku'i\n~ But...\nClaudia(F): .i mi ji'a mutce tatpi\n~ ...I'm very tired too.\nClaudia(F): .i mi'o ka'e go'i ca lo bavlamdei\n~ We can do it tomorrow.\nDiegos(M): .i xamgu sidbo\n~ Good idea!\nDiegos(M): .i ca lo cabdei .e'u mi'o limna\n~ Today, let's go swimming...\nDiegos(M): .i vi lo brabaktu pe lo xotli\n~ ...in the hotel pool.\nClaudia(F): go'i .i ba bo mi'o catlu lo skina vi lo mi'o kumfa\n~ Yes, and then a film in our room!\nDiegos(M): .i ba bo .e'u mi'o sipna\n~ And then, let's go to sleep!\nDiegos(M): .i ku'i ca lo bavlamdei le ti melbi stuzi ba zdile mi'o\n~ But tomorrow we'll enjoy this beautiful place!\n---\n? fill: Claudia(F): go'i .i ti mutce [melbi]\n? choice: .i la .klaudias. cu djica ma\n- lo nu xruti lo zdani\n+ lo nu cadzu gi'e catlu\n- lo nu klama lo drata xotli\n? choice: .i la .diegos. .e la .klaudias. ca ba mo\n- pinxe lo vlipa se pinxe\n+ surla ca lo vanci gi'e catlu ca lo bavlamdei\n- limna lo xamsi gi'e cpare",
+      "free_content_back": "The Perfect Holiday.\nClaudia and Diego are in a national park.\nClaudia: This is our hotel!\nDiegos: I'm so excited to be here!\nClaudia: Yes, it's very beautiful.\nDiegos: But I'm very tired after this long day...\nClaudia: What do you want to do first?\nDiegos: Ahh...\nClaudia: I want to walk around and see this place!\nClaudia: And I want to go horse riding!\nDiegos: Me too... but tomorrow.\nClaudia: Or do you want to go swimming?\nClaudia: We're near a beach.\nClaudia: But...\nClaudia: ...I'm very tired too.\nClaudia: We can do it tomorrow.\nDiegos: Good idea!\nDiegos: Today, let's go swimming...\nDiegos: ...in the hotel pool.\nClaudia: Yes, and then a film in our room!\nDiegos: And then, let's go to sleep!\nDiegos: But tomorrow we'll enjoy this beautiful place!",
       "level_index": 9,
       "position_in_level": 6,
-      "direction": "dialogue"
+      "direction": "dialogue",
+      "validation": {
+        "status": "doubtful",
+        "warnings": [
+          {
+            "where": "line 2",
+            "jbo": ".i mi mutce gleki lo nu zvati ti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zvati' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 3",
+            "jbo": "go'i .i ti mutce melbi",
+            "kind": "parser_limitation",
+            "message": "x1 of 'melbi' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 5",
+            "jbo": ".i do djica lo nu pa moi zukte ma",
+            "kind": "parser_limitation",
+            "message": "x2 of 'zukte' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 7",
+            "jbo": ".i mi djica lo nu cadzu gi'e catlu ti",
+            "kind": "parser_limitation",
+            "message": "x2 of 'catlu' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "line 18",
+            "jbo": "go'i .i ba bo mi'o catlu lo skina vi lo mi'o kumfa",
+            "kind": "parser_limitation",
+            "message": "unresolved: time tag 'ba' sumti has an undetermined type; it must be an event or time interval (CLL §10.12)",
+            "note": "parser limitation (time-tag): time tag with a quantified bare brivla sumti (ca ro detma'i): the checker cannot type `ro X` without lo; the referent is a time interval"
+          },
+          {
+            "where": "line 20",
+            "jbo": ".i ku'i ca lo bavlamdei le ti melbi stuzi ba zdile mi'o",
+            "kind": "parser_limitation",
+            "message": "x2 of 'srana' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          },
+          {
+            "where": "q0 fill",
+            "jbo": "go'i .i ti mutce melbi",
+            "kind": "parser_limitation",
+            "message": "x1 of 'melbi' is unverified: argument type information is unavailable",
+            "note": "parser limitation (unverified): egglog reports the place as unverified: no argument type information, nothing was checked"
+          }
+        ]
+      }
     }
   ],
   "levels": [
