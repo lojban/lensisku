@@ -1,0 +1,3316 @@
+{
+  "title": {
+    "en": "Lojban through dialogues",
+    "jbo": "la .lojban. fo lo casnu"
+  },
+  "plan": "lojban.pw data/pages/en/books/lojban-through-dialogues/new-dialogue-plan.md",
+  "characters": [
+    {
+      "name": "Lifri",
+      "cmevla": ".lifris.",
+      "gender": "F"
+    },
+    {
+      "name": "Mentu",
+      "cmevla": ".mentus.",
+      "gender": "M"
+    },
+    {
+      "name": "Linto",
+      "cmevla": ".lintas.",
+      "gender": "F"
+    }
+  ],
+  "plan_deviations": [
+    "Names are cmevla .lifris. / .mentus. / .lintas. (lifri, mentu, linto are gismu; a cmevla must end in a consonant).",
+    "L6: clock formula is `ti'u li N` (the plan's `li cacra bu N` is not needed and `cacra bu` is not a word).",
+    "L12: `se jdini` is not a price expression; prices use `se jdima lo meryru'u be li N` (jdima x1 price of x2).",
+    "L15: `se panzi re` is ungrammatical; `mi se panzi re da` = I have two children.",
+    "L20: `taske` means thirsty, not tired; tired is `tatpi` (both taught). `se cinmo` -> `cinmo` (x1 feels emotion x2).",
+    "L23/26: `taksi` is only an experimental gismu, so the trip is `fu lo karce` (by car); kept as a doubtful note.",
+    "L24: `sepli` means apart/separate, not distance; distance uses `ki'otre` (x1 is x2 km long) and `darno`.",
+    "L25: `mupli` dropped (no natural beginner sentence); comparison uses `zmadu`/`mleca` with `lo ka`.",
+    "L22: `kanpe` (expect) is only an experimental gismu, so it was dropped.",
+    "L18: `lerci` x1 is an event, so \"It's late\" is the observative `.i lerci`."
+  ],
+  "lessons": [
+    {
+      "id": "lesson-01",
+      "number": 1,
+      "block": "The Meetup",
+      "title": {
+        "en": "First Meeting",
+        "jbo": "lo pa moi nu penmi"
+      },
+      "new_words": [
+        "coi",
+        "co'o",
+        "mi'e",
+        "la",
+        "cliva",
+        "do"
+      ],
+      "grammar": "One word is already a full sentence: `coi` (hello), `co'o` (goodbye). `coi do` greets you; `coi .lifris.` greets Lifri by name. `mi'e la .mentus.` = \"I'm Mentu\".",
+      "phrases": [
+        {
+          "jbo": "coi",
+          "en": "Hello!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "co'o",
+          "en": "Goodbye!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "coi do",
+          "en": "Hello (to you)!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "mi'e la .mentus.",
+          "en": "I'm Mentu.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "coi .lifris.",
+          "en": "Hi, Lifri!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "mi cliva",
+          "en": "I'm leaving.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "do cliva",
+          "en": "You're leaving.",
+          "direction": "quiz_direct"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "First Meeting",
+          "jbo": "lo pa moi nu penmi"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": "coi do",
+            "en": "Hello!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "coi .i mi'e la .mentus.",
+            "en": "Hi! I'm Mentu."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "mi'e la .lifris.",
+            "en": "I'm Lifri."
+          },
+          {
+            "speaker": ">",
+            "jbo": ".i la .lintas. cu klama",
+            "en": "Linto arrives."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "coi .lifris. coi .mentus.",
+            "en": "Hi Lifri! Hi Mentu!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "coi .lintas.",
+            "en": "Hi, Linto!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi cliva .i co'o",
+            "en": "I'm leaving. Bye!"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "co'o .mentus.",
+            "en": "Bye, Mentu!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-02",
+      "number": 2,
+      "block": "The Meetup",
+      "title": {
+        "en": "Do You Speak Lojban?",
+        "jbo": "xu do se bangu la .lojban."
+      },
+      "new_words": [
+        "xu",
+        "se bangu",
+        "go'i",
+        "na",
+        "milxe",
+        "mi"
+      ],
+      "grammar": "`xu` turns a sentence into a yes/no question. Answer `go'i` (yes, it's so) or `na go'i` (no). `milxe` softens: `mi milxe se bangu` = I speak a little.",
+      "phrases": [
+        {
+          "jbo": "xu do se bangu la .lojban.",
+          "en": "Do you speak Lojban?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "go'i",
+          "en": "Yes.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "na go'i",
+          "en": "No.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "mi milxe se bangu la .lojban.",
+          "en": "I speak Lojban a little.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi na se bangu la .lojban.",
+          "en": "I don't speak Lojban.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "xu do se bangu lo glico bangu",
+          "en": "Do you speak English?",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Do You Speak Lojban?",
+          "jbo": "xu do se bangu la .lojban."
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": "coi .mentus. .i xu do se bangu la .lojban.",
+            "en": "Hi Mentu! Do you speak Lojban?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i mi milxe se bangu la .lojban.",
+            "en": "Yes. I speak Lojban a little."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu do se bangu lo glico bangu",
+            "en": "Do you speak English?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i",
+            "en": "Yes."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi na se bangu lo glico bangu",
+            "en": "I don't speak English."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i ku'i do se bangu la .lojban.",
+            "en": "But you speak Lojban."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "go'i",
+            "en": "Yes!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-03",
+      "number": 3,
+      "block": "The Meetup",
+      "title": {
+        "en": "What's Your Name? What Do You Like?",
+        "jbo": "ma cmene do"
+      },
+      "new_words": [
+        "ma",
+        "mo",
+        "cmene",
+        "zo",
+        "nelci"
+      ],
+      "grammar": "`ma` asks for a missing noun, `mo` for a missing predicate. `zo` quotes one word: `zo .mentus. cmene mi` = \"Mentu\" is my name. `do mo` = how are you?",
+      "phrases": [
+        {
+          "jbo": "ma cmene do",
+          "en": "What's your name?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "zo .mentus. cmene mi",
+          "en": "My name is Mentu.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "do nelci ma",
+          "en": "What do you like?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi nelci la .lojban.",
+          "en": "I like Lojban.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi nelci lo ckafi",
+          "en": "I like coffee.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "do mo",
+          "en": "How are you?",
+          "direction": "quiz_direct"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "What's Your Name? What Do You Like?",
+          "jbo": "ma cmene do"
+        },
+        "speakers": [
+          {
+            "name": "Linto",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Linto",
+            "jbo": "coi .i ma cmene do",
+            "en": "Hi! What's your name?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "zo .mentus. cmene mi .i ma cmene do",
+            "en": "My name is Mentu. What's your name?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "mi'e la .lintas.",
+            "en": "I'm Linto."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i do nelci ma",
+            "en": "What do you like?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi nelci lo ckafi",
+            "en": "I like coffee."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi nelci la .lojban.",
+            "en": "I like Lojban!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".ui",
+            "en": "Great!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-04",
+      "number": 4,
+      "block": "The Meetup",
+      "title": {
+        "en": "Thank You — Wrapping Up the Meetup",
+        "jbo": "ki'e"
+      },
+      "new_words": [
+        "ki'e",
+        "je'e",
+        ".ui",
+        ".u'u",
+        "pei",
+        ".e'u"
+      ],
+      "grammar": "Attitudinals are whole sentences or go before one. `pei` asks how the other person feels: `.ui pei` = are you happy? `.e'u` suggests: `.e'u mi'o ba penmi` = let's meet again.",
+      "phrases": [
+        {
+          "jbo": "ki'e",
+          "en": "Thanks!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "je'e",
+          "en": "You're welcome.",
+          "direction": "quiz_direct",
+          "doubtful": "je'e (\"roger\") as the answer to ki'e follows common usage; CLL gives no dedicated \"you're welcome\""
+        },
+        {
+          "jbo": ".ui",
+          "en": "Yay!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": ".u'u",
+          "en": "Sorry.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": ".ui pei",
+          "en": "Are you happy?",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": ".e'u mi'o ba penmi",
+          "en": "Let's meet again.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Thank You — Wrapping Up the Meetup",
+          "jbo": "ki'e"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": "ki'e .lifris.",
+            "en": "Thank you, Lifri!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "je'e",
+            "en": "You're welcome.",
+            "doubtful": "same je'e usage"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".ui .i mi nelci la .lojban.",
+            "en": "Yay! I like Lojban!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".u'u doi .lintas.",
+            "en": "Sorry, Linto!"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "je'e",
+            "en": "It's OK."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".ui .i .ui pei",
+            "en": "I'm happy! And you?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".ui",
+            "en": "Happy!"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".e'u mi'o ba penmi",
+            "en": "Let's meet again!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".ie .i co'o",
+            "en": "Yes! Bye!"
+          }
+        ]
+      },
+      "doubtful": [
+        {
+          "where": "phrase 1",
+          "jbo": "",
+          "candidate": "je'e",
+          "note": "je'e (\"roger\") as the answer to ki'e follows common usage; CLL gives no dedicated \"you're welcome\""
+        },
+        {
+          "where": "line 1",
+          "jbo": "",
+          "candidate": "je'e",
+          "note": "same je'e usage"
+        }
+      ],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-05",
+      "number": 5,
+      "block": "The Meetup",
+      "title": {
+        "en": "Let's Meet at the Park",
+        "jbo": "mi klama le panka"
+      },
+      "new_words": [
+        "zvati",
+        "klama",
+        "le",
+        "zdani",
+        "panka"
+      ],
+      "grammar": "`le` = the (one I have in mind). `klama`: x1 goes to x2 from x3. `ma nuzba` = what's new?",
+      "phrases": [
+        {
+          "jbo": "ma nuzba",
+          "en": "What's new?",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "do zvati ma",
+          "en": "Where are you?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi zvati le zdani",
+          "en": "I'm at home.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "do klama ma",
+          "en": "Where are you going?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi klama le panka",
+          "en": "I'm going to the park.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Let's Meet at the Park",
+          "jbo": "mi klama le panka"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": "coi .mentus. .i ma nuzba",
+            "en": "Hi Mentu! What's new?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "no da",
+            "en": "Nothing."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i do zvati ma",
+            "en": "Where are you?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi zvati le zdani .i do zvati ma",
+            "en": "I'm at home. Where are you?"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i mi zvati le panka",
+            "en": "I'm at the park."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".ui .i mi klama le panka",
+            "en": "Great! I'm coming to the park."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".ui",
+            "en": "Great!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-06",
+      "number": 6,
+      "block": "The Meetup",
+      "title": {
+        "en": "What Time? Let's Say Seven",
+        "jbo": "ti'u li ze"
+      },
+      "new_words": [
+        "pa",
+        "re",
+        "ci",
+        "vo",
+        "mu",
+        "xa",
+        "ze",
+        "bi",
+        "so",
+        "no",
+        "tcika",
+        "ti'u",
+        "li"
+      ],
+      "grammar": "Digits chain left to right: `pano` = 10, `reno` = 20. `li` makes a number a noun. `ti'u li xa` = at six o'clock. `ma tcika` = what time is it?",
+      "phrases": [
+        {
+          "jbo": "li pa",
+          "en": "one",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "li re",
+          "en": "two",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "li ci",
+          "en": "three",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "li ze",
+          "en": "seven",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "li pano",
+          "en": "ten",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "ma tcika",
+          "en": "What time is it?",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "ti'u li xa",
+          "en": "(It's) six o'clock.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi'o penmi ti'u li ze",
+          "en": "We meet at seven.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "What Time? Let's Say Seven",
+          "jbo": "ti'u li ze"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".i ma tcika",
+            "en": "What time is it?"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "ti'u li xa",
+            "en": "It's six."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i xu mi'o penmi ti'u li ze",
+            "en": "Shall we meet at seven?"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "go'i .i ti'u li ze",
+            "en": "Yes, at seven."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi klama le panka ti'u li ze",
+            "en": "I'm going to the park at seven."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".ui .i co'o",
+            "en": "Great! Bye!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-07",
+      "number": 7,
+      "block": "Daily Life",
+      "title": {
+        "en": "Good Morning",
+        "jbo": "cerni coi"
+      },
+      "new_words": [
+        "cerni",
+        "vanci",
+        "nicte",
+        "donri",
+        "gleki",
+        "ca"
+      ],
+      "grammar": "`ca le cerni` = in the morning; also `ca le vanci` (evening), `ca le nicte` (night). `cerni coi` / `donri coi` = good morning / good day.",
+      "phrases": [
+        {
+          "jbo": "cerni coi",
+          "en": "Good morning!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "donri coi",
+          "en": "Good day!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "mi gleki",
+          "en": "I'm happy.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "ca le cerni mi zvati le zdani",
+          "en": "In the morning I'm at home.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "ca le vanci mi klama le panka",
+          "en": "In the evening I go to the park.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "ca le nicte mi zvati le zdani",
+          "en": "At night I'm at home.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Good Morning",
+          "jbo": "cerni coi"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": "cerni coi .lifris.",
+            "en": "Good morning, Lifri!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "cerni coi .i do mo",
+            "en": "Good morning! How are you?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi gleki",
+            "en": "I'm happy."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "donri coi",
+            "en": "Good day!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i ca le cerni mi zvati le zdani",
+            "en": "In the morning I'm at home."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i ca le vanci mi klama le panka",
+            "en": "In the evening I go to the park."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".ui",
+            "en": "Great!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": [
+        "01-coi-ca-lo-cerni"
+      ]
+    },
+    {
+      "id": "lesson-08",
+      "number": 8,
+      "block": "Daily Life",
+      "title": {
+        "en": "Speak Slowly! I Don't Understand",
+        "jbo": "ko masno tavla"
+      },
+      "new_words": [
+        "sutra",
+        "masno",
+        "ko",
+        "djuno",
+        "jimpe",
+        "preti"
+      ],
+      "grammar": "`ko` makes a command: `ko masno tavla` = speak slowly! `mi na jimpe` = I don't understand; `mi na djuno` = I don't know.",
+      "phrases": [
+        {
+          "jbo": "ko masno tavla",
+          "en": "Speak slowly!",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi na jimpe",
+          "en": "I don't understand.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "do sutra tavla",
+          "en": "You speak fast.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi na djuno",
+          "en": "I don't know.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "xu do jimpe",
+          "en": "Do you understand?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi ponse pa preti",
+          "en": "I have a question.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Speak Slowly! I Don't Understand",
+          "jbo": "ko masno tavla"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": ".i do mo .i ma nuzba .i xu do zvati le panka ca le cerni",
+            "en": "How are you? What's new? Are you at the park in the mornings?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".u'u .i mi na jimpe .i ko masno tavla",
+            "en": "Sorry! I don't understand. Speak slowly!"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i do sutra tavla",
+            "en": "You speak fast."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".u'u .i xu do jimpe",
+            "en": "Sorry. Do you understand now?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i mi jimpe .i ki'e",
+            "en": "Yes, I understand. Thanks!"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi ponse pa preti .i ma tcika",
+            "en": "I have a question. What time is it?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi na djuno",
+            "en": "I don't know."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "ti'u li ze",
+            "en": "Seven o'clock."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-09",
+      "number": 9,
+      "block": "Daily Life",
+      "title": {
+        "en": "Yesterday and Tomorrow",
+        "jbo": "ca le prulamdei"
+      },
+      "new_words": [
+        "pu",
+        "ba",
+        "ku'i",
+        "cu",
+        "cabdei",
+        "bavlamdei",
+        "prulamdei"
+      ],
+      "grammar": "`pu` = past, `ba` = future, before the predicate. `cu` separates a long subject from the predicate. `.i ku'i` = but. `cabdei` today, `prulamdei` yesterday, `bavlamdei` tomorrow.",
+      "phrases": [
+        {
+          "jbo": "xu do pu klama le panka",
+          "en": "Did you go to the park?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "go'i .i mi pu klama",
+          "en": "Yes, I went.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "ca le bavlamdei mi ba klama le zdani",
+          "en": "Tomorrow I'll go home.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": ".i ku'i ca le cabdei mi zvati ti",
+          "en": "But today I'm here.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "le panka cu melbi",
+          "en": "The park is beautiful.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Yesterday and Tomorrow",
+          "jbo": "ca le prulamdei"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu do pu klama le panka ca le prulamdei",
+            "en": "Did you go to the park yesterday?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i mi pu klama",
+            "en": "Yes, I went."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i ca le bavlamdei mi ba klama le zdani",
+            "en": "Tomorrow I'll go home."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i ku'i ca le cabdei mi zvati ti",
+            "en": "But today I'm here."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i le panka cu melbi",
+            "en": "The park is beautiful."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i",
+            "en": "Yes!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-10",
+      "number": 10,
+      "block": "Daily Life",
+      "title": {
+        "en": "I Want to Eat",
+        "jbo": "mi djica lo nu citka"
+      },
+      "new_words": [
+        ".au",
+        ".ai",
+        "citka",
+        "pinxe",
+        "lo",
+        "djacu",
+        "nanba"
+      ],
+      "grammar": "`.au` = I wish; `.ai` = I'm going to (intent). `lo` = some/a (any), `le` = the specific one.",
+      "phrases": [
+        {
+          "jbo": ".au mi citka",
+          "en": "I want to eat.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": ".au mi pinxe lo djacu",
+          "en": "I'd like to drink water.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": ".ai mi citka lo nanba",
+          "en": "I'm going to eat bread.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": ".e'u mi'o klama lo gusta",
+          "en": "Let's go to a restaurant.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi ji'a citka",
+          "en": "I eat too.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "I Want to Eat",
+          "jbo": "mi djica lo nu citka"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".au mi citka",
+            "en": "I want to eat!"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".au mi pinxe lo djacu",
+            "en": "I want to drink water."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".au mi ji'a citka",
+            "en": "I want to eat too."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".e'u mi'o klama lo gusta",
+            "en": "Let's go to a restaurant!"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".ie",
+            "en": "Yes!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".ai mi citka lo nanba",
+            "en": "I'm going to eat bread."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-11",
+      "number": 11,
+      "block": "Daily Life",
+      "title": {
+        "en": "Ordering at the Café",
+        "jbo": "vi lo gusta"
+      },
+      "new_words": [
+        "stasu",
+        "cidja",
+        "jisra",
+        "titnanba",
+        "gusta"
+      ],
+      "grammar": "`pei` again: after an order it means \"and you?\". Chain orders: `.ai mi citka lo stasu .i .ai mi pinxe lo jisra`.",
+      "phrases": [
+        {
+          "jbo": ".ai mi citka lo stasu",
+          "en": "I'm going to have soup.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": ".ai mi pinxe lo jisra",
+          "en": "I'll have juice.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "xu do nelci lo titnanba",
+          "en": "Do you like cookies?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "le cidja cu kukte",
+          "en": "The food is tasty.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "lo gusta",
+          "en": "a restaurant",
+          "direction": "quiz_direct"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Ordering at the Café",
+          "jbo": "vi lo gusta"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": ">",
+            "jbo": ".i la .lifris. .e la .mentus. .e la .lintas. cu zvati lo gusta",
+            "en": "Lifri, Mentu and Linto are at a café."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".ai mi citka lo stasu .i .ai pei",
+            "en": "I'm going to have soup. And you?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".ai mi pinxe lo jisra",
+            "en": "I'll have juice."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu do nelci lo titnanba",
+            "en": "Do you like cookies?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "go'i .i .ai mi citka lo titnanba .e lo nanba",
+            "en": "Yes! I'll have cookies and bread."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i le cidja cu kukte",
+            "en": "The food is tasty!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": [
+        "02-sakta-joi-silna",
+        "03-lo-gusta"
+      ]
+    },
+    {
+      "id": "lesson-12",
+      "number": 12,
+      "block": "Daily Life",
+      "title": {
+        "en": "How Much? Is It Expensive?",
+        "jbo": "xu ri kargu"
+      },
+      "new_words": [
+        "kargu",
+        "tolkargu",
+        "meryru'u",
+        "se jdima",
+        "pleji",
+        "te vecnu"
+      ],
+      "grammar": "`tol-` reverses: `kargu` expensive -> `tolkargu` cheap. Prices: `se jdima lo meryru'u be li N` = costs N dollars. `te vecnu` = buy, `pleji` = pay.",
+      "phrases": [
+        {
+          "jbo": "xu ri kargu",
+          "en": "Is it expensive?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "lo nanba cu se jdima lo meryru'u be li paci",
+          "en": "The bread costs 13 dollars.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "ti tolkargu",
+          "en": "This is cheap.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "xu do ponse lo jdini",
+          "en": "Do you have money?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi ba pleji",
+          "en": "I'll pay.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi te vecnu lo stasu",
+          "en": "I buy soup.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "How Much? Is It Expensive?",
+          "jbo": "xu ri kargu"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".i xu lo stasu cu kargu",
+            "en": "Is the soup expensive?"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i lo nanba cu se jdima lo meryru'u be li paci",
+            "en": "The bread costs 13 dollars."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".ue .i ri kargu",
+            "en": "Wow, that's expensive!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i lo stasu cu se jdima lo meryru'u be li reno",
+            "en": "The soup costs 20."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i xu do ponse lo jdini",
+            "en": "Do you have money?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi ba pleji",
+            "en": "I'll pay."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "ki'e",
+            "en": "Thanks!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-13",
+      "number": 13,
+      "block": "Daily Life",
+      "title": {
+        "en": "Buying Things",
+        "jbo": "lo zarci"
+      },
+      "new_words": [
+        "zarci",
+        ".e",
+        "mutce",
+        "drata"
+      ],
+      "grammar": "`.e` joins nouns: `lo titnanba .e lo jisra` = cookies and juice. `mutce` intensifies: `mutce kargu` = very expensive.",
+      "phrases": [
+        {
+          "jbo": "mi klama lo zarci",
+          "en": "I'm going to a shop.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi ba te vecnu lo titnanba .e lo jisra",
+          "en": "I'll buy cookies and juice.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "xu lo jisra cu kargu",
+          "en": "Is the juice expensive?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "ri na kargu .i ri tolkargu",
+          "en": "It's not expensive, it's cheap.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "lo cidja cu mutce kargu",
+          "en": "Food is very expensive.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Buying Things",
+          "jbo": "lo zarci"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi klama lo zarci",
+            "en": "I'm going to a shop."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi ba te vecnu lo titnanba .e lo jisra",
+            "en": "I'll buy cookies and juice."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu lo jisra cu kargu",
+            "en": "Is the juice expensive?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "na go'i .i ri tolkargu",
+            "en": "No, it's cheap."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i ku'i lo cidja cu mutce kargu",
+            "en": "But the food is very expensive."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i mi ba te vecnu lo drata jisra",
+            "en": "Yes. I'll buy a different juice."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": [
+        "04-lo-taxfu",
+        "05-lo-zarci"
+      ]
+    },
+    {
+      "id": "lesson-14",
+      "number": 14,
+      "block": "Getting to Know Each Other",
+      "title": {
+        "en": "Planning the Week",
+        "jbo": "ca ro jeftu"
+      },
+      "new_words": [
+        "birti",
+        "jeftu",
+        "djedi",
+        "ro",
+        "detma'i"
+      ],
+      "grammar": "`ro` = every: `ca ro jeftu` = every week, `ca ro detma'i` = every month. `lo jeftu be li pa` = a one-week period. `mi birti` = I'm sure.",
+      "phrases": [
+        {
+          "jbo": "ca le cabdei mi zvati le zdani",
+          "en": "Today I'm at home.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "ca le bavlamdei mi ba klama le panka",
+          "en": "Tomorrow I'll go to the park.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi birti",
+          "en": "I'm sure.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "ca ro jeftu mi'o penmi",
+          "en": "Every week we meet.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "lo jeftu be li pa",
+          "en": "a one-week period",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "ca ro detma'i",
+          "en": "every month",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Planning the Week",
+          "jbo": "ca ro jeftu"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu mi'o penmi ca ro jeftu",
+            "en": "Shall we meet every week?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i mi birti",
+            "en": "Yes, I'm sure."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i ca le cabdei mi zvati le zdani",
+            "en": "Today I'm at home."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i ku'i ca le bavlamdei mi ba klama le panka",
+            "en": "But tomorrow I'll go to the park."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu do birti",
+            "en": "Are you sure?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "go'i .i mi birti",
+            "en": "Yes, I'm sure."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i ca ro detma'i mi'o klama lo gusta",
+            "en": "And every month we go to a restaurant."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-15",
+      "number": 15,
+      "block": "Getting to Know Each Other",
+      "title": {
+        "en": "My Family",
+        "jbo": "le lanzu be mi"
+      },
+      "new_words": [
+        "speni",
+        "se panzi",
+        "lanzu",
+        "be",
+        "xo"
+      ],
+      "grammar": "`be` attaches a place inside a noun: `le speni be mi` = my spouse. `xo` asks for a number: `do se panzi xo da` = how many children do you have?",
+      "phrases": [
+        {
+          "jbo": "xu do speni",
+          "en": "Are you married?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "le speni be mi cu gleki",
+          "en": "My spouse is happy.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "xu do se panzi",
+          "en": "Do you have children?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "do se panzi xo da",
+          "en": "How many children do you have?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi se panzi re da",
+          "en": "I have two children.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "le lanzu be mi cu gleki",
+          "en": "My family is happy.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "My Family",
+          "jbo": "le lanzu be mi"
+        },
+        "speakers": [
+          {
+            "name": "Linto",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu do speni",
+            "en": "Are you married?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i le speni be mi cu gleki",
+            "en": "Yes. My spouse is happy."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu do se panzi",
+            "en": "Do you have children?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i",
+            "en": "Yes."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i do se panzi xo da",
+            "en": "How many?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi se panzi re da",
+            "en": "Two."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i le lanzu be mi cu gleki",
+            "en": "My family is happy."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-16",
+      "number": 16,
+      "block": "Getting to Know Each Other",
+      "title": {
+        "en": "Son, Daughter, Siblings",
+        "jbo": "le bersa be mi"
+      },
+      "new_words": [
+        "bersa",
+        "tixnu",
+        "bruna",
+        "mensi",
+        "nanla",
+        "nixli"
+      ],
+      "grammar": "`le bersa be mi` = my son (x2 of bersa is the parent). `se bruna` = to have a brother. `nanla` / `nixli` = boy / girl.",
+      "phrases": [
+        {
+          "jbo": "le bersa be mi cu gleki",
+          "en": "My son is happy.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "le tixnu be mi cu zvati le zdani",
+          "en": "My daughter is at home.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi se panzi pa nanla .e pa nixli",
+          "en": "I have a boy and a girl.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "le tixnu be do cu tavla mi",
+          "en": "Your daughter talks to me.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "xu do se bruna",
+          "en": "Do you have a brother?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi se mensi",
+          "en": "I have a sister.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Son, Daughter, Siblings",
+          "jbo": "le bersa be mi"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".i le bersa be mi cu gleki",
+            "en": "My son is happy."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i le tixnu be mi cu zvati le zdani",
+            "en": "My daughter is at home."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu do se bruna",
+            "en": "Do you have a brother?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "na go'i .i ku'i mi se mensi",
+            "en": "No, but I have a sister."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i le tixnu be do pu tavla mi",
+            "en": "Your daughter talked to me."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".ui",
+            "en": "Oh, nice!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-17",
+      "number": 17,
+      "block": "Getting to Know Each Other",
+      "title": {
+        "en": "Where Do You Live?",
+        "jbo": "do xabju ma"
+      },
+      "new_words": [
+        "xabju",
+        "tcadu",
+        "barda",
+        "cmalu",
+        "jibni",
+        "darno"
+      ],
+      "grammar": "`barda` / `cmalu` = big / small; `jibni` / `darno` = near / far. `le zdani be mi` = my home.",
+      "phrases": [
+        {
+          "jbo": "do xabju ma",
+          "en": "Where do you live?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi xabju lo barda tcadu",
+          "en": "I live in a big city.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "le zdani be mi cu cmalu",
+          "en": "My home is small.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "xu le tcadu cu darno",
+          "en": "Is the city far?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "le panka cu jibni",
+          "en": "The park is near.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Where Do You Live?",
+          "jbo": "do xabju ma"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": ".i do xabju ma",
+            "en": "Where do you live?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi xabju lo barda tcadu",
+            "en": "I live in a big city."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i ku'i le zdani be mi cu cmalu",
+            "en": "But my home is small."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu le tcadu cu darno",
+            "en": "Is the city far?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "na go'i .i ri jibni",
+            "en": "No, it's near."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu le panzi be do cu xabju le zdani be do",
+            "en": "Do your children live with you?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i",
+            "en": "Yes."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-18",
+      "number": 18,
+      "block": "Getting to Know Each Other",
+      "title": {
+        "en": "I Need to Work",
+        "jbo": "mi nitcu lo nu gunka"
+      },
+      "new_words": [
+        "sipna",
+        "gunka",
+        "nitcu",
+        "jibri",
+        "lerci",
+        "lo nu"
+      ],
+      "grammar": "`lo nu ...` turns a sentence into an event: `mi nitcu lo nu mi gunka` = I need to work. `lo jibri be do cu mo` = what's your job?",
+      "phrases": [
+        {
+          "jbo": ".i lerci",
+          "en": "It's late.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "mi ba sipna",
+          "en": "I'm going to sleep.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi nitcu lo nu mi gunka",
+          "en": "I need to work.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "lo jibri be do cu mo",
+          "en": "What is your job?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi gunka ca le cerni",
+          "en": "I work in the morning.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi nitcu lo nu sipna",
+          "en": "I need to sleep.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "I Need to Work",
+          "jbo": "mi nitcu lo nu gunka"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".i lerci .i mi ba sipna",
+            "en": "It's late. I'm going to sleep."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu ca",
+            "en": "Now?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i ca le bavlamdei mi nitcu lo nu mi gunka",
+            "en": "Yes. Tomorrow I need to work."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i lo jibri be do cu mo",
+            "en": "What's your job?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi ctuca",
+            "en": "I'm a teacher."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi gunka ca le cerni .i mi nitcu lo nu sipna",
+            "en": "I work in the morning. I need to sleep."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "co'o .mentus.",
+            "en": "Bye, Mentu!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-19",
+      "number": 19,
+      "block": "Getting to Know Each Other",
+      "title": {
+        "en": "Travel and Countries",
+        "jbo": "lo nu litru"
+      },
+      "new_words": [
+        "litru",
+        "gugde",
+        "fi'i",
+        "bangu",
+        "drata"
+      ],
+      "grammar": "Names of places take `la`: `la .paris.`, `la .fransis.`. `lo drata gugde` = another country. `fi'i` = welcome!",
+      "phrases": [
+        {
+          "jbo": "fi'i",
+          "en": "Welcome!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "xu do pu litru",
+          "en": "Have you travelled?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi pu klama lo drata gugde",
+          "en": "I went to another country.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "vi ta do se bangu ma",
+          "en": "What language do you speak there?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi milxe se bangu lo fraso bangu",
+          "en": "I speak a little French.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "xu la .fransis. cu darno",
+          "en": "Is France far?",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Travel and Countries",
+          "jbo": "lo nu litru"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": "fi'i .lintas.",
+            "en": "Welcome back, Linto!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i xu do pu litru",
+            "en": "Have you been travelling?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "go'i .i mi pu klama lo drata gugde",
+            "en": "Yes, I went to another country."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi pu zvati la .paris.",
+            "en": "I was in Paris."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i vi ta do se bangu ma",
+            "en": "What language do you speak there?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi milxe se bangu lo fraso bangu",
+            "en": "I speak a little French."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu la .paris. cu darno",
+            "en": "Is Paris far?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "go'i",
+            "en": "Yes."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-20",
+      "number": 20,
+      "block": "Getting to Know Each Other",
+      "title": {
+        "en": "I'm Tired — How Do You Feel?",
+        "jbo": "mi tatpi"
+      },
+      "new_words": [
+        "tatpi",
+        "taske",
+        "kufra",
+        "zabna",
+        "pluka",
+        "cinmo"
+      ],
+      "grammar": "`tatpi` = tired, `taske` = thirsty. `lo nu X cu pluka mi` = X pleases me. `mi cinmo lo ka gleki` = I feel happy.",
+      "phrases": [
+        {
+          "jbo": "mi tatpi",
+          "en": "I'm tired.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "mi taske",
+          "en": "I'm thirsty.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "lo nu cadzu pu pluka mi",
+          "en": "The walk was pleasant.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi kufra",
+          "en": "I feel comfortable.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "lo bavlamdei ba zabna",
+          "en": "Tomorrow will be nice.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi cinmo lo ka gleki",
+          "en": "I feel happy.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "I'm Tired — How Do You Feel?",
+          "jbo": "mi tatpi"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": ".i do mo",
+            "en": "How are you?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi tatpi",
+            "en": "I'm tired."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi taske .i .au mi pinxe lo djacu",
+            "en": "I'm thirsty. I want to drink water."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i ku'i lo nu cadzu pu pluka mi",
+            "en": "But the walk was pleasant."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i mi ca kufra",
+            "en": "Yes. Now I feel comfortable."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i lo bavlamdei ba zabna",
+            "en": "Tomorrow will be nice."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".e'u mi'o tavla ca le vanci",
+            "en": "Let's talk in the evening."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-21",
+      "number": 21,
+      "block": "Getting to Know Each Other",
+      "title": {
+        "en": "Let's Go Together",
+        "jbo": "mi'o kansa klama"
+      },
+      "new_words": [
+        "casnu",
+        "jo'u",
+        "prami",
+        "tadni",
+        "pendo"
+      ],
+      "grammar": "`jo'u` joins people acting together: `mi jo'u le speni be mi` = my spouse and I. `mi prami do` = I love you; `do pendo mi` = you are my friend.",
+      "phrases": [
+        {
+          "jbo": ".e'u mi'o casnu",
+          "en": "Let's discuss.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "xu mi'o kansa klama",
+          "en": "Shall we go together?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi jo'u le speni be mi ba klama",
+          "en": "My spouse and I will go.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi tadni la .lojban.",
+          "en": "I study Lojban.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi prami do",
+          "en": "I love you.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "do pendo mi",
+          "en": "You're my friend.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Let's Go Together",
+          "jbo": "mi'o kansa klama"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": ".e'u mi'o casnu lo nu litru",
+            "en": "Let's discuss the trip."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu mi'o kansa klama le mi tcadu",
+            "en": "Shall we go to my city together?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i mi jo'u le speni be mi ba klama",
+            "en": "Yes! My spouse and I will go."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi ji'a ba klama",
+            "en": "I'll go too."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi tadni la .lojban. .i mi mutce nelci ri",
+            "en": "I study Lojban. I really like it!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "doi pendo .i mi prami do",
+            "en": "Friends, I love you!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".e'u mi'o klama ca le vanci",
+            "en": "Let's go in the evening."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-22",
+      "number": 22,
+      "block": "Deeper Conversation",
+      "title": {
+        "en": "How Long Will You Stay?",
+        "jbo": "ze'a ma"
+      },
+      "new_words": [
+        "ze'i",
+        "ze'a",
+        "ze'u",
+        "stali",
+        "djedi"
+      ],
+      "grammar": "Duration: `ze'i` short, `ze'a` medium, `ze'u` long. `ze'a lo jeftu be li pa` = for a week. `lo djedi be li ci` = three days.",
+      "phrases": [
+        {
+          "jbo": "mi ba stali ze'a lo jeftu be li pa",
+          "en": "I'll stay for a week.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi ba ze'i gunka",
+          "en": "I'll work for a short while.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi ba stali ze'a lo djedi be li ci",
+          "en": "I'll stay for three days.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "xu do ba ze'u stali",
+          "en": "Will you stay long?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "na go'i .i mi ba ze'i stali",
+          "en": "No, I'll stay a short time.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "How Long Will You Stay?",
+          "jbo": "ze'a ma"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi'o ba stali ze'a ma",
+            "en": "How long will we stay?"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i mi'o ba stali ze'a lo jeftu be li pa",
+            "en": "We'll stay for a week."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i ku'i mi ba stali ze'a lo djedi be li ci",
+            "en": "But I'll only stay three days."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi nitcu lo nu gunka",
+            "en": "I need to work."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i xu do ba ze'u stali",
+            "en": "So you won't stay long?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "na go'i .i mi ba ze'i stali",
+            "en": "No, I'll stay a short time."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-23",
+      "number": 23,
+      "block": "Deeper Conversation",
+      "title": {
+        "en": "Visiting — Welcome!",
+        "jbo": "fi'i"
+      },
+      "new_words": [
+        "vitke",
+        "fu",
+        "karce",
+        "ti",
+        "ta",
+        "tu",
+        ".ue"
+      ],
+      "grammar": "`fu` marks the 5th place, for `klama` the vehicle: `klama fu lo karce` = go by car. `ti` / `ta` / `tu` = this here / that there / that over yonder. `.ue` = surprise!",
+      "phrases": [
+        {
+          "jbo": "fi'i do",
+          "en": "Welcome!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "ko nerkla",
+          "en": "Come in!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "lo nu litru pu mo",
+          "en": "How was the trip?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi'o klama fu lo karce",
+          "en": "We came by car.",
+          "direction": "wordbank",
+          "doubtful": "the plan has `taksi`, but taksi is only an experimental gismu; the course uses lo karce (car)"
+        },
+        {
+          "jbo": "ti zdani mi",
+          "en": "This is my home.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": ".ue",
+          "en": "Oh, what a surprise!",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "mi vitke do",
+          "en": "I'm your guest.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Visiting — Welcome!",
+          "jbo": "fi'i"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Lifri",
+            "jbo": "fi'i .i ko nerkla",
+            "en": "Welcome! Come in!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "ki'e .i ti melbi zdani",
+            "en": "Thanks! This is a beautiful home."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i lo nu litru pu mo",
+            "en": "How was the trip?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi'o klama fu lo karce",
+            "en": "We came by car."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu lo klaji pu clani",
+            "en": "Was the road long?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i lo klaji cu ki'otre li muno",
+            "en": "Yes, the road is fifty kilometres."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".ue",
+            "en": "Wow!"
+          }
+        ]
+      },
+      "doubtful": [
+        {
+          "where": "phrase 3",
+          "jbo": "",
+          "candidate": "mi'o klama fu lo taksi",
+          "note": "the plan has `taksi`, but taksi is only an experimental gismu; the course uses lo karce (car)"
+        }
+      ],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-24",
+      "number": 24,
+      "block": "Deeper Conversation",
+      "title": {
+        "en": "How Far? How Many?",
+        "jbo": "xo prenu"
+      },
+      "new_words": [
+        "xo",
+        "ki'otre",
+        "ro",
+        "so'i"
+      ],
+      "grammar": "`xo` again: `xo prenu cu zvati ti` = how many people are here? `lo klaji cu ki'otre li muno` = the road is 50 km long. `so'i` = many.",
+      "phrases": [
+        {
+          "jbo": "xo prenu cu zvati ti",
+          "en": "How many people are here?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "xu le panka cu darno",
+          "en": "Is the park far?",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "lo klaji be le tcadu cu ki'otre li muno",
+          "en": "The road to the city is 50 km long.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "so'i zarci cu zvati ti",
+          "en": "There are many shops here.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "ro zarci cu cmalu",
+          "en": "Every shop is small.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "do se panzi xo da",
+          "en": "How many children do you have?",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "How Far? How Many?",
+          "jbo": "xo prenu"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".i xo prenu cu xabju le tcadu",
+            "en": "How many people live in the city?"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "so'i prenu",
+            "en": "Many people."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu le panka cu darno",
+            "en": "Is the park far?"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "na go'i .i ri jibni",
+            "en": "No, it's near."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i lo klaji be le mi tcadu cu ki'otre li muno",
+            "en": "The road to my city is fifty kilometres."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "doi .mentus. .i do se panzi xo da",
+            "en": "Mentu, how many children do you have again?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi se panzi re da",
+            "en": "Two!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-25",
+      "number": 25,
+      "block": "Deeper Conversation",
+      "title": {
+        "en": "Opinions and Preferences",
+        "jbo": "lo se jinvi"
+      },
+      "new_words": [
+        "jinvi",
+        "simlu",
+        "zmadu",
+        "mleca",
+        "lo du'u"
+      ],
+      "grammar": "`mi jinvi lo du'u X` = I think that X. `ta simlu lo ka zabna` = that seems nice. `ti zmadu ta lo ka kukte` = this is tastier than that; `mleca` = less.",
+      "phrases": [
+        {
+          "jbo": "do jinvi ma",
+          "en": "What do you think?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi jinvi lo du'u ri zabna",
+          "en": "I think it's nice.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "ta simlu lo ka zabna",
+          "en": "That seems nice.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "ti zmadu ta lo ka kukte",
+          "en": "This is tastier than that.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "ti mleca ta lo ka kargu",
+          "en": "This is cheaper than that.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Opinions and Preferences",
+          "jbo": "lo se jinvi"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": ">",
+            "jbo": ".i le ci pendo cu citka lo vanci sanmi vi le zdani be la .lifris.",
+            "en": "The three friends have dinner at Lifri's home."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i do jinvi ma",
+            "en": "What do you think?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi jinvi lo du'u le stasu cu zabna",
+            "en": "I think the soup is great."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i le nanba ji'a simlu lo ka kukte",
+            "en": "The bread also seems tasty."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i le stasu ji le nanba cu zmadu fi lo ka kukte",
+            "en": "Which is tastier, the soup or the bread?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i le stasu",
+            "en": "The soup."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu",
+            "en": "In my opinion, Lojban is the best language."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".ie",
+            "en": "Agreed!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-26",
+      "number": 26,
+      "block": "Deeper Conversation",
+      "title": {
+        "en": "Coming Back",
+        "jbo": "mi di'a klama"
+      },
+      "new_words": [
+        "di'a",
+        "pe",
+        "ba le nu ... kei",
+        "coi ro do",
+        "co'o ro do"
+      ],
+      "grammar": "`ba le nu vitke kei` = after the visit (`kei` closes the `nu`). `pe` = loose possession: `le karce pe do` = your car. `di'a` = resume: `mi ba di'a gunka` = I'll get back to work.",
+      "phrases": [
+        {
+          "jbo": "coi ro do",
+          "en": "Hello, everyone!",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "ba le nu vitke kei mi ba klama le zdani",
+          "en": "After the visit I'll go home.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "xu do ba klama fu le karce pe do",
+          "en": "Will you go in your car?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi ba di'a gunka",
+          "en": "I'll get back to work.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "ca le nu do xruti kei ko fonta'a mi",
+          "en": "When you get back, call me.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "co'o ro do",
+          "en": "Goodbye, everyone!",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Coming Back",
+          "jbo": "mi di'a klama"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": "coi ro do",
+            "en": "Good morning, everyone!"
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu do ba klama fu le karce pe do",
+            "en": "Will you go in your car?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i ba le nu vitke kei mi ba klama le zdani",
+            "en": "Yes. After the visit I'll go home."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi ba di'a gunka",
+            "en": "I'll get back to work."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i ca le nu do xruti kei ko fonta'a mi",
+            "en": "When you get back, call me!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i'e .i mi ba zi xruti ti",
+            "en": "OK! I'll come back here soon."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "co'o ro do",
+            "en": "Goodbye, everyone!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-27",
+      "number": 27,
+      "block": "Deeper Conversation",
+      "title": {
+        "en": "Paying Bills — Monthly Life",
+        "jbo": "ca ro detma'i"
+      },
+      "new_words": [
+        "dikca",
+        "kagni",
+        "ca ro detma'i",
+        "pleji"
+      ],
+      "grammar": "`ca ro detma'i` = every month. `pleji fi lo kagni` = pay the company (x3 of pleji is the recipient). `ro zdani` = every home.",
+      "phrases": [
+        {
+          "jbo": "xu lo dikca cu kargu",
+          "en": "Is electricity expensive?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi na djuno .i mi na pleji",
+          "en": "I don't know, I don't pay.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "xu do pleji fi lo kagni",
+          "en": "Do you pay the company?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "ca ro detma'i mi pleji lo meryru'u be li reno",
+          "en": "Every month I pay 20 dollars.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "vi ti lo dikca cu tolkargu",
+          "en": "Electricity is cheap here.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "ro zdani cu nitcu tu'a lo dikca",
+          "en": "Every home needs electricity.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Paying Bills — Monthly Life",
+          "jbo": "ca ro detma'i"
+        },
+        "speakers": [
+          {
+            "name": "Linto",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu lo dikca cu kargu",
+            "en": "Is electricity expensive?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi na djuno .i le speni be mi cu pleji",
+            "en": "I don't know. My spouse pays."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu ri pleji fi lo kagni",
+            "en": "Does she pay the company?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i ca ro detma'i ri pleji lo meryru'u be li reno",
+            "en": "Yes, every month she pays 20 dollars."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".ue .i vi ti lo dikca cu tolkargu",
+            "en": "Wow, electricity is cheap here."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i ku'i ro zdani cu nitcu tu'a lo dikca",
+            "en": "But every home needs electricity."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-28",
+      "number": 28,
+      "block": "Deeper Conversation",
+      "title": {
+        "en": "Because and Should",
+        "jbo": "ki'u ma"
+      },
+      "new_words": [
+        "ki'u",
+        ".ei",
+        "co'a",
+        "pu'o",
+        "zi"
+      ],
+      "grammar": "`ki'u le nu X` = because X. `.ei` = I should. `co'a` = begin: `co'a sipna` = fall asleep. `pu'o nicte` = night is about to come. `ba zi` = soon.",
+      "phrases": [
+        {
+          "jbo": "mi klama le zdani ki'u le nu mi nitcu lo nu sipna",
+          "en": "I'm going home because I need to sleep.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": ".ei mi sipna",
+          "en": "I should sleep.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi ba zi co'a sipna",
+          "en": "I'll fall asleep soon.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "pu'o nicte",
+          "en": "Night is coming.",
+          "direction": "quiz_direct"
+        },
+        {
+          "jbo": "lo nu tavla do kei pu pluka mi",
+          "en": "Talking to you was a pleasure.",
+          "direction": "wordbank_reverse"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Because and Should",
+          "jbo": "ki'u ma"
+        },
+        "speakers": [
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Mentu",
+            "jbo": ".u'u .i mi klama le zdani ki'u le nu mi nitcu lo nu sipna",
+            "en": "Sorry, I'm going home because I need to sleep."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i xu ca",
+            "en": "Already?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "go'i .i .ei mi sipna .i pu'o nicte",
+            "en": "Yes. I should sleep. Night is coming."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i lo nu tavla do kei pu pluka mi",
+            "en": "Talking to you was a pleasure."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi ji'a gleki",
+            "en": "I'm glad too."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "co'o .i mi ba zi co'a sipna",
+            "en": "Goodbye! I'll be asleep soon."
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-29",
+      "number": 29,
+      "block": "Deeper Conversation",
+      "title": {
+        "en": "Future Hopes",
+        "jbo": "mi pacna"
+      },
+      "new_words": [
+        "pacna",
+        "cumki",
+        "tcini",
+        "fenki",
+        "bau"
+      ],
+      "grammar": "`mi pacna lo nu X` = I hope X happens. `lo nu X cu cumki` = X is possible. `bau la .lojban.` = in Lojban.",
+      "phrases": [
+        {
+          "jbo": "mi pacna lo nu mi sutra tavla bau la .lojban.",
+          "en": "I hope to speak Lojban fluently.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "lo nu mi ba litru cu cumki",
+          "en": "Maybe I'll travel.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "mi pacna lo nu ro do gleki",
+          "en": "I wish you all happiness.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "lo tcini be mi cu xamgu",
+          "en": "My situation is good.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "lo nu litru ca ro djedi cu fenki",
+          "en": "Travelling every day is crazy.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi prami le vi bangu",
+          "en": "I love this language.",
+          "direction": "wordbank"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Future Hopes",
+          "jbo": "mi pacna"
+        },
+        "speakers": [
+          {
+            "name": "Linto",
+            "gender": "F"
+          },
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi pacna lo nu mi sutra tavla bau la .lojban.",
+            "en": "I hope to speak Lojban fluently."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i lo nu go'i cu cumki",
+            "en": "That's possible!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i lo nu mi ba litru cu cumki",
+            "en": "Maybe I'll travel."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i lo nu litru ca ro djedi cu fenki",
+            "en": "Travelling every day is crazy!"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi pacna lo nu ro do gleki",
+            "en": "I wish you all happiness."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".e'u mi'o ba penmi",
+            "en": "Let's meet again."
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi prami le vi bangu",
+            "en": "I love this language!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    },
+    {
+      "id": "lesson-30",
+      "number": 30,
+      "block": "Capstone",
+      "title": {
+        "en": "Full Spiral Review — One Year Later",
+        "jbo": "ba lo nanca be li pa"
+      },
+      "new_words": [],
+      "grammar": "Review of all 30 lessons. Mentu and Linto now speak confidently, and a newcomer says `coi`: the cycle begins again.",
+      "phrases": [
+        {
+          "jbo": "coi ro do .i ma nuzba",
+          "en": "Hi everyone! What's new?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "mi ca se bangu la .lojban.",
+          "en": "Now I speak Lojban.",
+          "direction": "wordbank"
+        },
+        {
+          "jbo": "ma cmene do",
+          "en": "What's your name?",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "fi'i",
+          "en": "Welcome!",
+          "direction": "quiz_direct"
+        }
+      ],
+      "dialogue": {
+        "title": {
+          "en": "Full Spiral Review — One Year Later",
+          "jbo": "ba lo nanca be li pa"
+        },
+        "speakers": [
+          {
+            "name": "Lifri",
+            "gender": "F"
+          },
+          {
+            "name": "Mentu",
+            "gender": "M"
+          },
+          {
+            "name": "Linto",
+            "gender": "F"
+          },
+          {
+            "name": "Newcomer",
+            "gender": "M"
+          }
+        ],
+        "lines": [
+          {
+            "speaker": ">",
+            "jbo": ".i ba lo nanca be li pa le ci pendo cu penmi vi le panka",
+            "en": "One year later, the three friends meet at the park."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "coi ro do .i ma nuzba",
+            "en": "Hi everyone! What's new?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".ui .i mi ca se bangu la .lojban.",
+            "en": "I speak Lojban now!"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": ".i mi pu di'a klama la .paris.",
+            "en": "I went to Paris again."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": ".i xu do ba stali ti ze'a lo jeftu be li re",
+            "en": "Will you stay here for two weeks?"
+          },
+          {
+            "speaker": "Linto",
+            "jbo": "na go'i .i mi nitcu lo nu gunka",
+            "en": "No, I need to work."
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": ".i mi ca'o jinvi lo du'u la .lojban. cu zmadu ro drata bangu lo ka xamgu",
+            "en": "I still think Lojban is the best language."
+          },
+          {
+            "speaker": ">",
+            "jbo": ".i pa cnino prenu cu klama",
+            "en": "A new person walks up."
+          },
+          {
+            "speaker": "Newcomer",
+            "jbo": "coi",
+            "en": "Hi..."
+          },
+          {
+            "speaker": "Lifri",
+            "jbo": "coi do .i mi'e la .lifris. .i ma cmene do",
+            "en": "Hello! I'm Lifri. What's your name?"
+          },
+          {
+            "speaker": "Mentu",
+            "jbo": "fi'i",
+            "en": "Welcome!"
+          }
+        ]
+      },
+      "doubtful": [],
+      "readings_after": []
+    }
+  ],
+  "readings_after_course": [
+    "batch2-01",
+    "batch2-02",
+    "batch2-03",
+    "batch2-04",
+    "batch2-05",
+    "batch2-06",
+    "batch2-07",
+    "batch2-08",
+    "batch2-09",
+    "batch2-10",
+    "batch2-11",
+    "batch2-12",
+    "batch2-13",
+    "batch2-14",
+    "batch2-15",
+    "batch2-16",
+    "batch2-17",
+    "batch2-18",
+    "batch2-19",
+    "batch2-20",
+    "batch2-21",
+    "batch2-22",
+    "batch2-23",
+    "batch2-24",
+    "batch2-25",
+    "batch2-26",
+    "batch2-27",
+    "batch2-28",
+    "batch2-29",
+    "batch2-30",
+    "batch2-31",
+    "batch2-32",
+    "batch2-33",
+    "batch2-34",
+    "batch2-35",
+    "batch2-36",
+    "batch2-37",
+    "batch2-38",
+    "batch2-39",
+    "batch2-40"
+  ]
+}
