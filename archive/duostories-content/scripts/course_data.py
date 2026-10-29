@@ -404,7 +404,8 @@ L.append(("Future Hopes", "mi pacna", ["pacna", "cumki", "tcini", "fenki", "bau"
 L.append(("Full Spiral Review — One Year Later", "ba lo nanca be li pa", [],
     "Review of all 30 lessons. Mentu and Linto now speak confidently, and a newcomer says `coi`: the cycle begins again.",
     [("coi ro do .i ma nuzba", "Hi everyone! What's new?"), ("mi ca se bangu la .lojban.", "Now I speak Lojban."),
-     ("ma cmene do", "What's your name?"), ("fi'i", "Welcome!")],
+     ("ma cmene do", "What's your name?"), ("fi'i", "Welcome!"),
+     ("mi ca'o jinvi lo du'u la .lojban. cu xamgu", "I still think Lojban is great."), ("pa cnino prenu cu klama", "A new person is coming.")],
     [(">", ".i ba lo nanca be li pa le ci pendo cu penmi vi le panka", "One year later, the three friends meet at the park."),
      ("Lifri", "coi ro do .i ma nuzba", "Hi everyone! What's new?"),
      ("Mentu", ".ui .i mi ca se bangu la .lojban.", "I speak Lojban now!"),
@@ -421,4 +422,20 @@ assert len(L) == 30, len(L)
 
 # Existing duostories-style stories linked as reading levels after a lesson.
 READINGS = {7: ["01-coi-ca-lo-cerni"], 11: ["02-sakta-joi-silna", "03-lo-gusta"], 13: ["04-lo-taxfu", "05-lo-zarci"]}
-READINGS_AFTER_COURSE = [f"batch2-{i:02d}" for i in range(1, 41)]
+# The 40 batch-2 stories are NOT in the main course: four themed story courses of 10 stories each,
+# each story in numeric (= roughly length/difficulty) order.  (slug, name, description, batch2 numbers)
+STORY_COURSES = [
+    ("lojban-stories-food-shopping", "Lojban stories 1: Food, Shopping and Going Out",
+     "Ten graded stories about restaurants, shops, clothes, money and evenings out.",
+     [1, 5, 6, 7, 13, 21, 24, 30, 36, 38]),
+    ("lojban-stories-family-friends", "Lojban stories 2: Family, Friends and Celebrations",
+     "Ten graded stories about family, friends, surprises, birthdays and parties.",
+     [11, 17, 18, 22, 23, 31, 32, 34, 39, 40]),
+    ("lojban-stories-school-everyday", "Lojban stories 3: School, Work and Everyday Troubles",
+     "Ten graded stories about exams, problems, bad days, the doctor and sleepless nights.",
+     [8, 9, 12, 15, 16, 25, 26, 27, 28, 29]),
+    ("lojban-stories-hobbies-travel", "Lojban stories 4: Hobbies, Pets and Travel",
+     "Ten graded stories about sport, games, pets, museums, farms and trips.",
+     [2, 3, 4, 10, 14, 19, 20, 33, 35, 37]),
+]
+assert sorted(k for *_, n in STORY_COURSES for k in n) == list(range(1, 41))

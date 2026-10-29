@@ -4,9 +4,10 @@
 Outputs (next to dialogues.json):
   course/course.json                                  structured lessons (validated by validate_dialogues.py)
   course/lojban-through-dialogues_collection.json     lensisku collection export (import format of
-                                                      archive/*/..._collection.json): per lesson an info card,
-                                                      isolated phrase cards and one 'dialogue' card; the
-                                                      existing 45 stories from dialogues.json as reading levels.
+                                                      archive/*/..._collection.json).
+Level standard (course/COURSE-STANDARD.md): ONE level per lesson = info card, isolated phrase
+cards, then the lesson's full dialogue as the last card. The 45 existing stories get levels of
+the same shape: info card, up to 5 short lines of the story as phrase cards, story card last.
 Usage: python3 scripts/build_course.py
 """
 import json, os, sys
@@ -16,18 +17,13 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import course_data as C  # noqa: E402
 from dialogue_lib import render_script, render_translation  # noqa: E402
+from collection_lib import Collection, direction_for  # noqa: E402
 
 
 def block_of(n):
     for a, b, name in C.BLOCKS:
         if a <= n <= b:
             return name
-
-
-def direction_for(jbo, k):
-    if len(jbo.replace(".i ", "").split()) <= 2:
-        return "quiz_direct"
-    return "wordbank_reverse" if k % 2 == 0 else "wordbank"
 
 
 def lessons():
@@ -79,33 +75,15 @@ def main():
         "characters": [{"name": n, "cmevla": C.NAMES[n], "gender": C.SPEAKERS[n]} for n in C.NAMES],
         "plan_deviations": C.PLAN_DEVIATIONS,
         "lessons": ls,
-        "readings_after_course": C.READINGS_AFTER_COURSE,
+        "story_courses": [{"file": f"{a}_collection.json", "name": b, "stories": [f"batch2-{k:02d}" for k in n]} for a, b, _, n in C.STORY_COURSES],
     }
     os.makedirs(os.path.join(ROOT, "course"), exist_ok=True)
     json.dump(course, open(os.path.join(ROOT, "course", "course.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    items, levels = [], []
-    seen_fronts = set()
-
-    def add_level(name, desc, cards, min_cards):
-        li = len(levels)
-        pos = []
-        cards = [c for c in cards if c[0] not in seen_fronts]  # importer skips duplicate free-content fronts
-        for j, (front, back, direction, note) in enumerate(cards):
-            seen_fronts.add(front)
-            p = len(items)
-            items.append({"item_id": p + 1, "position": p, "collection_note": note, "free_content_front": front,
-                          "free_content_back": back, "level_index": li, "position_in_level": j, "direction": direction})
-            pos.append(p)
-        levels.append({"name": name, "description": desc, "min_cards": min_cards, "min_success_rate": 0.8,
-                       "position": li, "prerequisite_positions": [li - 1] if li else [], "item_positions": pos})
-
-    def add_story(key):
-        e = sid[key]
-        t = e["title"]
-        add_level(f"Reading: {t['jbo']} ({t['en']})", "Story from the duostories adaptation (dialogues.json).",
-                  [(render_script(e), render_translation(e), "dialogue", key)], 1)
-
+    out = os.path.join(ROOT, "course")
+    main_c = Collection("Lojban through dialogues",
+                        "Progressive 30-lesson course (Lifri, Mentu, Linto): one level per lesson = info card, "
+                        "phrases, dialogue last; stories 01-05 interleaved. All Lojban validated with egglog-lojban.")
     for l in ls:
         n = l["number"]
         words = ", ".join("{%s}" % w if " " not in w and "..." not in w else w for w in l["new_words"])
@@ -113,21 +91,18 @@ def main():
         cards = [(f"Lesson {n}: {l['title']['en']} — {l['title']['jbo']}", info_back, "just_information", "")]
         for p in l["phrases"]:
             cards.append((p["jbo"], p["en"], p["direction"], ("doubtful: " + p["doubtful"]) if p.get("doubtful") else ""))
-        add_level(f"Lesson {n}: {l['title']['en']}", f"{l['block']} · {l['title']['jbo']}", cards, min(5, len(cards) - 1))
-        dia = dict(l["dialogue"])
-        add_level(f"Lesson {n} dialogue: {l['title']['jbo']}", l["title"]["en"],
-                  [(render_script(dia), render_translation(dia), "dialogue", l["id"])], 1)
+        # The lesson's full dialogue is the LAST card of the same level (COURSE-STANDARD.md).
+        cards.append((render_script(dict(l["dialogue"])), render_translation(dict(l["dialogue"])), "dialogue", l["id"]))
+        main_c.add_level(f"Lesson {n}: {l['title']['en']}", f"{l['block']} · {l['title']['jbo']}", cards)
         for key in l["readings_after"]:
-            add_story(key)
-    for key in C.READINGS_AFTER_COURSE:
-        add_story(key)
-    coll = {"collection": {"name": "Lojban through dialogues",
-                           "description": "Progressive 30-lesson course (Lifri, Mentu, Linto): isolated phrases and full dialogues, then 45 graded stories. All Lojban validated with egglog-lojban.",
-                           "is_public": False},
-            "items": items, "levels": levels}
-    json.dump(coll, open(os.path.join(ROOT, "course", "lojban-through-dialogues_collection.json"), "w", encoding="utf-8"),
-              ensure_ascii=False, indent=2)
-    print(f"lessons={len(ls)} levels={len(levels)} items={len(items)}")
+            main_c.add_story(key, sid[key])
+    print(main_c.write(os.path.join(out, "lojban-through-dialogues_collection.json")))
+    # Batch-2 stories: separate themed story courses (course_data.STORY_COURSES).
+    for slug, name, desc, nums in C.STORY_COURSES:
+        c = Collection(name, desc)
+        for k in nums:
+            c.add_story(f"batch2-{k:02d}", sid[f"batch2-{k:02d}"])
+        print(c.write(os.path.join(out, f"{slug}_collection.json")))
 
 
 if __name__ == "__main__":

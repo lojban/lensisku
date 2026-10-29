@@ -1,0 +1,899 @@
+{
+  "collection": {
+    "name": "Lojban stories 3: School, Work and Everyday Troubles",
+    "description": "Ten graded stories about exams, problems, bad days, the doctor and sleepless nights.",
+    "is_public": false
+  },
+  "items": [
+    {
+      "item_id": 1,
+      "position": 0,
+      "collection_note": "batch2-08",
+      "free_content_front": "Story 1: lo cipra — The Exam",
+      "free_content_back": "#### Before you read\nCharacters: Teacher, Giorgio, Lorena\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 0,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 2,
+      "position": 1,
+      "collection_note": "",
+      "free_content_front": "cipra xu",
+      "free_content_back": "Exam?",
+      "level_index": 0,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 3,
+      "position": 2,
+      "collection_note": "",
+      "free_content_front": "mi'a na te cipra",
+      "free_content_back": "We don't have an exam...",
+      "level_index": 0,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 4,
+      "position": 3,
+      "collection_note": "",
+      "free_content_front": "ri mutce nandu",
+      "free_content_back": "A very hard exam.",
+      "level_index": 0,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 5,
+      "position": 4,
+      "collection_note": "",
+      "free_content_front": "do noroi bredi lo cipra",
+      "free_content_back": "You're never ready for exams...",
+      "level_index": 0,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 6,
+      "position": 5,
+      "collection_note": "",
+      "free_content_front": ".ei mi ca tadni",
+      "free_content_back": "I have to study now!",
+      "level_index": 0,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 7,
+      "position": 6,
+      "collection_note": "batch2-08",
+      "free_content_front": "# lo cipra\n> .i la .djordjos. .e la .lorenas. cu zvati lo balcu'e\n~ Giorgio and Lorena are at the university.\nLorena(F): coi .djordjos. .i xu do bredi lo glico cipra\n~ Hi Giorgio, are you ready for the English exam?\nGiorgio(M): .i cipra xu\n~ Exam?\nGiorgio(M): .i mi'a na te cipra\n~ We don't have an exam...\nLorena(F): go'i .i mi'a te cipra ca lo cabdei doi .djordjos.\n~ Yes, we have an exam today, Giorgio.\nLorena(F): .i ri mutce nandu\n~ A very hard exam.\nLorena(F): .i do noroi bredi lo cipra\n~ You're never ready for exams...\nGiorgio(M): .oi .i mi'a se ctuca ba lo re cacra\n~ Oh no! And we have class in two hours...\nGiorgio(M): .i .ei mi ca tadni\n~ I have to study now!\n> .i ba lo re cacra la .djordjos. .e la .lorenas. cu se ctuca fo lo glico bangu\n~ Two hours later, Giorgio and Lorena are in English class.\nTeacher(M): .i xu ro do bredi lo cipra\n~ Are you all ready for the exam?\nTeacher(M): .i ri fasnu ca lo bavla'i jeftu\n~ It's next week!\nGiorgio(M): .i mi na jimpe\n~ I don't understand.\nGiorgio(M): doi .lorenas. .i lo cipra na fasnu ca lo cabdei\n~ Lorena, the exam isn't today...\nLorena(F): .u'u doi .djordjos.\n~ Sorry, Giorgio.\nLorena(F): .i ku'i do noroi bredi lo cipra\n~ But you're never ready for exams!\nGiorgio(M): .i'e doi .lorenas. .i ca bo mi je'a bredi\n~ OK, Lorena. Now I really am ready!\n---\n? fill: Lorena(F): .i ri mutce [nandu]\n? choice: .i lo cipra cu fasnu ca ma\n+ lo bavla'i jeftu\n- lo bavlamdei\n- lo bavla'i masti\n? choice: .i ki'u ma la .lorenas. cu tcica la .djordjos.\n- djica lo nu ri fliba\n- djica lo nu lo ctuca cu cmila ri\n+ djica lo nu sidju ri lo nu bredi",
+      "free_content_back": "The Exam.\nGiorgio and Lorena are at the university.\nLorena: Hi Giorgio, are you ready for the English exam?\nGiorgio: Exam?\nGiorgio: We don't have an exam...\nLorena: Yes, we have an exam today, Giorgio.\nLorena: A very hard exam.\nLorena: You're never ready for exams...\nGiorgio: Oh no! And we have class in two hours...\nGiorgio: I have to study now!\nTwo hours later, Giorgio and Lorena are in English class.\nTeacher: Are you all ready for the exam?\nTeacher: It's next week!\nGiorgio: I don't understand.\nGiorgio: Lorena, the exam isn't today...\nLorena: Sorry, Giorgio.\nLorena: But you're never ready for exams!\nGiorgio: OK, Lorena. Now I really am ready!",
+      "level_index": 0,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 8,
+      "position": 7,
+      "collection_note": "batch2-09",
+      "free_content_front": "Story 2: lo cizra savru — A Strange Noise",
+      "free_content_back": "#### Before you read\nCharacters: Rex, Roma\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 1,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 9,
+      "position": 8,
+      "collection_note": "",
+      "free_content_front": "ta mo",
+      "free_content_back": "What's that?",
+      "level_index": 1,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 10,
+      "position": 9,
+      "collection_note": "",
+      "free_content_front": "lo purdi cu krasi ri",
+      "free_content_back": "It's from the garden!",
+      "level_index": 1,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 11,
+      "position": 10,
+      "collection_note": "",
+      "free_content_front": "ma zvati ta",
+      "free_content_back": "Who's there?",
+      "level_index": 1,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 12,
+      "position": 11,
+      "collection_note": "",
+      "free_content_front": "mi tirna do",
+      "free_content_back": "I can hear you!",
+      "level_index": 1,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 13,
+      "position": 12,
+      "collection_note": "",
+      "free_content_front": "mi ponse lo mutce barda gerku",
+      "free_content_back": "I have a very big dog!",
+      "level_index": 1,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 14,
+      "position": 13,
+      "collection_note": "batch2-09",
+      "free_content_front": "# lo cizra savru\n> .i vanci .i la .roman. cu zvati lo ri kumfa\n~ Evening. Roma is in his room.\n> .i ri tirna su'o savru\n~ He hears some noise.\nRoma(M): .i ta mo\n~ What's that?\nRoma(M): .i lo purdi cu krasi ri\n~ It's from the garden!\n> .i la .roman. cu terpa .i ri catlu fi lo canko gi'e tirna\n~ Roma is scared. He looks out the window and listens.\nRoma(M): .i ma zvati ta\n~ Who's there?\nRoma(M): .i mi tirna do\n~ I can hear you!\nRoma(M): .i mi ponse lo mutce barda gerku\n~ I have a very big dog!\n> .i la .roman. cu za'u re'u tirna lo savru\n~ Roma hears the noise again.\nRoma(M): .i mi cpedu lo pulji\n~ I'm calling the police!\n> .i la .roman. cu lebna lo fonxa\n~ Roma takes the phone.\n> .i ri tirna lo savru noi jibni ri\n~ He hears the noise right next to him.\nRex(M): zoi gy. woof woof gy.\n~ Woof!\nRoma(M): .ua .i ri gerku\n~ Oh, it's the dog!\nRoma(M): doi .reks. .i ki'u ma do zvati lo purdi\n~ Rex, why are you in the garden?\n> .i la .roman. cu kalri lo vorme .i lo gerku cu nerkla lo zdani\n~ Roma opens the door, and the dog comes into the house.\nRoma(M): .i .ei do kansa mi vi lo zdani .i do jai bandu mi\n~ You should be at home with me! You're my protector!\n---\n? fill: Roma(M): .i mi ponse lo mutce barda [gerku]\n? choice: .i la .roman. cu fonta'a ma\n- lo ri pendo\n- lo ri rirni\n+ lo pulji\n? choice: .i lo cizra savru cu sance ma\n- lo pulji\n+ lo ri gerku po'u la .reks.\n- lo zerle'a",
+      "free_content_back": "A Strange Noise.\nEvening. Roma is in his room.\nHe hears some noise.\nRoma: What's that?\nRoma: It's from the garden!\nRoma is scared. He looks out the window and listens.\nRoma: Who's there?\nRoma: I can hear you!\nRoma: I have a very big dog!\nRoma hears the noise again.\nRoma: I'm calling the police!\nRoma takes the phone.\nHe hears the noise right next to him.\nRex: Woof!\nRoma: Oh, it's the dog!\nRoma: Rex, why are you in the garden?\nRoma opens the door, and the dog comes into the house.\nRoma: You should be at home with me! You're my protector!",
+      "level_index": 1,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 15,
+      "position": 14,
+      "collection_note": "batch2-12",
+      "free_content_front": "Story 3: lo nandu nabmi — A Difficult Problem",
+      "free_content_back": "#### Before you read\nCharacters: Luca, Selena\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 2,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 16,
+      "position": 15,
+      "collection_note": "",
+      "free_content_front": "coi .lukas.",
+      "free_content_back": "Hi, Luca...",
+      "level_index": 2,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 17,
+      "position": 16,
+      "collection_note": "",
+      "free_content_front": "xu do kanro doi .selenas.",
+      "free_content_back": "Are you OK, Selena?",
+      "level_index": 2,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 18,
+      "position": 17,
+      "collection_note": "",
+      "free_content_front": "mi se nabmi",
+      "free_content_back": "Hmm... I have a problem.",
+      "level_index": 2,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 19,
+      "position": 18,
+      "collection_note": "",
+      "free_content_front": "xu mi ka'e sidju do",
+      "free_content_back": "Can I help you?",
+      "level_index": 2,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 20,
+      "position": 19,
+      "collection_note": "",
+      "free_content_front": "xu do ponse lo do kulselgu'a",
+      "free_content_back": "Do you have your homework?",
+      "level_index": 2,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 21,
+      "position": 20,
+      "collection_note": "batch2-12",
+      "free_content_front": "# lo nandu nabmi\n> .i la .selenas. .e la .lukas. cu zvati lo balcu'e\n~ Selena and Luca are at the university.\nSelena(F): coi .lukas.\n~ Hi, Luca...\nLuca(M): .i xu do kanro doi .selenas.\n~ Are you OK, Selena?\nSelena(F): .i mi se nabmi\n~ Hmm... I have a problem.\nLuca(M): .i xu mi ka'e sidju do\n~ Can I help you?\nSelena(F): go'i .i mi jinvi lo du'u do ka'e sidju mi\n~ Yes, I think you can help me...\nLuca(M): .i xu do ponse lo do kulselgu'a\n~ Do you have your homework?\nSelena(F): go'i .i ti go'i\n~ Yes, here it is.\nLuca(M): .i xu do bredi lo cipra\n~ Are you ready for the exam?\nSelena(F): go'i .i mi bredi\n~ Yes, I'm ready.\nLuca(M): .i xu do nitcu tu'a lo penbi\n~ Do you need... a pen?\nSelena(F): .i mi ponse lo penbi .i ki'e doi .lukas.\n~ I have a pen. Thanks, Luca.\nLuca(M): .i lo nabmi cu mo\n~ What's the problem?\nSelena(F): .i mi ponse re pikta be fi lo nu zgike ca lo cabycte\n~ I have two tickets for a concert tonight...\nLuca(M): .i xu la'e di'u nabmi\n~ And that's a problem?\nSelena(F): go'i .i ku'i do ka'e sidju mi\n~ Yes, but you can help me!\nSelena(F): .i do ka'e klama kansa mi\n~ You can come with me!\nLuca(M): .ua .i go'i .i mi ka'e sidju do\n~ Ah... yes! I can help you!\n---\n? fill: Luca(M): .i xu do nitcu tu'a lo [penbi]\n? choice: .i la .lukas. cu retsku ma\n- xu la .selenas. kanro\n- xu do djica lo nu klama lo balcu'e\n+ xu mi ka'e sidju do\n? choice: .i la .selenas. pu zukte ma\n- cpedu lo penbi\n+ vi'ecpe la .lukas. lo nu zgike\n- klama lo zdani",
+      "free_content_back": "A Difficult Problem.\nSelena and Luca are at the university.\nSelena: Hi, Luca...\nLuca: Are you OK, Selena?\nSelena: Hmm... I have a problem.\nLuca: Can I help you?\nSelena: Yes, I think you can help me...\nLuca: Do you have your homework?\nSelena: Yes, here it is.\nLuca: Are you ready for the exam?\nSelena: Yes, I'm ready.\nLuca: Do you need... a pen?\nSelena: I have a pen. Thanks, Luca.\nLuca: What's the problem?\nSelena: I have two tickets for a concert tonight...\nLuca: And that's a problem?\nSelena: Yes, but you can help me!\nSelena: You can come with me!\nLuca: Ah... yes! I can help you!",
+      "level_index": 2,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 22,
+      "position": 21,
+      "collection_note": "batch2-15",
+      "free_content_front": "Story 4: lo xlali djedi — A Bad Day",
+      "free_content_back": "#### Before you read\nCharacters: Rebecca, Eva\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 3,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 23,
+      "position": 22,
+      "collection_note": "",
+      "free_content_front": "coi .rebekas.",
+      "free_content_back": "Hi, Rebecca!",
+      "level_index": 3,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 24,
+      "position": 23,
+      "collection_note": "",
+      "free_content_front": "coi .evas.",
+      "free_content_back": "Hi, Eva!",
+      "level_index": 3,
+      "position_in_level": 2,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 25,
+      "position": 24,
+      "collection_note": "",
+      "free_content_front": "do mo",
+      "free_content_back": "How are you?",
+      "level_index": 3,
+      "position_in_level": 3,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 26,
+      "position": 25,
+      "collection_note": "",
+      "free_content_front": "lo cabdei cu xlali",
+      "free_content_back": "Today is a bad day.",
+      "level_index": 3,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 27,
+      "position": 26,
+      "collection_note": "",
+      "free_content_front": "ki'u ma",
+      "free_content_back": "Why?",
+      "level_index": 3,
+      "position_in_level": 5,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 28,
+      "position": 27,
+      "collection_note": "batch2-15",
+      "free_content_front": "# lo xlali djedi\nEva(F): coi .rebekas.\n~ Hi, Rebecca!\nRebecca(F): coi .evas.\n~ Hi, Eva!\nEva(F): .i do mo\n~ How are you?\nRebecca(F): .i lo cabdei cu xlali\n~ Today is a bad day.\nEva(F): .i ki'u ma\n~ Why?\nRebecca(F): .i mi tatpi\n~ I'm tired.\nEva(F): .uu doi .rebekas.\n~ Oh, I'm sorry, Rebecca.\nRebecca(F): .i mi na ka'e facki lo du'u lo mi se nelci cukta cu zvati ma\n~ I can't find my favourite book.\nRebecca(F): .i mi djica lo nu citka lo djasnuji\n~ I want a sandwich...\nRebecca(F): .i ku'i mi ponse no jdini\n~ ...but I have no money!\nRebecca(F): .i .oi .i .ei mi ca klama lo ctuca kumfa\n~ And... oh no! I have to go to class now!\nEva(F): .uu doi .rebekas. .i xu do djica lo nu mi birjai do\n~ I'm sorry, Rebecca. Do you want a hug?\nRebecca(F): go'i .i .e'o\n~ Yes, please.\nRebecca(F): .i ca bo mi gleki\n~ Now I'm happy!\nEva(F): .i lo cabdei cu xlali\n~ Today is a bad day...\nEva(F): .i ki'u ma do gleki\n~ ...so why are you happy?\nRebecca(F): .i .y.\n~ Hmm...\nRebecca(F): .i ki'u lo nu mi ca kansa do\n~ ...because now we're together!\n---\n? fill: Rebecca(F): .i mi [tatpi]\n? choice: .i la .rebekas. ca sisku ma\n+ lo ri se nelci cukta\n- lo ri traji pendo\n- lo xlali djedi\n? choice: .i ki'u ma la .rebekas. ca gleki\n- ri pu cpacu lo ri cukta\n- la .evas. cu dunda lo djasnuji ri\n+ ri ca kansa lo ri traji pendo",
+      "free_content_back": "A Bad Day.\nEva: Hi, Rebecca!\nRebecca: Hi, Eva!\nEva: How are you?\nRebecca: Today is a bad day.\nEva: Why?\nRebecca: I'm tired.\nEva: Oh, I'm sorry, Rebecca.\nRebecca: I can't find my favourite book.\nRebecca: I want a sandwich...\nRebecca: ...but I have no money!\nRebecca: And... oh no! I have to go to class now!\nEva: I'm sorry, Rebecca. Do you want a hug?\nRebecca: Yes, please.\nRebecca: Now I'm happy!\nEva: Today is a bad day...\nEva: ...so why are you happy?\nRebecca: Hmm...\nRebecca: ...because now we're together!",
+      "level_index": 3,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 29,
+      "position": 28,
+      "collection_note": "batch2-16",
+      "free_content_front": "Story 5: pa dacti — One Thing",
+      "free_content_back": "#### Before you read\nCharacters: Francesca, Pietro\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 4,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 30,
+      "position": 29,
+      "collection_note": "",
+      "free_content_front": ".oi .i no nanba cu zvati",
+      "free_content_back": "Oh! There's no bread!",
+      "level_index": 4,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 31,
+      "position": 30,
+      "collection_note": "",
+      "free_content_front": "xu do klama lo barda zarci",
+      "free_content_back": "Are you going to the supermarket?",
+      "level_index": 4,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 32,
+      "position": 31,
+      "collection_note": "",
+      "free_content_front": "do djica ma",
+      "free_content_back": "What do you want?",
+      "level_index": 4,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 33,
+      "position": 32,
+      "collection_note": "",
+      "free_content_front": "pa tamca .i .e'o",
+      "free_content_back": "A tomato, please.",
+      "level_index": 4,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 34,
+      "position": 33,
+      "collection_note": "",
+      "free_content_front": "ji'a ci lurnanba",
+      "free_content_back": "Ah! And three croissants.",
+      "level_index": 4,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 35,
+      "position": 34,
+      "collection_note": "batch2-16",
+      "free_content_front": "# pa dacti\n> .i la .frantceskas. cu zvati lo zdani fi'o kansa lo ri bruna po'u la .pietros.\n~ Francesca is at home with her brother, Pietro.\nFrancesca(F): .oi .i no nanba cu zvati\n~ Oh! There's no bread!\nPietro(M): .i xu do klama lo barda zarci\n~ Are you going to the supermarket?\nFrancesca(F): go'i .i mi djica lo nu citka lo nanba .e lo mi cirla\n~ Yes, I want some bread with my cheese.\nPietro(M): .i xu do ka'e te vecnu pa dacti va'u mi\n~ Can you buy one thing for me?\nFrancesca(F): .i do djica ma\n~ What do you want?\nPietro(M): .i pa tamca .i .e'o\n~ A tomato, please.\nPietro(M): .i mi pilno ri lo nu zbasu lo mi salta\n~ I'll use it for my salad.\nFrancesca(F): .i'e\n~ OK.\nPietro(M): ki'e\n~ Thanks!\nPietro(M): .i ji'a ci lurnanba\n~ Ah! And three croissants.\nFrancesca(F): .i'e\n~ OK...\nPietro(M): .i ji'a lo jisra be lo narju\n~ And some orange juice...\nFrancesca(F): doi .pietros.\n~ Pietro...\nPietro(M): .i ji'a lo ckafi .i .e'o\n~ ...and some coffee, please.\nFrancesca(F): .i .y. mi se sidbo\n~ Hmm... I have an idea.\nFrancesca(F): .i mi stali lo zdani .i do klama lo barda zarci\n~ I'll stay home. You go to the supermarket.\nPietro(M): .i ki'u ma\n~ Why?\nFrancesca(F): .i mi djica tu'a pa dacti po'o .i lo nanba\n~ I only want one thing: bread.\n---\n? fill: Francesca(F): .oi .i no [nanba] cu zvati\n? choice: .i la .pietros. cu retsku ma\n- xu mi ka'e te vecnu da va'u do\n+ xu do ka'e te vecnu pa dacti va'u mi\n- xu mi'o kansa citka lo cirla\n? choice: .i la .frantceskas. cu jdice ma\n- zbasu lo cirla djasnuji va'u la .pietros.\n+ stali lo zdani gi'e rinka lo nu la .pietros. cu te vecnu lo nanba\n- te vecnu ci lurnanba",
+      "free_content_back": "One Thing.\nFrancesca is at home with her brother, Pietro.\nFrancesca: Oh! There's no bread!\nPietro: Are you going to the supermarket?\nFrancesca: Yes, I want some bread with my cheese.\nPietro: Can you buy one thing for me?\nFrancesca: What do you want?\nPietro: A tomato, please.\nPietro: I'll use it for my salad.\nFrancesca: OK.\nPietro: Thanks!\nPietro: Ah! And three croissants.\nFrancesca: OK...\nPietro: And some orange juice...\nFrancesca: Pietro...\nPietro: ...and some coffee, please.\nFrancesca: Hmm... I have an idea.\nFrancesca: I'll stay home. You go to the supermarket.\nPietro: Why?\nFrancesca: I only want one thing: bread.",
+      "level_index": 4,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 36,
+      "position": 35,
+      "collection_note": "batch2-25",
+      "free_content_front": "Story 6: lo mikce po'u la .edis. — Doctor Eddy",
+      "free_content_back": "#### Before you read\nCharacters: Eddy, Woman\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 5,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 37,
+      "position": 36,
+      "collection_note": "",
+      "free_content_front": "xu do mikce",
+      "free_content_back": "Are you a doctor, by any chance?",
+      "level_index": 5,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 38,
+      "position": 37,
+      "collection_note": "",
+      "free_content_front": "xu mi .i mikce .i .y.",
+      "free_content_back": "Me? A doctor? Uh...",
+      "level_index": 5,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 39,
+      "position": 38,
+      "collection_note": "",
+      "free_content_front": "go'i .i do pu djuno ta'i ma",
+      "free_content_back": "Yes! How did you know?",
+      "level_index": 5,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 40,
+      "position": 39,
+      "collection_note": "",
+      "free_content_front": "mi ponse so'i jdini",
+      "free_content_back": "I have a lot of money.",
+      "level_index": 5,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 41,
+      "position": 40,
+      "collection_note": "",
+      "free_content_front": "mi xabju lo mutce barda zdani",
+      "free_content_back": "I live in a very big house.",
+      "level_index": 5,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 42,
+      "position": 41,
+      "collection_note": "batch2-25",
+      "free_content_front": "# lo mikce po'u la .edis.\n> .i la .edis. cu zvati lo barda zarci\n~ Eddy is at the supermarket.\n> .i pa ninmu cu tavla ri\n~ A woman speaks to him.\nWoman(F): coi\n~ Hello, sir!\nEddy(M): .i mo\n~ Yes?\nWoman(F): .i xu do mikce\n~ Are you a doctor, by any chance?\nEddy(M): .i xu mi .i mikce .i .y.\n~ Me? A doctor? Uh...\nEddy(M): go'i .i do pu djuno ta'i ma\n~ Yes! How did you know?\nWoman(F): .i .ui\n~ Thank goodness!\n> .i ku'i la .edis. na mikce\n~ But Eddy is not a doctor.\nEddy(M): .i mi ponse so'i jdini\n~ I have a lot of money.\nEddy(M): .i mi xabju lo mutce barda zdani\n~ I live in a very big house.\nEddy(M): .i mi ponse lo mutce kargu palku\n~ I have very expensive trousers.\nWoman(F): .i'e .i ku'i\n~ OK, but...\nWoman(F): .i le ta nanmu ca nitcu tu'a lo mikce\n~ That man needs a doctor right now.\nWoman(F): .i ri sanli lo jibni be lo ladru\n~ He's standing by the milk.\nWoman(F): .e'o .i le nanmu cu nitcu lo nu do sidju ri\n~ Please, this man needs your help!\nWoman(F): .i ri mutce bilma\n~ He's very sick!\nEddy(M): .oi\n~ Oh, no.\n> .i la .edis. cu viska pa ninmu gi'e tavla ri\n~ Eddy sees a woman and speaks to her.\nEddy(M): coi .i xu do mikce\n~ Hello, madam, are you a doctor?\n---\n? fill: Woman(F): .i ri mutce [bilma]\n? choice: .i lo nanmu poi nitcu lo nu sidju cu jibni ma\n- lo tcana\n- lo tamca\n+ lo ladru\n? choice: .i ma fasnu\n- la .edis. co'a tadni lo mikce saske\n+ la .edis. cu cusku lo se du'u ri mikce\n- la .edis. cu sidju pa nanmu",
+      "free_content_back": "Doctor Eddy.\nEddy is at the supermarket.\nA woman speaks to him.\nWoman: Hello, sir!\nEddy: Yes?\nWoman: Are you a doctor, by any chance?\nEddy: Me? A doctor? Uh...\nEddy: Yes! How did you know?\nWoman: Thank goodness!\nBut Eddy is not a doctor.\nEddy: I have a lot of money.\nEddy: I live in a very big house.\nEddy: I have very expensive trousers.\nWoman: OK, but...\nWoman: That man needs a doctor right now.\nWoman: He's standing by the milk.\nWoman: Please, this man needs your help!\nWoman: He's very sick!\nEddy: Oh, no.\nEddy sees a woman and speaks to her.\nEddy: Hello, madam, are you a doctor?",
+      "level_index": 5,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 43,
+      "position": 42,
+      "collection_note": "batch2-26",
+      "free_content_front": "Story 7: lo mi se nelci penbi — My Favourite Pen",
+      "free_content_back": "#### Before you read\nCharacters: Marco, Lorenzo\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 6,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 44,
+      "position": 43,
+      "collection_note": "",
+      "free_content_front": "xu do kanro doi .lorentsos.",
+      "free_content_back": "Are you OK, Lorenzo?",
+      "level_index": 6,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 45,
+      "position": 44,
+      "collection_note": "",
+      "free_content_front": "ri zvati ma",
+      "free_content_back": "Where is it?!",
+      "level_index": 6,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 46,
+      "position": 45,
+      "collection_note": "",
+      "free_content_front": "mi nitcu tu'a lo mi penbi",
+      "free_content_back": "I need my pen!",
+      "level_index": 6,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 47,
+      "position": 46,
+      "collection_note": "",
+      "free_content_front": ".oi .i xu lo blanu penbi",
+      "free_content_back": "Oh no! The blue pen?",
+      "level_index": 6,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 48,
+      "position": 47,
+      "collection_note": "",
+      "free_content_front": "xu do nitcu tu'a lo penbi",
+      "free_content_back": "And you need a pen?",
+      "level_index": 6,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 49,
+      "position": 48,
+      "collection_note": "batch2-26",
+      "free_content_front": "# lo mi se nelci penbi\n> .i la .markos. .e la .lorentsos. cu zvati lo ctuca kumfa\n~ Marco and Lorenzo are in class.\nLorenzo(M): .oi\n~ No!\nMarco(M): .i xu do kanro doi .lorentsos.\n~ Are you OK, Lorenzo?\nLorenzo(M): .i ri zvati ma\n~ Where is it?!\nLorenzo(M): .i mi nitcu tu'a lo mi penbi\n~ I need my pen!\nMarco(M): .oi .i xu lo blanu penbi\n~ Oh no! The blue pen?\nLorenzo(M): go'i .i lo mi traji se nelci penbi\n~ Yes! My favourite pen!\nMarco(M): .i xu do nitcu tu'a lo penbi\n~ And you need a pen?\nLorenzo(M): go'i .i mi ba te cipra .i lo cipra cu vajni\n~ Yes! I have an exam! An important one!\nLorenzo(M): .i mi pilno lo mi se nelci penbi ca ro lo cipra\n~ And I use my favourite pen for every exam.\nMarco(M): .i .uizo'o .i xajmi\n~ Haha... funny...\nLorenzo(M): .i xu xajmi\n~ Funny?\nMarco(M): .i do xajmi doi .lorentsos.\n~ You're funny, Lorenzo!\nLorenzo(M): .i ki'u ma\n~ Why?\nMarco(M): .i do na nitcu tu'a lo penbi ca lo cipra\n~ You don't need a pen for the exam!\nLorenzo(M): .i ki'u ma\n~ Why?\nMarco(M): .i ki'u lo nu lo cipra cu fasnu vi lo skami\n~ Because the exam is on the computer!\n---\n? fill: Marco(M): .oi .i xu lo [blanu] penbi\n? choice: .i la .lorentsos. cu pilno lo ri se nelci penbi ca ma\n+ ca ro lo cipra\n- noroi\n- ca re cipra\n? choice: .i ki'u ma la .markos. cu cmila\n+ lo cipra cu fasnu vi lo skami\n- la .lorentsos. cu xajmi prenu\n- ri pu facki lo du'u lo penbi cu zvati ma",
+      "free_content_back": "My Favourite Pen.\nMarco and Lorenzo are in class.\nLorenzo: No!\nMarco: Are you OK, Lorenzo?\nLorenzo: Where is it?!\nLorenzo: I need my pen!\nMarco: Oh no! The blue pen?\nLorenzo: Yes! My favourite pen!\nMarco: And you need a pen?\nLorenzo: Yes! I have an exam! An important one!\nLorenzo: And I use my favourite pen for every exam.\nMarco: Haha... funny...\nLorenzo: Funny?\nMarco: You're funny, Lorenzo!\nLorenzo: Why?\nMarco: You don't need a pen for the exam!\nLorenzo: Why?\nMarco: Because the exam is on the computer!",
+      "level_index": 6,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 50,
+      "position": 49,
+      "collection_note": "batch2-27",
+      "free_content_front": "Story 8: lo nicte zgike — Music at Night",
+      "free_content_back": "#### Before you read\nCharacters: Tommaso, Gioele\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 7,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 51,
+      "position": 50,
+      "collection_note": "",
+      "free_content_front": "doi .tomasos. .i ko tirna",
+      "free_content_back": "Listen, Tommaso!",
+      "level_index": 7,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 52,
+      "position": 51,
+      "collection_note": "",
+      "free_content_front": ".ei mi sipna",
+      "free_content_back": "I need to sleep!",
+      "level_index": 7,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 53,
+      "position": 52,
+      "collection_note": "",
+      "free_content_front": "mi djica tu'a lo se prami",
+      "free_content_back": "I want a girlfriend...",
+      "level_index": 7,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 54,
+      "position": 53,
+      "collection_note": "",
+      "free_content_front": "lo ninmu cu prami ma",
+      "free_content_back": "...and who do women love?",
+      "level_index": 7,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 55,
+      "position": 54,
+      "collection_note": "",
+      "free_content_front": "lo nanmu poi zgipli lo jgita",
+      "free_content_back": "...guys who play the guitar!",
+      "level_index": 7,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 56,
+      "position": 55,
+      "collection_note": "batch2-27",
+      "free_content_front": "# lo nicte zgike\nGioele(M): doi .tomasos. .i ko tirna\n~ Listen, Tommaso!\nTommaso(M): doi .djoeles. .i xu .ei do ca zgipli lo jgita\n~ Gioele! Do you have to play the guitar now?\nTommaso(M): .i .ei mi sipna\n~ I need to sleep!\nGioele(M): .i mi djica lo nu xamgu zgipli lo jgita\n~ I want to play the guitar well.\nGioele(M): .i mi djica tu'a lo se prami\n~ I want a girlfriend...\nGioele(M): .i lo ninmu cu prami ma\n~ ...and who do women love?\nGioele(M): lo nanmu poi zgipli lo jgita\n~ ...guys who play the guitar!\nTommaso(M): .i xu .ei do zgipli ca lo nicte\n~ And you have to play at night?!\nTommaso(M): .i mi mutce tatpi\n~ I'm very tired!\nGioele(M): .i'e .i mi ba sisti lo nu zgipli lo jgita\n~ OK. I'll stop playing the guitar.\nTommaso(M): ki'e .i ko xamgu sipna\n~ Thanks. Sleep well.\nGioele(M): .i ko ji'a xamgu sipna\n~ You too, sleep well.\n> .i la .djoeles. cu co'a zgipli lo pipno\n~ Gioele starts playing the piano.\nTommaso(M): doi .djoeles. .i do zukte ma\n~ Gioele! What are you doing?!\nGioele(M): .i ma .i mi na ka'e zgipli lo jgita\n~ What? I can't play the guitar...\nGioele(M): .i ku'i mi ka'e zgipli lo pipno .i xu go'i\n~ ...but I can play the piano, right?\nGioele(M): .i lo ninmu cu prami lo nanmu poi zgipli lo pipno\n~ Women love guys who play the piano!\n---\n? fill: Tommaso(M): .i .ei mi [sipna]\n? choice: .i ki'u ma la .djoeles. cu djica lo nu zgipli lo jgita\n+ jinvi lo du'u lo ninmu cu nelci lo nanmu poi zgipli lo jgita\n- djica lo nu zgipli va'u lo pendo\n- djica lo nu zgipli pu lo nu sipna\n? choice: .i ki'u lo nu la .tomasos. na djica lo nu la .djoeles. cu zgipli lo jgita kei ma fasnu\n- la .djoeles. cu sipna\n+ la .djoeles. cu co'a zgipli lo pipno\n- la .djoeles. cu cliva lo zdani",
+      "free_content_back": "Music at Night.\nGioele: Listen, Tommaso!\nTommaso: Gioele! Do you have to play the guitar now?\nTommaso: I need to sleep!\nGioele: I want to play the guitar well.\nGioele: I want a girlfriend...\nGioele: ...and who do women love?\nGioele: ...guys who play the guitar!\nTommaso: And you have to play at night?!\nTommaso: I'm very tired!\nGioele: OK. I'll stop playing the guitar.\nTommaso: Thanks. Sleep well.\nGioele: You too, sleep well.\nGioele starts playing the piano.\nTommaso: Gioele! What are you doing?!\nGioele: What? I can't play the guitar...\nGioele: ...but I can play the piano, right?\nGioele: Women love guys who play the piano!",
+      "level_index": 7,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 57,
+      "position": 56,
+      "collection_note": "batch2-28",
+      "free_content_front": "Story 9: mi na ka'e sipna — I Can't Sleep",
+      "free_content_back": "#### Before you read\nCharacters: Rita, Anatoliy\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 8,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 58,
+      "position": 57,
+      "collection_note": "",
+      "free_content_front": "doi .anatolis. .i xu do sipna",
+      "free_content_back": "Anatoliy? Are you asleep?",
+      "level_index": 8,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 59,
+      "position": 58,
+      "collection_note": "",
+      "free_content_front": "na go'i .i mi ca na sipna",
+      "free_content_back": "No, I'm not asleep anymore...",
+      "level_index": 8,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 60,
+      "position": 59,
+      "collection_note": "",
+      "free_content_front": "mi na kakne lo ka co'a sipna",
+      "free_content_back": "I can't fall asleep.",
+      "level_index": 8,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 61,
+      "position": 60,
+      "collection_note": "",
+      "free_content_front": "na go'i .i lo cifnu cu sipna",
+      "free_content_back": "No! The baby is sleeping!",
+      "level_index": 8,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 62,
+      "position": 61,
+      "collection_note": "",
+      "free_content_front": ".e'u mi'o tavla fi lo skari",
+      "free_content_back": "Let's talk about colours then...",
+      "level_index": 8,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 63,
+      "position": 62,
+      "collection_note": "batch2-28",
+      "free_content_front": "# mi na ka'e sipna\nRita(F): doi .anatolis. .i xu do sipna\n~ Anatoliy? Are you asleep?\nAnatoliy(M): na go'i .i mi ca na sipna\n~ No, I'm not asleep anymore...\nRita(F): .i mi na kakne lo ka co'a sipna\n~ I can't fall asleep.\nAnatoliy(M): .i xu do djica lo nu pinxe lo kabri be lo ladru\n~ Do you want a glass of milk?\nRita(F): doi .anatolis. .i mi na nelci lo ladru\n~ Anatoliy! I don't like milk.\nAnatoliy(M): .i xu do djica lo nu tirna lo zgike\n~ Do you want to listen to some music?\nRita(F): na go'i .i lo cifnu cu sipna\n~ No! The baby is sleeping!\nAnatoliy(M): .i .e'u mi'o tavla fi lo skari\n~ Let's talk about colours then...\nRita(F): .i'e\n~ OK...\nAnatoliy(M): .i lo skari be lo bitmu pe lo mi'o kumfa\n~ ...about colours for the walls of our room.\nAnatoliy(M): .i mi nelci lo grusi\n~ I like grey!\nRita(F): go'i .i grusi\n~ Yes... grey...\nAnatoliy(M): .i lo blanu cu ji'a melbi\n~ Blue is pretty too.\nAnatoliy(M): .i ku'i mi na nelci lo manku skari\n~ But I don't like dark colours.\nAnatoliy(M): .i do nelci lo mo skari\n~ Which colour do you like?\nAnatoliy(M): doi .ritas. .i xu do sipna\n~ Rita? Rita, are you asleep?\nAnatoliy(M): .oi .i ca bo mi na kakne lo ka co'a sipna\n~ Oh no! Now I can't fall asleep.\n---\n? fill: Anatoliy(M): .i xu do djica lo nu pinxe lo kabri be lo [ladru]\n? choice: .i ki'u ma ri na ka'e tirna lo zgike\n- lo sance tutci cu spofu\n- ri na ba sipna\n+ ri na djica lo nu lo cifnu cu cikna\n? choice: .i ma fasnu\n- la .anatolis. cu cikygau lo cifnu\n+ la .anatolis. cu sidju la .ritas. lo nu co'a sipna .i ku'i ri na kakne lo ka co'a sipna\n- la .anatolis. cu punji lo cinta lo bitmu",
+      "free_content_back": "I Can't Sleep.\nRita: Anatoliy? Are you asleep?\nAnatoliy: No, I'm not asleep anymore...\nRita: I can't fall asleep.\nAnatoliy: Do you want a glass of milk?\nRita: Anatoliy! I don't like milk.\nAnatoliy: Do you want to listen to some music?\nRita: No! The baby is sleeping!\nAnatoliy: Let's talk about colours then...\nRita: OK...\nAnatoliy: ...about colours for the walls of our room.\nAnatoliy: I like grey!\nRita: Yes... grey...\nAnatoliy: Blue is pretty too.\nAnatoliy: But I don't like dark colours.\nAnatoliy: Which colour do you like?\nAnatoliy: Rita? Rita, are you asleep?\nAnatoliy: Oh no! Now I can't fall asleep.",
+      "level_index": 8,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 64,
+      "position": 63,
+      "collection_note": "batch2-29",
+      "free_content_front": "Story 10: lo cnino tadni — The New Student",
+      "free_content_back": "#### Before you read\nCharacters: Lily, Zari, Mete\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 9,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 65,
+      "position": 64,
+      "collection_note": "",
+      "free_content_front": "ri se cmene zo .metes.",
+      "free_content_back": "His name is Mete.",
+      "level_index": 9,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 66,
+      "position": 65,
+      "collection_note": "",
+      "free_content_front": "xu la .metes.",
+      "free_content_back": "Mete?",
+      "level_index": 9,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 67,
+      "position": 66,
+      "collection_note": "",
+      "free_content_front": "go'i .i ri dotco",
+      "free_content_back": "Yes, he's German.",
+      "level_index": 9,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 68,
+      "position": 67,
+      "collection_note": "",
+      "free_content_front": "mutce cinri",
+      "free_content_back": "Very interesting.",
+      "level_index": 9,
+      "position_in_level": 4,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 69,
+      "position": 68,
+      "collection_note": "",
+      "free_content_front": "ji'a ri stati",
+      "free_content_back": "Ah, and smart.",
+      "level_index": 9,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 70,
+      "position": 69,
+      "collection_note": "batch2-29",
+      "free_content_front": "# lo cnino tadni\n> .i la .zaris. .e la .lilis. cu zvati lo sorprekarce\n~ Zari and Lily are on the bus.\nZari(F): doi .lilis. .i pa cnino tadni cu zvati lo mi'o ctuca kumfa\n~ Lily, there's a new student in our class!\nZari(F): .i ri se cmene zo .metes.\n~ His name is Mete.\nLily(F): .i xu la .metes.\n~ Mete?\nZari(F): go'i .i ri dotco\n~ Yes, he's German.\nZari(F): .i lo patfu be ri cu ciska lo cukta\n~ His father writes books!\nLily(F): .i mutce cinri\n~ Very interesting.\nZari(F): .i ri se bangu lo bangu pe la .turkias. .e lo dotco bangu .e lo glico bangu\n~ He knows Turkish, German and English.\nLily(F): .i ji'a ri stati\n~ Ah, and smart.\nZari(F): .i ri stati gi'e clani gi'e mutce melbi\n~ Smart, tall and really cute...\nLily(F): .i .uizo'o .i je'u xu\n~ Haha, really?\nZari(F): .i .y. ri ponse lo mutce melbi cutci\n~ Hmm... he has really cute shoes.\nLily(F): doi .zaris. .i la .metes. cu sanli lo trixe be do\n~ Zari, Mete is standing behind you.\nZari(F): .i ma\n~ What?!\nLily(F): coi .metes.\n~ Hi, Mete.\nMete(M): coi .lilis. .i do mo\n~ Hi Lily, how are you?\nLily(F): .i mi kanro .i ki'e\n~ I'm fine, thanks.\nLily(F): doi .metes. .i ti mi pendo .i la .zaris.\n~ Mete, this is my friend Zari.\nLily(F): .i la .zaris. cu nelci lo do cutci\n~ Zari likes your shoes.\nZari(F): .oi .i coi .metes.\n~ Oh. Hi, Mete.\n---\n? fill: Zari(F): .i lo patfu be ri cu ciska lo [cukta]\n? choice: .i la .metes. cu mo\n- cmalu gi'e ponse lo pelxu kerfa\n- melbi je cladu\n+ stati je clani\n? choice: .i la .zaris. pu na djuno ma\n- lo du'u lo cutci pe la .metes. na melbi\n+ lo du'u la .metes. cu trixe ri\n- lo du'u ri ba te cipra ca lo cabdei",
+      "free_content_back": "The New Student.\nZari and Lily are on the bus.\nZari: Lily, there's a new student in our class!\nZari: His name is Mete.\nLily: Mete?\nZari: Yes, he's German.\nZari: His father writes books!\nLily: Very interesting.\nZari: He knows Turkish, German and English.\nLily: Ah, and smart.\nZari: Smart, tall and really cute...\nLily: Haha, really?\nZari: Hmm... he has really cute shoes.\nLily: Zari, Mete is standing behind you.\nZari: What?!\nLily: Hi, Mete.\nMete: Hi Lily, how are you?\nLily: I'm fine, thanks.\nLily: Mete, this is my friend Zari.\nLily: Zari likes your shoes.\nZari: Oh. Hi, Mete.",
+      "level_index": 9,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    }
+  ],
+  "levels": [
+    {
+      "name": "Story 1: lo cipra (The Exam)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 0,
+      "prerequisite_positions": [],
+      "item_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "name": "Story 2: lo cizra savru (A Strange Noise)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 1,
+      "prerequisite_positions": [
+        0
+      ],
+      "item_positions": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "name": "Story 3: lo nandu nabmi (A Difficult Problem)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 2,
+      "prerequisite_positions": [
+        1
+      ],
+      "item_positions": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    },
+    {
+      "name": "Story 4: lo xlali djedi (A Bad Day)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 3,
+      "prerequisite_positions": [
+        2
+      ],
+      "item_positions": [
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ]
+    },
+    {
+      "name": "Story 5: pa dacti (One Thing)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 4,
+      "prerequisite_positions": [
+        3
+      ],
+      "item_positions": [
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34
+      ]
+    },
+    {
+      "name": "Story 6: lo mikce po'u la .edis. (Doctor Eddy)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 5,
+      "prerequisite_positions": [
+        4
+      ],
+      "item_positions": [
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41
+      ]
+    },
+    {
+      "name": "Story 7: lo mi se nelci penbi (My Favourite Pen)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 6,
+      "prerequisite_positions": [
+        5
+      ],
+      "item_positions": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48
+      ]
+    },
+    {
+      "name": "Story 8: lo nicte zgike (Music at Night)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 7,
+      "prerequisite_positions": [
+        6
+      ],
+      "item_positions": [
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ]
+    },
+    {
+      "name": "Story 9: mi na ka'e sipna (I Can't Sleep)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 8,
+      "prerequisite_positions": [
+        7
+      ],
+      "item_positions": [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62
+      ]
+    },
+    {
+      "name": "Story 10: lo cnino tadni (The New Student)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 9,
+      "prerequisite_positions": [
+        8
+      ],
+      "item_positions": [
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69
+      ]
+    }
+  ]
+}

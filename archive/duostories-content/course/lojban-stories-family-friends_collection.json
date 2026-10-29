@@ -1,0 +1,899 @@
+{
+  "collection": {
+    "name": "Lojban stories 2: Family, Friends and Celebrations",
+    "description": "Ten graded stories about family, friends, surprises, birthdays and parties.",
+    "is_public": false
+  },
+  "items": [
+    {
+      "item_id": 1,
+      "position": 0,
+      "collection_note": "batch2-11",
+      "free_content_front": "Story 1: lo barda lanzu — A Big Family",
+      "free_content_back": "#### Before you read\nCharacters: Mom, Olya, Sveta\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 0,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 2,
+      "position": 1,
+      "collection_note": "",
+      "free_content_front": "ti mi se prami .i la .olias.",
+      "free_content_back": "This is my girlfriend, Olya.",
+      "level_index": 0,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 3,
+      "position": 2,
+      "collection_note": "",
+      "free_content_front": "ti rirmamta mi",
+      "free_content_back": "And my grandmother.",
+      "level_index": 0,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 4,
+      "position": 3,
+      "collection_note": "",
+      "free_content_front": "ti rirpa'u mi .i la .alekseis.",
+      "free_content_back": "Here's my grandpa, Aleksey.",
+      "level_index": 0,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 5,
+      "position": 4,
+      "collection_note": "",
+      "free_content_front": "lo do lanzu cu barda",
+      "free_content_back": "You have a big family!",
+      "level_index": 0,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 6,
+      "position": 5,
+      "collection_note": "",
+      "free_content_front": "ku'i mi se tixnu pa da po'o",
+      "free_content_back": "But I have only one daughter.",
+      "level_index": 0,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 7,
+      "position": 6,
+      "collection_note": "batch2-11",
+      "free_content_front": "# lo barda lanzu\n> .i la .olias. cu penmi lo lanzu be la .sfetas.\n~ Olya is meeting Sveta's family.\nMom(F): doi .sfetas. .i do traji lo ka se nelci mi kei fo lo mi tixnu\n~ Sveta! My favourite daughter!\nSveta(F): doi mamta .i do se tixnu pa da po'o\n~ Mom, you only have one daughter!\nSveta(F): .i ti mi se prami .i la .olias.\n~ This is my girlfriend, Olya.\nOlya(F): coi\n~ Hello!\nSveta(F): doi .olias. .i ti bruna mi .i la .timofeis.\n~ Olya, this is my brother, Timofey.\nOlya(F): coi\n~ Hi!\nSveta(F): .i ti rirmamta mi\n~ And my grandmother.\nOlya(F): coi\n~ Good afternoon...\nSveta(F): .i ti patfu mi .i ti bruna mi .i la .david.\n~ Here's my dad. And this is my brother, David.\nOlya(F): coi .i mi gleki lo nu penmi do\n~ Hello! Nice to meet you!\nSveta(F): .i ti rirpa'u mi .i la .alekseis.\n~ Here's my grandpa, Aleksey.\nOlya(F): coi\n~ Good afternoon!\nOlya(F): .i lo do lanzu cu barda\n~ You have a big family!\nMom(F): .i ku'i mi se tixnu pa da po'o\n~ But I have only one daughter.\nSveta(F): doi mamta\n~ Mom!\nMom(F): .uo .i ca bo mi se tixnu re da .i fi'i .olias. .i do ca cmima lo lanzu\n~ Oh, right! Now I have two daughters. Welcome to the family, Olya!\nOlya(F): ki'e sai\n~ Thank you so much!\n---\n? fill: > .i la .olias. cu penmi lo [lanzu] be la .sfetas.\n? choice: .i xu la .olias. cu penmi lo lanzu be la .sfetas.\n+ go'i\n- na go'i\n? choice: .i ba lo nu la .olias. cu penmi ro da kei ma fasnu\n- lo mamta cu minde ri lo nu ri cliva\n+ lo mamta cu rinsa ri\n- ri sutra bajra cliva",
+      "free_content_back": "A Big Family.\nOlya is meeting Sveta's family.\nMom: Sveta! My favourite daughter!\nSveta: Mom, you only have one daughter!\nSveta: This is my girlfriend, Olya.\nOlya: Hello!\nSveta: Olya, this is my brother, Timofey.\nOlya: Hi!\nSveta: And my grandmother.\nOlya: Good afternoon...\nSveta: Here's my dad. And this is my brother, David.\nOlya: Hello! Nice to meet you!\nSveta: Here's my grandpa, Aleksey.\nOlya: Good afternoon!\nOlya: You have a big family!\nMom: But I have only one daughter.\nSveta: Mom!\nMom: Oh, right! Now I have two daughters. Welcome to the family, Olya!\nOlya: Thank you so much!",
+      "level_index": 0,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 8,
+      "position": 7,
+      "collection_note": "batch2-17",
+      "free_content_front": "Story 2: lo spaji — The Surprise",
+      "free_content_back": "#### Before you read\nCharacters: Hiroko, Kenta, Mom\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 1,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 9,
+      "position": 8,
+      "collection_note": "",
+      "free_content_front": "ci prenu",
+      "free_content_back": "Three people.",
+      "level_index": 1,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 10,
+      "position": 9,
+      "collection_note": "",
+      "free_content_front": "lo mi pendo",
+      "free_content_back": "My friend.",
+      "level_index": 1,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 11,
+      "position": 10,
+      "collection_note": "",
+      "free_content_front": ".a'u doi mamta .i .y.",
+      "free_content_back": "Ah, Mom, um...",
+      "level_index": 1,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 12,
+      "position": 11,
+      "collection_note": "",
+      "free_content_front": "doi mamta .i mi",
+      "free_content_back": "Mom, I...",
+      "level_index": 1,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 13,
+      "position": 12,
+      "collection_note": "",
+      "free_content_front": "coi .kentas.",
+      "free_content_back": "Hello, Kenta.",
+      "level_index": 1,
+      "position_in_level": 5,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 14,
+      "position": 13,
+      "collection_note": "batch2-17",
+      "free_content_front": "# lo spaji\n> .i la .kentas. cu zvati lo gusta fi'o kansa lo ri mamta\n~ Kenta Abe is at a restaurant with his mother.\nMom(F): .i ci prenu\n~ Three people.\nKenta(M): .i xu do pu cusku zo ci .i mi .e do .e ma\n~ Did you say three? Me, you, and...\nMom(F): .i lo mi pendo\n~ My friend.\nKenta(M): .a'u doi mamta .i .y.\n~ Ah, Mom, um...\nMom(F): .i mi ba gasnu lo nu do se spaji\n~ I have a surprise.\nKenta(M): .i mi ji'a ba gasnu lo nu do se spaji\n~ I have a surprise too.\nMom(F): .i lo mi pendo cu mutce xamgu mikce tadni\n~ My friend is a very nice medical student, and...\nKenta(M): doi mamta .i mi\n~ Mom, I...\nMom(F): .i lo mi pendo cu se cmene zo .kimuras. .i ri mapti do\n~ My friend's name is Kimura. She's perfect for you.\n> .i pa ninmu cu nerkla lo gusta\n~ A woman comes into the restaurant.\nHiroko(F): coi .kentas.\n~ Hello, Kenta.\nMom(F): .i .y. xu do cusku zo .kentas.\n~ Huh? Did you say Kenta?\nKenta(M): coi .xirokos. .i doi mamta .y.\n~ Hello, Hiroko. Mom, um...\nHiroko(F): .i do ba'a mamta la .kentas.\n~ You must be Kenta's mom.\nMom(F): doi .kentas.\n~ Kenta?\nHiroko(F): .i mi gleki lo nu penmi do .i mi'e .xirokos. .uedas. .i mi speni la .kentas.\n~ Nice to meet you. I'm Hiroko Ueda, Kenta's wife.\nMom(F): .i je'u xu\n~ Is that so...\nKenta(M): .i spaji\n~ Surprise!\n---\n? fill: Hiroko(F): .i mi gleki lo nu penmi do .i mi'e .xirokos. .uedas. .i mi [speni] la .kentas.\n? choice: .i ki'u ma la .kentas. cu se cfipu\n- lo mamta na klama\n+ lo mamta cu cpedu lo jubme be ci prenu\n- lo mamta cu cpedu ci jubme\n? choice: .i ki'u ma lo mamta cu se spaji\n+ ri na djuno lo du'u la .kentas. speni\n- ri gleki lo nu viska la .xirokos.\n- lo cidja cu sutra klama",
+      "free_content_back": "The Surprise.\nKenta Abe is at a restaurant with his mother.\nMom: Three people.\nKenta: Did you say three? Me, you, and...\nMom: My friend.\nKenta: Ah, Mom, um...\nMom: I have a surprise.\nKenta: I have a surprise too.\nMom: My friend is a very nice medical student, and...\nKenta: Mom, I...\nMom: My friend's name is Kimura. She's perfect for you.\nA woman comes into the restaurant.\nHiroko: Hello, Kenta.\nMom: Huh? Did you say Kenta?\nKenta: Hello, Hiroko. Mom, um...\nHiroko: You must be Kenta's mom.\nMom: Kenta?\nHiroko: Nice to meet you. I'm Hiroko Ueda, Kenta's wife.\nMom: Is that so...\nKenta: Surprise!",
+      "level_index": 1,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 15,
+      "position": 14,
+      "collection_note": "batch2-18",
+      "free_content_front": "Story 3: lo jbena vanci sanmi — The Birthday Dinner",
+      "free_content_back": "#### Before you read\nCharacters: Clerk, Michela\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 2,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 16,
+      "position": 15,
+      "collection_note": "",
+      "free_content_front": "xu mi ka'e sidju do",
+      "free_content_back": "Can I help you, miss?",
+      "level_index": 2,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 17,
+      "position": 16,
+      "collection_note": "",
+      "free_content_front": ".ui .i vi ti so'i cidja",
+      "free_content_back": "Heh! Well, there's lots of food here.",
+      "level_index": 2,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 18,
+      "position": 17,
+      "collection_note": "",
+      "free_content_front": "do djica lo nu jukpa ma",
+      "free_content_back": "What do you want to cook?",
+      "level_index": 2,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 19,
+      "position": 18,
+      "collection_note": "",
+      "free_content_front": "mi nelci lo jbedetnunsla",
+      "free_content_back": "I love birthdays.",
+      "level_index": 2,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 20,
+      "position": 19,
+      "collection_note": "",
+      "free_content_front": "lo cabdei cu jbedetri la .frantceskos.",
+      "free_content_back": "Today is Francesco's birthday!",
+      "level_index": 2,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 21,
+      "position": 20,
+      "collection_note": "batch2-18",
+      "free_content_front": "# lo jbena vanci sanmi\n> .i la .mikelys. cu zvati lo barda zarci\n~ Michela is at the supermarket.\nMichela(F): .i .u'u doi nanmu\n~ Excuse me, sir.\nClerk(M): .i xu mi ka'e sidju do\n~ Can I help you, miss?\nMichela(F): go'i .e'o .i .ei mi te vecnu da mu'i lo nu jukpa lo vanci sanmi\n~ Yes, please! I need to buy something for dinner.\nClerk(M): .i .ui .i vi ti so'i cidja\n~ Heh! Well, there's lots of food here.\nClerk(M): .i do djica lo nu jukpa ma\n~ What do you want to cook?\nMichela(F): .i .ei mi jukpa lo mapti vanci sanmi mu'i lo nu mi'a salci pa jbedetri\n~ I have to make the perfect dinner for a birthday!\nClerk(M): .i mi nelci lo jbedetnunsla\n~ I love birthdays.\nMichela(F): .i lo cabdei cu jbedetri la .frantceskos.\n~ Today is Francesco's birthday!\nClerk(M): .i xu la .frantceskos. cu citka lo rectu\n~ Hmm... does Francesco eat meat?\nMichela(F): .i so'uroi\n~ Sometimes.\nClerk(M): .i xu ri nelci lo finpe\n~ Hmm... does he like fish?\nMichela(F): go'i .i la .frantceskos. cu mutce nelci lo finpe\n~ Yes! Francesco loves fish!\nMichela(F): .i lo salmone .e'o\n~ Well, some salmon, please.\nClerk(M): .i la .frantceskos. cu nanmu .i ri mutce se funca lo xamgu\n~ Francesco is a very lucky man!\nMichela(F): .i la .frantceskos. na nanmu\n~ Francesco isn't a man.\nClerk(M): .u'u\n~ Ah! Sorry.\nMichela(F): .i la .frantceskos. cu mlatu mi\n~ Francesco is my cat!\nClerk(M): .i .uizo'o .i la .frantceskos. cu mlatu .i ri mutce se funca lo xamgu\n~ Haha! Francesco is a very lucky cat!\n---\n? fill: Clerk(M): .i xu ri nelci lo [finpe]\n? choice: .i ki'u ma la .mikelys. cu te vecnu lo salmone\n- ri tolkargu\n- la .frantceskos. noroi citka lo rectu\n+ la .frantceskos. cu mutce nelci lo finpe\n? choice: .i la .frantceskos. cu mo la .mikelys.\n- speni\n+ mlatu\n- bruna",
+      "free_content_back": "The Birthday Dinner.\nMichela is at the supermarket.\nMichela: Excuse me, sir.\nClerk: Can I help you, miss?\nMichela: Yes, please! I need to buy something for dinner.\nClerk: Heh! Well, there's lots of food here.\nClerk: What do you want to cook?\nMichela: I have to make the perfect dinner for a birthday!\nClerk: I love birthdays.\nMichela: Today is Francesco's birthday!\nClerk: Hmm... does Francesco eat meat?\nMichela: Sometimes.\nClerk: Hmm... does he like fish?\nMichela: Yes! Francesco loves fish!\nMichela: Well, some salmon, please.\nClerk: Francesco is a very lucky man!\nMichela: Francesco isn't a man.\nClerk: Ah! Sorry.\nMichela: Francesco is my cat!\nClerk: Haha! Francesco is a very lucky cat!",
+      "level_index": 2,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 22,
+      "position": 21,
+      "collection_note": "batch2-22",
+      "free_content_front": "Story 4: lo prami xatra — Love Letters",
+      "free_content_back": "#### Before you read\nCharacters: Rosanna, Armando\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 3,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 23,
+      "position": 22,
+      "collection_note": "",
+      "free_content_front": "coi .rozanas.",
+      "free_content_back": "Good morning, Rosanna.",
+      "level_index": 3,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 24,
+      "position": 23,
+      "collection_note": "",
+      "free_content_front": "coi .armandos.",
+      "free_content_back": "Good morning, Armando.",
+      "level_index": 3,
+      "position_in_level": 2,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 25,
+      "position": 24,
+      "collection_note": "",
+      "free_content_front": "do zukte ma",
+      "free_content_back": "What are you doing?",
+      "level_index": 3,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 26,
+      "position": 25,
+      "collection_note": "",
+      "free_content_front": "mi ca'o tcidu le ti slabu xatra",
+      "free_content_back": "I'm reading these old letters.",
+      "level_index": 3,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 27,
+      "position": 26,
+      "collection_note": "",
+      "free_content_front": "le ti xatra cu mutce melbi",
+      "free_content_back": "These letters are very beautiful.",
+      "level_index": 3,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 28,
+      "position": 27,
+      "collection_note": "batch2-22",
+      "free_content_front": "# lo prami xatra\nArmando(M): coi .rozanas.\n~ Good morning, Rosanna.\nRosanna(F): coi .armandos.\n~ Good morning, Armando.\nArmando(M): .i do zukte ma\n~ What are you doing?\nRosanna(F): .i mi ca'o tcidu le ti slabu xatra\n~ I'm reading these old letters.\nRosanna(F): .i lo rirni be lo mi rirni cu ponse ri\n~ They're my grandparents'.\nArmando(M): .ue\n~ Wow!\nRosanna(F): .i .ei do tcidu le ti xatra .i ri mi traji se nelci\n~ You have to read this letter, it's my favourite.\nArmando(M): .i lu doi .marias. noi se prami .i do mutce melbi li'u\n~ \"Dear Maria, you are very beautiful.\"\nArmando(M): .i lu mi zgipli lo jgita gi'e pensi do li'u\n~ \"I play the guitar and think of you.\"\nRosanna(F): .i lu doi .djulios. noi se prami .i mi prami lo do zgike li'u\n~ \"Dear Giulio, I love your music...\"\nRosanna(F): .i lu .i mi ji'a prami lo do crino kanla li'u\n~ \"...and I love your green eyes.\"\nArmando(M): .i le ti xatra cu mutce melbi\n~ These letters are very beautiful.\nRosanna(F): go'i\n~ Yes...\nRosanna(F): .i .a'u doi .armandos.\n~ Ahh... Armando?\nArmando(M): .i mo doi .rozanas.\n~ Yes, Rosanna?\nRosanna(F): .i xu do prami mi\n~ Do you love me?\nArmando(M): .i ju'o mi prami do .i do mi speni\n~ Of course I love you! You're my wife!\nRosanna(F): .i ku'i do noroi ciska lo prami xatra mi\n~ But you never write me love letters...\nArmando(M): .i ki'u lo nu mi'o ca ponse lo samxa'a\n~ Because now we have email!\n---\n? fill: Armando(M): .i lu doi .marias. noi se [prami] .i do mutce melbi li'u\n? choice: .i lo rirpa'u be la .rozanas. cu mo\n+ zgipli lo jgita gi'e pensi la .marias.\n- te vecnu lo xrula va'u la .marias.\n- tcidu lo xatra\n? choice: .i ki'u ma la .armandos. na ciska lo prami xatra\n- ri na prami\n+ ri ka'e samymri\n- ri dukse lo ka zgipli lo jgita",
+      "free_content_back": "Love Letters.\nArmando: Good morning, Rosanna.\nRosanna: Good morning, Armando.\nArmando: What are you doing?\nRosanna: I'm reading these old letters.\nRosanna: They're my grandparents'.\nArmando: Wow!\nRosanna: You have to read this letter, it's my favourite.\nArmando: \"Dear Maria, you are very beautiful.\"\nArmando: \"I play the guitar and think of you.\"\nRosanna: \"Dear Giulio, I love your music...\"\nRosanna: \"...and I love your green eyes.\"\nArmando: These letters are very beautiful.\nRosanna: Yes...\nRosanna: Ahh... Armando?\nArmando: Yes, Rosanna?\nRosanna: Do you love me?\nArmando: Of course I love you! You're my wife!\nRosanna: But you never write me love letters...\nArmando: Because now we have email!",
+      "level_index": 3,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 29,
+      "position": 28,
+      "collection_note": "batch2-23",
+      "free_content_front": "Story 5: ma ti — Who Is It?",
+      "free_content_back": "#### Before you read\nCharacters: Boss, Leonid\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 4,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 30,
+      "position": 29,
+      "collection_note": "",
+      "free_content_front": "ca lo jefyfa'o",
+      "free_content_back": "This weekend...",
+      "level_index": 4,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 31,
+      "position": 30,
+      "collection_note": "",
+      "free_content_front": "mi'a kansa lo pendo",
+      "free_content_back": "We're getting together with friends...",
+      "level_index": 4,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 32,
+      "position": 31,
+      "collection_note": "",
+      "free_content_front": "coi .leonid.",
+      "free_content_back": "Good afternoon, Leonid!",
+      "level_index": 4,
+      "position_in_level": 3,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 33,
+      "position": 32,
+      "collection_note": "",
+      "free_content_front": "do mo",
+      "free_content_back": "Who is this?",
+      "level_index": 4,
+      "position_in_level": 4,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 34,
+      "position": 33,
+      "collection_note": "",
+      "free_content_front": "ku'i do slabu mi",
+      "free_content_back": "But I know you...",
+      "level_index": 4,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 35,
+      "position": 34,
+      "collection_note": "batch2-23",
+      "free_content_front": "# ma ti\n> .i la .leonid. cu zvati lo ri briju\n~ Leonid is in his office.\n> .i ri tavla lo ri pendo sepi'o lo fonxa\n~ He's talking on the phone with his friend.\nLeonid(M): .i ca lo jefyfa'o\n~ This weekend...\nLeonid(M): .i mi'a kansa lo pendo\n~ We're getting together with friends...\nLeonid(M): .i ko denpa .i lo mi briju fonxa cu ca'o se sance\n~ Wait a minute. My work phone keeps ringing.\nLeonid(M): coi\n~ Hello?\nBoss(F): coi .leonid.\n~ Good afternoon, Leonid!\nLeonid(M): .i do mo\n~ Who is this?\nBoss(F): .i pendo\n~ A friend.\nBoss(F): .i xu do sidju mi .i mi nitcu lo nu do sidju\n~ Will you help me? I need your help.\nLeonid(M): .i do djica ma .i do na slabu mi\n~ What do you want? I don't know you!\nBoss(F): .i ku'i do slabu mi\n~ But I know you...\nBoss(F): .i do mutce slabu mi\n~ I know you very well!\nBoss(F): .i ca bo mi klama lo do briju\n~ And now I'm coming to your office!\nLeonid(M): .oi .i mi ba fonta'a lo pulji\n~ Oh no! I'm calling the police!\nBoss(F): doi .leonid. .i na nitcu lo nu do fonta'a lo pulji .i mi do jatna\n~ Leonid, no need to call the police. I'm your boss.\nBoss(F): .i .ei do gunka\n~ You should be working!\nBoss(F): .i ko sisti lo nu tavla lo pendo sepi'o lo fonxa\n~ Stop talking with your friends on the phone!\nLeonid(M): .oi .i .u'u .i mi di'a gunka\n~ Oops! I'm sorry... Back to work!\n---\n? fill: Leonid(M): .oi .i mi ba fonta'a lo [pulji]\n? choice: .i xu lo ninmu na slabu la .leonid.\n+ go'i\n- na go'i\n? choice: .i lo prenu poi na slabu la .leonid. cu du ma\n- lo mamta be la .leonid.\n- lo pendo be la .leonid.\n+ lo jatna be la .leonid.",
+      "free_content_back": "Who Is It?.\nLeonid is in his office.\nHe's talking on the phone with his friend.\nLeonid: This weekend...\nLeonid: We're getting together with friends...\nLeonid: Wait a minute. My work phone keeps ringing.\nLeonid: Hello?\nBoss: Good afternoon, Leonid!\nLeonid: Who is this?\nBoss: A friend.\nBoss: Will you help me? I need your help.\nLeonid: What do you want? I don't know you!\nBoss: But I know you...\nBoss: I know you very well!\nBoss: And now I'm coming to your office!\nLeonid: Oh no! I'm calling the police!\nBoss: Leonid, no need to call the police. I'm your boss.\nBoss: You should be working!\nBoss: Stop talking with your friends on the phone!\nLeonid: Oops! I'm sorry... Back to work!",
+      "level_index": 4,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 36,
+      "position": 35,
+      "collection_note": "batch2-31",
+      "free_content_front": "Story 6: lo cnino fonxa po lo rirmamta — Grandma's New Phone",
+      "free_content_back": "#### Before you read\nCharacters: Roberto, Grandma\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 5,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 37,
+      "position": 36,
+      "collection_note": "",
+      "free_content_front": "xu va'u mi",
+      "free_content_back": "For me?",
+      "level_index": 5,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 38,
+      "position": 37,
+      "collection_note": "",
+      "free_content_front": "go'i .i ri cnino fonxa",
+      "free_content_back": "Yes! It's a new phone!",
+      "level_index": 5,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 39,
+      "position": 38,
+      "collection_note": "",
+      "free_content_front": "ku'i mi ponse lo fonxa",
+      "free_content_back": "But... I have a phone.",
+      "level_index": 5,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 40,
+      "position": 39,
+      "collection_note": "",
+      "free_content_front": "ri vasru lo kacma",
+      "free_content_back": "It has a camera.",
+      "level_index": 5,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 41,
+      "position": 40,
+      "collection_note": "",
+      "free_content_front": "xu lo fonxa poi vasru lo kacma",
+      "free_content_back": "A phone with a camera?",
+      "level_index": 5,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 42,
+      "position": 41,
+      "collection_note": "batch2-31",
+      "free_content_front": "# lo cnino fonxa po lo rirmamta\nRoberto(M): doi rirmamta .i mi ponse lo seldu'a va'u do\n~ Grandma... I have a present for you!\nGrandma(F): .i xu va'u mi\n~ For me?\nRoberto(M): go'i .i ri cnino fonxa\n~ Yes! It's a new phone!\nGrandma(F): .i ku'i mi ponse lo fonxa\n~ But... I have a phone.\nRoberto(M): .i le ti fonxa cu zmadu fi lo ka xamgu\n~ This phone is better!\nRoberto(M): .i ri vasru lo kacma\n~ It has a camera.\nGrandma(F): .i xu lo fonxa poi vasru lo kacma\n~ A phone with a camera?\nRoberto(M): .i do ka'e tirna lo zgike .i do ji'a ka'e catlu lo tivni\n~ And you can listen to music! And watch TV too!\nGrandma(F): .i xu sepi'o lo mi fonxa\n~ With my phone?!\nRoberto(M): go'i .i ri fonskami\n~ Yes, it's a smartphone.\nGrandma(F): .i le ti fonxa cu ju'o mutce kargu\n~ This phone must be very expensive.\nRoberto(M): go'i .i ku'i sepi'o le ti fonxa\n~ Yes, but with this phone...\nRoberto(M): .i do ka'e samymri gi'e tadni lo bangu\n~ ...you can write emails and learn languages.\nGrandma(F): .i cinri .i ku'i\n~ Interesting, but...\nRoberto(M): .i do ka'e te vecnu lo taxfu .e lo cidja\n~ You can buy clothes and food...\nGrandma(F): .i ku'i doi .robertos.\n~ But, Roberto...\nRoberto(M): .i do ka'e zukte so'i da sepi'o le ti fonxa\n~ You can do lots of things with this phone!\nGrandma(F): .i xu mi ka'e pilno ri lo nu fonta'a do\n~ And can I use it to call you?\nRoberto(M): go'i\n~ Yes!\nGrandma(F): .ua .i ri mutce stati fonxa .i ki'e\n~ Ah! It's a very smart phone! Thank you!\n---\n? fill: Roberto(M): go'i .i ri [cnino] fonxa\n? choice: .i sepi'o le fonxa do ka'e mo\n- catlu lo skina .e lo tcima\n+ tirna lo zgike gi'e catlu lo tivni\n- ciska lo xatra gi'e kelci\n? choice: .i lo rirmamta cu gleki ki'u lo nu ri ka'e mo sepi'o lo cnino fonxa\n- zbasu lo ckafi\n- cikygau ri\n+ fonta'a lo selrirbe'a be ri",
+      "free_content_back": "Grandma's New Phone.\nRoberto: Grandma... I have a present for you!\nGrandma: For me?\nRoberto: Yes! It's a new phone!\nGrandma: But... I have a phone.\nRoberto: This phone is better!\nRoberto: It has a camera.\nGrandma: A phone with a camera?\nRoberto: And you can listen to music! And watch TV too!\nGrandma: With my phone?!\nRoberto: Yes, it's a smartphone.\nGrandma: This phone must be very expensive.\nRoberto: Yes, but with this phone...\nRoberto: ...you can write emails and learn languages.\nGrandma: Interesting, but...\nRoberto: You can buy clothes and food...\nGrandma: But, Roberto...\nRoberto: You can do lots of things with this phone!\nGrandma: And can I use it to call you?\nRoberto: Yes!\nGrandma: Ah! It's a very smart phone! Thank you!",
+      "level_index": 5,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 43,
+      "position": 42,
+      "collection_note": "batch2-32",
+      "free_content_front": "Story 7: lo nunsla pe lo ckule — The School Party",
+      "free_content_back": "#### Before you read\nCharacters: Fabio, Mom\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 6,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 44,
+      "position": 43,
+      "collection_note": "",
+      "free_content_front": "coi mamta",
+      "free_content_back": "Ah... hi, Mom.",
+      "level_index": 6,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 45,
+      "position": 44,
+      "collection_note": "",
+      "free_content_front": "doi .fabios. .i xu do kanro",
+      "free_content_back": "Fabio, are you OK?",
+      "level_index": 6,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 46,
+      "position": 45,
+      "collection_note": "",
+      "free_content_front": ".ui .i xu do mutce gleki",
+      "free_content_back": "How nice! Are you excited?",
+      "level_index": 6,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 47,
+      "position": 46,
+      "collection_note": "",
+      "free_content_front": "na go'i .i mi na gleki",
+      "free_content_back": "No, I'm not excited.",
+      "level_index": 6,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 48,
+      "position": 47,
+      "collection_note": "",
+      "free_content_front": ".y. mi se sidbo",
+      "free_content_back": "Hmm... I have an idea.",
+      "level_index": 6,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 49,
+      "position": 48,
+      "collection_note": "batch2-32",
+      "free_content_front": "# lo nunsla pe lo ckule\n> .i lo mamta be la .fabios. cu nerkla lo kumfa be lo ri bersa\n~ Fabio's mom goes into her son's room.\nFabio(M): .i coi mamta\n~ Ah... hi, Mom.\nMom(F): doi .fabios. .i xu do kanro\n~ Fabio, are you OK?\nFabio(M): .i pa nunsla cu fasnu vi lo ckule .i ri vasru lo zgike\n~ There's a party at school... with music.\nMom(F): .ui .i xu do mutce gleki\n~ How nice! Are you excited?\nFabio(M): na go'i .i mi na gleki\n~ No, I'm not excited.\nFabio(M): .i mi na djica lo nu dansu vi lo crane be lo drata\n~ I don't want to dance in front of others!\nMom(F): .i .y. mi se sidbo\n~ Hmm... I have an idea.\nFabio(M): .i ma sidbo\n~ What idea?\nMom(F): .i mi ba ctuca do fo lo ka dansu\n~ I'll teach you to dance!\nFabio(M): .i xu ca\n~ Now?\nMom(F): go'i .i vi lo zdani\n~ Yes! Here at home!\nFabio(M): .i'e\n~ OK.\n> .i la .fabios. cu dansu kansa lo ri mamta\n~ Fabio dances with his mom.\nFabio(M): doi mamta .i .ei do kansa mi lo ka klama lo nunsla\n~ Mom, you have to come to the party with me!\nFabio(M): .i ca lo nu mi zvati lo mlana be do\n~ Next to you...\nFabio(M): .i mi simlu lo ka mutce xamgu dansu\n~ ...I look like a really good dancer!\nMom(F): .ua ki'e\n~ Oh, thank you!\nFabio(M): .i ki'u lo nu do mutce xlali dansu\n~ Because you dance really badly!\nMom(F): doi .fabios.\n~ Fabio!\n---\n? fill: Fabio(M): .i pa [nunsla] cu fasnu vi lo ckule .i ri vasru lo zgike\n? choice: .i ca lo nu la .fabios. cu dansu kansa lo mamta kei la .fabios. cu mo\n+ simlu lo ka xamgu dansu\n- na ka'e dansu\n- jinvi lo du'u ri .e lo mamta na ka'e kansa dansu\n? choice: .i ki'u ma la .fabios. cu djica lo nu lo mamta cu klama\n- ri xamgu dansu\n+ ri xlali dansu .i se ki'u bo la .fabios. cu simlu lo ka xamgu\n- ri terpa lo nu klama pa mei",
+      "free_content_back": "The School Party.\nFabio's mom goes into her son's room.\nFabio: Ah... hi, Mom.\nMom: Fabio, are you OK?\nFabio: There's a party at school... with music.\nMom: How nice! Are you excited?\nFabio: No, I'm not excited.\nFabio: I don't want to dance in front of others!\nMom: Hmm... I have an idea.\nFabio: What idea?\nMom: I'll teach you to dance!\nFabio: Now?\nMom: Yes! Here at home!\nFabio: OK.\nFabio dances with his mom.\nFabio: Mom, you have to come to the party with me!\nFabio: Next to you...\nFabio: ...I look like a really good dancer!\nMom: Oh, thank you!\nFabio: Because you dance really badly!\nMom: Fabio!",
+      "level_index": 6,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 50,
+      "position": 49,
+      "collection_note": "batch2-34",
+      "free_content_front": "Story 8: lo pendo — Friends",
+      "free_content_back": "#### Before you read\nCharacters: Sveta, Margarita\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 7,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 51,
+      "position": 50,
+      "collection_note": "",
+      "free_content_front": "coi .margaritas.",
+      "free_content_back": "Hi, Margarita!",
+      "level_index": 7,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 52,
+      "position": 51,
+      "collection_note": "",
+      "free_content_front": "coi .sfetas.",
+      "free_content_back": "Hi, Sveta.",
+      "level_index": 7,
+      "position_in_level": 2,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 53,
+      "position": 52,
+      "collection_note": "",
+      "free_content_front": "na go'i .i ki'e",
+      "free_content_back": "No, thanks!",
+      "level_index": 7,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 54,
+      "position": 53,
+      "collection_note": "",
+      "free_content_front": "mi klama lo barda zarci",
+      "free_content_back": "I'm going to the mall.",
+      "level_index": 7,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 55,
+      "position": 54,
+      "collection_note": "",
+      "free_content_front": "ku'i do xebni lo barda zarci",
+      "free_content_back": "But you hate malls.",
+      "level_index": 7,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 56,
+      "position": 55,
+      "collection_note": "batch2-34",
+      "free_content_front": "# lo pendo\nSveta(F): coi .margaritas.\n~ Hi, Margarita!\nMargarita(F): coi .sfetas.\n~ Hi, Sveta.\nSveta(F): .i xu do djica lo nu mi'o citka lo pitnanba\n~ Do you want to eat some pizza together?\nMargarita(F): na go'i .i ki'e\n~ No, thanks!\nMargarita(F): .i mi klama lo barda zarci\n~ I'm going to the mall.\nSveta(F): .i ku'i do xebni lo barda zarci\n~ But you hate malls.\nSveta(F): .i so'i prenu cu zvati ta .i la'e di'u dukse\n~ There are so many people there. Too many.\nMargarita(F): go'i .i ku'i .ei mi te vecnu da\n~ Yes, but I need to buy... something.\nSveta(F): .i .e'u mi'o kansa klama\n~ Let's go together!\nMargarita(F): .i ku'i\n~ But...\nSveta(F): .e'o\n~ Please!\nMargarita(F): .i'e\n~ OK.\n> .i la .margaritas. .e la .sfetas. cu zvati lo barda zarci\n~ Margarita and Sveta are at the mall.\nMargarita(F): .oi\n~ Oh no!\nMargarita(F): .i .ei mi te vecnu lo jbedetri seldu'a be fi do\n~ I need to buy a birthday present for you...\nMargarita(F): .i ku'i lo zarci cu ganlo\n~ ...and the shop is closed.\nMargarita(F): .i mi xlali pendo\n~ I'm a bad friend.\nSveta(F): doi .margaritas. .i do xebni lo barda zarci\n~ Margarita, you hate malls.\nSveta(F): .i ku'i do zvati ti\n~ But you're here...\nSveta(F): .i do zvati ti mu'i lo nu do te vecnu lo jbedetri seldu'a be fi mi\n~ You're here to buy me a birthday present!\n---\n? fill: Margarita(F): .i ku'i lo zarci cu [ganlo]\n? choice: .i ki'u ma la .margaritas. cu xebni lo barda zarci\n- ri roroi ganlo\n- ri dukse lo ka darno\n+ so'i prenu cu zvati ri .i la'e di'u dukse\n? choice: .i ki'u ma la .sfetas. cu jinvi lo du'u la .margaritas. cu xamgu pendo\n- ri na nelci lo prenu\n- ri jukpa lo vanci sanmi\n+ la .margaritas. cu klama lo barda zarci mu'i lo nu te vecnu lo seldu'a be fi la .sfetas.",
+      "free_content_back": "Friends.\nSveta: Hi, Margarita!\nMargarita: Hi, Sveta.\nSveta: Do you want to eat some pizza together?\nMargarita: No, thanks!\nMargarita: I'm going to the mall.\nSveta: But you hate malls.\nSveta: There are so many people there. Too many.\nMargarita: Yes, but I need to buy... something.\nSveta: Let's go together!\nMargarita: But...\nSveta: Please!\nMargarita: OK.\nMargarita and Sveta are at the mall.\nMargarita: Oh no!\nMargarita: I need to buy a birthday present for you...\nMargarita: ...and the shop is closed.\nMargarita: I'm a bad friend.\nSveta: Margarita, you hate malls.\nSveta: But you're here...\nSveta: You're here to buy me a birthday present!",
+      "level_index": 7,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 57,
+      "position": 56,
+      "collection_note": "batch2-39",
+      "free_content_front": "Story 9: .a'o gleki jbedetri — Happy Birthday!",
+      "free_content_back": "#### Before you read\nCharacters: Anya, Dima\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 8,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 58,
+      "position": 57,
+      "collection_note": "",
+      "free_content_front": "lo cabdei na jbedetri mi",
+      "free_content_back": "Today isn't my birthday!",
+      "level_index": 8,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 59,
+      "position": 58,
+      "collection_note": "",
+      "free_content_front": "mi na ba salci lo mi jbedetri",
+      "free_content_back": "I won't celebrate my birthday...",
+      "level_index": 8,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 60,
+      "position": 59,
+      "collection_note": "",
+      "free_content_front": "lo cabdei na jbedetri do",
+      "free_content_back": "Today isn't your birthday...",
+      "level_index": 8,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 61,
+      "position": 60,
+      "collection_note": "",
+      "free_content_front": "mi ba ralte lo seldu'a va'u mi",
+      "free_content_back": "And I'll keep the present for myself!",
+      "level_index": 8,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 62,
+      "position": 61,
+      "collection_note": "",
+      "free_content_front": "ma seldu'a",
+      "free_content_back": "What present?",
+      "level_index": 8,
+      "position_in_level": 5,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 63,
+      "position": 62,
+      "collection_note": "batch2-39",
+      "free_content_front": "# .a'o gleki jbedetri\nAnya(F): .i .a'o gleki jbedetri doi dirba\n~ Happy birthday, dear!\nDima(M): .i lo cabdei na jbedetri mi\n~ Today isn't my birthday!\nAnya(F): doi .dimas. .i lo cabdei cu jbedetri do\n~ Dima, today is your birthday!\nDima(M): .i mi na ba salci lo mi jbedetri\n~ I won't celebrate my birthday...\nDima(M): .i ja'o mi na ba nanca li cino\n~ ...so I won't turn thirty!\nDima(M): .i sampu\n~ It's simple!\nAnya(F): .i'e\n~ OK.\nAnya(F): .i lo cabdei na jbedetri do\n~ Today isn't your birthday...\nAnya(F): .i ja'o no seldu'a .e no nunsla .e no titnanba\n~ ...so no presents, no party and no cake.\nDima(M): .i ku'i\n~ But...\nAnya(F): .i mi ba ralte lo seldu'a va'u mi\n~ And I'll keep the present for myself!\nDima(M): .i ma seldu'a\n~ What present?\nAnya(F): .i pa cnino skami\n~ A new computer!\nAnya(F): .i ku'i ca bo ri mi skami\n~ But now it's my computer.\nAnya(F): .i ki'u lo nu lo cabdei na jbedetri do\n~ Because today isn't your birthday!\nDima(M): .i ku'i\n~ But...\nAnya(F): .i ca bo mi ba citka lo mulno be le ti titnanba\n~ And now I'm going to eat this whole cake!\nDima(M): doi .anias.\n~ Anya!\nAnya(F): .i ma\n~ What?\nDima(M): .i'e .i lo cabdei cu jbedetri mi\n~ OK... Today is my birthday!\nDima(M): .i ku'i mi djica lo nu reso laktergu'i po'o cu zvati lo titnanba\n~ But I only want twenty-nine candles on the cake.\n---\n? fill: Anya(F): .i pa cnino [skami]\n? choice: .i la .dimas. cu cusku ma\n- lo se du'u ri ba badri\n- lo se du'u lo ri jbedetri cu bavlamdei\n+ lo se du'u ganai ri na salci gi ri na ba nanca li cino\n? choice: .i la .dimas. cu jdice lo du'u ri ba mo\n+ salci lo ri cinomoi jbedetri gi'e pilno reso laktergu'i po'o\n- te vecnu lo skami va'u lo ri speni\n- sisti lo nu salci",
+      "free_content_back": "Happy Birthday!.\nAnya: Happy birthday, dear!\nDima: Today isn't my birthday!\nAnya: Dima, today is your birthday!\nDima: I won't celebrate my birthday...\nDima: ...so I won't turn thirty!\nDima: It's simple!\nAnya: OK.\nAnya: Today isn't your birthday...\nAnya: ...so no presents, no party and no cake.\nDima: But...\nAnya: And I'll keep the present for myself!\nDima: What present?\nAnya: A new computer!\nAnya: But now it's my computer.\nAnya: Because today isn't your birthday!\nDima: But...\nAnya: And now I'm going to eat this whole cake!\nDima: Anya!\nAnya: What?\nDima: OK... Today is my birthday!\nDima: But I only want twenty-nine candles on the cake.",
+      "level_index": 8,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 64,
+      "position": 63,
+      "collection_note": "batch2-40",
+      "free_content_front": "Story 10: pa preti — A Question",
+      "free_content_back": "#### Before you read\nCharacters: Dad, Junior\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 9,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 65,
+      "position": 64,
+      "collection_note": "",
+      "free_content_front": "doi patfu .i mi ponse pa preti",
+      "free_content_back": "Dad, I have a question.",
+      "level_index": 9,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 66,
+      "position": 65,
+      "collection_note": "",
+      "free_content_front": ".u'u doi .djunior. .i mi ca'o gunka",
+      "free_content_back": "Sorry, Junior, I'm busy.",
+      "level_index": 9,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 67,
+      "position": 66,
+      "collection_note": "",
+      "free_content_front": "pa vajni boltipterjvi cu se tivni",
+      "free_content_back": "There's an important football match on TV.",
+      "level_index": 9,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 68,
+      "position": 67,
+      "collection_note": "",
+      "free_content_front": "ku'i mi nitcu tu'a lo jdini",
+      "free_content_back": "But I need money.",
+      "level_index": 9,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 69,
+      "position": 68,
+      "collection_note": "",
+      "free_content_front": "je'u xu",
+      "free_content_back": "Really?",
+      "level_index": 9,
+      "position_in_level": 5,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 70,
+      "position": 69,
+      "collection_note": "batch2-40",
+      "free_content_front": "# pa preti\nJunior(M): doi patfu .i mi ponse pa preti\n~ Dad, I have a question.\nDad(M): .u'u doi .djunior. .i mi ca'o gunka\n~ Sorry, Junior, I'm busy.\nDad(M): .i pa vajni boltipterjvi cu se tivni\n~ There's an important football match on TV.\nDad(M): .i .e'u .e'u .e'u\n~ Come on! Come on! Come on!\nJunior(M): .i ku'i mi nitcu tu'a lo jdini\n~ But I need money.\nDad(M): .ui\n~ Yes!\nJunior(M): .i je'u xu\n~ Really?\nJunior(M): .i mi nitcu tu'a lo jdini mu'i lo nu mi te vecnu lo pitnanba\n~ I need money for a pizza.\nDad(M): .i ko ranji\n~ Keep it up!\nJunior(M): .i mi ji'a djica tu'a pa cnino samselkei\n~ And I want a new video game.\nDad(M): .ui\n~ Yes!\nJunior(M): .i mi ji'a na ba klama lo ckule ca lo bavlamdei\n~ And I'm not going to school tomorrow.\nDad(M): .ui sai\n~ Yes! Super!\nJunior(M): .ue .i sampu\n~ Wow, that was easy!\nJunior(M): .i mi klama lo zarci\n~ I'm going to the shop.\nDad(M): .ui .ui .ui\n~ Yes! Yes! Yes!\nJunior(M): co'o patfu\n~ Bye, Dad.\nDad(M): .u'u doi .djunior.\n~ Sorry, Junior.\nDad(M): .i lo boltipterjvi pu mutce xamgu\n~ It was a really good match!\nDad(M): doi .djunior. .i do nitcu ma\n~ Junior? What do you need?\nDad(M): doi .djunior. .i do zvati ma\n~ Junior? Where are you?\n---\n? fill: Junior(M): .i mi nitcu tu'a lo jdini mu'i lo nu mi te vecnu lo [pitnanba]\n? choice: .i ki'u ma la .djunior. cu se spaji\n+ ri jinvi lo du'u lo patfu cu curmi\n- lo ri kelci girzu cu fliba\n- ri pu facki lo du'u ri ponse lo jdini\n? choice: .i lo patfu be la .djunior. cu mo\n- pu bevri ri lo barda zarci\n- noroi catlu lo kelci\n+ pu mutce se cinri lo nu catlu lo boltipterjvi .i se ki'u bo ri na tirna la .djunior.",
+      "free_content_back": "A Question.\nJunior: Dad, I have a question.\nDad: Sorry, Junior, I'm busy.\nDad: There's an important football match on TV.\nDad: Come on! Come on! Come on!\nJunior: But I need money.\nDad: Yes!\nJunior: Really?\nJunior: I need money for a pizza.\nDad: Keep it up!\nJunior: And I want a new video game.\nDad: Yes!\nJunior: And I'm not going to school tomorrow.\nDad: Yes! Super!\nJunior: Wow, that was easy!\nJunior: I'm going to the shop.\nDad: Yes! Yes! Yes!\nJunior: Bye, Dad.\nDad: Sorry, Junior.\nDad: It was a really good match!\nDad: Junior? What do you need?\nDad: Junior? Where are you?",
+      "level_index": 9,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    }
+  ],
+  "levels": [
+    {
+      "name": "Story 1: lo barda lanzu (A Big Family)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 0,
+      "prerequisite_positions": [],
+      "item_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "name": "Story 2: lo spaji (The Surprise)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 1,
+      "prerequisite_positions": [
+        0
+      ],
+      "item_positions": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "name": "Story 3: lo jbena vanci sanmi (The Birthday Dinner)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 2,
+      "prerequisite_positions": [
+        1
+      ],
+      "item_positions": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    },
+    {
+      "name": "Story 4: lo prami xatra (Love Letters)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 3,
+      "prerequisite_positions": [
+        2
+      ],
+      "item_positions": [
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ]
+    },
+    {
+      "name": "Story 5: ma ti (Who Is It?)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 4,
+      "prerequisite_positions": [
+        3
+      ],
+      "item_positions": [
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34
+      ]
+    },
+    {
+      "name": "Story 6: lo cnino fonxa po lo rirmamta (Grandma's New Phone)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 5,
+      "prerequisite_positions": [
+        4
+      ],
+      "item_positions": [
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41
+      ]
+    },
+    {
+      "name": "Story 7: lo nunsla pe lo ckule (The School Party)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 6,
+      "prerequisite_positions": [
+        5
+      ],
+      "item_positions": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48
+      ]
+    },
+    {
+      "name": "Story 8: lo pendo (Friends)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 7,
+      "prerequisite_positions": [
+        6
+      ],
+      "item_positions": [
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ]
+    },
+    {
+      "name": "Story 9: .a'o gleki jbedetri (Happy Birthday!)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 8,
+      "prerequisite_positions": [
+        7
+      ],
+      "item_positions": [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62
+      ]
+    },
+    {
+      "name": "Story 10: pa preti (A Question)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 9,
+      "prerequisite_positions": [
+        8
+      ],
+      "item_positions": [
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69
+      ]
+    }
+  ]
+}

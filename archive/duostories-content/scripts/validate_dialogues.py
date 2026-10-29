@@ -13,10 +13,11 @@ separately and do not fail the run.
 
 Usage:
   python3 scripts/validate_dialogues.py [--json OUT] [--report OUT.md] [FILES...]
-Defaults: dialogues.json and course/course.json next to this folder.
+Defaults: dialogues.json, course/course.json and course/*_collection.json next to this folder
+(collection exports: phrase-card fronts plus every line/question of dialogue cards).
 Env: EGGLOJBAN_BIN (parser binary), KORPORA_DICT (dictionaries dir).
 """
-import argparse, collections, concurrent.futures as cf, hashlib, json, os, re, subprocess, sys
+import argparse, collections, glob, concurrent.futures as cf, hashlib, json, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -86,6 +87,28 @@ def sentences_of_entry(e, i):
                 yield eid, f"q{n} choice", q["jbo"]
                 for k, a in enumerate(q["answers"]):
                     yield eid, f"q{n} answer {k}", a["jbo"]
+
+
+def sentences_of_collection(c):
+    """lensisku collection export: phrase-card fronts, and every line/question of dialogue cards."""
+    for k, it in enumerate(c["items"]):
+        d, front = it.get("direction"), it.get("free_content_front") or ""
+        iid = f"item {k + 1}"
+        if d == "just_information" or not front:
+            continue
+        if d != "dialogue":
+            yield iid, "phrase", front
+            continue
+        lines, qs, _ = parse_script_entry({"script": front})
+        for n, ln in enumerate(lines):
+            yield iid, f"line {n}", ln["jbo"]
+        for n, q in enumerate(qs):
+            if q["type"] in ("fill", "bank"):
+                yield iid, f"q{n} {q['type']}", unblank(q["jbo"])
+            elif q["type"] == "choice":
+                yield iid, f"q{n} choice", q["jbo"]
+                for m, ans in enumerate(q["answers"]):
+                    yield iid, f"q{n} answer {m}", ans["jbo"]
 
 
 def sentences_of_course(c):
@@ -256,11 +279,26 @@ def main():
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--quiet", action="store_true")
     a = ap.parse_args()
-    files = a.files or [p for p in (os.path.join(ROOT, "dialogues.json"), os.path.join(ROOT, "course", "course.json")) if os.path.exists(p)]
+    files = a.files or [p for p in (os.path.join(ROOT, "dialogues.json"), os.path.join(ROOT, "course", "course.json")) if os.path.exists(p)] \
+        + sorted(glob.glob(os.path.join(ROOT, "course", "*_collection.json")))
 
     items = []  # (file, id, where, text, doubtful)
+    # Doubtful sentences known from the structured sources also count inside collection files.
+    global_ds = set()
+    for f in [os.path.join(ROOT, "dialogues.json"), os.path.join(ROOT, "course", "course.json")] + list(files):
+        if not os.path.exists(f) or f.endswith("_collection.json"):
+            continue
+        data = json.load(open(f, encoding="utf-8"))
+        for e in (data["lessons"] if isinstance(data, dict) and "lessons" in data else data):
+            global_ds |= doubtful_set(e)
     for f in files:
         data = json.load(open(f, encoding="utf-8"))
+        if isinstance(data, dict) and "items" in data and "levels" in data:
+            notes = {f"item {k + 1}": (it.get("collection_note") or "").startswith("doubtful") for k, it in enumerate(data["items"])}
+            for sid, where, text in sentences_of_collection(data):
+                t = text.strip()
+                items.append((os.path.basename(f), sid, where, text, t in global_ds or (".i " + t) in global_ds or notes[sid]))
+            continue
         if isinstance(data, dict) and "lessons" in data:
             for li, lesson in enumerate(data["lessons"]):
                 ds = doubtful_set(lesson)

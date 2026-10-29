@@ -1,0 +1,899 @@
+{
+  "collection": {
+    "name": "Lojban stories 4: Hobbies, Pets and Travel",
+    "description": "Ten graded stories about sport, games, pets, museums, farms and trips.",
+    "is_public": false
+  },
+  "items": [
+    {
+      "item_id": 1,
+      "position": 0,
+      "collection_note": "batch2-02",
+      "free_content_front": "Story 1: lo cange — The Farm",
+      "free_content_back": "#### Before you read\nCharacters: Linda, Teresa\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 0,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 2,
+      "position": 1,
+      "collection_note": "",
+      "free_content_front": "xu ta xirma",
+      "free_content_back": "Is that a... horse?",
+      "level_index": 0,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 3,
+      "position": 2,
+      "collection_note": "",
+      "free_content_front": "go'i .i ti cange",
+      "free_content_back": "Yes! This is a farm!",
+      "level_index": 0,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 4,
+      "position": 3,
+      "collection_note": "",
+      "free_content_front": "ti mutce frica lo tcadu",
+      "free_content_back": "This place is very different from the city.",
+      "level_index": 0,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 5,
+      "position": 4,
+      "collection_note": "",
+      "free_content_front": "ta sance ma",
+      "free_content_back": "What's that noise from?",
+      "level_index": 0,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 6,
+      "position": 5,
+      "collection_note": "",
+      "free_content_front": "xu do djica lo nu citka da",
+      "free_content_back": "Do you want to eat something?",
+      "level_index": 0,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 7,
+      "position": 6,
+      "collection_note": "batch2-02",
+      "free_content_front": "# lo cange\n> .i la .lindas. cu vitke lo cange po lo mensi be ri po'u la .terezas.\n~ Linda visits her sister Teresa's farm.\nTeresa(F): coi .lindas. .i mi mutce gleki lo nu viska do\n~ Hi, Linda! I'm very happy to see you!\nLinda(F): doi .terezas. .i do xabju lo darno be lo tcadu\n~ Teresa! You live very far from the city.\nTeresa(F): .i se ki'u bo mi nelci lo nu xabju ti\n~ That's why I like living here!\nLinda(F): .i xu ta xirma\n~ Is that a... horse?\nTeresa(F): go'i .i ti cange\n~ Yes! This is a farm!\nLinda(F): .i ti mutce frica lo tcadu\n~ This place is very different from the city.\nTeresa(F): .ie .i so'i savru cu zvati lo tcadu\n~ Oh yes! In the city there's a lot of noise.\nLinda(F): .i ta sance ma\n~ What's that noise from?\nTeresa(F): .i lo mi danlu .i mi ji'a ponse ci gerku .e mu jipci\n~ My animals! I also have three dogs and five chickens.\nLinda(F): .i mi na nelci lo panci be lo do danlu\n~ I don't like the smell of your animals!\nTeresa(F): .i xu do djica lo nu citka da\n~ Do you want to eat something?\nTeresa(F): .i mi ponse su'o djasnuji vi lo jupku'a\n~ I have some sandwiches in the kitchen.\nLinda(F): na go'i .i ki'e\n~ No, thanks.\nLinda(F): .i .e'o mi djica lo nu lo karce cu bevri mi lo tcadu\n~ I want a taxi back to the city, please!\n---\n? fill: Linda(F): doi .terezas. .i do xabju lo darno be lo [tcadu]\n? choice: .i la .lindas. cu vitke lo cange po lo tunba be lo patfu xu\n+ na go'i\n- go'i\n? choice: .i so'i savru cu zvati ma\n- lo cange\n- lo stedu be la .terezas.\n+ lo tcadu\n? choice: .i la .lindas. cu mo\n+ djica lo nu cliva lo cange gi'e klama lo tcadu\n- djica lo nu xabju lo nurma\n- djica lo nu citka lo djasnuji",
+      "free_content_back": "The Farm.\nLinda visits her sister Teresa's farm.\nTeresa: Hi, Linda! I'm very happy to see you!\nLinda: Teresa! You live very far from the city.\nTeresa: That's why I like living here!\nLinda: Is that a... horse?\nTeresa: Yes! This is a farm!\nLinda: This place is very different from the city.\nTeresa: Oh yes! In the city there's a lot of noise.\nLinda: What's that noise from?\nTeresa: My animals! I also have three dogs and five chickens.\nLinda: I don't like the smell of your animals!\nTeresa: Do you want to eat something?\nTeresa: I have some sandwiches in the kitchen.\nLinda: No, thanks.\nLinda: I want a taxi back to the city, please!",
+      "level_index": 0,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 8,
+      "position": 7,
+      "collection_note": "batch2-03",
+      "free_content_front": "Story 2: lo boltipyjvi cutci — The Soccer Shoes",
+      "free_content_back": "#### Before you read\nCharacters: Carlo, Liliana\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 1,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 9,
+      "position": 8,
+      "collection_note": "",
+      "free_content_front": "mi roroi jinga",
+      "free_content_back": "And I always win!",
+      "level_index": 1,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 10,
+      "position": 9,
+      "collection_note": "",
+      "free_content_front": "ku'i ca lo cabdei cu frica",
+      "free_content_back": "But today is different...",
+      "level_index": 1,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 11,
+      "position": 10,
+      "collection_note": "",
+      "free_content_front": "xu ri kargu",
+      "free_content_back": "Are they expensive?",
+      "level_index": 1,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 12,
+      "position": 11,
+      "collection_note": "",
+      "free_content_front": "ri mutce kargu",
+      "free_content_back": "They're very expensive!",
+      "level_index": 1,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 13,
+      "position": 12,
+      "collection_note": "",
+      "free_content_front": "xu do ca certu lo ka boltipyjvi",
+      "free_content_back": "And now you're good at soccer?",
+      "level_index": 1,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 14,
+      "position": 13,
+      "collection_note": "batch2-03",
+      "free_content_front": "# lo boltipyjvi cutci\n> .i la .karlos. .e la .lilianas. cu boltipyjvi\n~ Carlo and Liliana are playing soccer.\nCarlo(M): doi .lilianas. .i mi'a boltipyjvi ca ro lo djedi\n~ Liliana! We play soccer every day...\nLiliana(F): .i mi roroi jinga\n~ And I always win!\nCarlo(M): .i ku'i ca lo cabdei cu frica\n~ But today is different...\nCarlo(M): .i ki'u lo nu mi dasni lo mi cnino cutci\n~ ...because I'm wearing my new soccer shoes!\nLiliana(F): .i xu ri kargu\n~ Are they expensive?\nCarlo(M): .i ri mutce kargu\n~ They're very expensive!\nLiliana(F): .i xu do ca certu lo ka boltipyjvi\n~ And now you're good at soccer?\nCarlo(M): .i sepi'o le ti cutci mi mutce certu lo ka kelci\n~ With these shoes, I'm very good at playing!\n> .i la .lilianas. cu lebna lo bolci gi'e renro ri fi lo kelci vorme\n~ Liliana takes the ball and scores a goal.\nLiliana(F): .ui .i jinga\n~ Yes! Goal!\nCarlo(M): .ue .i ku'i mi dasni lo mi cnino cutci\n~ What?! But... I'm wearing my new shoes!\nLiliana(F): .i mi na nitcu lo nu dasni lo kargu cutci doi .karlos. .i ki'u bo mi boltipyjvi so'iroi\n~ I don't need expensive shoes, Carlo... because I play a lot!\nCarlo(M): .i mi na nelci lo mi cnino cutci\n~ I don't like my new shoes...\nLiliana(F): .a'o .i xu do dunda ri mi\n~ Ah! Will you give them to me?\n---\n? fill: Carlo(M): .i ki'u lo nu mi dasni lo mi cnino [cutci]\n? choice: .i xu la .karlos. .e la .lilianas. cu lankyboijvi\n- go'i\n+ na go'i\n? choice: .i ki'u ma la .lilianas. cu jinga\n- ri ponse lo kargu cutci\n+ ri boltipyjvi so'iroi\n- lo patfu be ri cu certu lo ka boltipyjvi",
+      "free_content_back": "The Soccer Shoes.\nCarlo and Liliana are playing soccer.\nCarlo: Liliana! We play soccer every day...\nLiliana: And I always win!\nCarlo: But today is different...\nCarlo: ...because I'm wearing my new soccer shoes!\nLiliana: Are they expensive?\nCarlo: They're very expensive!\nLiliana: And now you're good at soccer?\nCarlo: With these shoes, I'm very good at playing!\nLiliana takes the ball and scores a goal.\nLiliana: Yes! Goal!\nCarlo: What?! But... I'm wearing my new shoes!\nLiliana: I don't need expensive shoes, Carlo... because I play a lot!\nCarlo: I don't like my new shoes...\nLiliana: Ah! Will you give them to me?",
+      "level_index": 1,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 15,
+      "position": 14,
+      "collection_note": "batch2-04",
+      "free_content_front": "Story 3: lo muzga — At the Museum",
+      "free_content_back": "#### Before you read\nCharacters: Grandpa, Marina\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 2,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 16,
+      "position": 15,
+      "collection_note": "",
+      "free_content_front": "ti mutce cinri",
+      "free_content_back": "It's very interesting!",
+      "level_index": 2,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 17,
+      "position": 16,
+      "collection_note": "",
+      "free_content_front": "su'o pixra cu zvati .i ri slabu",
+      "free_content_back": "There are some old photos.",
+      "level_index": 2,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 18,
+      "position": 17,
+      "collection_note": "",
+      "free_content_front": "go'i .i ti pixra la .montreal.",
+      "free_content_back": "Yes, this is Montreal.",
+      "level_index": 2,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 19,
+      "position": 18,
+      "collection_note": "",
+      "free_content_front": "no karce cu zvati",
+      "free_content_back": "There are no cars!",
+      "level_index": 2,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 20,
+      "position": 19,
+      "collection_note": "",
+      "free_content_front": "pa ninmu cu zvati lo pixra",
+      "free_content_back": "There's a woman in the photo.",
+      "level_index": 2,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 21,
+      "position": 20,
+      "collection_note": "batch2-04",
+      "free_content_front": "# lo muzga\n> .i la .marinas. cu zvati lo muzga fi'o kansa lo rirpa'u be ri\n~ Marina is at the museum with her grandfather.\nMarina(F): .i ti mutce cinri\n~ It's very interesting!\nMarina(F): .i su'o pixra cu zvati .i ri slabu\n~ There are some old photos.\nGrandpa(M): go'i .i ti pixra la .montreal.\n~ Yes, this is Montreal.\nMarina(F): .i no karce cu zvati\n~ There are no cars!\nMarina(F): .i ko catlu .i ti pixra lo mikce tadni\n~ Look! A photo of medical students.\nGrandpa(M): go'i .i ri zvati lo balcu'e be la .montreal.\n~ Yes, it's the University of Montreal.\nMarina(F): .i pa ninmu cu zvati lo pixra\n~ There's a woman in the photo.\nMarina(F): .i pa ninmu po'o\n~ Only one woman!\n> .i lo rirpa'u be la .marinas. cu catlu lo pixra gi'e smaji\n~ Marina's grandfather looks at the photo in silence.\nMarina(F): doi dzena\n~ Grandpa?\nGrandpa(M): .i ri mutce melbi\n~ She's very pretty.\nMarina(F): go'i .i mutce melbi\n~ Yes, very pretty.\nGrandpa(M): .i ri rirmamta mi\n~ She's my grandmother.\nMarina(F): .ue .i je'u xu\n~ Oh, really?\nGrandpa(M): .i tu'a lo mi lanzu cu mutce cinri\n~ I have a very interesting family!\n---\n? fill: Marina(F): .i no [karce] cu zvati\n? choice: .i xu lo muzga cu vasru lo slabu pixra\n- na go'i\n+ go'i\n? choice: .i la .marinas. cu viska ma vi lo pixra\n- ro lo karce cu cnino\n+ no karce\n- lo pixra cu cnino",
+      "free_content_back": "At the Museum.\nMarina is at the museum with her grandfather.\nMarina: It's very interesting!\nMarina: There are some old photos.\nGrandpa: Yes, this is Montreal.\nMarina: There are no cars!\nMarina: Look! A photo of medical students.\nGrandpa: Yes, it's the University of Montreal.\nMarina: There's a woman in the photo.\nMarina: Only one woman!\nMarina's grandfather looks at the photo in silence.\nMarina: Grandpa?\nGrandpa: She's very pretty.\nMarina: Yes, very pretty.\nGrandpa: She's my grandmother.\nMarina: Oh, really?\nGrandpa: I have a very interesting family!",
+      "level_index": 2,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 22,
+      "position": 21,
+      "collection_note": "batch2-10",
+      "free_content_front": "Story 4: lo jaspu — The Passport",
+      "free_content_back": "#### Before you read\nCharacters: Vladimir, Driver\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 3,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 23,
+      "position": 22,
+      "collection_note": "",
+      "free_content_front": "lo mi jaspu cu zvati ma",
+      "free_content_back": "Where's my passport?",
+      "level_index": 3,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 24,
+      "position": 23,
+      "collection_note": "",
+      "free_content_front": "ri zvati no da",
+      "free_content_back": "It's nowhere!",
+      "level_index": 3,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 25,
+      "position": 24,
+      "collection_note": "",
+      "free_content_front": "ri na nenri lo mi dakli",
+      "free_content_back": "It's not in my bag.",
+      "level_index": 3,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 26,
+      "position": 25,
+      "collection_note": "",
+      "free_content_front": "ri ji'a na nenri lo mi kosta",
+      "free_content_back": "And it's not in my jacket either.",
+      "level_index": 3,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 27,
+      "position": 26,
+      "collection_note": "",
+      "free_content_front": "ko denpa .i ko na cliva",
+      "free_content_back": "Wait! Don't drive away!",
+      "level_index": 3,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 28,
+      "position": 27,
+      "collection_note": "batch2-10",
+      "free_content_front": "# lo jaspu\n> .i la .vladimir. cu zvati lo vijytcana\n~ Vladimir is at the airport.\nVladimir(M): .i lo mi jaspu cu zvati ma\n~ Where's my passport?\nVladimir(M): .i ri zvati no da\n~ It's nowhere!\nVladimir(M): .i ri na nenri lo mi dakli\n~ It's not in my bag.\nVladimir(M): .i ri ji'a na nenri lo mi kosta\n~ And it's not in my jacket either.\nVladimir(M): .ua .i ri nenri lo karce\n~ Ah! It's in the taxi (the car)!\n> .i la .vladimir. cu sisku lo karce\n~ Vladimir looks for the car.\n> .i ri viska lo jitro be lo karce\n~ He sees the driver.\nVladimir(M): .i ko denpa .i ko na cliva\n~ Wait! Don't drive away!\nDriver(F): .i ma fasnu .i xu do kanro\n~ What happened? Are you OK?\nVladimir(M): .i lo mi jaspu\n~ My passport!\nVladimir(M): .i ri nenri lo do karce\n~ It's in your car!\nDriver(F): .i lo do jaspu na nenri lo mi karce\n~ Your passport isn't in my car.\nVladimir(M): na go'i .i na ka'e go'i\n~ No! It can't be!\nDriver(F): .i ko catlu .i lo jaspu cu zvati lo do xance\n~ Look, the passport is in your hand!\nVladimir(M): .i je'u\n~ Right!\nVladimir(M): .i ki'e sai\n~ Thank you very much!\nDriver(F): .i .a'o do xamgu litru\n~ Have a good trip!\n---\n? fill: Vladimir(M): .i ri na nenri lo mi [dakli]\n? choice: .i la .vladimir. cu sisku lo karce .i ri mo\n- na viska lo karce jitro\n+ viska lo karce jitro\n- klama lo zdani\n? choice: .i lo jaspu be la .vladimir. pu zvati ma\n+ lo ri xance\n- lo ri zdani\n- lo karce",
+      "free_content_back": "The Passport.\nVladimir is at the airport.\nVladimir: Where's my passport?\nVladimir: It's nowhere!\nVladimir: It's not in my bag.\nVladimir: And it's not in my jacket either.\nVladimir: Ah! It's in the taxi (the car)!\nVladimir looks for the car.\nHe sees the driver.\nVladimir: Wait! Don't drive away!\nDriver: What happened? Are you OK?\nVladimir: My passport!\nVladimir: It's in your car!\nDriver: Your passport isn't in my car.\nVladimir: No! It can't be!\nDriver: Look, the passport is in your hand!\nVladimir: Right!\nVladimir: Thank you very much!\nDriver: Have a good trip!",
+      "level_index": 3,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 29,
+      "position": 28,
+      "collection_note": "batch2-14",
+      "free_content_front": "Story 5: lo xamgu gerku — The Good Dog",
+      "free_content_back": "#### Before you read\nCharacters: Ada, Braulio\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 4,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 30,
+      "position": 29,
+      "collection_note": "",
+      "free_content_front": "ki'e .i ko catlu",
+      "free_content_back": "Thanks! Look!",
+      "level_index": 4,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 31,
+      "position": 30,
+      "collection_note": "",
+      "free_content_front": "doi .maks. .i ko zutse",
+      "free_content_back": "Max! Sit!",
+      "level_index": 4,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 32,
+      "position": 31,
+      "collection_note": "",
+      "free_content_front": "lo nu ctuca lo gerku cu nandu",
+      "free_content_back": "Teaching a dog something is hard.",
+      "level_index": 4,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 33,
+      "position": 32,
+      "collection_note": "",
+      "free_content_front": "do zukte ma",
+      "free_content_back": "How do you do it?",
+      "level_index": 4,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 34,
+      "position": 33,
+      "collection_note": "",
+      "free_content_front": "mi ctuca ri fi da poi cnino",
+      "free_content_back": "Well, I teach him something new...",
+      "level_index": 4,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 35,
+      "position": 34,
+      "collection_note": "batch2-14",
+      "free_content_front": "# lo xamgu gerku\n> .i la .braulios. cu zvati lo panka fi'o kansa la .adas. .e lo ri gerku\n~ Braulio is in a park with Ada and her dog.\nBraulio(M): doi .adas. .i mi nelci lo do gerku\n~ Ada, I like your dog!\nAda(F): ki'e .i ko catlu\n~ Thanks! Look!\nAda(F): doi .maks. .i ko zutse\n~ Max! Sit!\nBraulio(M): .i xu lo do gerku cu roroi tinbe do\n~ Ah! Does your dog always listen to you?\nAda(F): .i ri so'iroi tinbe mi .i ku'i ri na roroi tinbe mi\n~ He usually listens to me, but not always!\nAda(F): .i lo nu ctuca lo gerku cu nandu\n~ Teaching a dog something is hard.\nBraulio(M): .i do zukte ma\n~ How do you do it?\nAda(F): .i mi ctuca ri fi da poi cnino\n~ Well, I teach him something new...\nAda(F): .i ba bo mi dunda lo cidja ri\n~ ...and then I give him something to eat!\nBraulio(M): .i ca bo mi djica lo nu citka\n~ Now I want something to eat!\nAda(F): .i xu do djica lo nu citka lo do djasnuji\n~ Ah, do you want your sandwich?\nBraulio(M): go'i .i .e'o\n~ Yes, please!\nAda(F): doi .maks. .i ko na zukte ta\n~ Max! No!\nBraulio(M): .i ma fasnu\n~ What happened?\nAda(F): .i ri citka lo do djasnuji\n~ He's eating your sandwich.\nAda(F): .u'u sai\n~ I'm so sorry.\nBraulio(M): .i ri so'iroi tinbe do .i ku'i ri na roroi tinbe do\n~ Well, he usually listens to you... but not always!\n---\n? fill: > .i la .braulios. cu zvati lo panka fi'o kansa la .adas. .e lo ri [gerku]\n? choice: .i la .adas. cu mo ba lo nu ri ctuca lo gerku\n+ dunda lo cidja lo gerku\n- dunda lo zilkei lo gerku\n- dunda lo djacu lo gerku\n? choice: .i ma fasnu\n- la .braulios. cu te vecnu lo zilkei\n+ lo gerku cu citka lo djasnuji pe la .braulios.\n- la .braulios. cu ji'a te vecnu lo gerku",
+      "free_content_back": "The Good Dog.\nBraulio is in a park with Ada and her dog.\nBraulio: Ada, I like your dog!\nAda: Thanks! Look!\nAda: Max! Sit!\nBraulio: Ah! Does your dog always listen to you?\nAda: He usually listens to me, but not always!\nAda: Teaching a dog something is hard.\nBraulio: How do you do it?\nAda: Well, I teach him something new...\nAda: ...and then I give him something to eat!\nBraulio: Now I want something to eat!\nAda: Ah, do you want your sandwich?\nBraulio: Yes, please!\nAda: Max! No!\nBraulio: What happened?\nAda: He's eating your sandwich.\nAda: I'm so sorry.\nBraulio: Well, he usually listens to you... but not always!",
+      "level_index": 4,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 36,
+      "position": 35,
+      "collection_note": "batch2-19",
+      "free_content_front": "Story 6: lo lankyboijvi — The Basketball Player",
+      "free_content_back": "#### Before you read\nCharacters: Barbara, Rodolfo, Player\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 5,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 37,
+      "position": 36,
+      "collection_note": "",
+      "free_content_front": "mi'o nitcu lo nu te vecnu ma",
+      "free_content_back": "What do we need to buy at the supermarket?",
+      "level_index": 5,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 38,
+      "position": 37,
+      "collection_note": "",
+      "free_content_front": "doi .rodolfos. .i ko catlu tu",
+      "free_content_back": "Rodolfo! Look over there!",
+      "level_index": 5,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 39,
+      "position": 38,
+      "collection_note": "",
+      "free_content_front": "ma .i ma",
+      "free_content_back": "Where? Who?",
+      "level_index": 5,
+      "position_in_level": 3,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 40,
+      "position": 39,
+      "collection_note": "",
+      "free_content_front": "na go'i",
+      "free_content_back": "No, it isn't!",
+      "level_index": 5,
+      "position_in_level": 4,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 41,
+      "position": 40,
+      "collection_note": "",
+      "free_content_front": "go'i .i ko tavla tu",
+      "free_content_back": "Yes, it is! Talk to him!",
+      "level_index": 5,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 42,
+      "position": 41,
+      "collection_note": "batch2-19",
+      "free_content_front": "# lo lankyboijvi\n> .i la .rodolfos. .e la .barbaras. cu klama lo zarci\n~ Rodolfo and Barbara go shopping.\nBarbara(F): .i mi'o nitcu lo nu te vecnu ma\n~ What do we need to buy at the supermarket?\nRodolfo(M): .i mi'o nitcu lo nu te vecnu lo ladru .e lo rismi .e lo dembi\n~ We need milk, rice, beans...\nBarbara(F): doi .rodolfos. .i ko catlu tu\n~ Rodolfo! Look over there!\nRodolfo(M): .i ma .i ma\n~ Where? Who?\nBarbara(F): .i tu du lo lankyboijvi poi do traji nelci\n~ That's your favourite basketball player!\nRodolfo(M): .i na go'i\n~ No, it isn't!\nBarbara(F): .i go'i .i ko tavla tu\n~ Yes, it is! Talk to him!\nRodolfo(M): .i mi dukse lo ka terpa\n~ No, I'm too nervous!\nBarbara(F): .i ku'i doi .rodolfos. ko catlu .i do .e ri dasni lo mintu cutci\n~ But Rodolfo... look! You have the same shoes!\n> .i lo lankyboijvi cu catlu la .rodolfos. .e la .barbaras.\n~ The basketball player looks at Rodolfo and Barbara.\nRodolfo(M): .i xu mi .e ri dasni lo mintu cutci\n~ We have the same shoes?\nBarbara(F): go'i .i ri ji'a ca'o klama ti\n~ Yes! And he's coming over here!\nRodolfo(M): .i mi zukte ma\n~ What do I do?!\nBarbara(F): .i ko tavla ri\n~ Talk to him!\nRodolfo(M): .i .ei mi cliva\n~ I have to go!\nPlayer(M): ju'i\n~ Hey!\nRodolfo(M): .i mo\n~ Yes?\nPlayer(M): .i mi nelci lo do cutci\n~ I like your shoes.\n---\n? fill: Rodolfo(M): .i mi'o nitcu lo nu te vecnu lo [ladru] .e lo rismi .e lo dembi\n? choice: .i xu la .barbaras. cu cusku lo se du'u lo lankyboijvi cu klama ri\n- na go'i\n+ go'i\n? choice: .i lo lankyboijvi cu djica lo nu cusku ma\n+ lo se du'u ri nelci lo cutci pe la .rodolfos.\n- lo se du'u .ei ri na catlu\n- lo se du'u ri ka'e ciska lo cmene",
+      "free_content_back": "The Basketball Player.\nRodolfo and Barbara go shopping.\nBarbara: What do we need to buy at the supermarket?\nRodolfo: We need milk, rice, beans...\nBarbara: Rodolfo! Look over there!\nRodolfo: Where? Who?\nBarbara: That's your favourite basketball player!\nRodolfo: No, it isn't!\nBarbara: Yes, it is! Talk to him!\nRodolfo: No, I'm too nervous!\nBarbara: But Rodolfo... look! You have the same shoes!\nThe basketball player looks at Rodolfo and Barbara.\nRodolfo: We have the same shoes?\nBarbara: Yes! And he's coming over here!\nRodolfo: What do I do?!\nBarbara: Talk to him!\nRodolfo: I have to go!\nPlayer: Hey!\nRodolfo: Yes?\nPlayer: I like your shoes.",
+      "level_index": 5,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 43,
+      "position": 42,
+      "collection_note": "batch2-20",
+      "free_content_front": "Story 7: lo nunkei poi mi traji nelci — My Favourite Game",
+      "free_content_back": "#### Before you read\nCharacters: Samuele, Dario\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 6,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 44,
+      "position": 43,
+      "collection_note": "",
+      "free_content_front": "coi bruna",
+      "free_content_back": "Hi, brother!",
+      "level_index": 6,
+      "position_in_level": 1,
+      "direction": "quiz_direct"
+    },
+    {
+      "item_id": 45,
+      "position": 44,
+      "collection_note": "",
+      "free_content_front": "coi .darios. .i do djica ma",
+      "free_content_back": "Hi, Dario. What do you want?",
+      "level_index": 6,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 46,
+      "position": 45,
+      "collection_note": "",
+      "free_content_front": "mi djica lo nu kelci kansa do",
+      "free_content_back": "I want to play with you!",
+      "level_index": 6,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 47,
+      "position": 46,
+      "collection_note": "",
+      "free_content_front": "mi mutce zukcfu ca lo cabdei",
+      "free_content_back": "Dario, I'm very busy today!",
+      "level_index": 6,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 48,
+      "position": 47,
+      "collection_note": "",
+      "free_content_front": ".ei mi lumci lo mi kumfa",
+      "free_content_back": "I have to clean my room!",
+      "level_index": 6,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 49,
+      "position": 48,
+      "collection_note": "batch2-20",
+      "free_content_front": "# lo nunkei poi mi traji nelci\n> .i la .samuel. cu ca'o lumci lo ri kumfa\n~ Samuele is cleaning his room.\nDario(M): coi bruna\n~ Hi, brother!\nSamuele(M): coi .darios. .i do djica ma\n~ Hi, Dario. What do you want?\nDario(M): .i mi djica lo nu kelci kansa do\n~ I want to play with you!\nSamuele(M): .i mi mutce zukcfu ca lo cabdei\n~ Dario, I'm very busy today!\nSamuele(M): .i .ei mi lumci lo mi kumfa\n~ I have to clean my room!\nDario(M): go'i .i lo do kumfa cu mutce na'e lumci\n~ Yes, your room is very dirty!\nSamuele(M): .i mi djuno doi .darios.\n~ I know, Dario!\nDario(M): .i ku'i mi djica lo nu kelci\n~ But I want to play!\nSamuele(M): .i do djica lo nu kelci ma doi .darios.\n~ What do you want to play, Dario?\nDario(M): .i mi na djuno\n~ I don't know!\nSamuele(M): .i'e .i mi se slabu pa mutce zdile nunkei\n~ OK. I know a really fun game!\nDario(M): .ue .i ma nunkei\n~ Oh yeah?! What game?\nSamuele(M): .i ri traji lo ka se nelci mi\n~ It's my favourite game!\nDario(M): .ui\n~ Yes!\nSamuele(M): .i le ti nunkei cu sampu\n~ This game is simple...\nSamuele(M): .i .ei do sidju mi lo nu lumci lo mi kumfa\n~ ...you have to help me clean my room!\nDario(M): .i ku'i .ei mi cliva .i mi mutce zukcfu ca lo cabdei\n~ Actually... I have to go. I'm very busy today.\nSamuele(M): .i ku'i doi .darios. .i do klama ma\n~ But... Dario! Where are you going?!\n---\n? fill: > .i la .samuel. cu ca'o lumci lo ri [kumfa]\n? choice: .i xu la .samuel. cu lumci lo jupku'a\n+ na go'i\n- go'i\n? choice: .i la .samuel. cu traji nelci ma\n+ lo nu lo bruna cu sidju fi lo nu lumci lo kumfa\n- lo nu mipri sisku\n- lo nu kelci vi lo bartu",
+      "free_content_back": "My Favourite Game.\nSamuele is cleaning his room.\nDario: Hi, brother!\nSamuele: Hi, Dario. What do you want?\nDario: I want to play with you!\nSamuele: Dario, I'm very busy today!\nSamuele: I have to clean my room!\nDario: Yes, your room is very dirty!\nSamuele: I know, Dario!\nDario: But I want to play!\nSamuele: What do you want to play, Dario?\nDario: I don't know!\nSamuele: OK. I know a really fun game!\nDario: Oh yeah?! What game?\nSamuele: It's my favourite game!\nDario: Yes!\nSamuele: This game is simple...\nSamuele: ...you have to help me clean my room!\nDario: Actually... I have to go. I'm very busy today.\nSamuele: But... Dario! Where are you going?!",
+      "level_index": 6,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 50,
+      "position": 49,
+      "collection_note": "batch2-33",
+      "free_content_front": "Story 8: mi djica tu'a lo gerku — I Want a Dog",
+      "free_content_back": "#### Before you read\nCharacters: Mom, Sasha\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 7,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 51,
+      "position": 50,
+      "collection_note": "",
+      "free_content_front": "doi mamta doi mamta",
+      "free_content_back": "Mom! Mom!",
+      "level_index": 7,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 52,
+      "position": 51,
+      "collection_note": "",
+      "free_content_front": "mo doi .sacas.",
+      "free_content_back": "Yes, Sasha?",
+      "level_index": 7,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 53,
+      "position": 52,
+      "collection_note": "",
+      "free_content_front": "mi djica tu'a lo gerku",
+      "free_content_back": "I want a dog.",
+      "level_index": 7,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 54,
+      "position": 53,
+      "collection_note": "",
+      "free_content_front": "doi mamta .i .e'o",
+      "free_content_back": "Mom, please!",
+      "level_index": 7,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 55,
+      "position": 54,
+      "collection_note": "",
+      "free_content_front": "ji'a lo palta",
+      "free_content_back": "...and the dishes...",
+      "level_index": 7,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 56,
+      "position": 55,
+      "collection_note": "batch2-33",
+      "free_content_front": "# mi djica tu'a lo gerku\nSasha(M): doi mamta doi mamta\n~ Mom! Mom!\nMom(F): .i mo doi .sacas.\n~ Yes, Sasha?\nSasha(M): .i mi djica tu'a lo gerku\n~ I want a dog.\nMom(F): .i xu lo gerku .i la'e di'u nitcu lo nu mutce gunka\n~ A dog? That's a lot of work.\nSasha(M): doi mamta .i .e'o\n~ Mom, please!\nMom(F): .i'e\n~ OK.\nSasha(M): .ui\n~ Yes!\nMom(F): .i ku'i pu bo .ei do lumci lo karce\n~ But first you have to wash the car...\nMom(F): .i ji'a lo palta\n~ ...and the dishes...\nSasha(M): go'i\n~ Yes...\nMom(F): .i ji'a lo canko\n~ ...and the windows too!\n> .i la .sacas. cu co'u lumci ro da\n~ Sasha finishes washing everything.\nSasha(M): doi mamta .i ko catlu\n~ Mom! Look!\nMom(F): .i xamgu gunka .i do mutce fuzme lo nu lumci\n~ Good job! You're very responsible.\nMom(F): .i ca bo mi'a ka'e te vecnu lo gerku va'u do\n~ Now we can buy you a dog.\nSasha(M): na go'i .i ki'e\n~ No, thanks!\nSasha(M): .i mi na djica tu'a lo gerku\n~ I don't want a dog.\nMom(F): .i ku'i mi na jimpe\n~ But... I don't understand.\nSasha(M): .i mi na djica lo nu fuzme .i mi tatpi\n~ I don't want to be responsible. I'm tired!\n---\n? fill: Sasha(M): .i mi djica tu'a lo [gerku]\n? choice: .i pu lo nu la .sacas. cu ponse lo gerku kei .ei ri mo\n- lumci lo kumfa .e lo jupku'a\n- dunda lo djacu lo spati gi'e jukpa\n+ lumci lo karce .e lo palta .e lo canko\n? choice: .i ki'u ma la .sacas. na djica tu'a lo gerku\n+ ri tatpi gi'e na djica lo nu fuzme\n- ri ponse vo gerku\n- lo nu ponse lo gerku na cinri",
+      "free_content_back": "I Want a Dog.\nSasha: Mom! Mom!\nMom: Yes, Sasha?\nSasha: I want a dog.\nMom: A dog? That's a lot of work.\nSasha: Mom, please!\nMom: OK.\nSasha: Yes!\nMom: But first you have to wash the car...\nMom: ...and the dishes...\nSasha: Yes...\nMom: ...and the windows too!\nSasha finishes washing everything.\nSasha: Mom! Look!\nMom: Good job! You're very responsible.\nMom: Now we can buy you a dog.\nSasha: No, thanks!\nSasha: I don't want a dog.\nMom: But... I don't understand.\nSasha: I don't want to be responsible. I'm tired!",
+      "level_index": 7,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 57,
+      "position": 56,
+      "collection_note": "batch2-35",
+      "free_content_front": "Story 9: lo nu klama la paris. — A Trip to Paris",
+      "free_content_back": "#### Before you read\nCharacters: Pavel, Kristina\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 8,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 58,
+      "position": 57,
+      "collection_note": "",
+      "free_content_front": "mi djica lo nu stali ti",
+      "free_content_back": "I want to stay here!",
+      "level_index": 8,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 59,
+      "position": 58,
+      "collection_note": "",
+      "free_content_front": "mi ji'a djica lo nu stali ti",
+      "free_content_back": "I want to stay here too...",
+      "level_index": 8,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 60,
+      "position": 59,
+      "collection_note": "",
+      "free_content_front": "mi mutce nelci la paris.",
+      "free_content_back": "I really like Paris!",
+      "level_index": 8,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 61,
+      "position": 60,
+      "collection_note": "",
+      "free_content_front": "vi ti so'i cinri stuzi",
+      "free_content_back": "There are lots of interesting places here.",
+      "level_index": 8,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 62,
+      "position": 61,
+      "collection_note": "",
+      "free_content_front": "mi ji'a mutce nelci lo panka",
+      "free_content_back": "And I really like the parks!",
+      "level_index": 8,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 63,
+      "position": 62,
+      "collection_note": "batch2-35",
+      "free_content_front": "# lo nu klama la paris.\n> .i la .pavel. .e la .kristinas. cu zvati la paris. ca lo nalgundei\n~ Pavel and Kristina are in Paris on holiday.\nPavel(M): .i mi djica lo nu stali ti\n~ I want to stay here!\nKristina(F): .i mi ji'a djica lo nu stali ti\n~ I want to stay here too...\nPavel(M): .i mi mutce nelci la paris.\n~ I really like Paris!\nPavel(M): .i vi ti so'i cinri stuzi\n~ There are lots of interesting places here.\nKristina(F): go'i\n~ Yes.\nKristina(F): .i mi nelci lo kafybarja .e lo bartu jubme\n~ I love the cafés and terraces.\nPavel(M): .i mi ji'a mutce nelci lo panka\n~ And I really like the parks!\nKristina(F): .i mi djica lo nu citka lo lurnanba ca ro lo djedi\n~ I want to eat croissants every day!\nPavel(M): .i ca bo .ei mi'o klama lo vijytcana\n~ It's time for us to go to the airport...\nPavel(M): doi .kristinas. .i mi se sidbo\n~ Kristina, I have an idea...\nPavel(M): .i xu do djica lo nu xabju la paris.\n~ Do you want to live in Paris?\nKristina(F): .i lo zdani mo .i lo gunka mo\n~ What about the house? Work?\nPavel(M): .i mi'o ka'e gunka je xabju vi ti\n~ We can work and live here!\nKristina(F): .i xu do birti\n~ Are you sure?\nPavel(M): .i lo mi pendo cu ponse lo gusta vi ti\n~ My friend has a restaurant here...\nPavel(M): .i ri nitcu tu'a lo djabei\n~ And he needs waiters!\nKristina(F): .ui\n~ Super!\nKristina(F): .i mi'o ba xabju la paris.\n~ We'll live in Paris!\nPavel(M): .ui sai\n~ Great!\n---\n? fill: Kristina(F): .i xu do [birti]\n? choice: .i la .kristinas. cu retsku ma\n- lu xu do kanro li'u\n+ lu xu do birti li'u\n- lu xu do zvati lo zdani li'u\n? choice: .i la .pavel. .e la .kristinas. cu jdice ma\n- lo du'u ri ba klama la paris. ca ro lo nalgundei\n+ lo du'u ri ba xabju la paris.\n- lo du'u ri ba te vecnu lo gusta",
+      "free_content_back": "A Trip to Paris.\nPavel and Kristina are in Paris on holiday.\nPavel: I want to stay here!\nKristina: I want to stay here too...\nPavel: I really like Paris!\nPavel: There are lots of interesting places here.\nKristina: Yes.\nKristina: I love the cafés and terraces.\nPavel: And I really like the parks!\nKristina: I want to eat croissants every day!\nPavel: It's time for us to go to the airport...\nPavel: Kristina, I have an idea...\nPavel: Do you want to live in Paris?\nKristina: What about the house? Work?\nPavel: We can work and live here!\nKristina: Are you sure?\nPavel: My friend has a restaurant here...\nPavel: And he needs waiters!\nKristina: Super!\nKristina: We'll live in Paris!\nPavel: Great!",
+      "level_index": 8,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    },
+    {
+      "item_id": 64,
+      "position": 63,
+      "collection_note": "batch2-37",
+      "free_content_front": "Story 10: lo mapti surla — The Perfect Holiday",
+      "free_content_back": "#### Before you read\nCharacters: Diego, Claudia\n\nPractise a few lines from the story, then read the whole story and answer its questions.",
+      "level_index": 9,
+      "position_in_level": 0,
+      "direction": "just_information"
+    },
+    {
+      "item_id": 65,
+      "position": 64,
+      "collection_note": "",
+      "free_content_front": "ti du lo mi'o xotli",
+      "free_content_back": "This is our hotel!",
+      "level_index": 9,
+      "position_in_level": 1,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 66,
+      "position": 65,
+      "collection_note": "",
+      "free_content_front": "mi mutce gleki lo nu zvati ti",
+      "free_content_back": "I'm so excited to be here!",
+      "level_index": 9,
+      "position_in_level": 2,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 67,
+      "position": 66,
+      "collection_note": "",
+      "free_content_front": "go'i .i ti mutce melbi",
+      "free_content_back": "Yes, it's very beautiful.",
+      "level_index": 9,
+      "position_in_level": 3,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 68,
+      "position": 67,
+      "collection_note": "",
+      "free_content_front": "mi ji'a .i ku'i ca lo bavlamdei",
+      "free_content_back": "Me too... but tomorrow.",
+      "level_index": 9,
+      "position_in_level": 4,
+      "direction": "wordbank"
+    },
+    {
+      "item_id": 69,
+      "position": 68,
+      "collection_note": "",
+      "free_content_front": "xu do djica lo nu limna",
+      "free_content_back": "Or do you want to go swimming?",
+      "level_index": 9,
+      "position_in_level": 5,
+      "direction": "wordbank_reverse"
+    },
+    {
+      "item_id": 70,
+      "position": 69,
+      "collection_note": "batch2-37",
+      "free_content_front": "# lo mapti surla\n> .i la .klaudias. .e la .diegos. cu zvati lo gugde panka\n~ Claudia and Diego are in a national park.\nClaudia(F): .i ti du lo mi'o xotli\n~ This is our hotel!\nDiego(M): .i mi mutce gleki lo nu zvati ti\n~ I'm so excited to be here!\nClaudia(F): go'i .i ti mutce melbi\n~ Yes, it's very beautiful.\nDiego(M): .i ku'i mi mutce tatpi ba lo ca clani djedi\n~ But I'm very tired after this long day...\nClaudia(F): .i do djica lo nu pa moi zukte ma\n~ What do you want to do first?\nDiego(M): .i .y.\n~ Ahh...\nClaudia(F): .i mi djica lo nu cadzu gi'e catlu ti\n~ I want to walk around and see this place!\nClaudia(F): .i mi ji'a djica lo nu klama sepi'o lo xirma\n~ And I want to go horse riding!\nDiego(M): .i mi ji'a .i ku'i ca lo bavlamdei\n~ Me too... but tomorrow.\nClaudia(F): .i xu do djica lo nu limna\n~ Or do you want to go swimming?\nClaudia(F): .i mi'o jibni lo xamsi korbi\n~ We're near a beach.\nClaudia(F): .i ku'i\n~ But...\nClaudia(F): .i mi ji'a mutce tatpi\n~ ...I'm very tired too.\nClaudia(F): .i mi'o ka'e go'i ca lo bavlamdei\n~ We can do it tomorrow.\nDiego(M): .i xamgu sidbo\n~ Good idea!\nDiego(M): .i ca lo cabdei .e'u mi'o limna\n~ Today, let's go swimming...\nDiego(M): .i vi lo brabaktu pe lo xotli\n~ ...in the hotel pool.\nClaudia(F): go'i .i ba bo mi'o catlu lo skina vi lo mi'o kumfa\n~ Yes, and then a film in our room!\nDiego(M): .i ba bo .e'u mi'o sipna\n~ And then, let's go to sleep!\nDiego(M): .i ku'i ca lo bavlamdei le ti melbi stuzi ba zdile mi'o\n~ But tomorrow we'll enjoy this beautiful place!\n---\n? fill: Claudia(F): go'i .i ti mutce [melbi]\n? choice: .i la .klaudias. cu djica ma\n- lo nu xruti lo zdani\n+ lo nu cadzu gi'e catlu\n- lo nu klama lo drata xotli\n? choice: .i la .diegos. .e la .klaudias. ca ba mo\n- pinxe lo vlipa se pinxe\n+ surla ca lo vanci gi'e catlu ca lo bavlamdei\n- limna lo xamsi gi'e cpare",
+      "free_content_back": "The Perfect Holiday.\nClaudia and Diego are in a national park.\nClaudia: This is our hotel!\nDiego: I'm so excited to be here!\nClaudia: Yes, it's very beautiful.\nDiego: But I'm very tired after this long day...\nClaudia: What do you want to do first?\nDiego: Ahh...\nClaudia: I want to walk around and see this place!\nClaudia: And I want to go horse riding!\nDiego: Me too... but tomorrow.\nClaudia: Or do you want to go swimming?\nClaudia: We're near a beach.\nClaudia: But...\nClaudia: ...I'm very tired too.\nClaudia: We can do it tomorrow.\nDiego: Good idea!\nDiego: Today, let's go swimming...\nDiego: ...in the hotel pool.\nClaudia: Yes, and then a film in our room!\nDiego: And then, let's go to sleep!\nDiego: But tomorrow we'll enjoy this beautiful place!",
+      "level_index": 9,
+      "position_in_level": 6,
+      "direction": "dialogue"
+    }
+  ],
+  "levels": [
+    {
+      "name": "Story 1: lo cange (The Farm)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 0,
+      "prerequisite_positions": [],
+      "item_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "name": "Story 2: lo boltipyjvi cutci (The Soccer Shoes)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 1,
+      "prerequisite_positions": [
+        0
+      ],
+      "item_positions": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "name": "Story 3: lo muzga (At the Museum)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 2,
+      "prerequisite_positions": [
+        1
+      ],
+      "item_positions": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    },
+    {
+      "name": "Story 4: lo jaspu (The Passport)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 3,
+      "prerequisite_positions": [
+        2
+      ],
+      "item_positions": [
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ]
+    },
+    {
+      "name": "Story 5: lo xamgu gerku (The Good Dog)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 4,
+      "prerequisite_positions": [
+        3
+      ],
+      "item_positions": [
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34
+      ]
+    },
+    {
+      "name": "Story 6: lo lankyboijvi (The Basketball Player)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 5,
+      "prerequisite_positions": [
+        4
+      ],
+      "item_positions": [
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41
+      ]
+    },
+    {
+      "name": "Story 7: lo nunkei poi mi traji nelci (My Favourite Game)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 6,
+      "prerequisite_positions": [
+        5
+      ],
+      "item_positions": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48
+      ]
+    },
+    {
+      "name": "Story 8: mi djica tu'a lo gerku (I Want a Dog)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 7,
+      "prerequisite_positions": [
+        6
+      ],
+      "item_positions": [
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ]
+    },
+    {
+      "name": "Story 9: lo nu klama la paris. (A Trip to Paris)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 8,
+      "prerequisite_positions": [
+        7
+      ],
+      "item_positions": [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62
+      ]
+    },
+    {
+      "name": "Story 10: lo mapti surla (The Perfect Holiday)",
+      "description": "Story from the duostories adaptation (dialogues.json).",
+      "min_cards": 5,
+      "min_success_rate": 0.8,
+      "position": 9,
+      "prerequisite_positions": [
+        8
+      ],
+      "item_positions": [
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69
+      ]
+    }
+  ]
+}

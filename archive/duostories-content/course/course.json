@@ -3184,6 +3184,16 @@
           "jbo": "fi'i",
           "en": "Welcome!",
           "direction": "quiz_direct"
+        },
+        {
+          "jbo": "mi ca'o jinvi lo du'u la .lojban. cu xamgu",
+          "en": "I still think Lojban is great.",
+          "direction": "wordbank_reverse"
+        },
+        {
+          "jbo": "pa cnino prenu cu klama",
+          "en": "A new person is coming.",
+          "direction": "wordbank"
         }
       ],
       "dialogue": {
@@ -3271,46 +3281,70 @@
       "readings_after": []
     }
   ],
-  "readings_after_course": [
-    "batch2-01",
-    "batch2-02",
-    "batch2-03",
-    "batch2-04",
-    "batch2-05",
-    "batch2-06",
-    "batch2-07",
-    "batch2-08",
-    "batch2-09",
-    "batch2-10",
-    "batch2-11",
-    "batch2-12",
-    "batch2-13",
-    "batch2-14",
-    "batch2-15",
-    "batch2-16",
-    "batch2-17",
-    "batch2-18",
-    "batch2-19",
-    "batch2-20",
-    "batch2-21",
-    "batch2-22",
-    "batch2-23",
-    "batch2-24",
-    "batch2-25",
-    "batch2-26",
-    "batch2-27",
-    "batch2-28",
-    "batch2-29",
-    "batch2-30",
-    "batch2-31",
-    "batch2-32",
-    "batch2-33",
-    "batch2-34",
-    "batch2-35",
-    "batch2-36",
-    "batch2-37",
-    "batch2-38",
-    "batch2-39",
-    "batch2-40"
+  "story_courses": [
+    {
+      "file": "lojban-stories-food-shopping_collection.json",
+      "name": "Lojban stories 1: Food, Shopping and Going Out",
+      "stories": [
+        "batch2-01",
+        "batch2-05",
+        "batch2-06",
+        "batch2-07",
+        "batch2-13",
+        "batch2-21",
+        "batch2-24",
+        "batch2-30",
+        "batch2-36",
+        "batch2-38"
+      ]
+    },
+    {
+      "file": "lojban-stories-family-friends_collection.json",
+      "name": "Lojban stories 2: Family, Friends and Celebrations",
+      "stories": [
+        "batch2-11",
+        "batch2-17",
+        "batch2-18",
+        "batch2-22",
+        "batch2-23",
+        "batch2-31",
+        "batch2-32",
+        "batch2-34",
+        "batch2-39",
+        "batch2-40"
+      ]
+    },
+    {
+      "file": "lojban-stories-school-everyday_collection.json",
+      "name": "Lojban stories 3: School, Work and Everyday Troubles",
+      "stories": [
+        "batch2-08",
+        "batch2-09",
+        "batch2-12",
+        "batch2-15",
+        "batch2-16",
+        "batch2-25",
+        "batch2-26",
+        "batch2-27",
+        "batch2-28",
+        "batch2-29"
+      ]
+    },
+    {
+      "file": "lojban-stories-hobbies-travel_collection.json",
+      "name": "Lojban stories 4: Hobbies, Pets and Travel",
+      "stories": [
+        "batch2-02",
+        "batch2-03",
+        "batch2-04",
+        "batch2-10",
+        "batch2-14",
+        "batch2-19",
+        "batch2-20",
+        "batch2-33",
+        "batch2-35",
+        "batch2-37"
+      ]
+    }
   ]
 }
