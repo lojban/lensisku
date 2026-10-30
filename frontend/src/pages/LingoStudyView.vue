@@ -881,6 +881,13 @@ const wordbankSelectedIds = ref<string[]>([])
 /** Server target: selected chip texts joined in order must equal this. */
 const wordbankExpectedNormalized = ref('')
 
+/** Ordered chip texts for server-side token grading (word-bank modes only). */
+function wordbankAnswerTokens(): string[] | undefined {
+  if (!isWordbankMode.value) return undefined
+  const byId = new Map(wordbankChips.value.map((c) => [c.id, c]))
+  return wordbankSelectedIds.value.map((id) => byId.get(id)?.text).filter((t): t is string => !!t)
+}
+
 function syncUserAnswerFromWordbank() {
   if (!isWordbankMode.value) return
   const byId = new Map(wordbankChips.value.map((c) => [c.id, c]))
@@ -1184,6 +1191,7 @@ async function commitGradedAndAdvance(rating: number) {
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
         answer: pending.answer,
+        answer_tokens: pending.answerTokens,
         rating,
         hint_used: hintUsed.value,
         presented_type: currentCard.value.flashcard.presented_type,
@@ -1746,11 +1754,16 @@ const submitAnswer = async (rating?: number) => {
     if (isFillInLikeMode.value) {
       if (isWordbankMode.value) syncUserAnswerFromWordbank()
       const answer = userAnswer.value.trim()
+      const answerTokens = wordbankAnswerTokens()
       // Check: grade only (no `rating` → no FSRS commit).
       const response = await submitFillinAnswer({
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
         answer,
+        answer_tokens: answerTokens,
+        // `auto` cards are graded as the presented type; without it the server falls back
+        // to typed fill-in (punctuation-sensitive) and "I talk" ≠ "I talk." is marked wrong.
+        presented_type: currentCard.value.flashcard.presented_type,
       })
       fillinResult.value = response.data
       // `success` = request OK (always true on 200); grading lives in `answer_correct`.
@@ -1758,6 +1771,7 @@ const submitAnswer = async (rating?: number) => {
       pendingGradeCommit.value = {
         kind: 'fillin',
         answer,
+        answerTokens,
         correct: ok,
         suggestedRating: response.data?.suggested_rating,
       }
@@ -1824,6 +1838,7 @@ const submitQuizOption = async (selectedOption) => {
         card_side: currentCard.value.progress[0].card_side,
         selected_answer_text: selectedOption,
         presented_options: options,
+        presented_type: fc.presented_type,
       })
       quizResult.value = response.data
       pendingGradeCommit.value = {

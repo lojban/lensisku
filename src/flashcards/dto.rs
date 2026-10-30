@@ -143,6 +143,11 @@ pub struct FillInAnswerRequest {
     /// `auto` cards: the presented type the client rendered (validated server-side).
     #[serde(default)]
     pub presented_type: Option<String>,
+    /// Word-bank: ordered chip texts the learner selected. When present the server grades
+    /// token-by-token against the expected sequence it derives from the card (exact match
+    /// against any `;` alternative), independent of `answer` text / `presented_type`.
+    #[serde(default)]
+    pub answer_tokens: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, ToSchema, Validate)]

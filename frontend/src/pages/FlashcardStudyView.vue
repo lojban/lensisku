@@ -722,6 +722,13 @@ const wordbankSelectedIds = ref<string[]>([])
 /** Server target: selected chip texts joined in order must equal this. */
 const wordbankExpectedNormalized = ref('')
 
+/** Ordered chip texts for server-side token grading (word-bank modes only). */
+function wordbankAnswerTokens(): string[] | undefined {
+  if (!isWordbankMode.value) return undefined
+  const byId = new Map(wordbankChips.value.map((c) => [c.id, c]))
+  return wordbankSelectedIds.value.map((id) => byId.get(id)?.text).filter((t): t is string => !!t)
+}
+
 function syncUserAnswerFromWordbank() {
   if (!isWordbankMode.value) return
   const byId = new Map(wordbankChips.value.map((c) => [c.id, c]))
@@ -1046,16 +1053,19 @@ const submitAnswer = async (rating?: number) => {
     if (isFillInLikeMode.value) {
       if (isWordbankMode.value) syncUserAnswerFromWordbank()
       const answer = userAnswer.value.trim()
+      const answerTokens = wordbankAnswerTokens()
       const response = await submitFillinAnswer({
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
         presented_type: currentCard.value.flashcard.presented_type,
         answer,
+        answer_tokens: answerTokens,
       })
       fillinResult.value = response.data
       pendingGradeCommit.value = {
         kind: 'fillin',
         answer,
+        answerTokens,
         correct: response.data?.answer_correct === true || response.data?.correct === true,
       }
       await nextTick()
@@ -1143,6 +1153,7 @@ async function commitPendingGrade(rating: number) {
       card_side: currentCard.value.progress[0].card_side,
       presented_type: currentCard.value.flashcard.presented_type,
       answer: pending.answer,
+      answer_tokens: pending.answerTokens,
       rating,
     })
   } else if (pending.kind === 'quiz') {

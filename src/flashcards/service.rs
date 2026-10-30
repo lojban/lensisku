@@ -2868,7 +2868,12 @@ pub async fn review_flashcard_serverside(
             .as_deref()
             .and_then(FlashcardDirection::parse)
             .filter(|t| is_wordbank_like_direction(t) || *t == FlashcardDirection::FillIn)
-            .unwrap_or(FlashcardDirection::FillIn);
+            // Chip tokens without a presented type (older client) → it was a word bank.
+            .unwrap_or(if req.answer_tokens.is_some() {
+                FlashcardDirection::Wordbank
+            } else {
+                FlashcardDirection::FillIn
+            });
         flashcard.direction = t.clone();
         t
     } else {
@@ -2902,6 +2907,9 @@ pub async fn review_flashcard_serverside(
     }
 
     validate_fill_in_answers(&req.answer, &expected_raw)?;
+    if req.answer_tokens.as_ref().is_some_and(|t| t.len() > 256) {
+        return Err("Too many answer tokens".into());
+    }
     let wordbank_lang = wordbank_lang_for(&direction, req.card_side.as_str());
     let provided = if let Some(lang) = wordbank_lang {
         // Chip-assembled answers are already normalized; normalize is idempotent.
@@ -2946,6 +2954,18 @@ pub async fn review_flashcard_serverside(
     } else {
         // Not free content or no semicolons, use standard similarity calculation
         calculate_similarity(&expected_for_grade, &provided)
+    };
+
+    // Word bank with chip tokens: authoritative server-side token-sequence check.
+    let similarity = match (wordbank_lang, req.answer_tokens.as_deref()) {
+        (Some(lang), Some(tokens)) => {
+            if wordbank_tokens_match(tokens, &expected_raw, lang) {
+                1.0
+            } else {
+                0.0
+            }
+        }
+        _ => similarity,
     };
 
     // Similarity-based suggested rating (used for grade-only Check / answer_correct).
@@ -4582,6 +4602,25 @@ pub async fn remove_card_from_level(
     Ok(())
 }
 
+/// Server-side word-bank grade: the learner's ordered chip texts must equal, token by
+/// token, the expected sequence for one of the card's `;`-separated alternatives
+/// (same tokenization/normalization used to build the chips).
+fn wordbank_tokens_match(tokens: &[String], expected_raw: &str, lang: WordbankLang) -> bool {
+    use crate::utils::wordbank::tokenize_wordbank_phrase;
+    let provided: Vec<String> = tokens
+        .iter()
+        .flat_map(|t| tokenize_wordbank_phrase(t, lang))
+        .collect();
+    if provided.is_empty() {
+        return false;
+    }
+    expected_raw
+        .split(';')
+        .map(|alt| tokenize_wordbank_phrase(alt, lang))
+        .filter(|e| !e.is_empty())
+        .any(|e| e == provided)
+}
+
 fn validate_fill_in_answers(answer: &str, expected: &str) -> Result<(), FlashcardError> {
     if answer.len() > 2048
         || expected.len() > 8192
@@ -5451,5 +5490,61 @@ mod info_card_wordbank_tests {
                 }
             }
         }
+    }
+}
+
+
+#[cfg(test)]
+mod auto_wordbank_grade_tests {
+    use super::{calculate_similarity, wordbank_tokens_match};
+    use crate::utils::wordbank::{normalize_wordbank_phrase, WordbankLang};
+
+    fn toks(v: &[&str]) -> Vec<String> {
+        v.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn tokens_mi_tavla_correct_with_trailing_stop() {
+        assert!(wordbank_tokens_match(&toks(&["I", "talk"]), "I talk.", WordbankLang::Translation));
+    }
+
+    #[test]
+    fn tokens_wrong_order_is_wrong() {
+        assert!(!wordbank_tokens_match(&toks(&["talk", "I"]), "I talk.", WordbankLang::Translation));
+    }
+
+    #[test]
+    fn tokens_extra_or_missing_is_wrong() {
+        assert!(!wordbank_tokens_match(&toks(&["I", "talk", "you"]), "I talk.", WordbankLang::Translation));
+        assert!(!wordbank_tokens_match(&toks(&["I"]), "I talk.", WordbankLang::Translation));
+        assert!(!wordbank_tokens_match(&[], "I talk.", WordbankLang::Translation));
+    }
+
+    #[test]
+    fn tokens_alternatives_accepted() {
+        assert!(wordbank_tokens_match(&toks(&["I", "speak"]), "I talk.; I speak.", WordbankLang::Translation));
+    }
+
+    #[test]
+    fn tokens_reverse_lojban() {
+        assert!(wordbank_tokens_match(&toks(&["mi", "tavla"]), "mi tavla", WordbankLang::Lojban));
+        assert!(!wordbank_tokens_match(&toks(&["tavla", "mi"]), "mi tavla", WordbankLang::Lojban));
+        // Lojban is case/orthography-preserving.
+        assert!(!wordbank_tokens_match(&toks(&["mi", "TAVLA"]), "mi tavla", WordbankLang::Lojban));
+    }
+
+    /// Prod bug: auto card "mi tavla" → "I talk." presented as wordbank; Check omitted
+    /// `presented_type`, so the server graded as typed fill-in and chips "I talk" failed.
+    #[test]
+    fn mi_tavla_wordbank_chips_vs_fillin_fallback() {
+        let expected = "I talk.";
+        let chips = "I talk";
+        // Fill-in fallback (no presented_type): punctuation counts → < 0.9 → wrong.
+        let fillin = calculate_similarity(&expected.to_lowercase(), &chips.to_lowercase());
+        assert!(fillin < 0.9, "fill-in fallback similarity {fillin}");
+        // Wordbank grading (presented_type = wordbank): exact match.
+        let e = normalize_wordbank_phrase(expected, WordbankLang::Translation);
+        let p = normalize_wordbank_phrase(chips, WordbankLang::Translation);
+        assert_eq!(calculate_similarity(&e, &p), 1.0);
     }
 }
