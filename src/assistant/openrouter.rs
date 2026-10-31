@@ -291,6 +291,17 @@ pub fn tool_call_dto_to_internal(c: &ToolCallDto) -> ToolCall {
     }
 }
 
+/// Whether an upstream status is worth retrying **on the same model**.
+///
+/// Free OpenRouter models often answer `429` (rate-limited upstream) or `503` ("Provider returned
+/// error") for minutes at a time. Retrying those with backoff burned the whole per-iteration
+/// timeout before the agent could switch to a fallback model, so the user got no reply. They
+/// (and other 4xx like `403` "agentic harness only" / `404` no endpoint) now fail fast; the
+/// agent loop moves to the next candidate. Only transient gateway errors are retried.
+pub(crate) fn status_is_same_model_retryable(code: u16) -> bool {
+    matches!(code, 500 | 502 | 504 | 520..=524)
+}
+
 async fn ensure_status(res: reqwest::Response, label: &str) -> Result<reqwest::Response, AppError> {
     let status = res.status();
     if status.is_success() {
@@ -306,7 +317,7 @@ async fn ensure_status(res: reqwest::Response, label: &str) -> Result<reqwest::R
         status,
         status.canonical_reason().unwrap_or("")
     );
-    if status.is_server_error() {
+    if status_is_same_model_retryable(status.as_u16()) {
         Err(AppError::ExternalServiceRetryable {
             message,
             raw_response: body,
@@ -340,7 +351,7 @@ async fn parse_response(
                 } else {
                     format!("{label}: {}", err_payload.error.message)
                 };
-                let is_server_error = code.map(|c| c >= 500).unwrap_or(true);
+                let is_server_error = code.map(status_is_same_model_retryable).unwrap_or(true);
                 if is_server_error {
                     log::warn!(
                         "OpenRouter {label} returned error body (code {code:?}), will retry: {msg}"
@@ -403,5 +414,24 @@ where
         None => Err(AppError::Internal(format!(
             "OpenRouter {label} retry loop exhausted without success"
         ))),
+    }
+}
+
+#[cfg(test)]
+mod retry_classification_tests {
+    use super::status_is_same_model_retryable as r;
+
+    #[test]
+    fn rate_limit_and_unavailable_fail_fast() {
+        for c in [429u16, 503, 403, 404, 400, 401, 402] {
+            assert!(!r(c), "{c} should switch model, not retry");
+        }
+    }
+
+    #[test]
+    fn transient_gateway_errors_retry() {
+        for c in [500u16, 502, 504, 522] {
+            assert!(r(c), "{c} should retry");
+        }
     }
 }

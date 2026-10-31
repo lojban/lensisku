@@ -10,6 +10,58 @@ use crate::middleware::cache::RedisCache;
 /// Redis key for the two assistant models (JSON: [`CachedOpenRouterAssistantModels`]).
 pub const REDIS_KEY_OPENROUTER_ASSISTANT_MODELS: &str = "openrouter:assistant_models_v1";
 
+/// Last pair that passed a probe. Never evicted by chat failures (only overwritten by the next
+/// successful refresh) so chat does not fall back to untested newest catalog models.
+pub const REDIS_KEY_OPENROUTER_LAST_GOOD_MODELS: &str = "openrouter:assistant_models_last_good_v1";
+const LAST_GOOD_TTL: Duration = Duration::from_secs(30 * 24 * 60 * 60);
+
+/// Free models observed to answer the assistant's tool-calling request (2026-10-31). Probed
+/// alongside the newest catalog entries and used before the raw catalog when Redis is empty.
+/// Override with `OPENROUTER_ASSISTANT_FALLBACK_MODELS` (comma-separated ids).
+const DEFAULT_FALLBACK_MODELS: &[&str] = &[
+    "nvidia/nemotron-3.5-super-vl:free",
+    "dots-studio/dots-3-note-preview:free",
+    "nvidia/nemotron-3.5-lightning:free",
+    "poolside/laguna-s-2.1:free",
+];
+
+/// Per-model ceiling for the cheap background probe (all candidates run concurrently).
+pub const OPENROUTER_PROBE_TIMEOUT: Duration = Duration::from_secs(45);
+
+pub fn fallback_model_ids() -> Vec<String> {
+    parse_fallback_models(std::env::var("OPENROUTER_ASSISTANT_FALLBACK_MODELS").ok().as_deref())
+}
+
+fn parse_fallback_models(raw: Option<&str>) -> Vec<String> {
+    match raw.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(s) => s
+            .split(',')
+            .map(str::trim)
+            .filter(|x| !x.is_empty())
+            .map(String::from)
+            .collect(),
+        None => DEFAULT_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
+    }
+}
+
+/// Stored pair first, then known-good fallbacks, then catalog; de-duplicated, order kept.
+pub fn merge_candidates(lists: &[Vec<ModelIdName>]) -> Vec<ModelIdName> {
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for l in lists {
+        for (id, name) in l {
+            if !id.trim().is_empty() && seen.insert(id.clone()) {
+                out.push((id.clone(), name.clone()));
+            }
+        }
+    }
+    out
+}
+
+pub fn fallback_candidates() -> Vec<ModelIdName> {
+    fallback_model_ids().into_iter().map(|id| (id.clone(), id)).collect()
+}
+
 /// Max free models to pull from the catalog (newest first). First two may run in parallel when
 /// streaming; the rest are used only as sequential fallbacks if earlier choices fail.
 pub const OPENROUTER_MODEL_CANDIDATES_MAX: usize = 8;
@@ -242,11 +294,12 @@ pub async fn fetch_latest_openrouter_models(
 }
 
 /// Reads two model ids from Redis if present and valid (non-empty ids, exactly two entries).
-pub async fn load_cached_openrouter_assistant_models(
+async fn load_cached_pair(
     redis: &RedisCache,
+    key: &str,
 ) -> Result<Option<Vec<ModelIdName>>, AppError> {
     let cached = redis
-        .get::<CachedOpenRouterAssistantModels>(REDIS_KEY_OPENROUTER_ASSISTANT_MODELS)
+        .get::<CachedOpenRouterAssistantModels>(key)
         .await
         .map_err(|e| AppError::ExternalService(format!("Redis read assistant models: {}", e)))?;
     let Some(cached) = cached else {
@@ -274,26 +327,31 @@ pub async fn load_or_fetch_openrouter_candidates(
     api_key: &str,
 ) -> Result<(Vec<ModelIdName>, bool), AppError> {
     if let Some(r) = redis {
-        match load_cached_openrouter_assistant_models(r).await {
-            Ok(Some(pair)) if pair.len() == 2 => {
-                log::debug!(
-                    "OpenRouter assistant: using two cached models from Redis: {}, {}",
-                    pair[0].0,
-                    pair[1].0
-                );
-                return Ok((pair, true));
-            }
-            Ok(_) => {}
-            Err(e) => {
-                log::warn!(
-                    "OpenRouter assistant: Redis read for cached models failed ({}); using catalog",
-                    e
-                );
+        for key in [
+            REDIS_KEY_OPENROUTER_ASSISTANT_MODELS,
+            REDIS_KEY_OPENROUTER_LAST_GOOD_MODELS,
+        ] {
+            match load_cached_pair(r, key).await {
+                Ok(Some(pair)) if pair.len() == 2 => {
+                    log::debug!(
+                        "OpenRouter assistant: using cached models from Redis `{key}`: {}, {}",
+                        pair[0].0,
+                        pair[1].0
+                    );
+                    return Ok((pair, true));
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    log::warn!("OpenRouter assistant: Redis read `{key}` failed ({e})");
+                }
             }
         }
     }
-    let full = fetch_latest_openrouter_models(base_url, api_key).await?;
-    Ok((full, false))
+    // No probed pair: known-good fallbacks first, untested newest catalog models last.
+    let catalog = fetch_latest_openrouter_models(base_url, api_key)
+        .await
+        .unwrap_or_default();
+    Ok((merge_candidates(&[fallback_candidates(), catalog]), false))
 }
 
 /// Removes a model id from the cached assistant models pair in Redis.
@@ -332,74 +390,51 @@ pub async fn evict_openrouter_assistant_model_from_cache(
     Ok(())
 }
 
-/// Walks catalog order, probes each candidate via `probe`, stores the first two that succeed.
-///
-/// The `probe` callback receives `(model_id, model_name)`; returning `Ok(())` accepts the candidate,
-/// any error skips it. Callers supply a probe that runs the real assistant chat path against the
-/// model so that only models which actually produce a non-empty reply are cached.
+/// Probes catalog + known-good fallbacks **concurrently** (each bounded by
+/// [`OPENROUTER_PROBE_TIMEOUT`]) and stores the two fastest successes in Redis (both the hot key
+/// and the persistent last-good key). Returns how many models passed, so the caller can retry
+/// sooner when fewer than two did; the previous Redis entries are kept in that case.
 pub async fn refresh_openrouter_assistant_models_cache<F, Fut>(
     redis: &RedisCache,
     base_url: &str,
     api_key: &str,
-    mut probe: F,
-) -> Result<(), AppError>
+    probe: F,
+) -> Result<usize, AppError>
 where
-    F: FnMut(String, String) -> Fut,
+    F: Fn(String, String) -> Fut,
     Fut: std::future::Future<Output = Result<(), AppError>>,
 {
     let catalog = fetch_latest_openrouter_models(base_url, api_key)
         .await
-        .map_err(|e| -> AppError { format!("{}", e).into() })?;
-
-    let mut picked: Vec<(ModelEntry, Duration)> = Vec::new();
-    for (id, name) in catalog {
-        let started_at = Instant::now();
-        match probe(id.clone(), name.clone()).await {
-            Ok(()) => {
-                let probe_duration = started_at.elapsed();
-                log::debug!(
-                    "OpenRouter cache refresh: probe ok for {} ({} ms)",
-                    id,
-                    probe_duration.as_millis()
-                );
-                picked.push((ModelEntry { id, name }, probe_duration));
-                if picked.len() == 2 {
-                    break;
-                }
-            }
-            Err(e) => {
-                log::debug!("OpenRouter cache refresh: skip {} ({})", id, e);
-            }
-        }
+        .unwrap_or_default();
+    let mut prev = Vec::new();
+    if let Ok(Some(p)) = load_cached_pair(redis, REDIS_KEY_OPENROUTER_LAST_GOOD_MODELS).await {
+        prev = p;
     }
+    let candidates = merge_candidates(&[prev, fallback_candidates(), catalog]);
+    let picked = probe_concurrently(candidates, &probe).await;
 
-    if picked.len() == 2 {
-        // Provider priority disabled: rank only by probe speed.
-        picked.sort_by(|(_a_entry, a_duration), (_b_entry, b_duration)| {
-            // let a_preferred = is_preferred_provider(&a_entry.id);
-            // let b_preferred = is_preferred_provider(&b_entry.id);
-            // match (a_preferred, b_preferred) {
-            //     (true, false) => std::cmp::Ordering::Less,
-            //     (false, true) => std::cmp::Ordering::Greater,
-            //     _ => a_duration.cmp(b_duration),
-            // }
-            a_duration.cmp(b_duration)
-        });
-
-        let ordered_models: Vec<ModelEntry> =
-            picked.iter().map(|(entry, _)| entry.clone()).collect();
-
+    if picked.len() >= 2 {
+        let models: Vec<ModelEntry> = picked
+            .iter()
+            .take(2)
+            .map(|(id, name)| ModelEntry {
+                id: id.clone(),
+                name: name.clone(),
+            })
+            .collect();
+        let entry = CachedOpenRouterAssistantModels { models };
         redis
-            .set(
-                REDIS_KEY_OPENROUTER_ASSISTANT_MODELS,
-                &CachedOpenRouterAssistantModels {
-                    models: ordered_models,
-                },
-                None,
-            )
+            .set(REDIS_KEY_OPENROUTER_ASSISTANT_MODELS, &entry, None)
+            .await?;
+        redis
+            .set(REDIS_KEY_OPENROUTER_LAST_GOOD_MODELS, &entry, Some(LAST_GOOD_TTL))
             .await?;
         log::info!(
-            "OpenRouter assistant model cache updated in Redis (two probed models, probe-speed ranked)."
+            "OpenRouter assistant model cache updated: {}, {} ({} passed)",
+            picked[0].0,
+            picked[1].0,
+            picked.len()
         );
     } else {
         log::warn!(
@@ -407,6 +442,83 @@ where
             picked.len()
         );
     }
+    Ok(picked.len())
+}
 
-    Ok(())
+/// Runs `probe` for every candidate at once; returns successes ordered fastest first.
+pub async fn probe_concurrently<F, Fut>(candidates: Vec<ModelIdName>, probe: &F) -> Vec<ModelIdName>
+where
+    F: Fn(String, String) -> Fut,
+    Fut: std::future::Future<Output = Result<(), AppError>>,
+{
+    let futs = candidates.into_iter().map(|(id, name)| async move {
+        let started = Instant::now();
+        let res = tokio::time::timeout(OPENROUTER_PROBE_TIMEOUT, probe(id.clone(), name.clone()))
+            .await;
+        match res {
+            Ok(Ok(())) => {
+                log::debug!("OpenRouter probe ok: {id} ({} ms)", started.elapsed().as_millis());
+                Some((started.elapsed(), id, name))
+            }
+            Ok(Err(e)) => {
+                log::debug!("OpenRouter probe skip {id}: {e}");
+                None
+            }
+            Err(_) => {
+                log::debug!("OpenRouter probe skip {id}: timed out");
+                None
+            }
+        }
+    });
+    let mut ok: Vec<(Duration, String, String)> =
+        futures::future::join_all(futs).await.into_iter().flatten().collect();
+    ok.sort_by_key(|(d, _, _)| *d);
+    ok.into_iter().map(|(_, id, name)| (id, name)).collect()
+}
+
+#[cfg(test)]
+mod model_selection_tests {
+    use super::*;
+
+    fn m(id: &str) -> ModelIdName {
+        (id.to_string(), id.to_string())
+    }
+
+    #[test]
+    fn merge_dedups_and_keeps_priority() {
+        let out = merge_candidates(&[vec![m("a"), m("b")], vec![m("b"), m("c")], vec![m(""), m("a"), m("d")]]);
+        let ids: Vec<_> = out.into_iter().map(|x| x.0).collect();
+        assert_eq!(ids, ["a", "b", "c", "d"]);
+    }
+
+    #[test]
+    fn fallback_env_parsing() {
+        assert_eq!(parse_fallback_models(Some(" x , ,y ")), ["x", "y"]);
+        assert_eq!(parse_fallback_models(Some("  ")).len(), DEFAULT_FALLBACK_MODELS.len());
+        assert_eq!(parse_fallback_models(None).len(), DEFAULT_FALLBACK_MODELS.len());
+    }
+
+    #[tokio::test]
+    async fn probes_run_concurrently_and_rank_fastest_first() {
+        let probe = |id: String, _n: String| async move {
+            let ms = match id.as_str() {
+                "slow" => 300,
+                "fast" => 10,
+                "mid" => 100,
+                _ => 0,
+            };
+            tokio::time::sleep(Duration::from_millis(ms)).await;
+            if id == "bad" {
+                Err(AppError::ExternalService("429".into()))
+            } else {
+                Ok(())
+            }
+        };
+        let started = Instant::now();
+        let got = probe_concurrently(vec![m("slow"), m("bad"), m("fast"), m("mid")], &probe).await;
+        // Sequential would take >= 410 ms.
+        assert!(started.elapsed() < Duration::from_millis(390), "{:?}", started.elapsed());
+        let ids: Vec<_> = got.into_iter().map(|x| x.0).collect();
+        assert_eq!(ids, ["fast", "mid", "slow"]);
+    }
 }

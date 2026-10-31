@@ -99,7 +99,9 @@ fn assistant_iteration_timeout() -> Duration {
         env::var("ASSISTANT_ITERATION_TIMEOUT_SECS")
             .ok()
             .and_then(|s| s.parse().ok())
-            .unwrap_or(60)
+            // 60s cut off healthy free models: iteration 1 carries the ~200 KB system prompt
+            // and measured 18–64s. 90s keeps them while dead models still fail fast (429/503).
+            .unwrap_or(90)
             .clamp(10, 300),
     )
 }
@@ -1445,12 +1447,14 @@ pub async fn run_agent_loop(
         .await
         {
             Ok(ok) => return Ok(ok),
-            Err(e) if from_redis_only => {
+            // Only provider/model failures justify trying other models; tool or internal
+            // errors (e.g. embeddings disabled) would fail the same way on any model.
+            Err(e) if from_redis_only && matches!(e, AppError::ExternalService(_)) => {
                 log::warn!(
-                    "OpenRouter: Redis-cached assistant models failed ({}); loading full catalog once",
+                    "OpenRouter: Redis-cached assistant models failed ({}); trying known-good fallbacks, then catalog",
                     e
                 );
-                candidates = match fetch_latest_openrouter_models(
+                let catalog = match fetch_latest_openrouter_models(
                     openrouter.base_url(),
                     openrouter.api_key(),
                 )
@@ -1458,10 +1462,22 @@ pub async fn run_agent_loop(
                 {
                     Ok(v) => v,
                     Err(e2) => {
-                        emit_sse_error(&event_tx, &persist, &e2).await;
-                        return Err(e2);
+                        log::warn!("OpenRouter: catalog fetch failed ({e2}); using fallbacks only");
+                        Vec::new()
                     }
                 };
+                let tried: HashSet<String> = candidates.iter().map(|c| c.0.clone()).collect();
+                candidates = crate::utils::openrouter_models::merge_candidates(&[
+                    crate::utils::openrouter_models::fallback_candidates(),
+                    catalog,
+                ])
+                .into_iter()
+                .filter(|c| !tried.contains(&c.0))
+                .collect();
+                if candidates.is_empty() {
+                    emit_sse_error(&event_tx, &persist, &e).await;
+                    return Err(e);
+                }
                 from_redis_only = false;
             }
             Err(e) => return Err(e),
@@ -1589,55 +1605,68 @@ async fn run_agent_loop_with_candidates(
 }
 
 /// Test phrase used as the user message when probing a candidate model with the real assistant
-/// chat path. The probe expects any non-empty trimmed reply within
-/// [`ASSISTANT_MODEL_HEALTH_TIMEOUT`] for the model to be considered healthy.
+/// chat path. The probe expects a tool call or non-empty text
+/// within [`crate::utils::openrouter_models::OPENROUTER_PROBE_TIMEOUT`] to be considered healthy.
 pub const ASSISTANT_MODEL_PROBE_PHRASE: &str = "The big brown fox jumps over the lazy dog";
 
-/// Hard ceiling for a single `run_agent_loop_inner` invocation in both probe and real-chat paths;
-/// candidates exceeding this are treated as unhealthy and (in real chat) evicted from the Redis
-/// assistant model cache.
-pub const ASSISTANT_MODEL_HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
+/// Whole-turn budget for real chat (all fallback models + tool iterations). Larger than the
+/// probe ceiling: a branch whose first free model is dead loses up to one iteration timeout
+/// before switching, and the remaining search → resolve iterations still need time.
+/// Override with `ASSISTANT_CHAT_TIMEOUT_SECS` (60–900).
+fn assistant_chat_timeout() -> Duration {
+    Duration::from_secs(
+        env::var("ASSISTANT_CHAT_TIMEOUT_SECS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(300)
+            .clamp(60, 900),
+    )
+}
 
-/// Runs the real assistant chat path against `model` with a fixed test prompt and verifies the
-/// final reply (including any tool calls) is returned within [`ASSISTANT_MODEL_HEALTH_TIMEOUT`]
-/// and is non-empty after trimming. Used by the background OpenRouter model cache refresh.
-pub async fn probe_openrouter_model_full_chat(
-    pool: &Pool,
-    redis: Option<&RedisCache>,
-    model_id: &str,
-    model_name: &str,
-) -> Result<(), AppError> {
-    let request = ChatRequest {
-        messages: vec![ChatMessage {
-            role: "user".to_string(),
-            content: ASSISTANT_MODEL_PROBE_PHRASE.to_string(),
-            tool_calls: None,
-            tool_call_id: None,
-            name: None,
-        }],
-        locale: None,
+/// Cheap background probe: one non-retried `chat/completions` call with a tiny system prompt,
+/// the real tool definitions and [`ASSISTANT_MODEL_PROBE_PHRASE`]. Healthy = HTTP 2xx and the
+/// first choice carries a tool call or non-empty text. 429/503/403/404 surface as errors
+/// immediately (no same-model retry), so dead free models are skipped fast.
+pub async fn probe_openrouter_model_cheap(model_id: &str) -> Result<(), AppError> {
+    let openrouter = OpenRouterClient::from_env()?;
+    let request = ChatCompletionRequest {
+        model: model_id.to_string(),
+        messages: vec![
+            ChatCompletionMessageRequest {
+                role: "system".to_string(),
+                content: "You are a Lojban dictionary assistant. Use the tools to look up words before translating.".to_string(),
+                tool_call_id: None,
+                name: None,
+                tool_calls: None,
+            },
+            ChatCompletionMessageRequest {
+                role: "user".to_string(),
+                content: format!("translate into lojban: {ASSISTANT_MODEL_PROBE_PHRASE}"),
+                tool_call_id: None,
+                name: None,
+                tool_calls: None,
+            },
+        ],
+        tools: Some(vec![
+            jbovlaste_tool_schema(),
+            jbovlaste_resolve_results_tool_schema(),
+        ]),
+        tool_choice: Some(json!("auto")),
+        parallel_tool_calls: Some(true),
     };
-    let candidate = (model_id.to_string(), model_name.to_string());
-    let candidates = [candidate];
-    let fut = run_agent_loop_inner(pool, &request, &candidates, None, None, redis);
-    let outcome = tokio::time::timeout(ASSISTANT_MODEL_HEALTH_TIMEOUT, fut).await;
-    match outcome {
-        Err(_) => Err(AppError::ExternalService(format!(
-            "OpenRouter probe: model {} did not return a final reply within {}s",
-            model_id,
-            ASSISTANT_MODEL_HEALTH_TIMEOUT.as_secs()
-        ))),
-        Ok(Err(e)) => Err(e),
-        Ok(Ok((reply, _steps))) => {
-            if reply.trim().is_empty() {
-                Err(AppError::ExternalService(format!(
-                    "OpenRouter probe: model {} returned empty reply (trimmed)",
-                    model_id
-                )))
-            } else {
-                Ok(())
-            }
-        }
+    let resp = openrouter
+        .chat_completion(&request, &format!("probe {model_id}"))
+        .await?;
+    let ok = resp.choices.first().is_some_and(|c| {
+        c.message.tool_calls.as_ref().is_some_and(|t| !t.is_empty())
+            || c.message.content.as_deref().is_some_and(|t| !t.trim().is_empty())
+    });
+    if ok {
+        Ok(())
+    } else {
+        Err(AppError::ExternalService(format!(
+            "OpenRouter probe: model {model_id} returned neither tool calls nor text"
+        )))
     }
 }
 
@@ -1653,11 +1682,12 @@ async fn run_agent_loop_inner_health_checked(
     redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let fut = run_agent_loop_inner(pool, request, candidates, event_tx, persist, redis);
-    let outcome = tokio::time::timeout(ASSISTANT_MODEL_HEALTH_TIMEOUT, fut).await;
+    let budget = assistant_chat_timeout();
+    let outcome = tokio::time::timeout(budget, fut).await;
     match outcome {
         Err(_) => Err(AppError::ExternalService(format!(
             "Assistant: did not return a final reply within {}s",
-            ASSISTANT_MODEL_HEALTH_TIMEOUT.as_secs()
+            budget.as_secs()
         ))),
         Ok(Err(e)) => Err(e),
         Ok(Ok((reply, steps))) => {
@@ -2123,7 +2153,23 @@ pub(crate) async fn run_agent_loop_inner(
                             }
                         }
 
-                        let embeddings = get_batch_embeddings(trimmed.clone()).await?;
+                        // An embedding failure (e.g. DISABLE_EMBEDDINGS locally) is reported to
+                        // the model as a per-query tool error instead of aborting the whole turn.
+                        let embeddings = match get_batch_embeddings(trimmed.clone()).await {
+                            Ok(v) => v,
+                            Err(e) => {
+                                log::warn!("Assistant semantic search: embeddings failed: {e}");
+                                let msg = e.to_string();
+                                batch_outcomes_by_slot.insert(
+                                    slot_i,
+                                    trimmed
+                                        .iter()
+                                        .map(|_| Err(AppError::Internal(msg.clone())))
+                                        .collect(),
+                                );
+                                continue;
+                            }
+                        };
 
                         let outcomes = join_all(trimmed.iter().zip(embeddings).map(|(q, emb)| {
                             let pool = pool_clone.clone();

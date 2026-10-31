@@ -85,7 +85,10 @@ pub async fn chat_stream_public(
         }
     });
 
-    Ok(sse::Sse::from_infallible_receiver(rx))
+    Ok(sse::Sse::from_infallible_receiver(rx)
+        // Comment pings keep Cloudflare/nginx from cutting a silent stream (~100s idle) while
+        // slow free models or fallbacks are working.
+        .with_keep_alive(std::time::Duration::from_secs(15)))
 }
 
 #[get("/chats")]
@@ -243,7 +246,10 @@ pub async fn chat_stream_by_id(
         }
     });
 
-    Ok(sse::Sse::from_infallible_receiver(rx))
+    Ok(sse::Sse::from_infallible_receiver(rx)
+        // Comment pings keep Cloudflare/nginx from cutting a silent stream (~100s idle) while
+        // slow free models or fallbacks are working.
+        .with_keep_alive(std::time::Duration::from_secs(15)))
 }
 
 /// Suggest a short wiki page title from a comment and its thread/entry context.

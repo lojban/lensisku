@@ -241,26 +241,19 @@ pub async fn spawn_background_tasks(
         }
     });
 
-    // Probe OpenRouter models and cache two working ids in Redis for the assistant (fast path).
-    // Cached order is provider-priority aware; within the same priority class, faster final
-    // probe replies are ranked first.
-    // Each candidate is exercised through the real assistant chat path
-    // (`crate::assistant::service::run_agent_loop_inner`) with a fixed test prompt; only models
-    // that return a non-empty trimmed reply within the health timeout are stored in the cache.
+    // Probe OpenRouter free models (newest catalog + known-good fallbacks + last-good pair)
+    // concurrently with a cheap single tool-calling request and cache the two fastest working
+    // ids in Redis. Hourly when healthy; every 5 minutes while fewer than two models pass.
     let redis_openrouter = redis.clone();
-    let pool_openrouter = pool.clone();
-    // `actix_web::rt::spawn` uses the local LocalSet (no Send requirement) so the probe can
-    // exercise the assistant chat path, which transitively touches !Send parser memoisation.
     actix_web::rt::spawn(async move {
         async fn try_refresh(
-            pool: &Pool,
             redis: &crate::middleware::cache::RedisCache,
-        ) -> Result<(), AppError> {
+        ) -> Result<usize, AppError> {
             let api_key = match std::env::var("OPENROUTER_API_KEY") {
                 Ok(k) => k,
                 Err(_) => {
                     log::debug!("OPENROUTER_API_KEY not set; skipping OpenRouter assistant model cache refresh");
-                    return Ok(());
+                    return Ok(usize::MAX);
                 }
             };
             let base_url = std::env::var("OPENROUTER_API_BASE")
@@ -269,25 +262,23 @@ pub async fn spawn_background_tasks(
                 redis,
                 &base_url,
                 &api_key,
-                |id, name| async move {
-                    crate::assistant::probe_openrouter_model_full_chat(
-                        pool,
-                        Some(redis),
-                        &id,
-                        &name,
-                    )
-                    .await
+                |id, _name| async move {
+                    crate::assistant::probe_openrouter_model_cheap(&id).await
                 },
             )
             .await
         }
 
-        let mut interval = time::interval(Duration::from_secs(60 * 60)); // hourly; first tick fires immediately
         loop {
-            interval.tick().await;
-            if let Err(e) = try_refresh(&pool_openrouter, &redis_openrouter).await {
-                error!("Failed OpenRouter assistant model cache refresh: {}", e);
-            }
+            let next = match try_refresh(&redis_openrouter).await {
+                Ok(n) if n >= 2 => Duration::from_secs(60 * 60),
+                Ok(_) => Duration::from_secs(5 * 60),
+                Err(e) => {
+                    error!("Failed OpenRouter assistant model cache refresh: {}", e);
+                    Duration::from_secs(5 * 60)
+                }
+            };
+            time::sleep(next).await;
         }
     });
 
