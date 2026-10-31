@@ -151,7 +151,7 @@
                     collectionImageCircumference -
                     (collectionImageUploadProgress / 100) * collectionImageCircumference
                   "
-                  class="transition-all duration-300"
+                  class="transition-colors duration-300"
                 />
               </svg>
               <span class="absolute text-white text-sm font-medium">
@@ -164,7 +164,7 @@
               class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 pointer-events-none"
             >
               <label
-                class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md pointer-events-auto"
+                class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-colors shadow-md pointer-events-auto"
                 :title="t('collectionDetail.collectionCoverUploadTitle')"
               >
                 <FileInput
@@ -177,7 +177,7 @@
               <button
                 v-if="collection?.has_cover_image"
                 type="button"
-                class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md pointer-events-auto"
+                class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-colors shadow-md pointer-events-auto"
                 :title="t('collectionDetail.collectionCoverRemoveTitle')"
                 @click.stop="handleCollectionCoverRemove"
               >

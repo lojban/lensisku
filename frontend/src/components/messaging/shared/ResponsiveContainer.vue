@@ -25,7 +25,9 @@ const props = withDefaults(defineProps<Props>(), {
 const { isMobile, isTablet: _isTablet } = useMobileOptimizations()
 
 const containerClasses = computed(() => {
-  const classes = ['responsive-container w-full transition-all duration-200 ease-out']
+  const classes = [
+    'responsive-container w-full transition-[padding,max-width] duration-200 ease-out',
+  ]
 
   // Max width classes
   const maxWidthClasses = {

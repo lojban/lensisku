@@ -1,7 +1,7 @@
 <template>
   <div class="lingo-unit-banner">
     <div class="min-w-0 space-y-2.5">
-      <h3 class="text-2xl font-bold">{{ title }}</h3>
+      <h3 class="text-2xl font-semibold">{{ title }}</h3>
       <p v-if="description" class="text-lg opacity-95">{{ description }}</p>
     </div>
     <button

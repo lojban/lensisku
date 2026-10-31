@@ -11,7 +11,7 @@ export function buildLingoThemeLayer() {
      * Pair with a `--*` variant; do not mix with `ui-btn--*` / `.aqua-base` / `.btn-flat-surface`.
      */
     '.lingo-btn': {
-      '@apply inline-flex cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-xl border-2 px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50':
+      '@apply inline-flex cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-xl border-2 px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50':
         {},
       minHeight: '2.75rem', // h-11
     },
@@ -222,7 +222,7 @@ export function buildLingoThemeLayer() {
       },
     },
     '.lingo-bottom-nav-item': {
-      '@apply flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 no-underline transition-colors':
+      '@apply flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-xs font-medium text-slate-500 no-underline transition-colors':
         {},
     },
     '.lingo-bottom-nav-item--active': {
@@ -567,7 +567,7 @@ export function buildLingoThemeLayer() {
       '@apply flex justify-start': {},
     },
     '.lingo-study-footer-meta__prompt': {
-      '@apply min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs':
+      '@apply min-w-0 truncate text-center text-xs font-medium text-slate-500 sm:text-xs':
         {},
     },
     /**

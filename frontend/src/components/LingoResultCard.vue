@@ -1,7 +1,7 @@
 <template>
   <div class="lingo-result-card w-full rounded-2xl border-2 overflow-hidden" :class="cardClass">
     <div
-      class="rounded-t-xl px-3 py-1.5 text-center text-xs font-bold uppercase text-white"
+      class="rounded-t-xl px-3 py-1.5 text-center text-xs font-semibold text-white"
       :class="headerClass"
     >
       {{ headerText }}

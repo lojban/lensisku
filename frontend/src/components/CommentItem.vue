@@ -170,7 +170,7 @@
             v-for="reaction in reactions"
             :key="reaction.reaction"
             :variant="reaction.reacted ? 'reaction-active' : 'reaction'"
-            class="reaction-emoji-pop gap-1.5 transition-all duration-300"
+            class="reaction-emoji-pop gap-1.5 transition-colors duration-300"
             @click.stop="handleReactionClick(reaction.reaction)"
           >
             <span

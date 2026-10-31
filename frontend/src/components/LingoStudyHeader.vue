@@ -18,8 +18,8 @@
           aria-valuemax="100"
         >
           <div
-            class="h-full rounded-full bg-green-500 transition-all duration-300"
-            :style="{ width: `${Math.min(100, Math.max(0, percentage))}%` }"
+            class="h-full w-full origin-left rounded-full bg-green-500 transition-transform duration-300"
+            :style="{ transform: `scaleX(${Math.min(100, Math.max(0, percentage)) / 100})` }"
           />
         </div>
       </div>

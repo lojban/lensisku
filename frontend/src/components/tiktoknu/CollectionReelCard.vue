@@ -89,7 +89,7 @@
 
       <div class="space-y-3 text-gray-100 drop-shadow-lg text-sm sm:text-base pb-1">
         <div>
-          <p class="text-xs uppercase tracking-wide text-white/60 mb-1">
+          <p class="text-xs text-white/60 mb-1">
             {{ t('components.tiktoknu.collectionReel.frontLabel') }}
           </p>
 
@@ -97,7 +97,7 @@
         </div>
 
         <div>
-          <p class="text-xs uppercase tracking-wide text-white/60 mb-1">
+          <p class="text-xs text-white/60 mb-1">
             {{ t('components.tiktoknu.collectionReel.backLabel') }}
           </p>
 

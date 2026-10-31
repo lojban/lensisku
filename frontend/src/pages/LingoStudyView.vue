@@ -26,7 +26,7 @@
         class="flex flex-1 flex-col items-center justify-center gap-3 min-h-0 py-4 text-center px-4"
       >
         <Heart class="h-14 w-14 fill-rose-500 text-rose-500" />
-        <h1 class="text-lg font-bold text-neutral-700">{{ t('lingo.outOfHearts') }}</h1>
+        <h1 class="text-lg font-semibold text-neutral-700">{{ t('lingo.outOfHearts') }}</h1>
         <p class="max-w-sm text-sm text-slate-500">{{ t('lingo.outOfHeartsHint') }}</p>
         <RouterLink
           to="/lingo/shop"
@@ -64,8 +64,8 @@
         v-else-if="!currentCard && remainingCards.length === 0"
         class="flex flex-1 flex-col items-center justify-center gap-3 min-h-0 py-4 text-center sm:gap-4"
       >
-        <div class="text-5xl sm:text-6xl" aria-hidden="true">🎉</div>
-        <h1 class="text-lg font-bold text-neutral-700 sm:text-2xl">
+        <PartyPopper class="h-14 w-14 text-amber-500 sm:h-16 sm:w-16" aria-hidden="true" />
+        <h1 class="text-lg font-semibold text-neutral-700 sm:text-2xl">
           <template v-if="levelUnlockedBySchedule && cardsAnsweredInSession === 0">
             {{ t('flashcardStudy.nothingDueTitle') }} <br />
             {{
@@ -541,7 +541,7 @@
 import { isTypingInEditable } from '@/utils/isEditableTarget'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { Textarea } from '@packages/ui'
-import { EqualApproximately, Heart } from '@lucide/vue'
+import { EqualApproximately, Heart, PartyPopper } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink } from 'vue-router'

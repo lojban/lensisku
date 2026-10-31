@@ -1,6 +1,6 @@
 <template>
   <div
-    class="message-bubble cursor-pointer transition-all duration-200"
+    class="message-bubble cursor-pointer transition-colors duration-200"
     :class="{ 'ml-auto': isFromSender, 'mr-auto': !isFromSender }"
     @click="$emit('click', message)"
   >

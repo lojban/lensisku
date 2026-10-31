@@ -4,7 +4,7 @@
       v-if="step.assistant_reasoning && String(step.assistant_reasoning).trim()"
       class="mb-2 not-italic rounded border border-indigo-100 bg-indigo-50/70 px-2 py-1.5 text-gray-800"
     >
-      <span class="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-indigo-700/90">
+      <span class="mb-1 block text-xs font-semibold text-indigo-700/90">
         {{ $t('assistantChat.reasoningLabel') }}
       </span>
       <LazyMathJax

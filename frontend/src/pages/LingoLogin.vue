@@ -4,7 +4,7 @@
   >
     <RouterLink to="/lingo/courses" class="mb-6 flex items-center gap-x-3">
       <GraduationCap class="h-12 w-12 text-green-600" />
-      <h1 class="text-2xl font-extrabold tracking-wide text-green-600">{{ t('lingo.appName') }}</h1>
+      <h1 class="text-2xl font-semibold text-green-600">{{ t('lingo.appName') }}</h1>
     </RouterLink>
     <h2 class="mb-6 text-xl font-semibold text-slate-800">{{ t('loginPage.title') }}</h2>
 

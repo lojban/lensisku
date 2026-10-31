@@ -372,7 +372,7 @@
                     <span class="font-medium text-gray-600">{{ progress.card_side }}</span>
                     <div class="h-1.5 w-16 shrink-0 rounded-full bg-gray-200">
                       <div
-                        class="h-1.5 rounded-full transition-all duration-300"
+                        class="h-1.5 rounded-full transition-colors duration-300"
                         :class="getProgressBarClass(progress.status)"
                         :style="{ width: getProgressWidth(progress) }"
                       />

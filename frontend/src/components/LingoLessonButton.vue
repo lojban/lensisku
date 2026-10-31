@@ -32,7 +32,7 @@
               cy="51"
               r="43"
               fill="none"
-              class="lingo-lesson-progress transition-all duration-300"
+              class="lingo-lesson-progress transition-[stroke-dashoffset] duration-300"
               stroke-width="8"
               stroke-linecap="round"
               stroke-dasharray="270.2"

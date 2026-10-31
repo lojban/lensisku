@@ -390,9 +390,7 @@
 
           <div class="overflow-x-auto border rounded-md">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
-              <thead
-                class="bg-gray-50 uppercase tracking-wider text-[10px] font-semibold text-gray-500"
-              >
+              <thead class="bg-gray-50 text-xs font-semibold text-gray-500">
                 <tr>
                   <th scope="col" class="px-3 py-2 text-left">
                     {{ t('components.definitionCard.metadataKey') }}
@@ -430,9 +428,7 @@
 
           <div class="overflow-x-auto border rounded-md">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
-              <thead
-                class="bg-gray-50 uppercase tracking-wider text-[10px] font-semibold text-gray-500"
-              >
+              <thead class="bg-gray-50 text-xs font-semibold text-gray-500">
                 <tr>
                   <th scope="col" class="px-3 py-2 text-left">#</th>
 
@@ -475,9 +471,7 @@
       </div>
       <!-- Canonical Form (only when different from main form) -->
       <div v-if="showCanonicalForm" class="mt-3 pt-3 border-t flex flex-col gap-1.5">
-        <div
-          class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
-        >
+        <div class="flex items-center gap-2 text-xs font-semibold text-gray-400">
           <EqualApproximately class="h-3.5 w-3.5 text-blue-400" />
           <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
         </div>

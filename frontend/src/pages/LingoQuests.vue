@@ -26,8 +26,10 @@
               <p class="text-xl font-bold text-neutral-700">{{ quest.title }}</p>
               <div class="h-3 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
-                  class="h-full rounded-full bg-green-500 transition-all"
-                  :style="{ width: `${Math.min(100, (points / quest.value) * 100)}%` }"
+                  class="h-full w-full origin-left rounded-full bg-green-500 transition-transform"
+                  :style="{
+                    transform: `scaleX(${Math.min(100, (points / quest.value) * 100) / 100})`,
+                  }"
                 />
               </div>
               <p class="text-xs text-slate-500">

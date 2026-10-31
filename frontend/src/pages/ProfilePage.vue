@@ -226,7 +226,7 @@
                 stroke-width="8"
                 :stroke-dasharray="circumference"
                 :stroke-dashoffset="circumference - (uploadProgress / 100) * circumference"
-                class="transition-all duration-300"
+                class="transition-colors duration-300"
               />
             </svg>
             <span class="absolute text-white text-sm font-medium"
@@ -239,7 +239,7 @@
             class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3"
           >
             <label
-              class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md"
+              class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-colors shadow-md"
               :title="t('profile.uploadNewPhoto')"
             >
               <FileInput type="file" class="hidden" accept="image/*" @change="handleFileChange" />
@@ -248,7 +248,7 @@
             <button
               v-if="hasImage"
               type="button"
-              class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md"
+              class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-colors shadow-md"
               :title="t('profile.removePhoto')"
               @click.stop="handleImageRemove"
             >

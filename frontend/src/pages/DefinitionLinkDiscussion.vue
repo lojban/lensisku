@@ -5,7 +5,7 @@
         <!-- Header with definitions being discussed -->
         <div class="mb-8">
           <div v-if="linkDetails" class="space-y-6">
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight mb-4">
+            <h1 class="text-3xl font-semibold text-gray-900 tracking-tight mb-4">
               {{ t('definitionLinkDiscussion.title') }}
             </h1>
 
@@ -161,7 +161,7 @@
                 <div v-for="comment in processedComments" :key="comment.comment_id">
                   <div
                     :style="{ marginLeft: `${getReplyMargin(comment.level)}rem` }"
-                    class="transition-all duration-300"
+                    class="transition-colors duration-300"
                   >
                     <CommentItem
                       :comment="comment"

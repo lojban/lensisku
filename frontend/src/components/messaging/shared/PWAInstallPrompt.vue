@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="showPrompt && canInstallPWA"
-    class="card-base card-elevated fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:w-96 transform transition-all duration-300"
+    class="card-base card-elevated fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:w-96 transform transition-[transform,opacity] duration-300"
     :class="{ 'translate-y-full opacity-0': !isVisible, 'translate-y-0 opacity-100': isVisible }"
   >
     <div class="flex items-start gap-3 p-4">
