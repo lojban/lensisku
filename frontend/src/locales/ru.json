@@ -2025,9 +2025,6 @@
     "loadFailed": "Не удалось загрузить диалог.",
     "submitFailed": "Не удалось сохранить ответ. Попробуйте ещё раз.",
     "narrator": "Рассказчик",
-    "importStories": "Импорт диалогов (JSON)",
-    "importDone": "Импортировано диалогов: {count}",
-    "importFailed": "Импорт остановлен после {count} диалогов: {error}",
     "editor": {
       "scriptLabel": "Сценарий диалога",
       "showSyntax": "Показать синтаксис",

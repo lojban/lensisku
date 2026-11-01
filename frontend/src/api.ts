@@ -1,3 +1,4 @@
+import type { CollectionFullExportFile } from '@/utils/collectionExport'
 import i18n from '@/i18n'
 import { isValsiRegexQuery } from '@/utils/searchQueryUtils'
 import axios, {
@@ -486,7 +487,8 @@ export const exportSearchResults = (params: Record<string, unknown>) =>
     timeout: 300000,
   })
 
-export const importCollectionFull = (data: unknown) => api.post('/collections/import/full', data)
+export const importCollectionFull = (data: CollectionFullExportFile) =>
+  api.post('/collections/import/full', data)
 
 export const listCachedExports = () => api.get('/export/cached')
 

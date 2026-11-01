@@ -10,7 +10,8 @@ use super::dto::{
     ImportFullRequest, ImportFullResponse, ImportJsonRequest, ImportJsonResponse, LevelExport,
     ListCollectionItemsFilters, ListCollectionsQuery, MediaBulkImportResponse,
     MediaBulkManifestEntry, MergeCollectionsRequest, SearchItemsResponse, UpdateCollectionRequest,
-    UpdateItemNotesRequest, UpdateItemRequest,
+    UpdateItemNotesRequest, UpdateItemRequest, COLLECTION_EXPORT_FORMAT,
+    COLLECTION_EXPORT_FORMAT_VERSION,
 };
 use crate::jbovlaste::service::get_valsi_sound_urls_from_db;
 use crate::utils::remove_html_tags;
@@ -1655,6 +1656,126 @@ fn decode_data_url(url: &str) -> AppResult<(String, Vec<u8>)> {
     Ok((mime_type, decoded))
 }
 
+/// Writes the optional (format v2) per-item fields of an imported item: item metadata,
+/// custom audio, dialogue voices and per-line clips. Problems become warnings; values are
+/// validated before the SQL so a bad file cannot abort the surrounding transaction.
+async fn apply_imported_item_extras(
+    transaction: &Transaction<'_>,
+    item_id: i32,
+    item: &CollectionExportItem,
+    label: &str,
+    warnings: &mut Vec<String>,
+) -> AppResult<()> {
+    let script_code = match item.script_code.as_deref() {
+        Some(s) if s.chars().count() > 4 => {
+            warnings.push(format!("{label}: script_code '{s}' longer than 4, ignored"));
+            None
+        }
+        other => other,
+    };
+    let license = match item.license.as_deref() {
+        Some(l) if l.chars().count() > 50 => {
+            warnings.push(format!("{label}: license longer than 50 chars, ignored"));
+            None
+        }
+        other => other,
+    };
+    let voices = item.dialogue.as_ref().and_then(|d| d.voices.clone());
+    let any = item.auto_progress.is_some()
+        || script_code.is_some()
+        || item.is_original.is_some()
+        || license.is_some()
+        || item.language_id.is_some()
+        || item.owner_user_id.is_some()
+        || voices.is_some();
+    if any {
+        transaction
+            .execute(
+                "UPDATE collection_items SET
+                    auto_progress = COALESCE($2, auto_progress),
+                    script = COALESCE($3, script),
+                    is_original = COALESCE($4, is_original),
+                    license = COALESCE($5, license),
+                    langid = COALESCE((SELECT langid FROM languages WHERE langid = $6), langid),
+                    owner_user_id = COALESCE((SELECT userid FROM users WHERE userid = $7), owner_user_id),
+                    dialogue_voices = COALESCE($8, dialogue_voices)
+                 WHERE item_id = $1",
+                &[
+                    &item_id,
+                    &item.auto_progress,
+                    &script_code,
+                    &item.is_original,
+                    &license,
+                    &item.language_id,
+                    &item.owner_user_id,
+                    &voices,
+                ],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+    }
+    if let Some(url) = &item.sound_url {
+        if let Err(e) = attach_imported_sound(transaction, item_id, url).await {
+            warnings.push(format!("{label}: sound skipped: {e}"));
+        }
+    }
+    if let Some(d) = &item.dialogue {
+        let mut seen = HashSet::new();
+        for ls in &d.line_sounds {
+            if ls.line_index < 0 || !seen.insert(ls.line_index) {
+                warnings.push(format!(
+                    "{label}: dialogue line sound {} invalid or duplicated, skipped",
+                    ls.line_index
+                ));
+                continue;
+            }
+            match decode_data_url(&ls.sound_url) {
+                Ok((mime, bytes)) if mime.starts_with("audio/") => {
+                    transaction
+                        .execute(
+                            "INSERT INTO dialogue_line_sounds (item_id, line_index, text_hash, voice, sound_data, mime_type)
+                             VALUES ($1, $2, $3, $4, $5, $6)",
+                            &[&item_id, &ls.line_index, &ls.text_hash, &ls.voice, &bytes, &mime],
+                        )
+                        .await
+                        .map_err(|e| AppError::Database(e.to_string()))?;
+                }
+                _ => warnings.push(format!(
+                    "{label}: dialogue line sound {} is not an audio data URL, skipped",
+                    ls.line_index
+                )),
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Rejects files of another format or written by a newer format version than supported.
+fn check_import_format(format: Option<&str>, version: Option<u32>) -> AppResult<()> {
+    if let Some(f) = format {
+        if f != COLLECTION_EXPORT_FORMAT {
+            return Err(AppError::BadRequest(format!(
+                "Unsupported export format '{f}'"
+            )));
+        }
+    }
+    if let Some(v) = version {
+        if v > COLLECTION_EXPORT_FORMAT_VERSION {
+            return Err(AppError::BadRequest(format!(
+                "Export format_version {v} is newer than supported ({COLLECTION_EXPORT_FORMAT_VERSION})"
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn data_url(mime: Option<String>, data: Option<Vec<u8>>) -> Option<String> {
+    match (mime, data) {
+        (Some(m), Some(d)) => Some(format!("data:{};base64,{}", m, BASE64.encode(d))),
+        _ => None,
+    }
+}
+
 pub async fn import_collection_from_json(
     pool: &Pool,
     redis: &RedisCache,
@@ -1762,9 +1883,14 @@ pub async fn import_collection_from_json(
         let sanitized_back = item.free_content_back.as_ref().map(|b| sanitize_html(b));
         let sanitized_note = item.collection_note.as_ref().map(|n| sanitize_html(n));
 
-        let canonical_form = sanitized_front
-            .as_ref()
-            .and_then(|front| crate::utils::canonical::get_canonical_form(front))
+        let canonical_form = item
+            .canonical_form
+            .clone()
+            .or_else(|| {
+                sanitized_front
+                    .as_ref()
+                    .and_then(|front| crate::utils::canonical::get_canonical_form(front))
+            })
             .or_else(|| {
                 item.word
                     .as_ref()
@@ -1816,8 +1942,17 @@ pub async fn import_collection_from_json(
     }
 
     // Images, in input order (only items that carry one).
+    let mut extra_warnings: Vec<String> = Vec::new();
     for (item, position) in ins_items.iter().zip(&ins_positions) {
         let new_item_id = item_id_by_position[position];
+        apply_imported_item_extras(
+            &transaction,
+            new_item_id,
+            item,
+            &format!("Item {}", new_item_id),
+            &mut extra_warnings,
+        )
+        .await?;
         for (side, url_option) in [
             ("front", &item.front_image_url),
             ("back", &item.back_image_url),
@@ -1853,6 +1988,10 @@ pub async fn import_collection_from_json(
 
     invalidate_public_collections_cache(redis).await;
 
+    skipped_items.extend(extra_warnings.into_iter().map(|w| SkippedItemInfo {
+        identifier: "warning".to_string(),
+        reason: w,
+    }));
     Ok(ImportCollectionJsonResponse {
         imported_count,
         skipped_count,
@@ -1884,6 +2023,10 @@ fn parse_export_direction(s: Option<&String>) -> FlashcardDirection {
         "quiz_direct" => FlashcardDirection::QuizDirect,
         "quiz_reverse" => FlashcardDirection::QuizReverse,
         "quiz_both" => FlashcardDirection::QuizBoth,
+        "quiz_image_direct" => FlashcardDirection::QuizImageDirect,
+        "quiz_image_reverse" => FlashcardDirection::QuizImageReverse,
+        "quiz_image_both" => FlashcardDirection::QuizImageBoth,
+        "auto" => FlashcardDirection::Auto,
         _ => FlashcardDirection::Both,
     }
 }
@@ -1920,6 +2063,9 @@ fn is_quiz_direction(d: &FlashcardDirection) -> bool {
         FlashcardDirection::QuizDirect
             | FlashcardDirection::QuizReverse
             | FlashcardDirection::QuizBoth
+            | FlashcardDirection::QuizImageDirect
+            | FlashcardDirection::QuizImageReverse
+            | FlashcardDirection::QuizImageBoth
     )
 }
 
@@ -1989,17 +2135,28 @@ pub async fn import_full(
         .as_ref()
         .map(|d| sanitize_html(d));
     let is_public = req.collection.is_public.unwrap_or(true);
+    check_import_format(req.format.as_deref(), req.format_version)?;
+    let mut warnings: Vec<String> = Vec::new();
+    let challenge_mode = match req.collection.challenge_mode.as_deref() {
+        None => "off",
+        Some(m @ ("off" | "fixed" | "auto")) => m,
+        Some(other) => {
+            warnings.push(format!("Unknown challenge_mode '{other}', using 'off'"));
+            "off"
+        }
+    };
 
     let row = transaction
         .query_one(
-            "INSERT INTO collections (user_id, name, description, is_public)
-             VALUES ($1, $2, $3, $4)
+            "INSERT INTO collections (user_id, name, description, is_public, challenge_mode, auto_challenge_mix)
+             VALUES ($1, $2, $3, $4, $5, $5 = 'fixed')
              RETURNING collection_id, created_at, updated_at",
             &[
                 &user_id,
                 &sanitized_name,
                 &sanitized_description,
                 &is_public,
+                &challenge_mode,
             ],
         )
         .await
@@ -2008,7 +2165,28 @@ pub async fn import_full(
     let collection_id: i32 = row.get("collection_id");
     let mut imported_count = 0i32;
     let mut skipped_count = 0i32;
-    let mut warnings: Vec<String> = Vec::new();
+    let mut has_cover_image = false;
+    if let Some(url) = &req.collection.cover_image_url {
+        match decode_data_url(url) {
+            Ok((mime, bytes)) if bytes.len() <= MAX_ITEM_IMAGE_BYTES => {
+                match get_or_insert_collection_image_id(&transaction, &bytes, &mime).await {
+                    Ok(image_id) => {
+                        transaction
+                            .execute(
+                                "UPDATE collections SET cover_collection_image_id = $2 WHERE collection_id = $1",
+                                &[&collection_id, &image_id],
+                            )
+                            .await
+                            .map_err(|e| AppError::Database(e.to_string()))?;
+                        has_cover_image = true;
+                    }
+                    Err(e) => warnings.push(format!("Cover image skipped: {e}")),
+                }
+            }
+            Ok(_) => warnings.push("Cover image too large, skipped".to_string()),
+            Err(e) => warnings.push(format!("Cover image skipped: {e}")),
+        }
+    }
     // For each export index, Some(item_id) if we inserted that item, None if skipped
     let mut inserted_item_ids_by_export_index: Vec<Option<i32>> =
         Vec::with_capacity(req.items.len());
@@ -2069,9 +2247,14 @@ pub async fn import_full(
         let sanitized_front = item.free_content_front.as_ref().map(|f| sanitize_html(f));
         let sanitized_back = item.free_content_back.as_ref().map(|b| sanitize_html(b));
         let sanitized_note = item.collection_note.as_ref().map(|n| sanitize_html(n));
-        let canonical_form = sanitized_front
-            .as_ref()
-            .and_then(|f| crate::utils::canonical::get_canonical_form(f))
+        let canonical_form = item
+            .canonical_form
+            .clone()
+            .or_else(|| {
+                sanitized_front
+                    .as_ref()
+                    .and_then(|f| crate::utils::canonical::get_canonical_form(f))
+            })
             .or_else(|| {
                 item.word
                     .as_ref()
@@ -2176,11 +2359,14 @@ pub async fn import_full(
             }
         }
 
-        if let Some(url) = &item.sound_url {
-            if let Err(e) = attach_imported_sound(&transaction, new_item_id, url).await {
-                warnings.push(format!("Item at position {}: sound skipped: {}", pos, e));
-            }
-        }
+        apply_imported_item_extras(
+            &transaction,
+            new_item_id,
+            item,
+            &format!("Item at position {}", pos),
+            &mut warnings,
+        )
+        .await?;
 
         inserted_item_ids_by_export_index.push(Some(new_item_id));
         imported_count += 1;
@@ -2227,15 +2413,38 @@ pub async fn import_full(
     let mut levels_created = 0i32;
     let mut quiz_flashcard_positions: Vec<i32> = Vec::new();
     let mut quiz_flashcard_ids: Vec<i32> = Vec::new();
-    if !levels_to_use.is_empty() {
+    // Items carrying a `direction` had a flashcard in the source collection, even when they
+    // sit in no level; recreate those too (older files without levels keep the old behaviour).
+    let any_direction = req.items.iter().any(|i| i.direction.is_some());
+    if !levels_to_use.is_empty() || any_direction {
         // One flashcard per inserted item (position = export index), then the progress
         // rows for the sides each direction needs, each in a single statement.
         let mut fc_positions: Vec<i32> = Vec::new();
         let mut fc_item_ids: Vec<i32> = Vec::new();
         let mut fc_directions: Vec<FlashcardDirection> = Vec::new();
         let auto_directions = auto_mix_directions_for_import(&req.items, &levels_to_use);
+        let mut fc_canonical: Vec<bool> = Vec::new();
+        let mut quiz_answers: Vec<(i32, String)> = Vec::new();
         for (idx, item_id_opt) in inserted_item_ids_by_export_index.iter().enumerate() {
             if let Some(item_id) = *item_id_opt {
+                if levels_to_use.is_empty()
+                    && req.items.get(idx).is_none_or(|i| i.direction.is_none())
+                {
+                    continue;
+                }
+                fc_canonical.push(
+                    req.items
+                        .get(idx)
+                        .and_then(|i| i.use_canonical_comparison)
+                        .unwrap_or(true),
+                );
+                if let Some(ans) = req
+                    .items
+                    .get(idx)
+                    .and_then(|i| i.quiz_correct_answer.clone())
+                {
+                    quiz_answers.push((idx as i32, ans));
+                }
                 fc_positions.push(idx as i32);
                 fc_item_ids.push(item_id);
                 let explicit = req.items.get(idx).and_then(|i| i.direction.as_ref());
@@ -2243,7 +2452,9 @@ pub async fn import_full(
                     (None, Some(auto)) => parse_export_direction(Some(&auto.to_string())),
                     _ => parse_export_direction(explicit),
                 };
-                if is_quiz_direction(&direction) {
+                if is_quiz_direction(&direction)
+                    && !quiz_answers.iter().any(|(p, _)| *p == idx as i32)
+                {
                     quiz_flashcard_positions.push(idx as i32);
                 }
                 fc_directions.push(direction);
@@ -2253,17 +2464,30 @@ pub async fn import_full(
         if !fc_positions.is_empty() {
             for row in transaction
                 .query(
-                    "INSERT INTO flashcards (collection_id, position, item_id, direction)
-                     SELECT $1, t.position, t.item_id, t.direction::flashcard_direction
-                     FROM UNNEST($2::int[], $3::int[], $4::text[]) WITH ORDINALITY AS t(position, item_id, direction, ord)
+                    "INSERT INTO flashcards (collection_id, position, item_id, direction, use_canonical_comparison)
+                     SELECT $1, t.position, t.item_id, t.direction::flashcard_direction, t.canon
+                     FROM UNNEST($2::int[], $3::int[], $4::text[], $5::bool[]) WITH ORDINALITY AS t(position, item_id, direction, canon, ord)
                      ORDER BY t.ord
                      RETURNING id, position",
-                    &[&collection_id, &fc_positions, &fc_item_ids, &fc_directions],
+                    &[&collection_id, &fc_positions, &fc_item_ids, &fc_directions, &fc_canonical],
                 )
                 .await
                 .map_err(|e| AppError::Database(e.to_string()))?
             {
                 flashcard_id_by_position.insert(row.get("position"), row.get("id"));
+            }
+        }
+        // Author-stored quiz answers from the file.
+        for (pos, ans) in &quiz_answers {
+            if let Some(fid) = flashcard_id_by_position.get(pos) {
+                transaction
+                    .execute(
+                        "INSERT INTO flashcard_quiz_options (flashcard_id, correct_answer_text) VALUES ($1, $2)
+                         ON CONFLICT (flashcard_id) DO UPDATE SET correct_answer_text = EXCLUDED.correct_answer_text",
+                        &[fid, ans],
+                    )
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
             }
         }
         quiz_flashcard_ids.extend(
@@ -2407,8 +2631,8 @@ pub async fn import_full(
         updated_at: row.get("updated_at"),
         item_count: imported_count as i64,
         has_flashcards: false,
-        has_cover_image: false,
-        has_collection_image: false,
+        has_cover_image,
+        has_collection_image: has_cover_image,
         comment_count: 0,
         monthly_drill_users: 0,
         owner: CollectionOwner { user_id, username },
@@ -2450,16 +2674,27 @@ pub async fn export_collection_full(
     user_id: Option<i32>,
 ) -> AppResult<CollectionFullExport> {
     let collection_resp = get_collection(pool, collection_id, user_id).await?;
-    let collection_meta = CollectionExportMeta {
-        name: collection_resp.name,
-        description: collection_resp.description,
-        is_public: Some(collection_resp.is_public),
-    };
-
     let client = pool
         .get()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    let meta_row = client
+        .query_one(
+            "SELECT c.challenge_mode, img.image_data, img.mime_type
+             FROM collections c
+             LEFT JOIN collection_images img ON img.collection_image_id = c.cover_collection_image_id
+             WHERE c.collection_id = $1",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let collection_meta = CollectionExportMeta {
+        name: collection_resp.name,
+        description: collection_resp.description,
+        is_public: Some(collection_resp.is_public),
+        challenge_mode: Some(meta_row.get("challenge_mode")),
+        cover_image_url: data_url(meta_row.get("mime_type"), meta_row.get("image_data")),
+    };
 
     let item_rows = client
         .query(
@@ -2467,6 +2702,9 @@ pub async fn export_collection_full(
                 ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
                 ci.free_content_front, ci.free_content_back,
                 ci.langid as language_id, ci.owner_user_id, ci.license,
+                ci.auto_progress, ci.script as script_code, ci.is_original, ci.canonical_form,
+                ci.dialogue_voices, f.use_canonical_comparison,
+                (SELECT q.correct_answer_text FROM flashcard_quiz_options q WHERE q.flashcard_id = f.id) as quiz_correct_answer,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.experimental_rafsi, c.selmaho,
                 (SELECT img.image_data FROM collection_item_images cii
@@ -2497,6 +2735,30 @@ pub async fn export_collection_full(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    // Per-line dialogue clips for every item of the collection, in one query.
+    let mut line_sounds_by_item: HashMap<i32, Vec<crate::export::models::DialogueLineSoundExport>> =
+        HashMap::new();
+    for r in client
+        .query(
+            "SELECT s.item_id, s.line_index, s.text_hash, s.voice, s.sound_data, s.mime_type
+             FROM dialogue_line_sounds s JOIN collection_items ci ON ci.item_id = s.item_id
+             WHERE ci.collection_id = $1 ORDER BY s.item_id, s.line_index",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+    {
+        line_sounds_by_item
+            .entry(r.get("item_id"))
+            .or_default()
+            .push(crate::export::models::DialogueLineSoundExport {
+                line_index: r.get("line_index"),
+                text_hash: r.get("text_hash"),
+                voice: r.get("voice"),
+                sound_url: data_url(r.get("mime_type"), r.get("sound_data")).unwrap_or_default(),
+            });
+    }
+
     let mut item_id_to_index: std::collections::HashMap<i32, usize> =
         std::collections::HashMap::new();
     let items: Vec<CollectionExportItem> = item_rows
@@ -2524,6 +2786,20 @@ pub async fn export_collection_full(
                         .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(&data)))
                 });
             let direction: Option<String> = row.get("flashcard_direction");
+            let front: Option<String> = row.get("free_content_front");
+            let voices: Option<serde_json::Value> = row.get("dialogue_voices");
+            let line_sounds = line_sounds_by_item.remove(&item_id).unwrap_or_default();
+            let is_dialogue = direction.as_deref() == Some("dialogue");
+            let dialogue =
+                (is_dialogue || voices.is_some() || !line_sounds.is_empty()).then(|| {
+                    crate::export::models::DialogueExport {
+                        voices,
+                        line_sounds,
+                        structure: front.as_deref().filter(|_| is_dialogue).and_then(|f| {
+                            serde_json::to_value(crate::dialogue::parser::parse(f)).ok()
+                        }),
+                    }
+                });
             CollectionExportItem {
                 item_id: row.get("item_id"),
                 position: row.get("position"),
@@ -2548,6 +2824,13 @@ pub async fn export_collection_full(
                 direction,
                 level_index: None,
                 position_in_level: None,
+                auto_progress: row.get("auto_progress"),
+                script_code: row.get("script_code"),
+                is_original: row.get("is_original"),
+                canonical_form: row.get("canonical_form"),
+                use_canonical_comparison: row.get("use_canonical_comparison"),
+                quiz_correct_answer: row.get("quiz_correct_answer"),
+                dialogue,
             }
         })
         .collect();
@@ -2636,6 +2919,8 @@ pub async fn export_collection_full(
     }
 
     Ok(CollectionFullExport {
+        format: COLLECTION_EXPORT_FORMAT.to_string(),
+        format_version: COLLECTION_EXPORT_FORMAT_VERSION,
         collection: collection_meta,
         items,
         levels,
@@ -5143,6 +5428,7 @@ pub async fn search_items_in_collections_for_export(
             direction: None,
             level_index: None,
             position_in_level: None,
+            ..Default::default()
         })
         .collect();
 

@@ -2118,9 +2118,6 @@
     "loadFailed": "Could not load the dialogue.",
     "submitFailed": "Could not save the answer. Try again.",
     "narrator": "Narrator",
-    "importStories": "Import dialogues (JSON)",
-    "importDone": "Imported {count} dialogues",
-    "importFailed": "Import stopped after {count} dialogues: {error}",
     "editor": {
       "scriptLabel": "Dialogue script",
       "showSyntax": "Show syntax",

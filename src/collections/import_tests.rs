@@ -356,3 +356,120 @@ async fn import_paths_current_behaviour() {
     }
     assert_eq!(got, include_str!("import_tests.expected.txt"));
 }
+
+/// Export → import → export must reproduce the course content exactly (ids aside),
+/// including a dialogue card whose several questions are scored separately.
+#[tokio::test]
+#[ignore = "requires COLLECTIONS_TEST_DATABASE_URL (disposable DB with the lensisku schema)"]
+async fn full_export_import_round_trip_is_lossless() {
+    let url = crate::test_db_guard::disposable_database_url("COLLECTIONS_TEST_DATABASE_URL");
+    let config = url.parse::<tokio_postgres::Config>().unwrap();
+    let manager = deadpool_postgres::Manager::new(config, tokio_postgres::NoTls);
+    let pool = deadpool_postgres::Pool::builder(manager)
+        .max_size(4)
+        .build()
+        .unwrap();
+    let redis = stub_cache();
+    let client = pool.get().await.unwrap();
+    let suffix = std::process::id();
+    let user_id: i32 = client
+        .query_one(
+            "INSERT INTO users (username, password, email, created_at, role) VALUES ($1, 'x', $2, now(), 'user') RETURNING userid",
+            &[&format!("roundtrip_{suffix}"), &format!("roundtrip_{suffix}@example.invalid")],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    let lang: i32 = client
+        .query_one("SELECT min(langid) FROM languages", &[])
+        .await
+        .unwrap()
+        .get(0);
+    let ogg = format!(
+        "data:audio/ogg;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(b"OggS\0fake")
+    );
+    let script = "# At the cafe\n> .i ti zarci\nMarian(F): coi do\n~ hi you\nM: mi tavla\n~ I talk\n---\n? fill: Marian: [coi] do\n? bank: M: mi [tavla]  (chips: klama, citka)\n? choice: Who greets?  + Marian  - nobody";
+    let file = json!({
+        "format": "lensisku.collection",
+        "format_version": 2,
+        "collection": {
+            "name": format!("rt {suffix}"), "description": "desc", "is_public": false,
+            "challenge_mode": "fixed", "cover_image_url": png_data_url()
+        },
+        "items": [
+            {"free_content_front": script, "free_content_back": "At the cafe (story)",
+             "collection_note": "story note", "direction": "dialogue", "auto_progress": false,
+             "language_id": lang, "license": "CC BY-SA 4.0", "script_code": "Latn", "is_original": false,
+             "dialogue": {"voices": {"Marian": "Victoria", "M": "Martin", "narrator": "Eva"},
+                          "line_sounds": [
+                              {"line_index": 0, "text_hash": "h0", "voice": "Eva", "sound_url": ogg},
+                              {"line_index": 2, "text_hash": "h2", "voice": "Martin", "sound_url": ogg}]}},
+            {"free_content_front": "coi", "free_content_back": "hello", "direction": "quiz_direct",
+             "quiz_correct_answer": "hello", "use_canonical_comparison": false, "sound_url": ogg,
+             "front_image_url": png_data_url()},
+            {"free_content_front": "mi tavla", "free_content_back": "I talk", "direction": "wordbank_reverse"},
+            {"free_content_front": "loose", "free_content_back": "card outside levels", "direction": "auto"}
+        ],
+        "levels": [
+            {"name": "One", "description": "first", "min_cards": 2, "min_success_rate": 0.7,
+             "position": 0, "item_positions": [1, 2]},
+            {"name": "Two", "description": null, "min_cards": 1, "min_success_rate": 0.5,
+             "position": 1, "prerequisite_positions": [0], "item_positions": [0]}
+        ]
+    });
+    let req: ImportFullRequest = serde_json::from_value(file).unwrap();
+    let first = import_full(&pool, &redis, user_id, &req).await.unwrap();
+    assert!(first.warnings.is_empty(), "{:?}", first.warnings);
+    let c1 = first.collection.collection_id;
+    let export1 = super::service::export_collection_full(&pool, c1, Some(user_id))
+        .await
+        .unwrap();
+    let mut v1 = serde_json::to_value(&export1).unwrap();
+
+    // Re-import the exported file as-is.
+    let req2: ImportFullRequest = serde_json::from_value(v1.clone()).unwrap();
+    let second = import_full(&pool, &redis, user_id, &req2).await.unwrap();
+    assert!(second.warnings.is_empty(), "{:?}", second.warnings);
+    let c2 = second.collection.collection_id;
+    let export2 = super::service::export_collection_full(&pool, c2, Some(user_id))
+        .await
+        .unwrap();
+    let mut v2 = serde_json::to_value(&export2).unwrap();
+
+    // Content checks on the first export.
+    assert_eq!(v1["format_version"], 2);
+    assert_eq!(v1["collection"]["challenge_mode"], "fixed");
+    assert!(v1["collection"]["cover_image_url"].is_string());
+    let items = v1["items"].as_array().unwrap();
+    assert_eq!(items.len(), 4);
+    let d = &items[0];
+    assert_eq!(d["direction"], "dialogue");
+    assert_eq!(d["auto_progress"], false);
+    assert_eq!(d["script_code"], "Latn");
+    assert_eq!(d["dialogue"]["voices"]["Marian"], "Victoria");
+    assert_eq!(d["dialogue"]["line_sounds"].as_array().unwrap().len(), 2);
+    let qs = d["dialogue"]["structure"]["questions"].as_array().unwrap();
+    assert_eq!(qs.len(), 3, "three separately scored questions");
+    assert_eq!(qs[1]["kind"], "bank");
+    assert_eq!(d["dialogue"]["structure"]["lines"][1]["gloss"], "hi you");
+    assert_eq!(items[1]["quiz_correct_answer"], "hello");
+    assert_eq!(items[1]["use_canonical_comparison"], false);
+    assert!(items[1]["sound_url"].is_string());
+    assert_eq!(items[3]["direction"], "auto");
+    assert_eq!(v1["levels"][1]["prerequisite_positions"], json!([0]));
+
+    // Equality modulo ids, positions are re-based and name is the same.
+    for v in [&mut v1, &mut v2] {
+        for it in v["items"].as_array_mut().unwrap() {
+            it.as_object_mut().unwrap().remove("item_id");
+        }
+    }
+    assert_eq!(v1, v2);
+
+    for c in [c1, c2] {
+        let _ = client
+            .execute("DELETE FROM collections WHERE collection_id = $1", &[&c])
+            .await;
+    }
+}

@@ -2016,9 +2016,6 @@
     "loadFailed": "会話を読み込めませんでした。",
     "submitFailed": "回答を保存できませんでした。もう一度お試しください。",
     "narrator": "ナレーター",
-    "importStories": "会話をインポート (JSON)",
-    "importDone": "{count} 件の会話をインポートしました",
-    "importFailed": "{count} 件の後でインポートが停止しました: {error}",
     "editor": {
       "scriptLabel": "会話スクリプト",
       "showSyntax": "書式を表示",

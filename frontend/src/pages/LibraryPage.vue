@@ -213,6 +213,7 @@ import {
   ToolbarSelectDropdownItem,
   ImportIcon,
 } from '@packages/ui'
+import { toImportFullPayload } from '@/utils/collectionExport'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import StudyStreak from '@/components/StudyStreak.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
@@ -383,19 +384,10 @@ const handleImportFile = async (event) => {
     const fileContent = await file.text()
     const jsonData = JSON.parse(fileContent)
 
-    if (!jsonData.collection || !Array.isArray(jsonData.items)) {
+    const payload = toImportFullPayload(jsonData)
+    if (!payload) {
       alert(t('collectionList.importFullFormatError'))
       return
-    }
-
-    const payload = {
-      collection: {
-        name: jsonData.collection.name,
-        description: jsonData.collection.description ?? null,
-        is_public: jsonData.collection.is_public ?? true,
-      },
-      items: jsonData.items,
-      levels: Array.isArray(jsonData.levels) ? jsonData.levels : [],
     }
 
     const response = await importCollectionFull(payload)

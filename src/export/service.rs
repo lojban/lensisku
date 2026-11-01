@@ -1067,6 +1067,7 @@ impl CollectionExportItem {
             direction: None, // only set in full collection export
             level_index: None,
             position_in_level: None,
+            ..Default::default()
         }
     }
 }

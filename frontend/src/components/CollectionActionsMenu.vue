@@ -30,14 +30,6 @@
       {{ t('collectionDetail.bulkEditCustomText') }}
     </ToolbarSelectDropdownItem>
     <ToolbarSelectDropdownItem
-      v-if="isOwner"
-      class="text-gray-700 hover:bg-gray-100"
-      @click="!importingDialogues && dialogueImportInput?.click()"
-    >
-      <MessagesSquare class="h-4 w-4 shrink-0" aria-hidden="true" />
-      {{ t('dialogue.importStories') }}
-    </ToolbarSelectDropdownItem>
-    <ToolbarSelectDropdownItem
       v-if="canExportFilteredItems"
       class="text-blue-600 hover:bg-blue-50"
       @click="goToCollectionExport"
@@ -87,14 +79,6 @@
   </ToolbarSelectDropdown>
 
   <FileInput ref="jsonImportInput" accept=".json" class="hidden" @change="handleJsonFileSelect" />
-  <input
-    ref="dialogueImportInput"
-    type="file"
-    accept=".json,application/json"
-    multiple
-    class="hidden"
-    @change="handleDialogueFiles"
-  />
 
   <ModalComponent
     :show="showEditModal"
@@ -344,23 +328,12 @@
 
 <script setup lang="ts">
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import {
-  Camera,
-  Copy,
-  Edit3,
-  FileText,
-  GitMerge,
-  Images,
-  MessagesSquare,
-  PlusCircle,
-  Trash2,
-} from '@lucide/vue'
+import { Camera, Copy, Edit3, FileText, GitMerge, Images, PlusCircle, Trash2 } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import {
-  addCollectionItem,
   cloneCollection,
   deleteCollection,
   getCollection,
@@ -382,7 +355,7 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
-import { dialogueStoryToItem, parseDialogueStoryFile } from '@/utils/dialogueImport'
+import { toImportFullPayload } from '@/utils/collectionExport'
 import { getApiErrorMessage, uploadImageErrorMessage } from '@/utils/apiError'
 import { combinedFiltersToQuery, compactQuery } from '@/utils/routeQuery'
 import {
@@ -822,40 +795,6 @@ async function onMediaBulkZipSuccess() {
   emit('refresh')
 }
 
-const dialogueImportInput = ref<HTMLInputElement | null>(null)
-const importingDialogues = ref(false)
-
-/** Bulk import: each JSON story becomes one `dialogue` card (sequential, stops on first error). */
-async function handleDialogueFiles(e: Event) {
-  const input = e.target as HTMLInputElement
-  const files = Array.from(input.files ?? [])
-  input.value = ''
-  if (!files.length) return
-  importingDialogues.value = true
-  clearError()
-  let added = 0
-  try {
-    for (const f of files) {
-      const stories = parseDialogueStoryFile(await f.text())
-      for (const s of stories) {
-        await addCollectionItem(props.collectionId, dialogueStoryToItem(s))
-        added += 1
-      }
-    }
-    showSuccess(t('dialogue.importDone', { count: added }))
-  } catch (err) {
-    showError(
-      t('dialogue.importFailed', {
-        count: added,
-        error: err instanceof Error ? err.message : getApiErrorMessage(err),
-      })
-    )
-  } finally {
-    importingDialogues.value = false
-    if (added) emit('refresh')
-  }
-}
-
 function triggerJsonImport() {
   jsonImportInput.value?.input?.click()
 }
@@ -872,19 +811,10 @@ async function handleJsonFileSelect(event: Event) {
     const fileContent = await file.text()
     const jsonData = JSON.parse(fileContent)
 
-    if (!jsonData.collection || !Array.isArray(jsonData.items)) {
+    const payload = toImportFullPayload(jsonData)
+    if (!payload) {
       showError(t('collectionDetail.importFullFormatError'))
       return
-    }
-
-    const payload = {
-      collection: {
-        name: jsonData.collection.name,
-        description: jsonData.collection.description ?? null,
-        is_public: jsonData.collection.is_public ?? true,
-      },
-      items: jsonData.items,
-      levels: Array.isArray(jsonData.levels) ? jsonData.levels : [],
     }
 
     const response = await importCollectionFull(payload)

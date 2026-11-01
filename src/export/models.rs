@@ -102,7 +102,7 @@ pub struct DictionaryEntry {
     pub user: Option<User>,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct CollectionExportItem {
     /// Omitted or zero when authoring an import file by hand (server assigns real ids).
     #[serde(default)]
@@ -159,6 +159,58 @@ pub struct CollectionExportItem {
     /// Order of this item within its level (for import when levels array is omitted)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub position_in_level: Option<i32>,
+    // ---- format_version >= 2 (all optional; older files simply omit them) ----
+    /// `collection_items.auto_progress`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_progress: Option<bool>,
+    /// ISO 15924 script code of the item content (`collection_items.script`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub script_code: Option<String>,
+    /// `collection_items.is_original`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_original: Option<bool>,
+    /// Stored canonical form; recomputed on import when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub canonical_form: Option<String>,
+    /// `flashcards.use_canonical_comparison` (typed-answer grading).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub use_canonical_comparison: Option<bool>,
+    /// Author-stored correct answer of a quiz card (`flashcard_quiz_options`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quiz_correct_answer: Option<String>,
+    /// Dialogue card data beyond the script itself (script = `free_content_front`,
+    /// card translation = `free_content_back`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dialogue: Option<DialogueExport>,
+}
+
+/// Dialogue extras. The script markup in `free_content_front` is the single source of truth
+/// for lines, per-line glosses (`~`) and every separately scored question (`? fill:`,
+/// `? bank:`, `? choice:`); `structure` is a parsed, read-only view of it for tools/readers
+/// and is ignored on import.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema, PartialEq)]
+pub struct DialogueExport {
+    /// Stable speaker → voice map (`collection_items.dialogue_voices`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Object)]
+    pub voices: Option<serde_json::Value>,
+    /// Generated per-line TTS clips (`dialogue_line_sounds`), reused instead of regenerated.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub line_sounds: Vec<DialogueLineSoundExport>,
+    /// Parsed script: `{title, lines:[{index,speaker,gender,voice_override,text,gloss}],
+    /// questions:[{index,kind,prompt,before,after,answers,options:[{text,correct}]}]}`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Object)]
+    pub structure: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
+pub struct DialogueLineSoundExport {
+    pub line_index: i32,
+    pub text_hash: String,
+    pub voice: String,
+    /// `data:audio/...;base64,...`
+    pub sound_url: String,
 }
 
 #[derive(Debug)]

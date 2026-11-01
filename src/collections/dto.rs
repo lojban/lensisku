@@ -432,15 +432,28 @@ pub struct SkippedItemInfo {
 
 // Full collection export/import (items + levels + optional flashcards)
 
+/// Current full export format version. 1 = files without `format_version`.
+pub const COLLECTION_EXPORT_FORMAT_VERSION: u32 = 2;
+pub const COLLECTION_EXPORT_FORMAT: &str = "lensisku.collection";
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CollectionExportMeta {
     pub name: String,
     pub description: Option<String>,
     pub is_public: Option<bool>,
+    /// Course challenge mode: `off`, `fixed` or `auto`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub challenge_mode: Option<String>,
+    /// Cover image as a data URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cover_image_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CollectionFullExport {
+    /// Always `lensisku.collection`.
+    pub format: String,
+    pub format_version: u32,
     pub collection: CollectionExportMeta,
     pub items: Vec<CollectionExportItem>,
     pub levels: Vec<LevelExport>,
@@ -463,6 +476,11 @@ pub struct LevelExport {
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ImportFullRequest {
+    #[serde(default)]
+    pub format: Option<String>,
+    /// Missing = 1 (pre-versioned files). Newer than the server's version is rejected.
+    #[serde(default)]
+    pub format_version: Option<u32>,
     pub collection: ImportFullCollectionMeta,
     pub items: Vec<CollectionExportItem>,
     #[serde(default)]
@@ -474,6 +492,10 @@ pub struct ImportFullCollectionMeta {
     pub name: String,
     pub description: Option<String>,
     pub is_public: Option<bool>,
+    #[serde(default)]
+    pub challenge_mode: Option<String>,
+    #[serde(default)]
+    pub cover_image_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

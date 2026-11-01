@@ -2021,9 +2021,6 @@
     "loadFailed": "无法加载对话。",
     "submitFailed": "无法保存答案，请重试。",
     "narrator": "旁白",
-    "importStories": "导入对话 (JSON)",
-    "importDone": "已导入 {count} 个对话",
-    "importFailed": "导入在 {count} 个对话后停止：{error}",
     "editor": {
       "scriptLabel": "对话脚本",
       "showSyntax": "显示语法",
