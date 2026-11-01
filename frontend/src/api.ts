@@ -837,7 +837,7 @@ export const getDialogueLineAudioBlob = (itemId: number | string, line: number) 
 
 export const checkDialogueAnswer = (
   itemId: number | string,
-  data: { question_index: number; answer: string }
+  data: { question_index: number; answer: string; hint_used?: boolean }
 ) => api.post(`/dialogue/items/${itemId}/check`, data)
 
 export const previewDialogue = (data: { text: string; item_id?: number | null }) =>

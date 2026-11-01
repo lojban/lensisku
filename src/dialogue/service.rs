@@ -1,7 +1,7 @@
 //! Dialogue cards: parsed view, per-line TTS clips, and per-question answers.
 use super::parser::{self, assign_voices, line_voice, Dialogue};
 use crate::flashcards::dto::ReviewRequest;
-use crate::flashcards::rating_policy::effective_rating;
+use crate::flashcards::rating_policy::{effective_rating, MAX_RATING, MIN_RATING};
 use crate::utils::wordbank::{build_wordbank_chips, WordbankChip, WordbankLang};
 use deadpool_postgres::{GenericClient, Pool};
 use serde::{Deserialize, Serialize};
@@ -123,6 +123,9 @@ pub struct DialogueAnswerRequest {
 pub struct DialogueCheckRequest {
     pub question_index: usize,
     pub answer: String,
+    /// Optional: a gloss/hint was opened before answering (lowers the rating by 1).
+    #[serde(default)]
+    pub hint_used: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -439,23 +442,28 @@ pub async fn check(
 ) -> Result<DialogueAnswerResponse, DialogueError> {
     let client = pool.get().await?;
     let item = load_item(&client, item_id, user_id).await?;
-    let (correct, expected) = grade(&parser::parse(&item.front), req.question_index, &req.answer)?;
+    let d = parser::parse(&item.front);
+    let (correct, expected) = grade(&d, req.question_index, &req.answer)?;
+    let kind = d.questions[req.question_index].kind.as_str();
     Ok(DialogueAnswerResponse {
         correct,
         expected,
-        rating: if correct { 3 } else { 1 },
+        rating: question_rating(kind, correct, req.hint_used),
         card_rating: None,
     })
 }
 
-/// Question rating: correct 3, wrong 1; a hint costs 1 (never below 1), like fixed cards.
-pub fn question_rating(correct: bool, hint_used: bool) -> u32 {
-    effective_rating(
-        Some("dialogue"),
-        None,
-        if correct { 3 } else { 1 },
-        hint_used,
-    )
+/// Question rating: a typed `fill` answered correctly is 4 (Easy); `bank` / `choice` (answer
+/// material on screen) are 3; wrong is 1. A hint costs 1 (never below 1) via the shared policy.
+pub fn question_rating(kind: &str, correct: bool, hint_used: bool) -> u32 {
+    let submitted = if !correct {
+        MIN_RATING
+    } else if kind == "fill" {
+        MAX_RATING
+    } else {
+        3
+    };
+    effective_rating(Some("dialogue"), None, submitted, hint_used)
 }
 
 /// Record one question answer (own row, own score). On `finish`, commit one FSRS review for the
@@ -489,9 +497,9 @@ pub async fn answer(
     let (correct, expected, rating) = match req.question_index {
         Some(qi) => {
             let (correct, expected) = grade(&d, qi, &req.answer)?;
-            let rating = question_rating(correct, req.hint_used);
-            let qi32 = qi as i32;
             let kind = d.questions[qi].kind.clone();
+            let rating = question_rating(&kind, correct, req.hint_used);
+            let qi32 = qi as i32;
             let r = rating as i32;
             client
                 .execute(
@@ -563,10 +571,18 @@ mod tests {
 
     #[test]
     fn question_ratings_follow_rating_policy() {
-        assert_eq!(question_rating(true, false), 3);
-        assert_eq!(question_rating(true, true), 2);
-        assert_eq!(question_rating(false, false), 1);
-        assert_eq!(question_rating(false, true), 1);
+        // Typed fill: correct without hint is Easy.
+        assert_eq!(question_rating("fill", true, false), 4);
+        assert_eq!(question_rating("fill", true, true), 3);
+        assert_eq!(question_rating("fill", false, false), 1);
+        assert_eq!(question_rating("fill", false, true), 1);
+        // Answer material on screen: 3, a hint costs 1.
+        for kind in ["bank", "choice"] {
+            assert_eq!(question_rating(kind, true, false), 3);
+            assert_eq!(question_rating(kind, true, true), 2);
+            assert_eq!(question_rating(kind, false, false), 1);
+            assert_eq!(question_rating(kind, false, true), 1);
+        }
     }
 
     #[test]

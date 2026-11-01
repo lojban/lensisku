@@ -92,7 +92,13 @@ import { answerDialogue, checkDialogueAnswer, getDialogue } from '@/api'
 import { useDialogueAudio } from '@/composables/useDialogueAudio'
 import DialogueLineBubble from './DialogueLineBubble.vue'
 import DialogueQuestionPanel from './DialogueQuestionPanel.vue'
-import { NARRATOR, gradeDialogueLocally, type DialogueGrade, type DialogueView } from './types'
+import {
+  NARRATOR,
+  dialogueQuestionRating,
+  gradeDialogueLocally,
+  type DialogueGrade,
+  type DialogueView,
+} from './types'
 
 const props = withDefaults(
   defineProps<{
@@ -210,6 +216,7 @@ async function onSubmit(answer: string) {
       const res = await checkDialogueAnswer(view.value.item_id ?? props.itemId!, {
         question_index: q.index,
         answer,
+        hint_used: hint,
       })
       grade = res.data as DialogueGrade
     } else {
@@ -222,7 +229,7 @@ async function onSubmit(answer: string) {
       })
       grade = res.data as DialogueGrade
     }
-    if (!grade.rating) grade.rating = grade.correct ? (hint ? 2 : 3) : 1
+    if (!grade.rating) grade.rating = dialogueQuestionRating(q.kind, grade.correct, hint)
     results.value = { ...results.value, [q.index]: grade }
     glossSinceAnswer.value = false
     emit('answered', grade.correct)

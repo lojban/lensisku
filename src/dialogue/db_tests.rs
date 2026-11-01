@@ -160,7 +160,8 @@ async fn dialogue_audio_cache_and_per_question_scores() {
     .await
     .unwrap();
     assert!(a1.correct);
-    assert_eq!((a1.rating, a1.card_rating), (2, None));
+    // Typed fill: 4, minus 1 for the hint.
+    assert_eq!((a1.rating, a1.card_rating), (3, None));
     let a2 = answer(
         &pool,
         user_id,
@@ -175,7 +176,8 @@ async fn dialogue_audio_cache_and_per_question_scores() {
     )
     .await
     .unwrap();
-    assert_eq!((a2.correct, a2.rating, a2.card_rating), (true, 3, Some(2)));
+    // Choice: 3; the card takes the lowest question rating.
+    assert_eq!((a2.correct, a2.rating, a2.card_rating), (true, 3, Some(3)));
     let rows = client
         .query(
             "SELECT question_index, correct, rating FROM dialogue_question_answers WHERE attempt_id = $1 ORDER BY question_index",
@@ -184,7 +186,7 @@ async fn dialogue_audio_cache_and_per_question_scores() {
         .await
         .unwrap();
     assert_eq!(rows.len(), 2);
-    assert_eq!(rows[0].get::<_, i32>(2), 2);
+    assert_eq!(rows[0].get::<_, i32>(2), 3);
     assert_eq!(rows[1].get::<_, i32>(2), 3);
     let (reviews, last): (i32, Option<chrono::DateTime<chrono::Utc>>) = {
         let r = client

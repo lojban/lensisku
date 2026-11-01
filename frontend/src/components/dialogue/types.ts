@@ -76,6 +76,13 @@ function normalizeDialogueAnswer(s: string): string {
     .join(' ')
 }
 
+/** Mirrors the server: typed fill correct = 4, bank/choice correct = 3, wrong = 1; a hint costs 1. */
+export function dialogueQuestionRating(kind: string, correct: boolean, hintUsed: boolean): number {
+  if (!correct) return 1
+  const base = kind === 'fill' ? 4 : 3
+  return Math.max(1, base - (hintUsed ? 1 : 0))
+}
+
 export function gradeDialogueLocally(q: DialogueQuestion, answer: string): DialogueGrade {
   const a = normalizeDialogueAnswer(answer)
   if (q.kind === 'choice') {
