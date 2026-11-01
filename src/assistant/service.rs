@@ -1659,7 +1659,10 @@ pub async fn probe_openrouter_model_cheap(model_id: &str) -> Result<(), AppError
         .await?;
     let ok = resp.choices.first().is_some_and(|c| {
         c.message.tool_calls.as_ref().is_some_and(|t| !t.is_empty())
-            || c.message.content.as_deref().is_some_and(|t| !t.trim().is_empty())
+            || c.message
+                .content
+                .as_deref()
+                .is_some_and(|t| !t.trim().is_empty())
     });
     if ok {
         Ok(())

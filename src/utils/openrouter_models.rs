@@ -29,7 +29,11 @@ const DEFAULT_FALLBACK_MODELS: &[&str] = &[
 pub const OPENROUTER_PROBE_TIMEOUT: Duration = Duration::from_secs(45);
 
 pub fn fallback_model_ids() -> Vec<String> {
-    parse_fallback_models(std::env::var("OPENROUTER_ASSISTANT_FALLBACK_MODELS").ok().as_deref())
+    parse_fallback_models(
+        std::env::var("OPENROUTER_ASSISTANT_FALLBACK_MODELS")
+            .ok()
+            .as_deref(),
+    )
 }
 
 fn parse_fallback_models(raw: Option<&str>) -> Vec<String> {
@@ -40,7 +44,10 @@ fn parse_fallback_models(raw: Option<&str>) -> Vec<String> {
             .filter(|x| !x.is_empty())
             .map(String::from)
             .collect(),
-        None => DEFAULT_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
+        None => DEFAULT_FALLBACK_MODELS
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
     }
 }
 
@@ -59,7 +66,10 @@ pub fn merge_candidates(lists: &[Vec<ModelIdName>]) -> Vec<ModelIdName> {
 }
 
 pub fn fallback_candidates() -> Vec<ModelIdName> {
-    fallback_model_ids().into_iter().map(|id| (id.clone(), id)).collect()
+    fallback_model_ids()
+        .into_iter()
+        .map(|id| (id.clone(), id))
+        .collect()
 }
 
 /// Max free models to pull from the catalog (newest first). First two may run in parallel when
@@ -428,7 +438,11 @@ where
             .set(REDIS_KEY_OPENROUTER_ASSISTANT_MODELS, &entry, None)
             .await?;
         redis
-            .set(REDIS_KEY_OPENROUTER_LAST_GOOD_MODELS, &entry, Some(LAST_GOOD_TTL))
+            .set(
+                REDIS_KEY_OPENROUTER_LAST_GOOD_MODELS,
+                &entry,
+                Some(LAST_GOOD_TTL),
+            )
             .await?;
         log::info!(
             "OpenRouter assistant model cache updated: {}, {} ({} passed)",
@@ -453,11 +467,14 @@ where
 {
     let futs = candidates.into_iter().map(|(id, name)| async move {
         let started = Instant::now();
-        let res = tokio::time::timeout(OPENROUTER_PROBE_TIMEOUT, probe(id.clone(), name.clone()))
-            .await;
+        let res =
+            tokio::time::timeout(OPENROUTER_PROBE_TIMEOUT, probe(id.clone(), name.clone())).await;
         match res {
             Ok(Ok(())) => {
-                log::debug!("OpenRouter probe ok: {id} ({} ms)", started.elapsed().as_millis());
+                log::debug!(
+                    "OpenRouter probe ok: {id} ({} ms)",
+                    started.elapsed().as_millis()
+                );
                 Some((started.elapsed(), id, name))
             }
             Ok(Err(e)) => {
@@ -470,8 +487,11 @@ where
             }
         }
     });
-    let mut ok: Vec<(Duration, String, String)> =
-        futures::future::join_all(futs).await.into_iter().flatten().collect();
+    let mut ok: Vec<(Duration, String, String)> = futures::future::join_all(futs)
+        .await
+        .into_iter()
+        .flatten()
+        .collect();
     ok.sort_by_key(|(d, _, _)| *d);
     ok.into_iter().map(|(_, id, name)| (id, name)).collect()
 }
@@ -486,7 +506,11 @@ mod model_selection_tests {
 
     #[test]
     fn merge_dedups_and_keeps_priority() {
-        let out = merge_candidates(&[vec![m("a"), m("b")], vec![m("b"), m("c")], vec![m(""), m("a"), m("d")]]);
+        let out = merge_candidates(&[
+            vec![m("a"), m("b")],
+            vec![m("b"), m("c")],
+            vec![m(""), m("a"), m("d")],
+        ]);
         let ids: Vec<_> = out.into_iter().map(|x| x.0).collect();
         assert_eq!(ids, ["a", "b", "c", "d"]);
     }
@@ -494,8 +518,14 @@ mod model_selection_tests {
     #[test]
     fn fallback_env_parsing() {
         assert_eq!(parse_fallback_models(Some(" x , ,y ")), ["x", "y"]);
-        assert_eq!(parse_fallback_models(Some("  ")).len(), DEFAULT_FALLBACK_MODELS.len());
-        assert_eq!(parse_fallback_models(None).len(), DEFAULT_FALLBACK_MODELS.len());
+        assert_eq!(
+            parse_fallback_models(Some("  ")).len(),
+            DEFAULT_FALLBACK_MODELS.len()
+        );
+        assert_eq!(
+            parse_fallback_models(None).len(),
+            DEFAULT_FALLBACK_MODELS.len()
+        );
     }
 
     #[tokio::test]
@@ -517,7 +547,11 @@ mod model_selection_tests {
         let started = Instant::now();
         let got = probe_concurrently(vec![m("slow"), m("bad"), m("fast"), m("mid")], &probe).await;
         // Sequential would take >= 410 ms.
-        assert!(started.elapsed() < Duration::from_millis(390), "{:?}", started.elapsed());
+        assert!(
+            started.elapsed() < Duration::from_millis(390),
+            "{:?}",
+            started.elapsed()
+        );
         let ids: Vec<_> = got.into_iter().map(|x| x.0).collect();
         assert_eq!(ids, ["fast", "mid", "slow"]);
     }

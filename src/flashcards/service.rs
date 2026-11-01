@@ -5493,7 +5493,6 @@ mod info_card_wordbank_tests {
     }
 }
 
-
 #[cfg(test)]
 mod auto_wordbank_grade_tests {
     use super::{calculate_similarity, wordbank_tokens_match};
@@ -5505,32 +5504,68 @@ mod auto_wordbank_grade_tests {
 
     #[test]
     fn tokens_mi_tavla_correct_with_trailing_stop() {
-        assert!(wordbank_tokens_match(&toks(&["I", "talk"]), "I talk.", WordbankLang::Translation));
+        assert!(wordbank_tokens_match(
+            &toks(&["I", "talk"]),
+            "I talk.",
+            WordbankLang::Translation
+        ));
     }
 
     #[test]
     fn tokens_wrong_order_is_wrong() {
-        assert!(!wordbank_tokens_match(&toks(&["talk", "I"]), "I talk.", WordbankLang::Translation));
+        assert!(!wordbank_tokens_match(
+            &toks(&["talk", "I"]),
+            "I talk.",
+            WordbankLang::Translation
+        ));
     }
 
     #[test]
     fn tokens_extra_or_missing_is_wrong() {
-        assert!(!wordbank_tokens_match(&toks(&["I", "talk", "you"]), "I talk.", WordbankLang::Translation));
-        assert!(!wordbank_tokens_match(&toks(&["I"]), "I talk.", WordbankLang::Translation));
-        assert!(!wordbank_tokens_match(&[], "I talk.", WordbankLang::Translation));
+        assert!(!wordbank_tokens_match(
+            &toks(&["I", "talk", "you"]),
+            "I talk.",
+            WordbankLang::Translation
+        ));
+        assert!(!wordbank_tokens_match(
+            &toks(&["I"]),
+            "I talk.",
+            WordbankLang::Translation
+        ));
+        assert!(!wordbank_tokens_match(
+            &[],
+            "I talk.",
+            WordbankLang::Translation
+        ));
     }
 
     #[test]
     fn tokens_alternatives_accepted() {
-        assert!(wordbank_tokens_match(&toks(&["I", "speak"]), "I talk.; I speak.", WordbankLang::Translation));
+        assert!(wordbank_tokens_match(
+            &toks(&["I", "speak"]),
+            "I talk.; I speak.",
+            WordbankLang::Translation
+        ));
     }
 
     #[test]
     fn tokens_reverse_lojban() {
-        assert!(wordbank_tokens_match(&toks(&["mi", "tavla"]), "mi tavla", WordbankLang::Lojban));
-        assert!(!wordbank_tokens_match(&toks(&["tavla", "mi"]), "mi tavla", WordbankLang::Lojban));
+        assert!(wordbank_tokens_match(
+            &toks(&["mi", "tavla"]),
+            "mi tavla",
+            WordbankLang::Lojban
+        ));
+        assert!(!wordbank_tokens_match(
+            &toks(&["tavla", "mi"]),
+            "mi tavla",
+            WordbankLang::Lojban
+        ));
         // Lojban is case/orthography-preserving.
-        assert!(!wordbank_tokens_match(&toks(&["mi", "TAVLA"]), "mi tavla", WordbankLang::Lojban));
+        assert!(!wordbank_tokens_match(
+            &toks(&["mi", "TAVLA"]),
+            "mi tavla",
+            WordbankLang::Lojban
+        ));
     }
 
     /// Prod bug: auto card "mi tavla" → "I talk." presented as wordbank; Check omitted
