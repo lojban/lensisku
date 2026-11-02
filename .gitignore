@@ -2,6 +2,9 @@ mail_archive.db
 lojban-list
 target
 .env
+.env.*
+!.env.example
+.claude/settings.local.json
 *.zip
 maildir
 .vite

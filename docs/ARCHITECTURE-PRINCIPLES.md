@@ -87,6 +87,11 @@ These are the rules the lensisku backend follows, why, and where they are (or ar
 - `import_full` logs failed level-prerequisite/membership inserts as warnings instead of `let _ =`.
 - CI `db-tests` loads `tests/fixtures/lensisku_schema.sql` (schema + `languages`/`valsitypes`) and
   runs the collections import, merge-progress and challenge-mix progress tests.
+- Agent and contributor rules in one place (`AGENTS.md`, loaded through `CLAUDE.md`) plus a living
+  `docs/pitfalls.md` of mistakes and their rules.
+- `docs/file-formats.md`: every exchanged format is versioned, older files load, newer ones are refused.
+- `scripts/check-secrets.sh` run by the pre-commit hook (`--all` scans every tracked file), and `.env.*` and
+  `.claude/settings.local.json` ignored by the repo's own `.gitignore`.
 
 ### Not applied, and why
 - **Splitting into many crates / an `xtask` layer checker**: large, conflict-prone churn with little

@@ -242,3 +242,8 @@
 - [ ] all endpoints must use transactions, txs must be committed like add_valsi
 - [ ] test with the latest sql dump
     - [ ] prepare procedure for the migration from la jbovlaste
+
+## Hygiene
+- [ ] production `web` container runs with `--log-driver=none`: give it a log driver or file so error ids can be looked up
+- [ ] literal version 1 sample test for collection import (see docs/file-formats.md)
+- [ ] `coturn.conf` / `coturn-dev.conf` carry TURN secrets in tracked files: move to env or the secrets file and rotate

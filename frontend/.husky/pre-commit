@@ -1,1 +1,2 @@
+scripts/check-secrets.sh || exit 1
 cd frontend && pnpm lint-staged
