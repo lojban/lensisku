@@ -22,7 +22,6 @@ use crate::jbovlaste::{
     UpdateDefinitionRequest, UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail,
     ValsiTypeListResponse, VoteRequest, VoteResponse, WikiByDefinitionResponse,
 };
-use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{
     generate_search_cache_key, generate_semantic_graph_cache_key,
     generate_semantic_graph_preview_cache_key, RedisCache,
@@ -980,35 +979,6 @@ pub async fn add_definition(
     redis_cache: web::Data<RedisCache>,
     request: web::Json<AddDefinitionRequest>,
 ) -> impl Responder {
-    if request.is_wiki != Some(true) {
-        let options = MathJaxValidationOptions { use_tectonic: true };
-        let definition = crate::utils::preserve_author_text(&request.definition);
-        let notes = request
-            .notes
-            .as_ref()
-            .map(|n| crate::utils::preserve_author_text(n));
-        let etymology = request
-            .etymology
-            .as_ref()
-            .map(|e| crate::utils::preserve_author_text(e));
-        let fields: Vec<(&str, &str)> = vec![
-            ("definition", definition.as_str()),
-            ("notes", notes.as_deref().unwrap_or("")),
-            ("etymology", etymology.as_deref().unwrap_or("")),
-        ]
-        .into_iter()
-        .filter(|(_, t)| !t.trim().is_empty())
-        .collect::<Vec<_>>();
-        if let Err((field_name, e)) = validate_mathjax_fields(&fields, &options).await {
-            return HttpResponse::BadRequest().json(AddValsiResponse {
-                success: false,
-                word_type: String::new(),
-                definition_id: 0,
-                error: Some(format!("Invalid LaTeX/MathJax in {}: {}", field_name, e)),
-                warning: None,
-            });
-        }
-    }
     if let Some(image) = &request.image {
         if let Err(e) = validate_image(image) {
             return HttpResponse::BadRequest().json(AddValsiResponse {
@@ -1041,7 +1011,9 @@ pub async fn add_definition(
         Err(e) => {
             let msg = error_chain(&e);
             log::error!("Failed to add definition: {}", msg);
-            if msg.contains(service::PLACE_SPAN_REQUIRED_ERROR) {
+            if msg.contains(service::PLACE_SPAN_REQUIRED_ERROR)
+                || msg.contains("Invalid LaTeX/MathJax")
+            {
                 HttpResponse::BadRequest().json(AddValsiResponse {
                     success: false,
                     word_type: String::new(),
@@ -1219,36 +1191,6 @@ pub async fn update_definition(
     let definition_id = id.into_inner();
     let cache_target = service::definition_cache_target(&pool, definition_id).await;
 
-    if req.is_wiki != Some(true) {
-        let options = MathJaxValidationOptions { use_tectonic: true };
-        let definition = crate::utils::preserve_author_text(&req.definition);
-        let notes = req
-            .notes
-            .as_ref()
-            .map(|n| crate::utils::preserve_author_text(n));
-        let etymology = req
-            .etymology
-            .as_ref()
-            .map(|e| crate::utils::preserve_author_text(e));
-
-        let fields: Vec<(&str, &str)> = vec![
-            ("definition", definition.as_str()),
-            ("notes", notes.as_deref().unwrap_or("")),
-            ("etymology", etymology.as_deref().unwrap_or("")),
-        ]
-        .into_iter()
-        .filter(|(_, t)| !t.trim().is_empty())
-        .collect::<Vec<_>>();
-
-        if let Err((field_name, e)) = validate_mathjax_fields(&fields, &options).await {
-            return HttpResponse::BadRequest().json(UpdateDefinitionResponse {
-                success: false,
-                error: Some(format!("Invalid LaTeX/MathJax in {}: {}", field_name, e)),
-                warning: None,
-            });
-        }
-    }
-
     if let Some(image) = &req.image {
         if let Err(e) = validate_image(image) {
             return HttpResponse::BadRequest().json(UpdateDefinitionResponse {
@@ -1290,6 +1232,7 @@ pub async fn update_definition(
                 })
             } else if msg.contains("Invalid target language")
                 || msg.contains(service::PLACE_SPAN_REQUIRED_ERROR)
+                || msg.contains("Invalid LaTeX/MathJax")
             {
                 HttpResponse::BadRequest().json(UpdateDefinitionResponse {
                     success: false,

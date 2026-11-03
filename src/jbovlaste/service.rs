@@ -185,7 +185,7 @@ use crate::auth::Claims;
 use crate::comments::dto::ReactionResponse;
 use crate::language::{
     analyze_word, classify_lujvo_spelling, has_dollar_math_span, is_decomposable_lujvo_type,
-    load_owned_rafsi_maps, validate_mathjax, MathJaxValidationOptions,
+    load_owned_rafsi_maps, validate_mathjax_fields, MathJaxValidationOptions,
 };
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
@@ -3549,6 +3549,52 @@ pub async fn rename_definition_valsi(
     })
 }
 
+fn definition_math_error(
+    field: String,
+    error: crate::language::models::MathJaxValidationError,
+) -> AppError {
+    AppError::Validation(format!("Invalid LaTeX/MathJax in {field}: {error}"))
+}
+
+async fn validate_definition_math(
+    definition: &str,
+    notes: Option<&str>,
+    etymology: Option<&str>,
+) -> Result<(), AppError> {
+    let definition = preserve_author_text(definition);
+    let notes = notes.map(preserve_author_text);
+    let etymology = etymology.map(preserve_author_text);
+    let fields = [
+        ("definition", definition.as_str()),
+        ("notes", notes.as_deref().unwrap_or("")),
+        ("etymology", etymology.as_deref().unwrap_or("")),
+    ];
+    let fields: Vec<(&str, &str)> = fields
+        .into_iter()
+        .filter(|(_, text)| !text.trim().is_empty())
+        .collect();
+    validate_mathjax_fields(&fields, &MathJaxValidationOptions { use_tectonic: true })
+        .await
+        .map_err(|(field, error)| definition_math_error(field, error))
+}
+
+async fn definition_source_langid(
+    pool: &Pool,
+    definition_id: i32,
+) -> Result<Option<Option<i32>>, AppError> {
+    let client = pool.get().await?;
+    let row = client
+        .query_opt(
+            "SELECT v.source_langid
+             FROM definitions d
+             JOIN valsi v ON v.valsiid = d.valsiid
+             WHERE d.definitionid = $1",
+            &[&definition_id],
+        )
+        .await?;
+    Ok(row.map(|row| row.get(0)))
+}
+
 pub async fn add_definition(
     pool: &Pool,
     claims: &Claims,
@@ -3557,6 +3603,15 @@ pub async fn add_definition(
     redis_cache: &RedisCache,
     send_notifications: bool,
 ) -> Result<(String, i32, Option<String>), AppError> {
+    let source_langid = request.source_langid.unwrap_or(1);
+    if request.is_wiki != Some(true) && (source_langid == 1 || source_langid == 58) {
+        validate_definition_math(
+            &request.definition,
+            request.notes.as_deref(),
+            request.etymology.as_deref(),
+        )
+        .await?;
+    }
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -3608,24 +3663,12 @@ async fn add_definition_in_transaction(
     let sanitized_selmaho = request.selmaho.as_ref().map(|s| preserve_author_text(s));
     let sanitized_jargon = request.jargon.as_ref().map(|j| preserve_author_text(j));
 
-    let combined_text = format!(
-        "{} {} {}",
-        sanitized_definition,
-        sanitized_notes.as_deref().unwrap_or(""),
-        sanitized_etymology.as_deref().unwrap_or("")
-    );
-
-    let options = MathJaxValidationOptions { use_tectonic: true };
-
     // Use provided source_langid or default to 1 (Lojban)
     let source_langid = request.source_langid.unwrap_or(1);
 
     let (word, word_type) = match source_langid {
         1 | 58 => {
-            // Lojban or Loglan
-            validate_mathjax(&combined_text, &options)
-                .await
-                .map_err(AppError::from)?;
+            // Lojban or Loglan. MathJax was checked before this transaction opened.
             let res = analyze_word(&parsers, &request.word, source_langid, transaction).await?;
             (res.text, res.word_type)
         }
@@ -4319,13 +4362,18 @@ pub async fn update_definition(
     let sanitized_selmaho = request.selmaho.as_ref().map(|s| preserve_author_text(s));
     let sanitized_jargon = request.jargon.as_ref().map(|j| preserve_author_text(j));
 
-    // Combine all text fields for validation
-    let combined_text = format!(
-        "{} {} {}",
-        sanitized_definition,
-        sanitized_notes.as_deref().unwrap_or(""),
-        sanitized_etymology.as_deref().unwrap_or("")
-    );
+    if request.is_wiki != Some(true) {
+        if let Some(source_langid) = definition_source_langid(pool, definition_id).await? {
+            if source_langid.is_none() || source_langid == Some(1) {
+                validate_definition_math(
+                    &sanitized_definition,
+                    sanitized_notes.as_deref(),
+                    sanitized_etymology.as_deref(),
+                )
+                .await?;
+            }
+        }
+    }
 
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -4463,15 +4511,6 @@ pub async fn update_definition(
     } else {
         None
     };
-
-    let options = MathJaxValidationOptions { use_tectonic: true };
-
-    // Only validate MathJax if source lang is Lojban (1) or not set
-    if request.is_wiki != Some(true) && (source_langid.is_none() || source_langid == Some(1)) {
-        validate_mathjax(&combined_text, &options)
-            .await
-            .map_err(AppError::from)?;
-    }
 
     let is_author = current_def.get::<_, i32>("userid") == user_id;
     let current_owner_only = current_def.get::<_, bool>("owner_only");

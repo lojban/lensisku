@@ -668,15 +668,16 @@ pub async fn validate_mathjax(
     if text.trim().is_empty() {
         return Ok(());
     }
-    // Decode HTML entities so that e.g. &lt; becomes < for LaTeX (avoids "Misplaced alignment tab character &")
     let decoded = crate::utils::decode_html_entities(text);
     // Parse math spans once; prose is never input to the TeX compiler.
     let math_spans = extract_math_spans(&decoded)?;
+    let mut owned = Vec::with_capacity(math_spans.len());
     for span in math_spans {
         check_syntax_patterns(span)?;
-        if options.use_tectonic {
-            validate_with_tex(span).await?;
-        }
+        owned.push(span.to_string());
+    }
+    if options.use_tectonic {
+        validate_spans_with_tex(&owned).await?;
     }
 
     Ok(())
@@ -697,10 +698,20 @@ pub async fn validate_mathjax_fields(
     fields: &[(&str, &str)],
     options: &MathJaxValidationOptions,
 ) -> Result<(), (String, MathJaxValidationError)> {
+    let mut spans = Vec::new();
     for (name, text) in fields {
-        if let Err(e) = validate_mathjax(text, options).await {
-            return Err(((*name).to_string(), e));
+        if text.trim().is_empty() {
+            continue;
         }
+        let decoded = crate::utils::decode_html_entities(text);
+        let extracted = extract_math_spans(&decoded).map_err(|e| ((*name).to_string(), e))?;
+        for span in extracted {
+            check_syntax_patterns(span).map_err(|e| ((*name).to_string(), e))?;
+            spans.push(((*name).to_string(), span.to_string()));
+        }
+    }
+    if options.use_tectonic && !spans.is_empty() {
+        validate_fields_with_tex(&spans).await?;
     }
     Ok(())
 }
@@ -985,7 +996,7 @@ fn handle_tectonic_failure(
     Err(MathJaxValidationError::Tectonic(engine_error.to_string()))
 }
 
-fn latex_document_for_math(span: &str) -> String {
+fn latex_document_for_spans(spans: &[&str]) -> String {
     format!(
         r#"\documentclass{{article}}
 \usepackage{{amsmath}}
@@ -993,22 +1004,73 @@ fn latex_document_for_math(span: &str) -> String {
 \begin{{document}}
 {}
 \end{{document}}"#,
-        span
+        spans.join("\n\n")
     )
 }
 
-/// Validate with the system xelatex command supplied by TeX Live.
-async fn validate_with_tex(span: &str) -> Result<(), MathJaxValidationError> {
+/// One XeLaTeX process for every distinct span in this save.
+async fn validate_spans_with_tex(spans: &[String]) -> Result<(), MathJaxValidationError> {
+    compile_spans(&unique_spans(spans)).await
+}
+
+async fn validate_fields_with_tex(
+    spans: &[(String, String)],
+) -> Result<(), (String, MathJaxValidationError)> {
+    let unique = unique_spans(
+        &spans
+            .iter()
+            .map(|(_, span)| span.clone())
+            .collect::<Vec<_>>(),
+    );
+    if let Err(error) = compile_spans(&unique).await {
+        if unique.len() > 1 {
+            for span in &unique {
+                if let Err(error) = compile_spans(std::slice::from_ref(span)).await {
+                    return Err((field_for_span(spans, span), error));
+                }
+            }
+        }
+        let span = unique.first().map(String::as_str).unwrap_or("");
+        return Err((field_for_span(spans, span), error));
+    }
+    Ok(())
+}
+
+fn field_for_span(spans: &[(String, String)], span: &str) -> String {
+    spans
+        .iter()
+        .find(|(_, text)| text == span)
+        .map(|(field, _)| field.clone())
+        .unwrap_or_else(|| "definition".to_string())
+}
+
+fn unique_spans(spans: &[String]) -> Vec<String> {
+    let mut unique = Vec::new();
+    for span in spans {
+        if !unique.iter().any(|seen: &String| seen == span) {
+            unique.push(span.clone());
+        }
+    }
+    unique
+}
+
+async fn compile_spans(spans: &[String]) -> Result<(), MathJaxValidationError> {
+    if spans.is_empty() {
+        return Ok(());
+    }
+    let refs: Vec<&str> = spans.iter().map(String::as_str).collect();
+    compile_tex_document(&latex_document_for_spans(&refs)).await
+}
+
+/// Validate with one system xelatex process supplied by TeX Live.
+async fn compile_tex_document(document: &str) -> Result<(), MathJaxValidationError> {
     use tokio::process::Command;
 
     let dir = tempfile::tempdir()
         .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX temp directory: {e}")))?;
-    tokio::fs::write(
-        dir.path().join("definition.tex"),
-        latex_document_for_math(span),
-    )
-    .await
-    .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX input: {e}")))?;
+    tokio::fs::write(dir.path().join("definition.tex"), document)
+        .await
+        .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX input: {e}")))?;
 
     let mut command = Command::new("xelatex");
     command
@@ -1019,6 +1081,7 @@ async fn validate_with_tex(span: &str) -> Result<(), MathJaxValidationError> {
             "definition.tex",
         ])
         .current_dir(dir.path())
+        .stdin(std::process::Stdio::null())
         .kill_on_drop(true);
     match tokio::time::timeout(std::time::Duration::from_secs(15), command.output()).await {
         Ok(Ok(output)) if output.status.success() => Ok(()),
@@ -1115,8 +1178,9 @@ mod tests {
     fn extracts_only_math_spans_from_definition() {
         let definition = "$x_1$ is the pantheon, the set of all gods of religion or people x2.";
         assert_eq!(extract_math_spans(definition).unwrap(), vec!["$x_1$"]);
-        let document = latex_document_for_math(extract_math_spans(definition).unwrap()[0]);
+        let document = latex_document_for_spans(&["$x_1$", "$x_2$"]);
         assert!(document.contains("$x_1$"));
+        assert!(document.contains("$x_2$"));
         assert!(!document.contains("pantheon"));
     }
 
