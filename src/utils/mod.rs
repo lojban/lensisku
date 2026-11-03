@@ -33,6 +33,15 @@ pub fn remove_html_tags(html: &str) -> String {
     AMMONIA.clean(html).to_string()
 }
 
+/// Dictionary prose is Markdown and MathJax, not HTML. An HTML parser treats
+/// `Set <T | U>` as a tag and deletes it. Keep the characters; drop only
+/// control characters that are not whitespace.
+pub fn preserve_author_text(text: &str) -> String {
+    text.chars()
+        .filter(|c| !c.is_control() || matches!(c, '\n' | '\r' | '\t'))
+        .collect()
+}
+
 /// Decode HTML entities so that LaTeX/MathJax validation sees literal characters.
 /// E.g. `&lt;` → `<`, so that `$&lt;$` validates as math mode less-than instead of
 /// causing "Misplaced alignment tab character &".
@@ -229,7 +238,20 @@ pub fn handle_import_error(e: crate::error::AppError) -> HttpResponse {
 
 #[cfg(test)]
 mod tests {
-    use super::decode_html_entities;
+    use super::{decode_html_entities, preserve_author_text};
+
+    #[test]
+    fn preserve_author_text_keeps_angle_brackets() {
+        assert_eq!(
+            preserve_author_text("Set <T | U> and $x_1 < x_2$"),
+            "Set <T | U> and $x_1 < x_2$"
+        );
+    }
+
+    #[test]
+    fn preserve_author_text_drops_nul() {
+        assert_eq!(preserve_author_text("a\0b\nc"), "ab\nc");
+    }
 
     #[test]
     fn decode_html_entities_less_than() {

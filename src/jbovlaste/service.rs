@@ -202,6 +202,11 @@ pub fn sanitize_html(html: &str) -> String {
     remove_html_tags(html)
 }
 
+/// Markdown and MathJax fields. Do not parse them as HTML.
+fn preserve_author_text(text: &str) -> String {
+    crate::utils::preserve_author_text(text)
+}
+
 /// Similarity threshold for semantic search (cosine distance). Lower = stricter.
 /// Set via env SEMANTIC_SIMILARITY_THRESHOLD (default 0.4).
 fn semantic_similarity_threshold() -> f64 {
@@ -3597,11 +3602,11 @@ async fn add_definition_in_transaction(
         ));
     }
 
-    let sanitized_definition = sanitize_html(&request.definition);
-    let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
-    let sanitized_etymology = request.etymology.as_ref().map(|e| sanitize_html(e));
-    let sanitized_selmaho = request.selmaho.as_ref().map(|s| sanitize_html(s));
-    let sanitized_jargon = request.jargon.as_ref().map(|j| sanitize_html(j));
+    let sanitized_definition = preserve_author_text(&request.definition);
+    let sanitized_notes = request.notes.as_ref().map(|n| preserve_author_text(n));
+    let sanitized_etymology = request.etymology.as_ref().map(|e| preserve_author_text(e));
+    let sanitized_selmaho = request.selmaho.as_ref().map(|s| preserve_author_text(s));
+    let sanitized_jargon = request.jargon.as_ref().map(|j| preserve_author_text(j));
 
     let combined_text = format!(
         "{} {} {}",
@@ -3812,11 +3817,11 @@ async fn add_definition_in_transaction(
     // Add gloss keywords (including phrases)
     if let Some(gloss_keywords) = &request.gloss_keywords {
         for keyword in gloss_keywords {
-            let sanitized_word = sanitize_html(&keyword.word);
+            let sanitized_word = preserve_author_text(&keyword.word);
             let sanitized_meaning = keyword
                 .meaning
                 .as_ref()
-                .map(|m| sanitize_html(m))
+                .map(|m| preserve_author_text(m))
                 .filter(|s| !s.trim().is_empty());
             // Add natlangword if it doesn't exist
             transaction
@@ -3869,11 +3874,11 @@ async fn add_definition_in_transaction(
     if type_id != 15 {
         if let Some(place_keywords) = &request.place_keywords {
             for (i, keyword) in place_keywords.iter().enumerate() {
-                let sanitized_word = sanitize_html(&keyword.word);
+                let sanitized_word = preserve_author_text(&keyword.word);
                 let sanitized_meaning = keyword
                     .meaning
                     .as_ref()
-                    .map(|m| sanitize_html(m))
+                    .map(|m| preserve_author_text(m))
                     .filter(|s| !s.trim().is_empty());
                 // Add natlangword if it doesn't exist
                 transaction
@@ -4307,12 +4312,12 @@ pub async fn update_definition(
     let mut sanitized_definition = if request.is_wiki == Some(true) {
         sanitize_wiki_markdown(&request.definition)
     } else {
-        sanitize_html(&request.definition)
+        preserve_author_text(&request.definition)
     };
-    let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
-    let sanitized_etymology = request.etymology.as_ref().map(|e| sanitize_html(e));
-    let sanitized_selmaho = request.selmaho.as_ref().map(|s| sanitize_html(s));
-    let sanitized_jargon = request.jargon.as_ref().map(|j| sanitize_html(j));
+    let sanitized_notes = request.notes.as_ref().map(|n| preserve_author_text(n));
+    let sanitized_etymology = request.etymology.as_ref().map(|e| preserve_author_text(e));
+    let sanitized_selmaho = request.selmaho.as_ref().map(|s| preserve_author_text(s));
+    let sanitized_jargon = request.jargon.as_ref().map(|j| preserve_author_text(j));
 
     // Combine all text fields for validation
     let combined_text = format!(
@@ -4602,11 +4607,11 @@ pub async fn update_definition(
     if request.is_wiki != Some(true) {
         if let Some(gloss_keywords) = &request.gloss_keywords {
             for keyword in gloss_keywords {
-                let sanitized_word = sanitize_html(&keyword.word);
+                let sanitized_word = preserve_author_text(&keyword.word);
                 let sanitized_meaning = keyword
                     .meaning
                     .as_ref()
-                    .map(|m| sanitize_html(m))
+                    .map(|m| preserve_author_text(m))
                     .filter(|s| !s.trim().is_empty());
                 // First ensure the natlangword exists
                 transaction
@@ -4659,11 +4664,11 @@ pub async fn update_definition(
         if valsi_typeid != 15 {
             if let Some(place_keywords) = &request.place_keywords {
                 for (i, keyword) in place_keywords.iter().enumerate() {
-                    let sanitized_word = sanitize_html(&keyword.word);
+                    let sanitized_word = preserve_author_text(&keyword.word);
                     let sanitized_meaning = keyword
                         .meaning
                         .as_ref()
-                        .map(|m| sanitize_html(m))
+                        .map(|m| preserve_author_text(m))
                         .filter(|s| !s.trim().is_empty());
                     // First ensure the natlangword exists
                     transaction

@@ -982,15 +982,15 @@ pub async fn add_definition(
 ) -> impl Responder {
     if request.is_wiki != Some(true) {
         let options = MathJaxValidationOptions { use_tectonic: true };
-        let definition = crate::utils::remove_html_tags(&request.definition);
+        let definition = crate::utils::preserve_author_text(&request.definition);
         let notes = request
             .notes
             .as_ref()
-            .map(|n| crate::utils::remove_html_tags(n));
+            .map(|n| crate::utils::preserve_author_text(n));
         let etymology = request
             .etymology
             .as_ref()
-            .map(|e| crate::utils::remove_html_tags(e));
+            .map(|e| crate::utils::preserve_author_text(e));
         let fields: Vec<(&str, &str)> = vec![
             ("definition", definition.as_str()),
             ("notes", notes.as_deref().unwrap_or("")),
@@ -1221,15 +1221,15 @@ pub async fn update_definition(
 
     if req.is_wiki != Some(true) {
         let options = MathJaxValidationOptions { use_tectonic: true };
-        let definition = crate::utils::remove_html_tags(&req.definition);
+        let definition = crate::utils::preserve_author_text(&req.definition);
         let notes = req
             .notes
             .as_ref()
-            .map(|n| crate::utils::remove_html_tags(n));
+            .map(|n| crate::utils::preserve_author_text(n));
         let etymology = req
             .etymology
             .as_ref()
-            .map(|e| crate::utils::remove_html_tags(e));
+            .map(|e| crate::utils::preserve_author_text(e));
 
         let fields: Vec<(&str, &str)> = vec![
             ("definition", definition.as_str()),

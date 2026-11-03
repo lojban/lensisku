@@ -247,7 +247,7 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { Marked } from 'marked'
-import { sanitizeHtml } from '@/utils/sanitizeHtml'
+import { escapeMarkdownAngles, sanitizeHtml } from '@/utils/sanitizeHtml'
 
 import { addComment, fetchComments, getDefinitionLink } from '@/api'
 import CommentForm from '@/components/CommentForm.vue'
@@ -300,7 +300,7 @@ const toggleFlatStyle = () => {
 
 const renderMarkdown = (text) => {
   if (!text) return ''
-  return sanitizeHtml(marked.parse(text, { async: false }))
+  return sanitizeHtml(marked.parse(escapeMarkdownAngles(text), { async: false }) as string)
 }
 
 const getReplyMargin = (level) => {

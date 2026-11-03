@@ -4,6 +4,7 @@
       :content="renderedMarkdown"
       :enable-markdown="true"
       :enable-math="false"
+      :allow-raw-html="true"
       :enable-curly-links="false"
       :preserve-multiple-empty-lines="false"
       @rendered="emit('rendered')"

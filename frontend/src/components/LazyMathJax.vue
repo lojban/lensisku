@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { Marked } from 'marked'
-import { sanitizeHtml } from '@/utils/sanitizeHtml'
+import { escapeHtmlText, escapeMarkdownAngles, sanitizeHtml } from '@/utils/sanitizeHtml'
 import type { RendererObject } from 'marked'
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 
@@ -47,6 +47,11 @@ const props = defineProps({
   enableCurlyLinks: {
     type: Boolean,
     default: true,
+  },
+  /** Wiki bodies keep a small HTML allowlist. Dictionary prose escapes every `<`. */
+  allowRawHtml: {
+    type: Boolean,
+    default: false,
   },
 })
 const emit = defineEmits<{ rendered: [] }>()
@@ -156,7 +161,7 @@ function restoreMathAfterMarkdown(html, parts) {
   if (!parts.length || !html) return html
   return html.replace(/MJXPH(\d+)MJXEND/g, (_, n) => {
     const idx = Number(n)
-    return parts[idx] ?? ''
+    return escapeHtmlText(parts[idx] ?? '')
   })
 }
 
@@ -214,7 +219,7 @@ const renderContent = async () => {
     const { text: mdInput, parts: mathParts } = props.enableMath
       ? protectMathForMarkdown(finalContent)
       : { text: finalContent, parts: [] }
-    finalContent = mdInput
+    finalContent = escapeMarkdownAngles(mdInput, props.allowRawHtml)
 
     const extensions = props.enableCurlyLinks
       ? [
@@ -277,6 +282,10 @@ const renderContent = async () => {
       // such as <p><br><br></p> when imported content contains stray breaks.
       finalContent = finalContent.replace(/<p>(?:\s*<br\s*\/?>\s*)+<\/p>/gi, '')
     }
+  }
+
+  if (!props.enableMarkdown && finalContent) {
+    finalContent = escapeHtmlText(finalContent)
   }
 
   // Apply highlighting if searchTerm is provided
