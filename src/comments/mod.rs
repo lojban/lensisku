@@ -10,6 +10,8 @@ mod error_mapping_tests;
 mod errors;
 pub mod models;
 pub mod service;
+#[cfg(test)]
+mod thread_context_tests;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(

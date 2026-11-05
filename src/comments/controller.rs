@@ -94,10 +94,10 @@ async fn validate_flashcard_thread_context(
         ("bearer_auth" = [])
     ),
     summary = "Get comments for a thread",
-    description = "Retrieves comments for a specific thread. \
-    The thread can be identified by `thread_id`, `comment_id` (to find its thread), or a context such as `valsi_id` (for a valsi's main thread), `natlang_word_id`, `definition_id`, or `target_user_id` (for a user's profile thread). \
-    Combinations of context IDs (e.g., `valsi_id` and `definition_id`) can pinpoint more specific threads. \
-    If only `valsi_id` is provided, it attempts to find the unique thread associated solely with that valsi."
+    description = "Retrieves paginated comments across every thread matching the supplied context. \
+    Explicit `thread_id` or `comment_id` links select a single thread. \
+    Context IDs such as `valsi_id` plus `definition_id` select all threads for that definition. \
+    With only `valsi_id`, selects entry-level threads, excluding definition discussions."
 )]
 #[get("/thread")]
 pub async fn get_thread(

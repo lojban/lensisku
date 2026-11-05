@@ -5502,7 +5502,7 @@ pub async fn get_definitions_by_entry(
     // Get comment counts in bulk
     let comment_counts = transaction
         .query(
-            "SELECT t.definitionid, COUNT(*) as count
+            "SELECT t.definitionid, COUNT(c.commentid) as count
              FROM threads t
              LEFT JOIN comments c ON t.threadid = c.threadid
              WHERE t.valsiid = $1 AND t.definitionid = ANY($2)

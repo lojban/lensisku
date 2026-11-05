@@ -40,10 +40,10 @@ pub async fn get_thread_comments(
     let mut page = params.page.unwrap_or(1).max(1);
     let mut offset = (page - 1) * per_page;
 
-    // Determine thread ID using sequential fallback approach
-    let thread_id: Option<i32> = if let Some(thread_id) = params.thread_id.filter(|&id| id > 0) {
+    // Explicit links select one thread; context links include every matching thread.
+    let thread_ids: Vec<i32> = if let Some(thread_id) = params.thread_id.filter(|&id| id > 0) {
         // 1. Use thread_id if provided and valid
-        Some(thread_id)
+        vec![thread_id]
     } else if let Some(comment_id) = params.comment_id.filter(|&id| id > 0) {
         // 2. Get thread_id from comment if comment_id is provided and valid
         transaction
@@ -53,8 +53,10 @@ pub async fn get_thread_comments(
             )
             .await?
             .map(|row| row.get("threadid"))
+            .into_iter()
+            .collect()
     } else {
-        get_thread_id_by_context(
+        get_thread_ids_by_context(
             &transaction,
             params.valsi_id,
             params.natlang_word_id,
@@ -67,7 +69,7 @@ pub async fn get_thread_comments(
     };
 
     // Context query with no thread yet (e.g. flashcard never discussed) → empty page, not 500.
-    let Some(thread_id) = thread_id else {
+    if thread_ids.is_empty() {
         return Ok(PaginatedCommentsResponse {
             comments: vec![],
             total: 0,
@@ -77,8 +79,17 @@ pub async fn get_thread_comments(
     };
 
     let (comments, total) = {
-        verify_thread_access(&transaction, thread_id, params.current_user_id).await?;
-        // Get all comments in the thread in hierarchical order
+        let allowed: bool = transaction
+            .query_one(
+                "SELECT bool_and(can_read_comment_thread(id, $2)) FROM unnest($1::int[]) AS ids(id)",
+                &[&thread_ids, &params.current_user_id],
+            )
+            .await?
+            .get(0);
+        if !allowed {
+            return Err(AppError::Auth("Access denied".into()));
+        }
+        // Get comments across the selected threads in stable hierarchical order.
         let all_comments = transaction
             .query(
                 "WITH RECURSIVE comment_tree AS (
@@ -102,14 +113,14 @@ pub async fn get_thread_comments(
                         cc.total_reactions as counter_reactions,
                         cc.total_replies as counter_replies,
                         CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
-                        ARRAY[c.commentnum] as path,
+                        ARRAY[c.threadid, c.commentnum, c.commentid] as path,
                         0 as depth,
                         pc.content::text as parent_content
                     FROM convenientcomments c
                     LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
                     LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
                     LEFT JOIN convenientcomments pc ON c.parentid = pc.commentid
-                    WHERE c.threadid = $2 AND c.parentid is null
+                    WHERE c.threadid = ANY($2) AND c.parentid is null
 
                     UNION ALL
 
@@ -133,17 +144,17 @@ pub async fn get_thread_comments(
                         cc.total_reactions as counter_reactions,
                         cc.total_replies as counter_replies,
                         CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
-                        ct.path || c.commentnum as path,
+                        ct.path || ARRAY[c.commentnum, c.commentid] as path,
                         ct.depth + 1 as depth,
                         ct.content as parent_content
                     FROM convenientcomments c
                     LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
                     LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
-                    JOIN comment_tree ct ON c.parentid = ct.commentid
+                    JOIN comment_tree ct ON c.parentid = ct.commentid AND c.threadid = ct.threadid
                 )
                 SELECT *, ROW_NUMBER() OVER (ORDER BY path) - 1 as position
-                FROM comment_tree",
-                &[&params.current_user_id, &thread_id],
+                FROM comment_tree ORDER BY path",
+                &[&params.current_user_id, &thread_ids],
             )
             .await?;
 
@@ -484,7 +495,7 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, AppError> 
     Ok(comment)
 }
 
-async fn get_thread_id_by_context(
+async fn get_thread_ids_by_context(
     transaction: &tokio_postgres::Transaction<'_>,
     valsi_id: Option<i32>,
     natlang_word_id: Option<i32>,
@@ -492,7 +503,7 @@ async fn get_thread_id_by_context(
     definition_link_id: Option<i32>,
     target_user_id: Option<i32>,
     collection_id: Option<i32>,
-) -> Result<Option<i32>, AppError> {
+) -> Result<Vec<i32>, AppError> {
     // Ensure only one context type is primarily active or it's a free-standing thread context
     let has_entry_context =
         valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some();
@@ -526,7 +537,7 @@ async fn get_thread_id_by_context(
     }
 
     Ok(transaction
-        .query_opt(
+        .query(
             "SELECT threadid
              FROM threads t
             WHERE (t.valsiid = $1 OR ($1 IS NULL AND (t.valsiid IS NULL OR t.valsiid = 0)))
@@ -535,7 +546,7 @@ async fn get_thread_id_by_context(
               AND (t.definition_link_id = $4 OR ($4 IS NULL AND (t.definition_link_id IS NULL OR t.definition_link_id = 0)))
               AND (t.target_user_id = $5 OR ($5 IS NULL AND t.target_user_id IS NULL))
               AND (t.collection_id = $6 OR ($6 IS NULL AND t.collection_id IS NULL))
-            LIMIT 1",
+            ORDER BY threadid",
             &[
                 &valsi_id,
                 &natlang_word_id,
@@ -546,7 +557,9 @@ async fn get_thread_id_by_context(
             ],
         )
         .await?
-        .map(|row| row.get("threadid")))
+        .iter()
+        .map(|row| row.get("threadid"))
+        .collect())
 }
 
 async fn get_comment_by_id(
