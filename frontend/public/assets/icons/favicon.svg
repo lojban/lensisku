@@ -46,5 +46,6 @@
         style="pointer-events:none"
       />
     </g>
+    <path stroke="#93c5fd" stroke-width="1.15" d="M8.85 8.6q.75-.75 1.85-.4"/>
   </g>
 </svg>
