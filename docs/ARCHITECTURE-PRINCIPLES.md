@@ -32,6 +32,13 @@ These are the rules the lensisku backend follows, why, and where they are (or ar
 
 ## 3. Performance
 
+- Hosting frontend builds stage outside the served `frontend/dist`, publish assets before
+  HTML using per-file atomic renames, and retain old files so open tabs keep loading their
+  hashed chunks. Existing asset names cannot change contents. After successful publication,
+  each deploy removes assets retired for over 90 days using versioned reference metadata,
+  not file mtimes. Current assets are protected, legacy assets get a first-use grace period,
+  and a lock serializes publishers. The served tree must not be removed during a normal build.
+
 - **Never block the async runtime.** CPU-bound or blocking work goes to `spawn_blocking` /
   `tokio::fs`: bcrypt, SMTP sends (a blocking `lettre` send on the current-thread main runtime
   once stalled pooled connections "idle in transaction" and made requests take 25–106 s after boot;

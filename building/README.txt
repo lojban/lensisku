@@ -1,6 +1,25 @@
 To build lensisku for hosting on the main lojban.org infrastructure,
 run ./build-rust.sh and ./build-npm.sh in this directory.
 
+Frontend builds use a temporary output directory, then publish into frontend/dist.
+New assets are installed before HTML; individual files are replaced by atomic rename.
+Existing assets with the same name must have identical contents. Old files in dist
+are retained so tabs opened before a deployment can still load their lazy chunks.
+Do not delete dist as part of normal builds or rollback. After successful publication,
+each deploy deletes assets retired for over 90 days. It records the current build's
+assets and retirement timestamps in frontend/dist.asset-retention.json (version 1).
+Still-used assets are protected regardless of file age. The first deployment gives
+untracked legacy assets a 90-day grace period; missing metadata starts a new grace
+period. Non-asset public files remain available. Failed builds do not run cleanup.
+Concurrent publication is blocked by frontend/dist.publish-lock; after a killed
+publisher, confirm it is no longer running before manually removing its stale lock.
+This publishes files individually, not the whole release as one atomic operation.
+Failed builds do not publish; a failure while publishing can leave a mix of HTML
+generations; cleanup only runs after publication and metadata persistence succeed.
+No nginx path changes are required. Very old tabs may need a refresh after cleanup.
+Run the publisher regression checks with:
+  node --test building/publish-frontend.test.mjs
+
 Rust builds default to nightly-2026-09-29 and the release-fast Cargo profile.
 The builder image installs mold (faster linking; configured in ../.cargo/config.toml).
 On nightly, build-rust-inside.sh also sets -Zthreads=8 (parallel frontend).

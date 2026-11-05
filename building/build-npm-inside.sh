@@ -16,8 +16,10 @@ scriptdir="$(readlink -f "$(dirname "$0")")"
 
 cd "$scriptdir/../frontend"
 
-# Clean out old dependency packages and the previous build
-rm -rf node_modules dist
+# Build away from the directory nginx serves. Keep its old hashed assets for open tabs.
+rm -rf node_modules
+staging_dir="$(mktemp -d "$PWD/.frontend-build.XXXXXX")"
+trap 'rm -rf -- "$staging_dir"' EXIT
 
 # Activate the packageManager pin via Corepack so pnpm does not attempt a broken
 # self-switch into ~/.local/share/pnpm/.tools (ENOEXEC on Alpine).
@@ -26,4 +28,5 @@ corepack prepare "$(node -p "require('./package.json').packageManager")" --activ
 
 pnpm install --frozen-lockfile
 
-pnpm run build
+FRONTEND_BUILD_OUT_DIR="$staging_dir" pnpm run build
+node "$scriptdir/publish-frontend.mjs" "$staging_dir" "$PWD/dist"

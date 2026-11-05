@@ -25,6 +25,7 @@ export default defineConfig({
     },
   },
   build: {
+    outDir: process.env.FRONTEND_BUILD_OUT_DIR || 'dist',
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',

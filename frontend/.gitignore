@@ -10,6 +10,9 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.frontend-build.*
+dist.asset-retention.json*
+dist.publish-lock/
 *.local
 
 # Editor directories and files

@@ -18,6 +18,16 @@ parsed `dialogue.structure` in the file is informational and ignored on import.
 
 It never contains user progress: no scores, due dates, review history or per-question ratings.
 
+## Frontend asset retention metadata
+
+`building/publish-frontend.mjs` writes `frontend/dist.asset-retention.json` outside the served
+directory. Its format is `lensisku.frontend-assets`, version `1`. `currentAssets` lists paths
+relative to dist; `lastReferencedAt` maps asset paths to Unix timestamps in milliseconds.
+Each successful publication refreshes timestamps for both the previous and new current assets,
+then removes non-current assets whose timestamps are more than 90 days old. Missing metadata
+starts a full grace period for existing assets. Invalid or unsupported metadata stops publication
+before served files change. Metadata is replaced atomically before any asset deletion.
+
 ## Changing a format
 
 1. Bump the version constant on both sides (backend and frontend).
