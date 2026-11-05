@@ -1466,12 +1466,14 @@ pub async fn list_flashcards(
     }
 
     // Calculate pagination
-    let page = query.page.unwrap_or(1);
+    let page = query.page.unwrap_or(1).max(1);
     let per_page = query
         .per_page
         .unwrap_or(20)
-        .clamp(1, crate::pagination::MAX_PER_PAGE as _);
-    let offset = ((page - 1) * per_page) as usize;
+        // This endpoint currently builds the full ordered response before slicing it.
+        // Allow bounded bulk reads so course views don't repeat that work per 100 cards.
+        .clamp(1, 5_000);
+    let offset = page.saturating_sub(1).saturating_mul(per_page) as usize;
 
     let mut paginated_cards: Vec<FlashcardResponse> = all_flashcards_with_retrievability
         .iter()

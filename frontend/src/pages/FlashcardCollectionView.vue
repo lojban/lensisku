@@ -544,19 +544,18 @@ const focusLevelId = computed(() => {
 })
 const requestedItemId = computed(() => parseInt(queryStr(route.query.item), 10) || null)
 
-/** Course mode lists every card: 100 per request in parallel (public endpoint for guests). */
+/** Course mode lists every card: one bounded bulk request (public endpoint for guests). */
 async function fetchAllFlashcards() {
   if (!auth.state.isLoggedIn) {
     const { data } = await getCollectionFlashcardsPublic(props.collectionId)
     return { flashcards: data.flashcards ?? [], total: data.flashcards?.length ?? 0, due_count: 0 }
   }
-  const per = 100
+  const per = 5_000
   const first = await getFlashcards({ collection_id: props.collectionId, page: 1, per_page: per })
-  const rest = await Promise.all(
-    Array.from({ length: Math.max(0, Math.ceil(first.data.total / per) - 1) }, (_, i) =>
-      getFlashcards({ collection_id: props.collectionId, page: i + 2, per_page: per })
-    )
-  )
+  const rest: (typeof first)[] = []
+  for (let page = 2; (page - 1) * per < first.data.total; page++) {
+    rest.push(await getFlashcards({ collection_id: props.collectionId, page, per_page: per }))
+  }
   const all = [first, ...rest].flatMap((r) => r.data.flashcards)
   return { ...first.data, flashcards: all, total: all.length }
 }

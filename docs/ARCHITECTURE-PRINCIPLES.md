@@ -121,10 +121,14 @@ generically, so none of these needed UI changes.
 
 ### Behaviour changes (Oct 2026, audit follow-up)
 
-- `per_page`/`limit` on every list endpoint is clamped to `1..=pagination::MAX_PER_PAGE` (100).
-  The frontend never asks for more than 100.
+- `per_page`/`limit` on list endpoints is clamped to a bounded maximum. Most endpoints use
+  `pagination::MAX_PER_PAGE` (100); `list_flashcards` allows at most 5,000 because it currently
+  builds the full ordered response before slicing. Course views request that bounded batch once
+  instead of repeating the full response work for each 100-card page.
 - `list_flashcards` loads each card's quiz options inside a savepoint; a failure leaves that
   card's `quiz_options` empty instead of aborting the whole list.
+- Collection item substring searches rank exact valsi matches before collection position, and
+  filter changes reset pagination so old page offsets do not hide the newly filtered matches.
 - CORS still allows any origin but no longer sends `Access-Control-Allow-Credentials`. The SPA
   calls `/api` on its own origin with a bearer header, so it does not rely on cross-origin cookies.
 - Canonical forms are stored trimmed (`"a"`, not `"a "`). Answer checking recomputes both sides,

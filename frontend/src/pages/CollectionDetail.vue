@@ -2389,6 +2389,12 @@ watch(
       route.query.popular_collections,
     ]),
   () => {
+    if (currentPage.value !== 1) {
+      // A changed filter narrows the result set; page numbers from the previous result set
+      // must not hide early matches in the newly filtered collection.
+      router.push({ query: { ...route.query, page: 1 } })
+      return
+    }
     const fromQuery = combinedFiltersFromQuery(route.query)
     if (route.query.langs !== undefined) {
       itemFilters.value.selectedLanguages = fromQuery.selectedLanguages

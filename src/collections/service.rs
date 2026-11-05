@@ -4667,10 +4667,38 @@ pub async fn list_collection_items(
         None
     };
 
-    if let Some(idx) = semantic_vector_idx {
+    // Surface a complete valsi match before broader substring hits. Without this rank,
+    // collection position can push an exact result (e.g. `mi`) onto a later page.
+    let exact_word_idx = if search_pattern
+        .as_ref()
+        .is_some_and(|pattern| !pattern.is_regex)
+    {
+        let idx = param_count;
+        let exact_word = search.as_deref().unwrap_or_default().trim().to_string();
+        params.push(Box::new(exact_word));
+        param_count += 1;
+        Some(idx)
+    } else {
+        None
+    };
+
+    if let (Some(exact_idx), Some(sim_idx)) = (exact_word_idx, semantic_vector_idx) {
+        query.push_str(&format!(
+            " ORDER BY CASE WHEN v.word ILIKE ${exact_idx} THEN 0 ELSE 1 END, \
+             (CASE WHEN d.embedding IS NULL THEN 1 ELSE 0 END) ASC, \
+             d.embedding <=> ${sim_idx}::vector ASC NULLS LAST, ci.position ASC, ci.added_at DESC",
+            exact_idx = exact_idx,
+            sim_idx = sim_idx
+        ));
+    } else if let Some(idx) = semantic_vector_idx {
         query.push_str(&format!(
             " ORDER BY (CASE WHEN d.embedding IS NULL THEN 1 ELSE 0 END) ASC, \
               d.embedding <=> ${idx}::vector ASC NULLS LAST, ci.position ASC, ci.added_at DESC",
+            idx = idx
+        ));
+    } else if let Some(idx) = exact_word_idx {
+        query.push_str(&format!(
+            " ORDER BY CASE WHEN v.word ILIKE ${idx} THEN 0 ELSE 1 END, ci.position ASC, ci.added_at DESC",
             idx = idx
         ));
     } else {
@@ -5034,6 +5062,20 @@ pub async fn search_items_in_collections(
         content_match.as_ref(),
     );
 
+    let exact_word_idx = if search_pattern
+        .as_ref()
+        .is_some_and(|pattern| !pattern.is_regex)
+    {
+        let idx = list_param_idx;
+        list_params.push(Box::new(
+            search.as_deref().unwrap_or_default().trim().to_string(),
+        ));
+        list_param_idx += 1;
+        Some(idx)
+    } else {
+        None
+    };
+
     let sim_param_idx = match (filters.semantic_embedding.as_ref(), search_pattern.as_ref()) {
         (Some(embedding), Some(_)) => {
             let idx = list_param_idx;
@@ -5064,18 +5106,32 @@ pub async fn search_items_in_collections(
                    WHERE cis.item_id = page.item_id) as has_sound";
 
     let query = if filters.dedupe_by_content {
+        let exact_select = exact_word_idx.map_or_else(String::new, |idx| {
+            format!(
+                ", CASE WHEN d.cached_valsiword ILIKE ${idx} THEN 0 ELSE 1 END AS _exact",
+                idx = idx
+            )
+        });
         let sim_select = if let Some(idx) = sim_param_idx {
             format!(", d.embedding <=> ${idx}::vector AS _sim")
         } else {
             ", NULL::float8 AS _sim".to_string()
         };
-        let page_order = if sim_param_idx.is_some() {
+        let mut page_order = if sim_param_idx.is_some() {
             "(CASE WHEN _sim IS NULL THEN 1 ELSE 0 END) ASC, \
              _sim ASC NULLS LAST, \
              collection_updated_at DESC, position ASC, added_at DESC"
         } else {
             "collection_updated_at DESC, position ASC, added_at DESC"
         };
+        if exact_word_idx.is_some() {
+            page_order = if sim_param_idx.is_some() {
+                "_exact ASC, (CASE WHEN _sim IS NULL THEN 1 ELSE 0 END) ASC, \
+                 _sim ASC NULLS LAST, collection_updated_at DESC, position ASC, added_at DESC"
+            } else {
+                "_exact ASC, collection_updated_at DESC, position ASC, added_at DESC"
+            };
+        }
         format!(
             "{cte},
              candidates AS MATERIALIZED (
@@ -5086,6 +5142,7 @@ pub async fn search_items_in_collections(
                     COALESCE(d.definition, ci.free_content_back, '') AS _def,
                     COALESCE(d.cached_source_langid, -1) AS _src,
                     COALESCE(d.langid, ci.langid, -1) AS _tgt
+                    {exact_select}
                     {sim_select}
                 {from_where}
              ),
@@ -5122,6 +5179,7 @@ pub async fn search_items_in_collections(
              FROM page",
             cte = ACCESSIBLE_CTE,
             select_item_cols = select_item_cols,
+            exact_select = exact_select,
             sim_select = sim_select,
             from_where = from_where,
             page_order = page_order,
@@ -5130,15 +5188,26 @@ pub async fn search_items_in_collections(
             off = list_param_idx + 1,
         )
     } else {
-        let order_by = if let Some(idx) = sim_param_idx {
+        let semantic_order = sim_param_idx.map(|idx| {
             format!(
                 "(CASE WHEN d.embedding IS NULL THEN 1 ELSE 0 END) ASC, \
                  d.embedding <=> ${idx}::vector ASC NULLS LAST, \
                  c.updated_at DESC, ci.position ASC, ci.added_at DESC",
                 idx = idx
             )
+        });
+        let order_by = if let Some(idx) = exact_word_idx {
+            format!(
+                "CASE WHEN d.cached_valsiword ILIKE ${idx} THEN 0 ELSE 1 END, {semantic_order}",
+                idx = idx,
+                semantic_order = semantic_order.unwrap_or_else(|| {
+                    "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
+                })
+            )
         } else {
-            "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
+            semantic_order.unwrap_or_else(|| {
+                "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
+            })
         };
         format!(
             "{cte},

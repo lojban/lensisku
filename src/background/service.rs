@@ -329,11 +329,19 @@ pub async fn spawn_background_tasks(
         }
     });
 
-    // Spawn email notification processor
-    let email_pool = pool.clone();
-    tokio::spawn(async move {
-        run_email_notifications(email_pool).await;
-    });
+    // Local development can use a populated database without draining its queued mail.
+    if std::env::var("DISABLE_EMAIL_NOTIFICATIONS")
+        .ok()
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+    {
+        info!("DISABLE_EMAIL_NOTIFICATIONS set; skipping email notification processor");
+    } else {
+        let email_pool = pool.clone();
+        tokio::spawn(async move {
+            run_email_notifications(email_pool).await;
+        });
+    }
 
     // Generate missing valsi sounds (Lojban → IPA → Kokoro Martin TTS) every 5 minutes
     valsi_tts::spawn_valsi_sound_generation(pool.clone());
