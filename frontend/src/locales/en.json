@@ -1020,6 +1020,7 @@
     "loadDefinitionError": "Failed to load definition data",
     "loadLanguagesError": "Failed to load languages",
     "analyzeError": "Invalid word morphology. Check the spelling and consonant clusters; experimental words must follow the same rules.",
+    "forbiddenConsonantPair": "Consonant cluster \"{pair}\" at letters {start}–{end} is not permitted in Lojban. Experimental words follow the same consonant-cluster rules.",
     "analyzeErrorGeneric": "Error analyzing text",
     "validateError": "Invalid LaTeX/MathJax syntax",
     "validationUnavailable": "Could not validate the definition. Please try again.",

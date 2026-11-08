@@ -9,6 +9,8 @@
       :disabled="isAnalyzing || isSubmitting || isEditMode"
       :readonly="isEditMode"
       :clear="prefilledWord"
+      :aria-invalid="ariaInvalid"
+      :aria-describedby="ariaDescribedby"
       @input="handleInput"
       @paste="handlePaste"
       @blur="emit('blur')"
@@ -18,6 +20,8 @@
       v-else
       :id="id"
       v-model="inputValue"
+      :aria-invalid="ariaInvalid"
+      :aria-describedby="ariaDescribedby"
       rows="5"
       maxlength="4000"
       class="textarea-field"
@@ -43,6 +47,8 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  ariaInvalid: { type: Boolean, default: undefined },
+  ariaDescribedby: { type: String, default: undefined },
   isAnalyzing: Boolean,
   isSubmitting: Boolean,
   prefilledWord: Boolean,

@@ -978,6 +978,7 @@
     "loadDefinitionError": "无法加载释义数据",
     "loadLanguagesError": "无法加载语言列表",
     "analyzeError": "词形无效。请检查拼写和辅音组合；实验词也必须遵守相同的规则。",
+    "forbiddenConsonantPair": "逻辑语不允许第 {start}–{end} 个字母处的辅音组合“{pair}”。实验词也必须遵守相同的辅音组合规则。",
     "analyzeErrorGeneric": "分析文本时出错",
     "validateError": "LaTeX/MathJax 语法无效",
     "validateErrorInField": "字段 {field} 中 LaTeX/MathJax 无效：{details}",

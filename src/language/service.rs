@@ -426,6 +426,25 @@ fn fill_text(token: &mut LojbanToken, input: &str) {
     }
 }
 
+/// Diagnose using the same forbidden-pair rule as validation, not a second rule list.
+fn forbidden_pair_message(word: &str) -> Option<String> {
+    let parser = Peg::new("forbidden_pair", include_str!("../grammar/lojban.peg")).ok()?;
+    for (letter, (offset, _)) in word.char_indices().enumerate() {
+        let Some(pair) = word.get(offset..offset.checked_add(2)?) else {
+            continue;
+        };
+        let ParseResult(_, consumed, _, result) = parser.parse(pair);
+        if result.is_ok() && consumed == 2 {
+            return Some(format!(
+                "FORBIDDEN_CONSONANT_PAIR|{pair}|{}|{}",
+                letter + 1,
+                letter + 2
+            ));
+        }
+    }
+    None
+}
+
 pub async fn analyze_word(
     parsers: &Arc<HashMap<i32, Peg>>,
     word: &str,
@@ -543,7 +562,14 @@ pub async fn analyze_word(
             text: String::new(),
             recommended: None,
             problems: None,
-            error: Some(format!("Failed to parse word: {:?}", e)),
+            error: Some(
+                if source_langid == 1 {
+                    forbidden_pair_message(word)
+                } else {
+                    None
+                }
+                .unwrap_or_else(|| format!("Invalid word morphology: {e}")),
+            ),
             decomposition: None,
         }),
     }
@@ -1418,6 +1444,19 @@ mod tests {
 
     fn word_texts(word: &str) -> Vec<String> {
         extract_token_text(&parse_word(word))
+    }
+
+    #[test]
+    fn forbidden_pair_diagnostic_identifies_cluster_and_location() {
+        let message = forbidden_pair_message("zazko").unwrap();
+        assert_eq!(message, "FORBIDDEN_CONSONANT_PAIR|zk|3|4");
+        for word in ["zazgo", "mlatu", "", "é", "mi klama"] {
+            assert_eq!(forbidden_pair_message(word), None, "{word}");
+        }
+        assert_eq!(
+            forbidden_pair_message("ézazko").as_deref(),
+            Some("FORBIDDEN_CONSONANT_PAIR|zk|4|5")
+        );
     }
 
     #[test]

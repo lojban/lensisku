@@ -987,6 +987,7 @@
     "loadDefinitionError": "fliba lo nu jgari lo velckivei datni",
     "loadLanguagesError": "fliba lo nu jgari lo bangu",
     "analyzeError": "lo valsi cu na mapti lo gerna be lo tarmi be lo valsi .i ko cipcta lo lerfu jo'u lo zunsna girzu .i lo cipra valsi ji'a cu nitcu lo nu mapti",
+    "forbiddenConsonantPair": "lo zunsna girzu po'u lu {pair} li'u noi pagbu lo lerfu noi se namcu li {start} bi'i {end} cu na se curmi lo lojbo .i lo cipra valsi ji'a cu nitcu lo nu mapti lo mintu javni",
     "analyzeErrorGeneric": "fliba lo nu lanli",
     "validateError": "srera fa lo LaTeX jufra",
     "validateErrorInField": "srera fa lo LaTeX bu'u la'ei {field}: {details}",

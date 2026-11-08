@@ -16,7 +16,7 @@ before your first change.
    Every crash fix gets a regression test.
 2. **Never block the async runtime.** Blocking or CPU-heavy work (bcrypt, SMTP sends, file I/O, TeX) goes to
    `spawn_blocking` or `tokio::fs`. Every external program runs with a deadline, closed stdin and
-   `kill_on_drop(true)`, and a failure becomes an error with a plain-English message, never a hang.
+   `kill_on_drop(true)`, and a failure becomes an error with a clear, localized user-facing message, never a hang.
 3. **Decide on typed values, never on text.** Match on error variants and fields, not on
    `e.to_string()` or on English wording.
 4. **One owner per interpretation.** Parse and validate once at the HTTP edge (DTOs); services take typed
@@ -34,6 +34,8 @@ before your first change.
    `#[ignore]` and guarded by `src/test_db_guard.rs` (loopback host, database name contains `test`). Each
    test case gets its own data.
 10. **Say what you verified.** Never claim a live run, a deploy or a delivered email you did not observe.
+11. **Never hard-code user-facing English.** Use locale keys and translation catalogs instead, in the
+    frontend/src/locales/ and locales/ as needed. This includes labels, validation and error messages, notifications, and emails. Reuse the existing localization mechanisms and add or update the relevant locale entries with every user-facing text change.
 
 ## Working rules
 

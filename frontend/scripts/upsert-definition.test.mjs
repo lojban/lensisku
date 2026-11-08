@@ -19,6 +19,7 @@ function form(analyzeWord) {
   const context = {
     analyzeWord,
     word: { value: 'zazko' },
+    analysisError: { value: 'previous error' },
     wordType: { value: 'gismu' },
     recommended: { value: 'old recommendation' },
     problems: { value: { regular: ['old clash'] } },
@@ -27,20 +28,33 @@ function form(analyzeWord) {
     isAnalyzing: { value: false },
     clearError: () => {},
     showError: (message) => errors.push(message),
-    t: (key) => english.upsertDefinition[key.split('.').at(-1)],
+    t: (key, params = {}) =>
+      english.upsertDefinition[key.split('.').at(-1)].replace(
+        /\{(\w+)\}/g,
+        (_, name) => params[name]
+      ),
   }
   vm.createContext(context)
-  vm.runInContext(`${handler}\nglobalThis.runAnalysis = doAnalyzeWord`, context)
+  const formatter = component
+    .slice(component.indexOf('function formatDefinitionError('), component.indexOf('// Form state'))
+    .replace('apiError: unknown): string', 'apiError)')
+  vm.runInContext(`${formatter}\n${handler}\nglobalThis.runAnalysis = doAnalyzeWord`, context)
   return { context, errors }
 }
 
-test('HTTP 400 invalid morphology shows spelling guidance and clears stale results', async () => {
+test('HTTP 400 shows the precise server diagnostic inline, without a popup', async () => {
+  const diagnostic = english.upsertDefinition.forbiddenConsonantPair
+    .replace('{pair}', 'zk')
+    .replace('{start}', '3')
+    .replace('{end}', '4')
   const { context, errors } = form(async () => {
-    throw { response: { status: 400, data: { success: false, error: 'Failed to parse word' } } }
+    throw {
+      response: { status: 400, data: { success: false, error: 'FORBIDDEN_CONSONANT_PAIR|zk|3|4' } },
+    }
   })
   await context.runAnalysis()
-  assert.equal(errors[0], english.upsertDefinition.analyzeError)
-  assert.match(errors[0], /consonant clusters/)
+  assert.equal(context.analysisError.value, diagnostic)
+  assert.equal(errors.length, 0)
   assert.equal(context.word.value, 'zazko')
   assert.equal(context.wordType.value, '')
   assert.equal(context.recommended.value, '')
@@ -54,7 +68,8 @@ test('transport failures remain distinct from invalid morphology', async () => {
     throw new Error('offline')
   })
   await context.runAnalysis()
-  assert.equal(errors[0], english.upsertDefinition.analyzeErrorGeneric)
+  assert.equal(context.analysisError.value, english.upsertDefinition.analyzeErrorGeneric)
+  assert.equal(errors.length, 0)
   assert.equal(context.wordType.value, '')
   assert.equal(context.isAnalyzing.value, false)
 })
@@ -64,6 +79,7 @@ test('valid gismu still sets the classification', async () => {
     data: { success: true, word_type: 'gismu', text: 'zazgo' },
   }))
   await context.runAnalysis()
+  assert.equal(context.analysisError.value, '')
   assert.equal(context.wordType.value, 'gismu')
   assert.equal(context.word.value, 'zazgo')
   assert.equal(errors.length, 0)

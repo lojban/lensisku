@@ -59,6 +59,8 @@
         <DynamicInput
           id="word"
           v-model="word"
+          :aria-invalid="analysisError ? true : undefined"
+          :aria-describedby="analysisError ? 'word-analysis-error' : undefined"
           :is-analyzing="isAnalyzing"
           :is-submitting="isSubmitting"
           :prefilled-word="prefilledWord"
@@ -68,6 +70,9 @@
           @clear="handleWordClear"
         />
       </div>
+      <AlertComponent v-if="analysisError" id="word-analysis-error" type="error" role="alert">
+        {{ analysisError }}
+      </AlertComponent>
       <!-- Word Type Display -->
       <div v-if="!isEditMode && wordType" class="space-y-4">
         <AlertComponent type="info" :label="t('upsertDefinition.detectedTypeLabel')">
@@ -519,6 +524,10 @@ function formatRafsiOverlapMessage(code: string): string {
 
 function formatDefinitionError(apiError: unknown): string {
   if (typeof apiError !== 'string') return String(apiError ?? '')
+  if (apiError.startsWith('FORBIDDEN_CONSONANT_PAIR|')) {
+    const [, pair, start, end] = apiError.split('|')
+    return t('upsertDefinition.forbiddenConsonantPair', { pair, start, end })
+  }
   if (apiError.startsWith('RAFSI_OVERLAP|') || apiError.startsWith('RAFSI_CONFLICT|')) {
     return formatRafsiOverlapMessage(apiError)
   }
@@ -543,6 +552,7 @@ function formatDefinitionError(apiError: unknown): string {
 
 // Form state
 const word = ref('')
+const analysisError = ref('')
 const recommended = ref('')
 const problems = ref<Record<string, string[]>>({})
 const wordId = ref('')
@@ -892,6 +902,7 @@ const clearAnalysis = () => {
   problems.value = {}
   lujvoDecomposition.value = []
   lastAnalyzedWord.value = ''
+  analysisError.value = ''
   clearError()
 }
 
@@ -913,6 +924,7 @@ const doAnalyzeWord = async () => {
   word.value = word.value.trim()
   if (!word.value) return
   isAnalyzing.value = true
+  analysisError.value = ''
 
   try {
     const response = await analyzeWord(word.value)
@@ -937,20 +949,18 @@ const doAnalyzeWord = async () => {
       recommended.value = ''
       problems.value = {}
       lujvoDecomposition.value = []
-      showError(t('upsertDefinition.analyzeError'))
+      analysisError.value =
+        formatDefinitionError(response.data?.error) || t('upsertDefinition.analyzeError')
     }
   } catch (err) {
     wordType.value = ''
     recommended.value = ''
     problems.value = {}
     lujvoDecomposition.value = []
-    showError(
-      t(
-        err.response?.status === 400 && err.response?.data?.success === false
-          ? 'upsertDefinition.analyzeError'
-          : 'upsertDefinition.analyzeErrorGeneric'
-      )
-    )
+    analysisError.value =
+      err.response?.status === 400 && err.response?.data?.success === false
+        ? formatDefinitionError(err.response.data.error) || t('upsertDefinition.analyzeError')
+        : t('upsertDefinition.analyzeErrorGeneric')
   } finally {
     isAnalyzing.value = false
   }
