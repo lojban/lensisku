@@ -1019,7 +1019,7 @@
     "createSuccess": "Definition added",
     "loadDefinitionError": "Failed to load definition data",
     "loadLanguagesError": "Failed to load languages",
-    "analyzeError": "Failed to analyze text",
+    "analyzeError": "Invalid word morphology. Check the spelling and consonant clusters; experimental words must follow the same rules.",
     "analyzeErrorGeneric": "Error analyzing text",
     "validateError": "Invalid LaTeX/MathJax syntax",
     "validationUnavailable": "Could not validate the definition. Please try again.",

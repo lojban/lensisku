@@ -1,4 +1,4 @@
-text <- any_word+
+text <- any_word+ !.
 
 any_word <- lerfu_string / jbovla
 
@@ -89,7 +89,7 @@ consonantal_syllable <- zunsna &syllabic coda
 
 coda <- !any_syllable zunsna &any_syllable / syllabic? zunsna? &pause
 
-onset <- (h / glaide / affricate / (cs !x / jz !(n / l / r))? (pfbgvkx / (t / d / n !r) !l / m)? (l / r)?) !zunsna !glaide
+onset <- !forbidden_pair (h / glaide / affricate / (cs !x / jz !(n / l / r))? (pfbgvkx / (t / d / n !r) !l / m)? (l / r)?) !zunsna !glaide
 
 nucleus <- pa_zei_karsna / re_zei_karsna / y !nucleus
 
@@ -113,7 +113,9 @@ initial_pair <- &onset zunsna zunsna !zunsna
 
 affricate <- t cs / d jz
 
-zunsna <- pfbgvkx / d / jz / cs / t / syllabic
+zunsna <- !forbidden_pair (pfbgvkx / d / jz / cs / t / syllabic)
+
+forbidden_pair <- [bdgjvz] [cfkpstx] / [cfkpstx] [bdgjvz] / [cjsz] [cjsz] / 'bb' / 'dd' / 'ff' / 'gg' / 'kk' / 'll' / 'mm' / 'nn' / 'pp' / 'rr' / 'tt' / 'vv' / 'xx' / 'cx' / 'kx' / 'xc' / 'xk' / 'mz'
 
 syllabic <- l / m / n / r
 

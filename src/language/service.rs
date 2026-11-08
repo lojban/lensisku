@@ -1421,6 +1421,28 @@ mod tests {
     }
 
     #[test]
+    fn morphology_rejects_forbidden_consonant_pairs() {
+        let parser = Peg::new("text", include_str!("../grammar/lojban.peg")).unwrap();
+        for word in [
+            "zazko", "bapda", "babba", "bacja", "bacxa", "bakxa", "baxca", "baxka", "bamza",
+            "mi zazko", "mlatu @",
+        ] {
+            let ParseResult(_, consumed, _, result) = parser.parse(word);
+            assert!(result.is_err() || consumed != word.len(), "accepted {word}");
+        }
+    }
+
+    #[test]
+    fn morphology_preserves_legal_internal_clusters() {
+        for word in [
+            "zazgo", "babda", "bafsa", "banza", "bakla", "mlatu", "klama",
+        ] {
+            assert_eq!(word_type(word), "gismu", "{word}");
+            assert_eq!(word_texts(word), vec![word]);
+        }
+    }
+
+    #[test]
     fn bu_letteral_detection() {
         assert_eq!(word_type("nu bu"), "bu-letteral");
         assert_eq!(word_type("mlatu bu"), "bu-letteral");
@@ -1496,6 +1518,8 @@ mod validation_tts_tests {
             "",
             "   ",
             "qqq",
+            "zazko",
+            "mi zazko",
             "mi klama @@@",
             "mi klama %%%END%%% garbage",
         ] {

@@ -109,61 +109,6 @@ These are the rules the lensisku backend follows, why, and where they are (or ar
   completion judged per iteration, unknown id rolls everything back) would change; small,
   user-triggered loop.
 
-## 6. Status-code changes (Oct 2026)
-
-| Endpoint | Before | After |
-|---|---|---|
-| `PUT /auth/roles/{name}`, unknown role | 200 (silently created) | 404 |
-| Full JSON export with ≠1 collection id / non-JSON format | 500 | 400 |
-| Full JSON export of a private foreign collection / missing collection | 500 | 403 / 404 |
-| Export with unknown `source_lang` | 500 | 400 |
-| Level create/update/delete on a foreign collection | 500 | 403 |
-| Missing level (update/delete/list cards/add cards) | 500 | 404 |
-| Remove card not in level | 500 | 404 |
-| Unknown collection id (public flashcards list, ownership/read checks) | 500 | 404 |
-| `GET .../levels/{id}/cards` on a locked level | 500 | 403 (same as the due endpoint) |
-
-The frontend only special-cases 401 (`frontend/src/api.ts`); pages show `response.data.error`
-generically, so none of these needed UI changes.
-
-### Behaviour changes (Oct 2026, audit follow-up)
-
-- `per_page`/`limit` on list endpoints is clamped to a bounded maximum. Most endpoints use
-  `pagination::MAX_PER_PAGE` (100); `list_flashcards` allows at most 5,000 because it currently
-  builds the full ordered response before slicing. Course views request that bounded batch once
-  instead of repeating the full response work for each 100-card page.
-- `list_flashcards` loads each card's quiz options inside a savepoint; a failure leaves that
-  card's `quiz_options` empty instead of aborting the whole list.
-- Collection item substring searches rank exact valsi matches before collection position, and
-  filter changes reset pagination so old page offsets do not hide the newly filtered matches.
-- CORS still allows any origin but no longer sends `Access-Control-Allow-Credentials`. The SPA
-  calls `/api` on its own origin with a bearer header, so it does not rely on cross-origin cookies.
-- Canonical forms are stored trimmed (`"a"`, not `"a "`). Answer checking recomputes both sides,
-  so older rows with a trailing space still compare correctly.
-- Inferred import levels are numbered densely: "Level N" at position N-1, whatever the source
-  level indices were.
-- SEO HTML templates are read with `tokio::fs`, so the request thread never blocks on disk.
-
-### Review rating policy (Oct 2026)
-
-- Every stored review rating passes through `flashcards::rating_policy::effective_rating`
-  (called from `review_flashcard` and `record_review`, so `/review`, `/fillin`, `/check`,
-  `/quiz/submit` and related-card auto-progress all share it).
-- The rule only subtracts points. Fixed card types (quiz, image quiz, word bank, listen, fill-in,
-  self-assessed, info) keep the submitted rating; only `hint_used: true` loses 1 point. A correct
-  fixed quiz answer (client 3) is stored as 3.
-- `auto` cards lose 1 point when presented as quiz / word bank / listening (`presented_type`,
-  sent by the client and validated against the auto ladder); typing, reverse and flip
-  presentations keep the rating. A hint loses 1 more. At most 2 points are subtracted and the
-  result is never below 1. A missing `presented_type` on an auto card counts as on-screen.
-- Card status: fixed cards move new → learning → review → graduated on stored rating >= 3.
-  Auto cards move on stored rating >= `PASS_RATING` (2), but reach review / graduated only after
-  at least one correct production answer (typing, reverse, reverse word bank). A stored 1 sends
-  any card back to learning. Level stats count stored rating >= 2 as correct.
-- A passing review (stored >= 2) whose FSRS interval rounds to 0 days is scheduled 10 minutes
-  ahead so the card leaves the current session's due queue.
-- `hint_used` defaults to false, so older clients keep working. The flag can never raise a rating.
-
 ## 7. Open items
 
 1. `import_full` now warns on failed level inserts, but a failed statement still aborts the

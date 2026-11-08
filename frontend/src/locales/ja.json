@@ -972,7 +972,7 @@
     "createSuccess": "定義を追加しました。",
     "loadDefinitionError": "定義データを読み込めませんでした",
     "loadLanguagesError": "言語一覧を読み込めませんでした",
-    "analyzeError": "テキストを解析できませんでした",
+    "analyzeError": "単語の形が不正です。綴りと子音の組み合わせを確認してください。実験的な単語にも同じ規則が適用されます。",
     "analyzeErrorGeneric": "解析中にエラーが発生しました",
     "validateError": "LaTeX / MathJax の構文が無効です",
     "validateErrorInField": "{field} の LaTeX / MathJax が無効です：{details}",

@@ -3309,6 +3309,12 @@ pub async fn rename_definition_valsi(
         1 | 58 => {
             let res =
                 analyze_word(&parsers, &request.new_word, source_langid, &transaction).await?;
+            if !res.success {
+                return Err(AppError::BadRequest(
+                    res.error
+                        .unwrap_or_else(|| "Invalid word morphology".into()),
+                ));
+            }
             res.text
         }
         _ => sanitize_html(request.new_word.trim()),
@@ -3670,6 +3676,12 @@ async fn add_definition_in_transaction(
         1 | 58 => {
             // Lojban or Loglan. MathJax was checked before this transaction opened.
             let res = analyze_word(&parsers, &request.word, source_langid, transaction).await?;
+            if !res.success {
+                return Err(AppError::BadRequest(
+                    res.error
+                        .unwrap_or_else(|| "Invalid word morphology".into()),
+                ));
+            }
             (res.text, res.word_type)
         }
         _ => (sanitize_html(&request.word), "phrase".to_string()),

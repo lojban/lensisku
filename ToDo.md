@@ -1,4 +1,8 @@
 ## Functional requirements
+- [ ] Resolve existing frontend knip findings (unused exports/types and duplicate Lingo character export).
+- [ ] Fix existing frontend lint errors: unused `t` in `AssistantDefinitionCard.vue` and `let queued` in `useCollectionMembershipCache.ts`.
+- [ ] Resolve existing Cargo unused-dependency warnings for `criterion`, `num-bigint-dig` and `tectonic`.
+- [ ] Audit existing Lojban dictionary entries for forbidden consonant pairs (e.g. `zazko`); review corrections rather than silently deleting or reclassifying entries.
 - [ ] custom books
 - [ ] chatbot for course
 - [ ] opentelemetry, trace_id

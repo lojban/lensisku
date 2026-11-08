@@ -986,7 +986,7 @@
     "createSuccess": "snada lo nu jmina lo velckivei!",
     "loadDefinitionError": "fliba lo nu jgari lo velckivei datni",
     "loadLanguagesError": "fliba lo nu jgari lo bangu",
-    "analyzeError": "fliba lo nu lanli lo jufra",
+    "analyzeError": "lo valsi cu na mapti lo gerna be lo tarmi be lo valsi .i ko cipcta lo lerfu jo'u lo zunsna girzu .i lo cipra valsi ji'a cu nitcu lo nu mapti",
     "analyzeErrorGeneric": "fliba lo nu lanli",
     "validateError": "srera fa lo LaTeX jufra",
     "validateErrorInField": "srera fa lo LaTeX bu'u la'ei {field}: {details}",

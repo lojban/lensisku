@@ -977,7 +977,7 @@
     "createSuccess": "释义已添加！",
     "loadDefinitionError": "无法加载释义数据",
     "loadLanguagesError": "无法加载语言列表",
-    "analyzeError": "分析文本失败",
+    "analyzeError": "词形无效。请检查拼写和辅音组合；实验词也必须遵守相同的规则。",
     "analyzeErrorGeneric": "分析文本时出错",
     "validateError": "LaTeX/MathJax 语法无效",
     "validateErrorInField": "字段 {field} 中 LaTeX/MathJax 无效：{details}",

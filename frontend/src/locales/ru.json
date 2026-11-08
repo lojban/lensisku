@@ -943,7 +943,7 @@
     "createSuccess": "Определение успешно добавлено!",
     "loadDefinitionError": "Не удалось загрузить данные определения",
     "loadLanguagesError": "Не удалось загрузить языки",
-    "analyzeError": "Не удалось проанализировать текст",
+    "analyzeError": "Недопустимая форма слова. Проверьте написание и сочетания согласных: экспериментальные слова должны подчиняться тем же правилам.",
     "analyzeErrorGeneric": "Ошибка анализа текста",
     "validateError": "Неверный синтаксис LaTeX/MathJax",
     "validateErrorInField": "Неверный LaTeX/MathJax в поле «{field}»: {details}",

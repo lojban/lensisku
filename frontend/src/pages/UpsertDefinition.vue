@@ -934,12 +934,23 @@ const doAnalyzeWord = async () => {
           : []
     } else {
       wordType.value = ''
+      recommended.value = ''
+      problems.value = {}
       lujvoDecomposition.value = []
       showError(t('upsertDefinition.analyzeError'))
     }
-  } catch {
+  } catch (err) {
+    wordType.value = ''
+    recommended.value = ''
+    problems.value = {}
     lujvoDecomposition.value = []
-    showError(t('upsertDefinition.analyzeErrorGeneric'))
+    showError(
+      t(
+        err.response?.status === 400 && err.response?.data?.success === false
+          ? 'upsertDefinition.analyzeError'
+          : 'upsertDefinition.analyzeErrorGeneric'
+      )
+    )
   } finally {
     isAnalyzing.value = false
   }
