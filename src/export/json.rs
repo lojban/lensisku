@@ -2,10 +2,11 @@
 //!
 //! `serde_json` leaves U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR
 //! unescaped, which is valid JSON but trips JavaScript parsers and editors
-//! that treat those characters as line terminators. These helpers wrap
-//! `serde_json`'s pretty formatter so the two characters are written as
-//! `\u2028` / `\u2029`. Output is otherwise byte-identical to
-//! `serde_json::to_string_pretty` / `to_vec_pretty`.
+//! that treat those characters as line terminators. These helpers first
+//! rewrite the two characters with [`crate::utils::normalize_line_terminators`]
+//! (U+2028 → `\n`, U+2029 → `\n\n`) and then emit them with the usual JSON
+//! `\n` escape, not as a raw newline inside a string. Output is otherwise
+//! byte-identical to `serde_json::to_string_pretty` / `to_vec_pretty`.
 
 use serde::Serialize;
 use serde_json::ser::{Formatter, PrettyFormatter, Serializer};
@@ -21,27 +22,24 @@ impl<F> EscapeLineSeparatorFormatter<F> {
     }
 }
 
-fn write_escaped_fragment<W>(writer: &mut W, fragment: &str) -> io::Result<()>
+fn write_normalized_fragment<F, W>(inner: &mut F, writer: &mut W, fragment: &str) -> io::Result<()>
 where
+    F: Formatter,
     W: ?Sized + Write,
 {
-    let mut last = 0;
-    for (i, ch) in fragment.char_indices() {
-        if ch == '\u{2028}' || ch == '\u{2029}' {
-            if i > last {
-                writer.write_all(fragment[last..i].as_bytes())?;
-            }
-            let escape: &[u8] = if ch == '\u{2028}' {
-                br"\u2028"
-            } else {
-                br"\u2029"
-            };
-            writer.write_all(escape)?;
-            last = i + ch.len_utf8();
+    // write_string_fragment is only used for pieces that need no escaping.
+    // After normalization, LS/PS have become `\n`, so those must go through
+    // write_char_escape; the surrounding text can still use write_string_fragment.
+    let normalized = crate::utils::normalize_line_terminators(fragment);
+    let mut first = true;
+    for piece in normalized.split('\n') {
+        if !first {
+            inner.write_char_escape(writer, serde_json::ser::CharEscape::LineFeed)?;
         }
-    }
-    if last < fragment.len() {
-        writer.write_all(fragment[last..].as_bytes())?;
+        first = false;
+        if !piece.is_empty() {
+            inner.write_string_fragment(writer, piece)?;
+        }
     }
     Ok(())
 }
@@ -65,7 +63,7 @@ impl<F: Formatter> Formatter for EscapeLineSeparatorFormatter<F> {
     where
         W: ?Sized + Write,
     {
-        write_escaped_fragment(writer, fragment)
+        write_normalized_fragment(&mut self.inner, writer, fragment)
     }
 
     forward_formatter! {
@@ -102,7 +100,7 @@ impl<F: Formatter> Formatter for EscapeLineSeparatorFormatter<F> {
     }
 }
 
-/// Pretty-print `value` as JSON, escaping U+2028 and U+2029.
+/// Pretty-print `value` as JSON, rewriting U+2028/U+2029 as JSON `\n` escapes.
 pub fn to_writer_pretty<W, T>(writer: W, value: &T) -> serde_json::Result<()>
 where
     W: Write,
@@ -115,7 +113,7 @@ where
     value.serialize(&mut ser)
 }
 
-/// Pretty-print `value` as JSON bytes, escaping U+2028 and U+2029.
+/// Pretty-print `value` as JSON bytes, rewriting U+2028/U+2029 as JSON `\n` escapes.
 pub fn to_vec_pretty<T>(value: &T) -> serde_json::Result<Vec<u8>>
 where
     T: ?Sized + Serialize,
@@ -125,7 +123,7 @@ where
     Ok(writer)
 }
 
-/// Pretty-print `value` as a JSON string, escaping U+2028 and U+2029.
+/// Pretty-print `value` as a JSON string, rewriting U+2028/U+2029 as JSON `\n` escapes.
 pub fn to_string_pretty<T>(value: &T) -> serde_json::Result<String>
 where
     T: ?Sized + Serialize,
@@ -141,9 +139,10 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn escapes_line_and_paragraph_separators_and_round_trips() {
+    fn rewrites_line_and_paragraph_separators_as_json_newlines_and_round_trips() {
         let input = format!("lead\u{2028}mid\u{2029}trail");
         let pretty = to_string_pretty(&input).unwrap();
+        let normalized = crate::utils::normalize_line_terminators(&input);
 
         assert!(
             !pretty.contains('\u{2028}'),
@@ -154,25 +153,21 @@ mod tests {
             "raw U+2029 must not appear in export JSON"
         );
         assert!(
-            pretty.contains("\\u2028"),
-            "expected \\\\u2028 escape: {pretty}"
+            !pretty.contains("\\u2028") && !pretty.contains("\\u2029"),
+            "expected JSON \\n escapes, not \\u2028/\\u2029: {pretty}"
         );
+        // Pretty-printing a lone string has no structural newlines, so a raw
+        // `\n` here would be an unescaped newline inside the JSON string.
         assert!(
-            pretty.contains("\\u2029"),
-            "expected \\\\u2029 escape: {pretty}"
+            !pretty.contains('\n'),
+            "raw newline must not appear inside a JSON string: {pretty}"
         );
+        assert_eq!(pretty, "\"lead\\nmid\\n\\ntrail\"");
+        assert_eq!(pretty, serde_json::to_string_pretty(&normalized).unwrap());
 
         let back: String = serde_json::from_str(&pretty).unwrap();
-        assert_eq!(back, input);
-
-        // serde_json itself leaves the characters raw; our output differs only there.
-        let raw = serde_json::to_string_pretty(&input).unwrap();
-        assert!(raw.contains('\u{2028}') && raw.contains('\u{2029}'));
-        assert_eq!(
-            raw.replace('\u{2028}', "\\u2028")
-                .replace('\u{2029}', "\\u2029"),
-            pretty
-        );
+        assert_eq!(back, normalized);
+        assert_eq!(back, "lead\nmid\n\ntrail");
     }
 
     #[test]
