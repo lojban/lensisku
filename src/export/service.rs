@@ -13,6 +13,7 @@ use tokio::time::{timeout, Duration};
 use xml::writer::{EventWriter, XmlEvent};
 use zip::write::{SimpleFileOptions, ZipWriter};
 
+use super::json::{to_string_pretty, to_vec_pretty};
 use super::models::CachedExport;
 use super::models::CollectionExportItem;
 use super::models::DictionaryEntry;
@@ -809,7 +810,7 @@ async fn generate_xml(
                 CollectionExportItem::from_row(row, front_image_url, back_image_url)
             })
             .collect();
-        return Ok(serde_json::to_string_pretty(&entries)?);
+        return Ok(to_string_pretty(&entries)?);
     }
 
     if let Some(id) = collection_id {
@@ -862,7 +863,7 @@ async fn generate_xml(
                 CollectionExportItem::from_row(row, front_image_url, back_image_url)
             })
             .collect();
-        return Ok(serde_json::to_string_pretty(&entries)?);
+        return Ok(to_string_pretty(&entries)?);
     }
 
     let mut writer = EventWriter::new(Cursor::new(Vec::new()));
@@ -1588,7 +1589,7 @@ async fn generate_tsv(
                 CollectionExportItem::from_row(row, front_image_url, back_image_url)
             })
             .collect();
-        return Ok(serde_json::to_string_pretty(&entries)?);
+        return Ok(to_string_pretty(&entries)?);
     }
 
     if let Some(id) = collection_id {
@@ -1848,7 +1849,7 @@ async fn generate_json(
                 CollectionExportItem::from_row(row, front_image_url, back_image_url)
             })
             .collect();
-        return Ok(serde_json::to_string_pretty(&entries)?);
+        return Ok(to_string_pretty(&entries)?);
     }
 
     let positive_scores_only = options.positive_scores_only.unwrap_or(true);
@@ -1923,7 +1924,7 @@ async fn generate_json(
         })
         .collect();
 
-    Ok(serde_json::to_string_pretty(&entries)?)
+    Ok(to_string_pretty(&entries)?)
 }
 
 pub async fn list_cached_exports(pool: &Pool) -> Result<Vec<CachedExport>, ExportError> {
@@ -2741,7 +2742,7 @@ async fn finalize_search_export(
         ExportFormat::Xml => {
             generate_search_export_xml(&collection_items, &definitions)?.into_bytes()
         }
-        ExportFormat::Json => serde_json::to_vec_pretty(&SearchExportJson {
+        ExportFormat::Json => to_vec_pretty(&SearchExportJson {
             collection_items,
             definitions,
         })
@@ -2824,7 +2825,7 @@ async fn export_full_collection_json(
             })?;
 
     let filename = collection_export_filename(&export.collection.name);
-    let content = serde_json::to_vec_pretty(&export).map_err(boxed)?;
+    let content = to_vec_pretty(&export).map_err(boxed)?;
     Ok((
         content,
         ExportFormat::Json.content_type().to_string(),

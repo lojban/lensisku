@@ -1,0 +1,197 @@
+//! JSON serializers for user-facing exports.
+//!
+//! `serde_json` leaves U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR
+//! unescaped, which is valid JSON but trips JavaScript parsers and editors
+//! that treat those characters as line terminators. These helpers wrap
+//! `serde_json`'s pretty formatter so the two characters are written as
+//! `\u2028` / `\u2029`. Output is otherwise byte-identical to
+//! `serde_json::to_string_pretty` / `to_vec_pretty`.
+
+use serde::Serialize;
+use serde_json::ser::{Formatter, PrettyFormatter, Serializer};
+use std::io::{self, Write};
+
+struct EscapeLineSeparatorFormatter<F> {
+    inner: F,
+}
+
+impl<F> EscapeLineSeparatorFormatter<F> {
+    fn new(inner: F) -> Self {
+        Self { inner }
+    }
+}
+
+fn write_escaped_fragment<W>(writer: &mut W, fragment: &str) -> io::Result<()>
+where
+    W: ?Sized + Write,
+{
+    let mut last = 0;
+    for (i, ch) in fragment.char_indices() {
+        if ch == '\u{2028}' || ch == '\u{2029}' {
+            if i > last {
+                writer.write_all(fragment[last..i].as_bytes())?;
+            }
+            let escape: &[u8] = if ch == '\u{2028}' {
+                br"\u2028"
+            } else {
+                br"\u2029"
+            };
+            writer.write_all(escape)?;
+            last = i + ch.len_utf8();
+        }
+    }
+    if last < fragment.len() {
+        writer.write_all(fragment[last..].as_bytes())?;
+    }
+    Ok(())
+}
+
+macro_rules! forward_formatter {
+    ($($method:ident $(, $arg:ident : $ty:ty)* ;)+) => {
+        $(
+            #[inline]
+            fn $method<W>(&mut self, writer: &mut W $(, $arg: $ty)*) -> io::Result<()>
+            where
+                W: ?Sized + Write,
+            {
+                self.inner.$method(writer $(, $arg)*)
+            }
+        )+
+    };
+}
+
+impl<F: Formatter> Formatter for EscapeLineSeparatorFormatter<F> {
+    fn write_string_fragment<W>(&mut self, writer: &mut W, fragment: &str) -> io::Result<()>
+    where
+        W: ?Sized + Write,
+    {
+        write_escaped_fragment(writer, fragment)
+    }
+
+    forward_formatter! {
+        write_null;
+        write_bool, value: bool;
+        write_i8, value: i8;
+        write_i16, value: i16;
+        write_i32, value: i32;
+        write_i64, value: i64;
+        write_i128, value: i128;
+        write_u8, value: u8;
+        write_u16, value: u16;
+        write_u32, value: u32;
+        write_u64, value: u64;
+        write_u128, value: u128;
+        write_f32, value: f32;
+        write_f64, value: f64;
+        write_number_str, value: &str;
+        begin_string;
+        end_string;
+        write_char_escape, char_escape: serde_json::ser::CharEscape;
+        write_byte_array, value: &[u8];
+        begin_array;
+        end_array;
+        begin_array_value, first: bool;
+        end_array_value;
+        begin_object;
+        end_object;
+        begin_object_key, first: bool;
+        end_object_key;
+        begin_object_value;
+        end_object_value;
+        write_raw_fragment, fragment: &str;
+    }
+}
+
+/// Pretty-print `value` as JSON, escaping U+2028 and U+2029.
+pub fn to_writer_pretty<W, T>(writer: W, value: &T) -> serde_json::Result<()>
+where
+    W: Write,
+    T: ?Sized + Serialize,
+{
+    let mut ser = Serializer::with_formatter(
+        writer,
+        EscapeLineSeparatorFormatter::new(PrettyFormatter::new()),
+    );
+    value.serialize(&mut ser)
+}
+
+/// Pretty-print `value` as JSON bytes, escaping U+2028 and U+2029.
+pub fn to_vec_pretty<T>(value: &T) -> serde_json::Result<Vec<u8>>
+where
+    T: ?Sized + Serialize,
+{
+    let mut writer = Vec::with_capacity(128);
+    to_writer_pretty(&mut writer, value)?;
+    Ok(writer)
+}
+
+/// Pretty-print `value` as a JSON string, escaping U+2028 and U+2029.
+pub fn to_string_pretty<T>(value: &T) -> serde_json::Result<String>
+where
+    T: ?Sized + Serialize,
+{
+    let vec = to_vec_pretty(value)?;
+    // The formatter only writes UTF-8 fragments and ASCII escapes.
+    Ok(String::from_utf8(vec).expect("JSON serializer emitted invalid UTF-8"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn escapes_line_and_paragraph_separators_and_round_trips() {
+        let input = format!("lead\u{2028}mid\u{2029}trail");
+        let pretty = to_string_pretty(&input).unwrap();
+
+        assert!(
+            !pretty.contains('\u{2028}'),
+            "raw U+2028 must not appear in export JSON"
+        );
+        assert!(
+            !pretty.contains('\u{2029}'),
+            "raw U+2029 must not appear in export JSON"
+        );
+        assert!(
+            pretty.contains("\\u2028"),
+            "expected \\\\u2028 escape: {pretty}"
+        );
+        assert!(
+            pretty.contains("\\u2029"),
+            "expected \\\\u2029 escape: {pretty}"
+        );
+
+        let back: String = serde_json::from_str(&pretty).unwrap();
+        assert_eq!(back, input);
+
+        // serde_json itself leaves the characters raw; our output differs only there.
+        let raw = serde_json::to_string_pretty(&input).unwrap();
+        assert!(raw.contains('\u{2028}') && raw.contains('\u{2029}'));
+        assert_eq!(
+            raw.replace('\u{2028}', "\\u2028")
+                .replace('\u{2029}', "\\u2029"),
+            pretty
+        );
+    }
+
+    #[test]
+    fn pretty_output_matches_serde_json_when_no_line_separators() {
+        let value = json!({
+            "word": "coi",
+            "notes": "hello\n\t\"world\"\\",
+            "score": 1.5,
+            "tags": ["a", "b"],
+            "empty": null,
+            "flag": true
+        });
+        assert_eq!(
+            to_string_pretty(&value).unwrap(),
+            serde_json::to_string_pretty(&value).unwrap()
+        );
+        assert_eq!(
+            to_vec_pretty(&value).unwrap(),
+            serde_json::to_vec_pretty(&value).unwrap()
+        );
+    }
+}

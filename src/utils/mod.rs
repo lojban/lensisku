@@ -30,14 +30,39 @@ pub fn remove_html_tags(html: &str) -> String {
         builder
     });
 
-    AMMONIA.clean(html).to_string()
+    normalize_line_terminators(&AMMONIA.clean(html).to_string())
+}
+
+/// Normalize unusual Unicode line terminators in user-entered text before it is
+/// persisted.
+///
+/// - U+2028 LINE SEPARATOR becomes a newline (`\n`)
+/// - U+2029 PARAGRAPH SEPARATOR becomes a blank line (`\n\n`)
+///
+/// CRLF and bare CR are left unchanged. `preserve_author_text` already keeps
+/// `\r`, and existing rows were not confirmed to be consistently `\n`-only.
+pub fn normalize_line_terminators(text: &str) -> String {
+    if !text.contains('\u{2028}') && !text.contains('\u{2029}') {
+        return text.to_string();
+    }
+    let mut out = String::with_capacity(text.len());
+    for ch in text.chars() {
+        match ch {
+            '\u{2028}' => out.push('\n'),
+            '\u{2029}' => out.push_str("\n\n"),
+            _ => out.push(ch),
+        }
+    }
+    out
 }
 
 /// Dictionary prose is Markdown and MathJax, not HTML. An HTML parser treats
 /// `Set <T | U>` as a tag and deletes it. Keep the characters; drop only
-/// control characters that are not whitespace.
+/// control characters that are not whitespace. Line and paragraph separators
+/// are normalized first; see [`normalize_line_terminators`].
 pub fn preserve_author_text(text: &str) -> String {
-    text.chars()
+    normalize_line_terminators(text)
+        .chars()
         .filter(|c| !c.is_control() || matches!(c, '\n' | '\r' | '\t'))
         .collect()
 }
@@ -238,7 +263,9 @@ pub fn handle_import_error(e: crate::error::AppError) -> HttpResponse {
 
 #[cfg(test)]
 mod tests {
-    use super::{decode_html_entities, preserve_author_text};
+    use super::{
+        decode_html_entities, normalize_line_terminators, preserve_author_text, remove_html_tags,
+    };
 
     #[test]
     fn preserve_author_text_keeps_angle_brackets() {
@@ -251,6 +278,29 @@ mod tests {
     #[test]
     fn preserve_author_text_drops_nul() {
         assert_eq!(preserve_author_text("a\0b\nc"), "ab\nc");
+    }
+
+    #[test]
+    fn normalize_line_terminators_ls_to_newline_ps_to_blank_line() {
+        assert_eq!(
+            normalize_line_terminators("a\u{2028}b\u{2029}c"),
+            "a\nb\n\nc"
+        );
+        assert_eq!(normalize_line_terminators("plain"), "plain");
+        assert_eq!(
+            normalize_line_terminators("keep\r\ncrlf and \r bare"),
+            "keep\r\ncrlf and \r bare"
+        );
+    }
+
+    #[test]
+    fn preserve_author_text_normalizes_line_separators_then_strips_controls() {
+        assert_eq!(preserve_author_text("a\u{2028}b\0c\u{2029}d"), "a\nbc\n\nd");
+    }
+
+    #[test]
+    fn remove_html_tags_normalizes_line_separators() {
+        assert_eq!(remove_html_tags("a\u{2028}<b>x</b>\u{2029}c"), "a\nx\n\nc");
     }
 
     #[test]
