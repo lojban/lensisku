@@ -129,8 +129,7 @@ where
     T: ?Sized + Serialize,
 {
     let vec = to_vec_pretty(value)?;
-    // The formatter only writes UTF-8 fragments and ASCII escapes.
-    Ok(String::from_utf8(vec).expect("JSON serializer emitted invalid UTF-8"))
+    String::from_utf8(vec).map_err(|error| serde::ser::Error::custom(error.utf8_error()))
 }
 
 #[cfg(test)]
@@ -140,9 +139,9 @@ mod tests {
 
     #[test]
     fn rewrites_line_and_paragraph_separators_as_json_newlines_and_round_trips() {
-        let input = format!("lead\u{2028}mid\u{2029}trail");
-        let pretty = to_string_pretty(&input).unwrap();
-        let normalized = crate::utils::normalize_line_terminators(&input);
+        let input = "lead\u{2028}mid\u{2029}trail";
+        let pretty = to_string_pretty(input).unwrap();
+        let normalized = crate::utils::normalize_line_terminators(input);
 
         assert!(
             !pretty.contains('\u{2028}'),
