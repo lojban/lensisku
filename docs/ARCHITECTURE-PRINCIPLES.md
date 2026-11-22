@@ -70,6 +70,8 @@ These are the rules the lensisku backend follows, why, and where they are (or ar
 ## 5. Decisions
 
 ### Applied
+- Comment Markdown retains bare `<br>` tags during sanitization so empty paragraphs from
+  the editor survive posting. The comment renderer recognizes those tags as line breaks.
 - Layering, typed errors (flashcards, export), runtime-blocking fixes, set-based SQL listed above,
   SEO/locale caching, lint deny-list, guarded DB tests, quality gates in CI.
 - Collection import loops (`import_json`, `import_collection_from_json`, `import_full`) are batched

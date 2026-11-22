@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { Marked } from 'marked'
 import { escapeHtmlText, escapeMarkdownAngles, sanitizeHtml } from '@/utils/sanitizeHtml'
-import type { RendererObject } from 'marked'
+import type { RendererObject, TokenizerAndRendererExtension } from 'marked'
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
@@ -50,6 +50,11 @@ const props = defineProps({
   },
   /** Wiki bodies keep a small HTML allowlist. Dictionary prose escapes every `<`. */
   allowRawHtml: {
+    type: Boolean,
+    default: false,
+  },
+  /** Render the line-break markers stored in comment Markdown. */
+  allowBreakTags: {
     type: Boolean,
     default: false,
   },
@@ -104,6 +109,21 @@ function normalizeLinkAnchors(text) {
 }
 
 const MATH_PLACEHOLDER = (i) => `MJXPH${i}MJXEND`
+
+const markdownBreakTag: TokenizerAndRendererExtension = {
+  name: 'markdownBreakTag',
+  level: 'inline',
+  start(src) {
+    return src.indexOf('&lt;br')
+  },
+  tokenizer(src) {
+    const match = /^&lt;br[ \t]*\/?(?:>|&gt;)/.exec(src)
+    if (match) return { type: 'markdownBreakTag', raw: match[0] }
+  },
+  renderer() {
+    return '<br>'
+  },
+}
 
 /**
  * Replace TeX math spans with placeholders so marked (curly links, emphasis, etc.)
@@ -221,7 +241,7 @@ const renderContent = async () => {
       : { text: finalContent, parts: [] }
     finalContent = escapeMarkdownAngles(mdInput, props.allowRawHtml)
 
-    const extensions = props.enableCurlyLinks
+    const extensions: TokenizerAndRendererExtension[] = props.enableCurlyLinks
       ? [
           {
             name: 'curlyLink',
@@ -253,6 +273,7 @@ const renderContent = async () => {
           },
         ]
       : []
+    if (props.allowBreakTags) extensions.push(markdownBreakTag)
 
     const renderer = {
       link(href, title, text) {

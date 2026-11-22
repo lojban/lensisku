@@ -1,8 +1,9 @@
 use crate::error::AppError;
-use crate::utils::remove_html_tags;
+use crate::utils::{normalize_line_terminators, remove_html_tags};
 use std::{
     collections::{HashMap, HashSet},
     env,
+    sync::LazyLock,
     time::Duration,
 };
 
@@ -21,8 +22,26 @@ use super::{
     models::{CommentOpinion, FreeThread, SearchCommentsParams, TrendingTimespan},
 };
 
-pub fn sanitize_html(html: &str) -> String {
-    remove_html_tags(html)
+fn sanitize_comment_body(markdown: &str) -> String {
+    static SANITIZER: LazyLock<ammonia::Builder<'static>> = LazyLock::new(|| {
+        let mut builder = ammonia::Builder::empty();
+        builder
+            .add_tags(["br"])
+            .generic_attributes(HashSet::new())
+            .clean_content_tags(HashSet::new());
+        builder
+    });
+
+    normalize_line_terminators(&SANITIZER.clean(markdown).to_string())
+}
+
+#[cfg(test)]
+#[test]
+fn comment_body_preserves_editor_breaks() {
+    assert_eq!(
+        sanitize_comment_body("First\n\n<br />\n\nSecond<br title=\"label\"><b> line</b>"),
+        "First\n\n<br>\n\nSecond<br> line"
+    );
 }
 
 fn bounded_page(page: i64, per_page: i64) -> (i64, i64, i64) {
@@ -296,8 +315,10 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, AppError> 
 
     // Sanitize each part's content
     for part in content_parts.iter_mut() {
-        if part.r#type == "text" || part.r#type == "header" {
-            part.data = sanitize_html(&part.data);
+        match part.r#type.as_str() {
+            "text" => part.data = sanitize_comment_body(&part.data),
+            "header" => part.data = remove_html_tags(&part.data),
+            _ => {}
         }
     }
 
@@ -320,7 +341,7 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, AppError> 
         )));
     }
 
-    let sanitized_subject = sanitize_html(&params.subject);
+    let sanitized_subject = remove_html_tags(&params.subject);
 
     // Add subject as header if present
     if !sanitized_subject.is_empty() {

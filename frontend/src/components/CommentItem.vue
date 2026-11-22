@@ -106,7 +106,11 @@
             <div class="italic prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain">
               <template v-for="(part, index) in processedComment.parent_content" :key="index">
                 <div v-if="['text', 'header'].includes(part.type)">
-                  <LazyMathJax :content="part.data" :enable-markdown="true" />
+                  <LazyMathJax
+                    :content="part.data"
+                    :enable-markdown="true"
+                    :allow-break-tags="part.type === 'text'"
+                  />
                 </div>
               </template>
             </div>
@@ -138,7 +142,11 @@
             <div class="italic prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain">
               <template v-for="(part, index) in processedComment.parent_content" :key="index">
                 <div v-if="['text', 'header'].includes(part.type)">
-                  <LazyMathJax :content="part.data" :enable-markdown="true" />
+                  <LazyMathJax
+                    :content="part.data"
+                    :enable-markdown="true"
+                    :allow-break-tags="part.type === 'text'"
+                  />
                 </div>
               </template>
             </div>
@@ -158,7 +166,7 @@
         class="prose prose-sm max-w-none text-gray-700 mb-3 [&_img]:max-h-48 [&_img]:object-contain"
       >
         <template v-for="(part, index) in processedComment.plain_content" :key="index">
-          <LazyMathJax :content="part.data" :enable-markdown="true" />
+          <LazyMathJax :content="part.data" :enable-markdown="true" allow-break-tags />
         </template>
       </div>
     </div>
