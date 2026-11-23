@@ -54,16 +54,6 @@ impl PermissionCache {
         Ok(())
     }
 
-    pub async fn has_permission(&self, role: String, permission_name: &str) -> bool {
-        let cache = self.cache.read().await;
-        // Normalize role to lowercase for case-insensitive lookup
-        let role_lower = role.to_lowercase();
-        cache
-            .get(&role_lower)
-            .map(|perms| perms.iter().any(|p| p.name == permission_name))
-            .unwrap_or(false)
-    }
-
     pub async fn get_permissions_for_role(&self, role: String) -> Vec<Permission> {
         let cache = self.cache.read().await;
         // Normalize role to lowercase for case-insensitive lookup

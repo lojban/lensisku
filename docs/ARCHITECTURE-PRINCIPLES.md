@@ -70,6 +70,9 @@ These are the rules the lensisku backend follows, why, and where they are (or ar
 ## 5. Decisions
 
 ### Applied
+- Definition edits and history reverts require `edit_definition` and respect the definition's
+  owner-only setting. History responses include the requesting user's revert eligibility and
+  must stay out of shared caches.
 - Comment Markdown retains bare `<br>` tags during sanitization so empty paragraphs from
   the editor survive posting. The comment renderer recognizes those tags as line breaks.
 - Layering, typed errors (flashcards, export), runtime-blocking fixes, set-based SQL listed above,

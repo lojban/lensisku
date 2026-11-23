@@ -3,7 +3,7 @@ use super::{
     VersionHistoryResponse,
 };
 use crate::error::AppError;
-use crate::{auth::permissions::PermissionCache, jbovlaste::KeywordMapping};
+use crate::jbovlaste::{service::can_edit_definition, KeywordMapping};
 use deadpool_postgres::Pool;
 
 const VERSION_SELECT_SQL: &str = "SELECT v.*, u.username,
@@ -122,6 +122,7 @@ pub async fn get_definition_history(
     definition_id: i32,
     page: i64,
     per_page: i64,
+    editor_id: Option<i32>,
 ) -> Result<VersionHistoryResponse, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -142,13 +143,20 @@ pub async fn get_definition_history(
         .map(version_from_row)
         .collect();
 
-    let total: i64 = transaction
-        .query_one(
-            "SELECT COUNT(*) FROM definition_versions WHERE definition_id = $1",
+    let definition = transaction
+        .query_opt(
+            "SELECT d.userid, d.owner_only,
+                    (SELECT COUNT(*) FROM definition_versions WHERE definition_id = d.definitionid) AS total
+             FROM definitions d WHERE d.definitionid = $1",
             &[&definition_id],
         )
-        .await?
-        .get(0);
+        .await?;
+    let (total, can_revert) = definition.map_or((0, false), |row| {
+        let can_revert = editor_id.is_some_and(|user_id| {
+            can_edit_definition(user_id, row.get("userid"), row.get("owner_only"))
+        });
+        (row.get("total"), can_revert)
+    });
 
     transaction.commit().await?;
 
@@ -157,6 +165,7 @@ pub async fn get_definition_history(
         total,
         page,
         per_page,
+        can_revert,
     })
 }
 
@@ -264,36 +273,29 @@ pub async fn revert_to_version(
     pool: &Pool,
     version_id: i32,
     user_id: i32,
-    user_role: &str,
-    perm_cache: &PermissionCache,
 ) -> Result<Version, AppError> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
     let old_version: Version = get_version_with_transaction(&transaction, version_id).await?;
 
-    // Check permissions
-    let has_permission = perm_cache
-        .has_permission(user_role.to_string(), "revert_entry_version")
-        .await;
-    if !has_permission {
-        // Check if user is the original author of the definition
-        let definition_author: i32 = transaction
-            .query_one(
-                "SELECT userid AS user_id FROM definitions WHERE definitionid = $1",
-                &[&old_version.definition_id],
-            )
-            .await?
-            .get("user_id");
-
-        if definition_author != user_id {
-            return Err(AppError::Auth(
-                "You must be the definition author or have revert permissions".into(),
-            ));
-        }
+    let current_def = transaction
+        .query_one(
+            "SELECT d.userid, d.owner_only, d.valsiid, d.langid, d.definitionnum,
+                    d.rafsi AS proposal_rafsi, u.username = 'officialdata' AS official_rafsi_author
+             FROM definitions d JOIN users u ON u.userid = d.userid
+             WHERE d.definitionid = $1",
+            &[&old_version.definition_id],
+        )
+        .await?;
+    if !can_edit_definition(
+        user_id,
+        current_def.get("userid"),
+        current_def.get("owner_only"),
+    ) {
+        return Err(AppError::Auth("forbidden".into()));
     }
 
-    // Create a new version with the old content
     let new_version = create_version(
         &transaction,
         old_version.definition_id,
@@ -303,13 +305,6 @@ pub async fn revert_to_version(
     )
     .await?;
 
-    let current_def = transaction
-        .query_one(
-            "SELECT d.valsiid, d.langid, d.definitionnum, d.rafsi AS proposal_rafsi, u.username = 'officialdata' AS official_rafsi_author
-             FROM definitions d JOIN users u ON u.userid = d.userid WHERE d.definitionid = $1",
-            &[&old_version.definition_id],
-        )
-        .await?;
     let valsi_id: i32 = current_def.get("valsiid");
     let current_langid: i32 = current_def.get("langid");
     let current_definitionnum: i32 = current_def.get("definitionnum");
@@ -338,14 +333,14 @@ pub async fn revert_to_version(
         old_version.content.rafsi.clone()
     };
 
-    // Update the definition with the old content, including target language.
+    // Recheck ownership at the write in case the definition became owner-only.
     let reverted_at = new_version.created_at.timestamp() as i32;
-    transaction
+    let updated = transaction
         .execute(
             "UPDATE definitions 
              SET definition = $1, notes = $2, etymology = $3, selmaho = $4, jargon = $5, rafsi = $6,
                  langid = $7, definitionnum = $8, time = $9
-             WHERE definitionid = $10",
+             WHERE definitionid = $10 AND (userid = $11 OR NOT owner_only)",
             &[
                 &old_version.content.definition,
                 &old_version.content.notes,
@@ -357,9 +352,13 @@ pub async fn revert_to_version(
                 &definitionnum,
                 &reverted_at,
                 &old_version.definition_id,
+                &user_id,
             ],
         )
         .await?;
+    if updated == 0 {
+        return Err(AppError::Auth("forbidden".into()));
+    }
 
     if restored_langid != current_langid {
         retarget_definition_votes(&transaction, old_version.definition_id, restored_langid).await?;

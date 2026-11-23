@@ -13,6 +13,7 @@ CREATE TABLE definitions (
  definitionid INTEGER PRIMARY KEY, valsiid INTEGER REFERENCES valsi, userid INTEGER REFERENCES users,
  langid INTEGER DEFAULT 2, definition TEXT DEFAULT '', etymology TEXT, notes TEXT, selmaho TEXT, jargon TEXT,
  time INTEGER DEFAULT 0, definitionnum INTEGER DEFAULT 1, rafsi TEXT,
+ owner_only BOOLEAN NOT NULL DEFAULT FALSE,
  cached_username TEXT, cached_langrealname TEXT, cached_type_name TEXT, cached_valsiword TEXT,
  cached_rafsi TEXT, cached_decomposition TEXT, cached_canonical_word TEXT,
  cached_source_langid INTEGER, cached_typeid SMALLINT, cached_glosswords TEXT, cached_search_text TEXT,

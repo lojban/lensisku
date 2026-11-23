@@ -135,7 +135,7 @@
                 {{ t('versionHistory.cancelSelection') }}
               </Button>
               <Button
-                v-if="auth.state.isLoggedIn && !isRenameVersion(version)"
+                v-if="auth.state.isLoggedIn && canRevert && !isRenameVersion(version)"
                 variant="revert"
                 @click="performRevertToVersion(version.version_id)"
               >
@@ -229,6 +229,7 @@ const auth = useAuth()
 const isLoading = ref(true)
 const { showError, clearError } = useError()
 const versions = ref([])
+const canRevert = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
@@ -296,6 +297,7 @@ function previewContent(text: string) {
 // Fetch version history
 const fetchVersionHistory = async (page = 1) => {
   isLoading.value = true
+  canRevert.value = false
   clearError()
 
   try {
@@ -306,6 +308,7 @@ const fetchVersionHistory = async (page = 1) => {
 
     const data = response.data
     versions.value = data.versions
+    canRevert.value = data.can_revert === true
     total.value = data.total
     totalPages.value = Math.ceil(data.total / data.per_page)
     currentPage.value = page

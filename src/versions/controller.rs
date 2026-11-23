@@ -1,8 +1,11 @@
-use actix_web::{get, post, web, HttpResponse, Responder};
-// use actix_web_grants::protect;
+use actix_web::{get, http::header, post, web, HttpResponse, Responder};
+use actix_web_grants::{
+    authorities::{AuthDetails, AuthoritiesCheck},
+    protect,
+};
 use deadpool_postgres::Pool;
 
-use crate::auth::permissions::PermissionCache;
+use crate::auth::Claims;
 use crate::middleware::cache::RedisCache;
 use crate::middleware::cloudflare_cache::CloudflareCachePurger;
 
@@ -38,6 +41,8 @@ pub async fn get_definition_history(
     pool: web::Data<Pool>,
     definition_id: web::Path<i32>,
     query: web::Query<GetVersionsQuery>,
+    user: Option<web::ReqData<Claims>>,
+    authorities: AuthDetails,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
     let per_page = query
@@ -45,8 +50,22 @@ pub async fn get_definition_history(
         .unwrap_or(20)
         .clamp(1, crate::pagination::MAX_PER_PAGE as _);
 
-    match service::get_definition_history(&pool, definition_id.into_inner(), page, per_page).await {
-        Ok(response) => HttpResponse::Ok().json(response),
+    let editor_id = user
+        .filter(|_| authorities.has_authority("edit_definition"))
+        .map(|user| user.sub);
+
+    match service::get_definition_history(
+        &pool,
+        definition_id.into_inner(),
+        page,
+        per_page,
+        editor_id,
+    )
+    .await
+    {
+        Ok(response) => HttpResponse::Ok()
+            .insert_header((header::CACHE_CONTROL, "private, no-store"))
+            .json(response),
         Err(e) => match &e {
             crate::error::AppError::NotFound(_) => HttpResponse::NotFound().finish(),
             _ => HttpResponse::InternalServerError()
@@ -97,7 +116,7 @@ pub async fn get_version(pool: web::Data<Pool>, version_id: web::Path<i32>) -> i
     responses(
         (status = 200, description = "Definition reverted successfully", body = Version),
         (status = 404, description = "Version not found"),
-        (status = 403, description = "User is not the author and lacks revert permissions"),
+        (status = 403, description = "User cannot edit the definition"),
         (status = 500, description = "Internal server error")
     ),
     security(
@@ -109,25 +128,17 @@ pub async fn get_version(pool: web::Data<Pool>, version_id: web::Path<i32>) -> i
                   version in the history. Only users with edit permissions can perform this operation."
 )]
 #[post("/{version_id}/revert")]
+#[protect(any("edit_definition"))]
 pub async fn revert_to_version(
     pool: web::Data<Pool>,
     version_id: web::Path<i32>,
-    user: crate::auth::Claims,
-    perm_cache: web::Data<PermissionCache>,
+    user: web::ReqData<Claims>,
     redis_cache: web::Data<RedisCache>,
     cloudflare_cache: web::Data<CloudflareCachePurger>,
 ) -> impl Responder {
     let version_id = version_id.into_inner();
     let cache_target = service::definition_cache_target_for_version(&pool, version_id).await;
-    match service::revert_to_version(
-        &pool,
-        version_id,
-        user.sub,
-        &user.role,
-        perm_cache.get_ref(),
-    )
-    .await
-    {
+    match service::revert_to_version(&pool, version_id, user.sub).await {
         Ok(new_version) => {
             if let Some((definition_id, valsi_id, word)) = cache_target {
                 cloudflare_cache
@@ -150,6 +161,7 @@ pub async fn revert_to_version(
         }
         Err(e) => match &e {
             crate::error::AppError::NotFound(_) => HttpResponse::NotFound().finish(),
+            crate::error::AppError::Auth(_) => HttpResponse::Forbidden().finish(),
             _ => HttpResponse::InternalServerError()
                 .body(format!("Failed to revert: {}", e.detail())),
         },

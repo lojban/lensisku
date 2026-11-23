@@ -525,7 +525,8 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
             let url = link.as_deref().unwrap_or("");
             let (new_definition, changes) = if let Some(def_id) = definition_id {
                 let (version_pair, single_def, latest_version_id) =
-                    match crate::versions::service::get_definition_history(pool, def_id, 1, 2).await
+                    match crate::versions::service::get_definition_history(pool, def_id, 1, 2, None)
+                        .await
                     {
                         Ok(history) if history.versions.len() >= 2 => (
                             Some((

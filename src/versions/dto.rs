@@ -21,4 +21,5 @@ pub struct VersionHistoryResponse {
     pub total: i64,
     pub page: i64,
     pub per_page: i64,
+    pub can_revert: bool,
 }

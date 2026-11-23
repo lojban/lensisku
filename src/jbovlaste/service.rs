@@ -4357,6 +4357,10 @@ pub async fn get_definition(
     Ok(Some(definition))
 }
 
+pub(crate) fn can_edit_definition(user_id: i32, owner_id: i32, owner_only: bool) -> bool {
+    user_id == owner_id || !owner_only
+}
+
 pub async fn update_definition(
     pool: &Pool,
     definition_id: i32,
@@ -4524,14 +4528,12 @@ pub async fn update_definition(
         None
     };
 
-    let is_author = current_def.get::<_, i32>("userid") == user_id;
+    let owner_id: i32 = current_def.get("userid");
+    let is_author = owner_id == user_id;
     let current_owner_only = current_def.get::<_, bool>("owner_only");
     let author_username = current_def.get::<_, String>("username");
 
-    // Calculate can_edit
-    let can_edit = is_author || !current_owner_only;
-
-    if !can_edit {
+    if !can_edit_definition(user_id, owner_id, current_owner_only) {
         return Err(format!(
             "You don't have permission to edit this definition owned by {}",
             author_username
@@ -7452,27 +7454,44 @@ mod rafsi_authority_tests {
         validate_and_update_rafsi(&tx, 1, Some(1), Some("kex".into()), 1, 1)
             .await
             .unwrap();
+        tx.execute(
+            "UPDATE definitions SET owner_only = true WHERE definitionid = 1",
+            &[],
+        )
+        .await
+        .unwrap();
         tx.commit().await.unwrap();
         drop(client);
-        let permissions = crate::auth::permissions::PermissionCache::new(pool.clone());
-        crate::versions::service::revert_to_version(
-            &pool,
-            saved.version_id,
-            3,
-            "user",
-            &permissions,
-        )
-        .await
-        .unwrap();
-        crate::versions::service::revert_to_version(
-            &pool,
-            saved_official.version_id,
-            1,
-            "user",
-            &permissions,
-        )
-        .await
-        .unwrap();
+
+        for (definition_id, editor_id, expected) in [
+            (102, Some(2), true),
+            (1, Some(2), false),
+            (1, Some(1), true),
+            (102, None, false),
+        ] {
+            let history = crate::versions::service::get_definition_history(
+                &pool,
+                definition_id,
+                1,
+                10,
+                editor_id,
+            )
+            .await
+            .unwrap();
+            assert_eq!(history.can_revert, expected);
+        }
+        let denied =
+            crate::versions::service::revert_to_version(&pool, saved_official.version_id, 2).await;
+        assert!(matches!(denied, Err(AppError::Auth(_))));
+
+        // A collaborator can restore someone else's snapshot.
+        let restored = crate::versions::service::revert_to_version(&pool, saved.version_id, 2)
+            .await
+            .unwrap();
+        assert_eq!(restored.user_id, 2);
+        crate::versions::service::revert_to_version(&pool, saved_official.version_id, 1)
+            .await
+            .unwrap();
         let client = pool.get().await.unwrap();
         assert_eq!(
             client
