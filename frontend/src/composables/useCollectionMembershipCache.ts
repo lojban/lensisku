@@ -13,7 +13,7 @@ const MAX_BATCH = 100
 const membershipByKey = ref<Record<string, number[]>>({})
 
 type Queued = { key: string } & MembershipQuery
-let queued: Queued[] = []
+const queued: Queued[] = []
 const waiters = new Map<string, Array<(ids: number[]) => void>>()
 let flushScheduled = false
 let flushing = false
