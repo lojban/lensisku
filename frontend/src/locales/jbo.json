@@ -941,6 +941,8 @@
     "renameEvent": "Title rename"
   },
   "upsertDefinition": {
+    "renameAuthorOnly": "lo finti be le smuni po'o ka'e galfi le valsi.",
+    "renameForbidden": "do na se curmi lo nu galfi le valsi.",
     "editTitle": "galfi lo velckivei",
     "addTitle": "jmina lo cnino velckivei",
     "addEntryTitle": "jmina lo cnino valsi",

@@ -33,10 +33,28 @@
           v-model="word"
           type="text"
           required
-          class="input-field w-full h-10 mb-4"
-          :disabled="isSubmitting || (isEditMode && !isAuthor)"
+          class="input-field w-full h-10 read-only:bg-gray-100"
+          :disabled="isSubmitting"
+          :readonly="isHeadwordReadOnly"
           :placeholder="t('upsertDefinitionMarkdown.wordPlaceholder')"
+          :aria-invalid="renameError ? true : undefined"
+          :aria-describedby="
+            renameError ? 'word-rename-error' : showRenameNotice ? 'word-rename-notice' : undefined
+          "
+          @update:model-value="renameError = ''"
         />
+        <p v-if="showRenameNotice" id="word-rename-notice" class="mt-1 text-sm text-gray-600">
+          {{ t('upsertDefinition.renameAuthorOnly') }}
+        </p>
+        <AlertComponent
+          v-if="renameError"
+          id="word-rename-error"
+          class="mt-1"
+          type="error"
+          role="alert"
+        >
+          {{ renameError }}
+        </AlertComponent>
       </div>
       <!-- Language Selection -->
       <div>
@@ -94,6 +112,7 @@
 <script setup lang="ts">
 import { Input, Select } from '@packages/ui'
 import { Crepe } from '@milkdown/crepe'
+import { isAxiosError } from 'axios'
 
 import { attachTopBarToggle, crepeToolbarFeatures, placeHeadingLast } from '@/utils/crepeToolbar'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -101,6 +120,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import { getLanguages, addValsi, updateValsi, getDefinition, renameDefinition } from '@/api'
+import AlertComponent from '@/components/AlertComponent.vue'
 import AnimatedDots from '@/components/AnimatedDots.vue'
 import UpsertPageLayout from '@/components/layout/UpsertPageLayout.vue'
 import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
@@ -124,6 +144,8 @@ const langId = ref('')
 const word = ref('')
 const originalWord = ref('')
 const isAuthor = ref(false)
+const renameDenied = ref(false)
+const renameError = ref('')
 const definition = ref('')
 const sourceLangId = ref(1)
 const editor = ref(null)
@@ -133,7 +155,6 @@ onMounted(async () => {
 
   const definitionId = route.params.id
   if (definitionId) {
-    isEditMode.value = true
     editDefinitionId.value = definitionId
     await loadDefinitionData(definitionId)
   }
@@ -215,8 +236,12 @@ onUnmounted(() => {
   }
 })
 const languages = ref([])
-const isEditMode = ref(false)
+const isEditMode = ref(Boolean(route.params.id))
 const canCreate = useCreationAccess('definition', isEditMode)
+const isHeadwordReadOnly = computed(
+  () => isEditMode.value && (!isAuthor.value || !canCreate.value || renameDenied.value)
+)
+const showRenameNotice = computed(() => isEditMode.value && !!originalWord.value && !isAuthor.value)
 const unsaved = useUnsavedChanges(
   computed(() => JSON.stringify([word.value, langId.value, definition.value, sourceLangId.value]))
 )
@@ -273,6 +298,7 @@ async function submitValsi() {
   }
   if (!isValid.value) return
 
+  renameError.value = ''
   isSubmitting.value = true
 
   try {
@@ -296,16 +322,29 @@ async function submitValsi() {
     if (isEditMode.value) {
       const trimmedWord = word.value.trim()
       const wordChanged =
-        isAuthor.value && trimmedWord !== '' && trimmedWord !== originalWord.value.trim()
+        !isHeadwordReadOnly.value && trimmedWord !== '' && trimmedWord !== originalWord.value.trim()
       if (wordChanged) {
-        const renameResp = await renameDefinition(editDefinitionId.value, {
-          new_word: trimmedWord,
-        })
-        if (!renameResp.data?.success) {
-          throw new Error(renameResp.data?.error || 'Failed to change word')
+        try {
+          const renameResp = await renameDefinition(editDefinitionId.value, {
+            new_word: trimmedWord,
+          })
+          if (!renameResp.data?.success) {
+            renameError.value = renameResp.data?.error || t('upsertDefinition.saveError')
+            return
+          }
+          originalWord.value = renameResp.data.new_word
+          word.value = renameResp.data.new_word
+        } catch (error) {
+          const response = isAxiosError(error) ? error.response : undefined
+          if (response?.status === 403) {
+            renameDenied.value = true
+            word.value = originalWord.value
+            renameError.value = t('upsertDefinition.renameForbidden')
+          } else {
+            renameError.value = response?.data?.error || t('upsertDefinition.saveError')
+          }
+          return
         }
-        originalWord.value = renameResp.data.new_word
-        word.value = renameResp.data.new_word
       }
       response = await updateValsi(editDefinitionId.value, requestData)
     } else {

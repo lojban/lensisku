@@ -974,6 +974,8 @@
     "renameEvent": "Title rename"
   },
   "upsertDefinition": {
+    "renameAuthorOnly": "Only the definition’s author can change this headword.",
+    "renameForbidden": "You don’t have permission to change this headword.",
     "editTitle": "Edit definition",
     "addTitle": "Add new definition",
     "addEntryTitle": "Add new entry",

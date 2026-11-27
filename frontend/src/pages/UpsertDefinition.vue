@@ -28,7 +28,7 @@
       <UpsertToolbarButton
         v-else-if="!isValid && !isSubmitting"
         variant="warning-orange"
-        :disabled="isAnalyzing || word === ''"
+        :disabled="isAnalyzing || word === '' || isHeadwordReadOnly"
         :loading="isAnalyzing"
         @click="analyzeAndScroll"
       >
@@ -60,15 +60,24 @@
           id="word"
           v-model="word"
           :aria-invalid="analysisError ? true : undefined"
-          :aria-describedby="analysisError ? 'word-analysis-error' : undefined"
+          :aria-describedby="
+            analysisError
+              ? 'word-analysis-error'
+              : showRenameNotice
+                ? 'word-rename-notice'
+                : undefined
+          "
           :is-analyzing="isAnalyzing"
           :is-submitting="isSubmitting"
           :prefilled-word="prefilledWord"
-          :is-edit-mode="isEditMode && !isAuthor"
+          :readonly="isHeadwordReadOnly"
           @blur="handleWordBlur"
           @clear-analysis="clearAnalysis"
           @clear="handleWordClear"
         />
+        <p v-if="showRenameNotice" id="word-rename-notice" class="mt-1 text-sm text-gray-600">
+          {{ t('upsertDefinition.renameAuthorOnly') }}
+        </p>
       </div>
       <AlertComponent v-if="analysisError" id="word-analysis-error" type="error" role="alert">
         {{ analysisError }}
@@ -457,6 +466,7 @@
 <script setup lang="ts">
 import { invalidateActivityFeed } from '@/composables/useActivityFeed'
 import { ArrowRight, Search, CirclePlus, CircleMinus, Eye } from '@lucide/vue'
+import { isAxiosError } from 'axios'
 import { useLocalePath } from '@/composables/useLocalePath'
 import { useCreationAccess } from '@/composables/useCreationAccess'
 import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
@@ -611,6 +621,11 @@ const unsaved = useUnsavedChanges(
 )
 const isAuthor = ref(false)
 const originalWord = ref('')
+const renameDenied = ref(false)
+const isHeadwordReadOnly = computed(
+  () => isEditMode.value && (!isAuthor.value || !canCreate.value || renameDenied.value)
+)
+const showRenameNotice = computed(() => isEditMode.value && !!originalWord.value && !isAuthor.value)
 const editDefinitionId = ref(null)
 const lastAnalyzedWord = ref('')
 /** Matches DefinitionCard: definition = MathJax only; notes = markdown + MathJax */
@@ -1036,16 +1051,29 @@ const submitValsi = async () => {
     if (isEditMode.value) {
       const trimmedWord = word.value.trim()
       const wordChanged =
-        isAuthor.value && trimmedWord !== '' && trimmedWord !== originalWord.value.trim()
+        !isHeadwordReadOnly.value && trimmedWord !== '' && trimmedWord !== originalWord.value.trim()
       if (wordChanged) {
-        const renameResp = await renameDefinition(editDefinitionId.value, {
-          new_word: trimmedWord,
-        })
-        if (!renameResp.data?.success) {
-          throw new Error(renameResp.data?.error || 'Failed to change word')
+        analysisError.value = ''
+        try {
+          const renameResp = await renameDefinition(editDefinitionId.value, {
+            new_word: trimmedWord,
+          })
+          if (!renameResp.data?.success) {
+            analysisError.value =
+              formatDefinitionError(renameResp.data?.error) || t('upsertDefinition.saveError')
+            isSubmitting.value = false
+            return
+          }
+          originalWord.value = renameResp.data.new_word
+          word.value = renameResp.data.new_word
+        } catch (error) {
+          if (!isAxiosError(error) || error.response?.status !== 403) throw error
+          renameDenied.value = true
+          word.value = originalWord.value
+          analysisError.value = t('upsertDefinition.renameForbidden')
+          isSubmitting.value = false
+          return
         }
-        originalWord.value = renameResp.data.new_word
-        word.value = renameResp.data.new_word
       }
       response = await updateValsi(editDefinitionId.value, requestData)
     } else {

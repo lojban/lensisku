@@ -5,9 +5,9 @@
       :id="id"
       v-model="inputValue"
       type="text"
-      class="block w-full input-field disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-75 h-10"
-      :disabled="isAnalyzing || isSubmitting || isEditMode"
-      :readonly="isEditMode"
+      class="block w-full input-field read-only:bg-gray-100 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-75 h-10"
+      :disabled="isAnalyzing || isSubmitting"
+      :readonly="readonly"
       :clear="prefilledWord"
       :aria-invalid="ariaInvalid"
       :aria-describedby="ariaDescribedby"
@@ -24,9 +24,9 @@
       :aria-describedby="ariaDescribedby"
       rows="5"
       maxlength="4000"
-      class="textarea-field"
-      :disabled="isAnalyzing || isSubmitting || isEditMode"
-      :readonly="isEditMode"
+      class="textarea-field read-only:bg-gray-100"
+      :disabled="isAnalyzing || isSubmitting"
+      :readonly="readonly"
       @input="handleInput"
       @paste="handlePaste"
       @blur="emit('blur')"
@@ -52,7 +52,7 @@ const props = defineProps({
   isAnalyzing: Boolean,
   isSubmitting: Boolean,
   prefilledWord: Boolean,
-  isEditMode: Boolean,
+  readonly: Boolean,
 })
 
 const emit = defineEmits(['update:modelValue', 'input', 'blur', 'clear-analysis', 'clear'])
@@ -73,6 +73,7 @@ const handleInput = (event) => {
 }
 
 const handlePaste = async (event) => {
+  if (props.readonly) return
   event.preventDefault()
   const pastedText = event.clipboardData.getData('text')
   const currentValue = inputValue.value || ''

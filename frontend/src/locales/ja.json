@@ -927,6 +927,8 @@
     "renameEvent": "Title rename"
   },
   "upsertDefinition": {
+    "renameAuthorOnly": "見出し語を変更できるのは定義の作成者だけです。",
+    "renameForbidden": "見出し語を変更する権限がありません。",
     "editTitle": "定義を編集",
     "addTitle": "新しい定義を追加",
     "addEntryTitle": "新しいエントリを追加",

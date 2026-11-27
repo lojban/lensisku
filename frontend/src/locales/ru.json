@@ -898,6 +898,8 @@
     "renameEvent": "Title rename"
   },
   "upsertDefinition": {
+    "renameAuthorOnly": "Изменить заглавное слово может только автор определения.",
+    "renameForbidden": "У вас нет разрешения изменить заглавное слово.",
     "editTitle": "Редактировать определение",
     "addTitle": "Добавить новое определение",
     "addEntryTitle": "Добавить новую запись",

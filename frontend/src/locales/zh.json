@@ -932,6 +932,8 @@
     "renameEvent": "Title rename"
   },
   "upsertDefinition": {
+    "renameAuthorOnly": "只有这条释义的作者可以更改词头。",
+    "renameForbidden": "你没有更改词头的权限。",
     "editTitle": "编辑释义",
     "addTitle": "添加释义",
     "addEntryTitle": "添加新词条",
